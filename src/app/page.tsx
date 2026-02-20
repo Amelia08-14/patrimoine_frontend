@@ -22,34 +22,34 @@ const getIcon = (name: string) => {
   return icons[name] || HomeIcon
 }
 
-// Mapping des couleurs par ID de catégorie
-const getCategoryColorById = (categoryId: string) => {
-  switch (categoryId) {
-    case "accommodation": return "bg-yellow-400";
-    case "office": return "bg-blue-500";
-    case "hotel": return "bg-orange-500";
-    case "event": return "bg-red-500";
-    case "industrial": return "bg-gray-500";
-    case "residential": return "bg-green-500";
+// Helper pour les couleurs des catégories (surlignements)
+const getCategoryColor = (label: string) => {
+  switch (label) {
+    case "Hébergement et Séjours": return "bg-yellow-400";
+    case "Bureaux et Commerces": return "bg-blue-500";
+    case "Immobilier Hôtelier": return "bg-orange-500";
+    case "Immobilier Évènementiel": return "bg-red-500";
+    case "Immobilier Industriel": return "bg-gray-500";
+    case "Immobilier Résidentiel": return "bg-green-500";
     default: return "bg-[#00BFA6]";
   }
 }
 
-// Mapping des couleurs d'icônes par ID de catégorie
-const getIconColorById = (categoryId: string) => {
-  switch (categoryId) {
-    case "accommodation": return "text-yellow-500";
-    case "office": return "text-blue-500";
-    case "hotel": return "text-orange-500";
-    case "event": return "text-red-500";
-    case "industrial": return "text-gray-500";
-    case "residential": return "text-green-500";
+// Helper pour les couleurs des icônes
+const getIconColor = (label: string) => {
+  switch (label) {
+    case "Hébergement et Séjours": return "text-yellow-500";
+    case "Bureaux et Commerces": return "text-blue-500";
+    case "Immobilier Hôtelier": return "text-orange-500";
+    case "Immobilier Évènementiel": return "text-red-500";
+    case "Immobilier Industriel": return "text-gray-500";
+    case "Immobilier Résidentiel": return "text-green-500";
     default: return "text-[#00BFA6]";
   }
 }
 
 // Section Carousel (comme avant)
-const CarouselSection = ({ title, categoryId, items }: { title: string, categoryId: string, items: any[] }) => {
+const CarouselSection = ({ title, items }: { title: string, items: any[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const scroll = (direction: 'left' | 'right') => {
@@ -68,7 +68,7 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
           <div className="flex justify-between items-end mb-10">
             <div>
                <h2 className="text-3xl font-bold text-gray-900 mb-2 capitalize">{title}</h2>
-               <div className={cn("w-20 h-1 rounded-full", getCategoryColorById(categoryId))}></div>
+               <div className={cn("w-20 h-1 rounded-full", getCategoryColor(title))}></div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => scroll('left')} className="p-3 rounded-full border border-gray-200 hover:bg-gray-50 transition-all">
@@ -113,8 +113,9 @@ export default function HomePage() {
 
   const heroImages = [
     "/hero1.jpg",
-    "/hero2.png",
+    "/hero2.jpg",
     "/hero3.png",
+    "/hero4.png",
     "/Hero4.jpg"
   ];
 
@@ -129,6 +130,8 @@ export default function HomePage() {
     const fetchAnnounces = async () => {
         try {
             const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces`);
+            console.log("=== DONNÉES REÇUES ===");
+            console.log("Announces:", res.data);
             setAnnounces(res.data);
         } catch (err) {
             console.error(err);
@@ -137,6 +140,12 @@ export default function HomePage() {
         }
     }
     fetchAnnounces();
+  }, []);
+
+  useEffect(() => {
+    console.log("=== CONFIGURATION ===");
+    console.log("REAL_ESTATE_CATEGORIES:", REAL_ESTATE_CATEGORIES);
+    console.log("PROPERTY_TYPES:", PROPERTY_TYPES);
   }, []);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroImages.length);
@@ -149,7 +158,21 @@ export default function HomePage() {
              a.type === 'SALE';
   });
 
-  // Group announces by category (uniquement les 6 catégories principales)
+  // Debug: voir les property types des annonces
+  useEffect(() => {
+    if (filteredAnnounces.length > 0) {
+      console.log("=== ANALYSE DES ANNONCES ===");
+      filteredAnnounces.forEach((a, index) => {
+        console.log(`Annonce ${index + 1}:`, {
+          id: a.id,
+          propertyType: a.property?.propertyType,
+          category: PROPERTY_TYPES.find(t => t.id === a.property?.propertyType)?.categoryId
+        });
+      });
+    }
+  }, [filteredAnnounces]);
+
+  // Group announces by category
   const groupedAnnounces = filteredAnnounces.reduce((acc, announce) => {
     const pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType);
     
@@ -163,15 +186,35 @@ export default function HomePage() {
               };
             }
             acc[cat.id].items.push(announce);
+        } else {
+            // Si la catégorie n'est pas trouvée
+            if (!acc['unknown']) {
+              acc['unknown'] = {
+                  label: 'Non catégorisé',
+                  items: []
+              };
+            }
+            acc['unknown'].items.push(announce);
         }
+    } else {
+        // Si le property type n'est pas trouvé
+        if (!acc['unknown']) {
+          acc['unknown'] = {
+              label: 'Non catégorisé',
+              items: []
+          };
+        }
+        acc['unknown'].items.push(announce);
     }
     return acc;
   }, {} as Record<string, { label: string, items: any[] }>);
 
-  // Ne garder que les catégories qui ont des annonces, dans l'ordre de REAL_ESTATE_CATEGORIES
-  const sortedCategories = REAL_ESTATE_CATEGORIES
-    .map(cat => cat.id)
-    .filter(id => groupedAnnounces[id] && groupedAnnounces[id].items.length > 0);
+  console.log("=== RÉSULTAT DU GROUPEMENT ===");
+  console.log("groupedAnnounces:", groupedAnnounces);
+
+  // Afficher toutes les catégories qui ont des annonces
+  const categoriesWithAnnounces = Object.keys(groupedAnnounces).filter(key => groupedAnnounces[key].items.length > 0);
+  console.log("Catégories avec annonces:", categoriesWithAnnounces);
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-gray-50">
@@ -273,12 +316,12 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Category Bubbles avec couleurs par ID */}
+          {/* Category Bubbles avec couleurs */}
           <div className="mb-4">
             <div className="flex flex-wrap gap-3 justify-center">
               {REAL_ESTATE_CATEGORIES.map((category) => {
                 const Icon = getIcon(category.iconName);
-                const iconColor = getIconColorById(category.id);
+                const iconColor = getIconColor(category.label);
                 return (
                   <button
                     key={category.id}
@@ -299,18 +342,17 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* --- PROPERTIES BY CATEGORY (uniquement les 6 types avec annonces) --- */}
+      {/* --- PROPERTIES BY CATEGORY --- */}
       {loading ? (
         <div className="py-20 text-center text-gray-500">Chargement des annonces...</div>
       ) : (
         <>
-          {sortedCategories.length === 0 ? (
+          {Object.keys(groupedAnnounces).length === 0 ? (
             <div className="py-20 text-center text-gray-500">Aucune annonce validée pour le moment.</div>
           ) : (
-            sortedCategories.map((catId) => (
+            Object.keys(groupedAnnounces).map((catId) => (
               <CarouselSection 
                 key={catId} 
-                categoryId={catId}
                 title={groupedAnnounces[catId].label} 
                 items={groupedAnnounces[catId].items} 
               />
