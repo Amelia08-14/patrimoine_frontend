@@ -270,75 +270,75 @@ export default function HomePage() {
       <div className="relative py-8 px-4 z-40 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           
-          {/* Transaction Type Tabs with Deposit Button */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="bg-white p-1.5 rounded-full shadow-sm border border-gray-200 flex gap-1">
-              <button 
-                onClick={() => setSearchType('all')}
-                className={cn(
-                  "px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
-                  searchType === 'all' 
-                    ? "bg-[#003B4A] text-white shadow-md" 
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                )}
-              >
-                TOUS
-              </button>
-              <button 
-                onClick={() => setSearchType('rent')}
-                className={cn(
-                  "px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
-                  searchType === 'rent' 
-                    ? "bg-[#003B4A] text-white shadow-md" 
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                )}
-              >
-                LOUER
-              </button>
-              <button 
-                onClick={() => setSearchType('buy')}
-                className={cn(
-                  "px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
-                  searchType === 'buy' 
-                    ? "bg-[#003B4A] text-white shadow-md" 
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                )}
-              >
-                ACHETER
-              </button>
-            </div>
-            
-            <Link href="/deposit">
-              <Button className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-6 py-2.5 text-sm font-bold shadow-lg shadow-[#00BFA6]/20 transition-all flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Déposer votre annonce
-              </Button>
-            </Link>
-          </div>
+{/* Transaction Type Tabs with Deposit Button */}
+<div className="flex flex-col items-center gap-4 mb-6">
+  <div className="bg-white p-1.5 rounded-full shadow-sm border border-gray-200 flex gap-1">
+    <button 
+      onClick={() => setSearchType('all')}
+      className={cn(
+        "px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
+        searchType === 'all' 
+          ? "bg-[#003B4A] text-white shadow-md" 
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+      )}
+    >
+      TOUS
+    </button>
+    <button 
+      onClick={() => setSearchType('rent')}
+      className={cn(
+        "px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
+        searchType === 'rent' 
+          ? "bg-[#003B4A] text-white shadow-md" 
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+      )}
+    >
+      LOUER
+    </button>
+    <button 
+      onClick={() => setSearchType('buy')}
+      className={cn(
+        "px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
+        searchType === 'buy' 
+          ? "bg-[#003B4A] text-white shadow-md" 
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+      )}
+    >
+      ACHETER
+    </button>
+  </div>
+  
+  <Link href="/deposit">
+    <Button className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-6 py-2.5 text-sm font-bold shadow-lg shadow-[#00BFA6]/20 transition-all flex items-center gap-2">
+      <Plus className="h-4 w-4" />
+      Déposer votre annonce
+    </Button>
+  </Link>
+</div>
 
-          {/* Category Bubbles avec couleurs */}
-          <div className="mb-4">
-            <div className="flex flex-wrap gap-3 justify-center">
-              {REAL_ESTATE_CATEGORIES.map((category) => {
-                const Icon = getIcon(category.iconName);
-                const iconColor = getIconColor(category.label);
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => handleCategoryClick(category.id)}
-                    className="group flex flex-col items-center gap-1 p-2 min-w-[100px] hover:scale-105 transition-transform duration-200"
-                  >
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center border-2 border-gray-100 bg-white shadow-sm group-hover:shadow-md transition-all">
-                      <Icon className={cn("h-8 w-8", iconColor)} />
-                    </div>
-                    <span className="text-xs font-medium text-gray-700 text-center group-hover:text-[#00BFA6] transition-colors">
-                      {category.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+         {/* Category Bubbles avec couleurs */}
+<div className="mb-4">
+  <div className="flex flex-wrap gap-4 justify-center">
+    {REAL_ESTATE_CATEGORIES.map((category) => {
+      const Icon = getIcon(category.iconName);
+      const iconColor = getIconColor(category.label);
+      return (
+        <button
+          key={category.id}
+          onClick={() => handleCategoryClick(category.id)}
+          className="group flex flex-col items-center gap-2 p-3 min-w-[120px] hover:scale-105 transition-transform duration-200"
+        >
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center border-2 border-gray-100 bg-white shadow-md group-hover:shadow-lg transition-all">
+            <Icon className={cn("h-10 w-10", iconColor)} />
           </div>
+          <span className="text-sm font-medium text-gray-700 text-center group-hover:text-[#00BFA6] transition-colors">
+            {category.label}
+          </span>
+        </button>
+      );
+    })}
+  </div>
+</div>
         </div>
       </div>
 
