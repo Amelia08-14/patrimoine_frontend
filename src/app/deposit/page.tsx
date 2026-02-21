@@ -201,10 +201,10 @@ const BASE_PROPERTY_TYPES = [
 const formSchema = z.object({
   transactionType: z.enum(["SALE", "RENTAL"]),
   realEstateType: z.string().min(1, "Type d'immobilier requis"),
+  propertyType: z.string().min(1, "Type de bien requis"),
   city: z.string().min(2, "Wilaya requise"),
   commune: z.string().min(2, "Commune requise"),
   address: z.string().min(5, "Adresse du bien requise"),
-  propertyType: z.string().min(1, "Type de bien requis"),
   area: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface invalide"),
   price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Prix invalide"),
   rooms: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de pièces invalide"),
@@ -217,8 +217,8 @@ type FormData = z.infer<typeof formSchema>
 const steps = [
   { id: 1, name: "Type de transaction" },
   { id: 2, name: "Type d'immobilier" },
-  { id: 3, name: "Localisation" },
-  { id: 4, name: "Type de bien" },
+  { id: 3, name: "Type de bien" },
+  { id: 4, name: "Localisation" },
   { id: 5, name: "Caractéristiques" },
   { id: 6, name: "Commodités" },
   { id: 7, name: "Description & Photos" },
@@ -365,19 +365,19 @@ export default function DepositPage() {
 
   const handleCategoryClick = (categoryId: string) => {
     setValue("realEstateType", categoryId)
-    setCurrentStep(3) // Passer à la localisation
+    setCurrentStep(3) // Passer au type de bien
+  }
+
+  const handlePropertyTypeClick = (propertyId: string) => {
+    setValue("propertyType", propertyId)
+    setCurrentStep(4) // Passer à la localisation
   }
 
   const handleLocationSubmit = async () => {
     const isValid = await trigger(["city", "commune", "address"])
     if (isValid) {
-      setCurrentStep(4) // Passer au type de bien
+      setCurrentStep(5) // Passer aux caractéristiques
     }
-  }
-
-  const handlePropertyTypeClick = (propertyId: string) => {
-    setValue("propertyType", propertyId)
-    setCurrentStep(5) // Passer aux caractéristiques
   }
 
   const goToStep = (step: number) => {
@@ -410,10 +410,10 @@ export default function DepositPage() {
       const formData = new FormData()
       formData.append('transactionType', data.transactionType)
       formData.append('realEstateType', data.realEstateType)
+      formData.append('propertyType', data.propertyType)
       formData.append('city', data.city)
       formData.append('commune', data.commune)
       formData.append('address', data.address)
-      formData.append('propertyType', data.propertyType)
       formData.append('area', data.area)
       formData.append('price', data.price)
       formData.append('rooms', data.rooms)
@@ -475,8 +475,8 @@ export default function DepositPage() {
     switch(currentStep) {
       case 1: return "Choisissez votre type de transaction"
       case 2: return "Type d'immobilier"
-      case 3: return "Localisation"
-      case 4: return "Décrivez-nous votre bien"
+      case 3: return "Décrivez-nous votre bien"
+      case 4: return "Localisation"
       case 5: return "Caractéristiques"
       case 6: return "Commodités"
       case 7: return "Description & Photos"
@@ -585,8 +585,32 @@ export default function DepositPage() {
                         </div>
                     )}
 
-                    {/* Step 3: Location */}
+                    {/* Step 3: Property Type */}
                     {currentStep === 3 && (
+                        <div className="w-full max-w-4xl animate-fade-in">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                {filteredPropertyTypes.map((type) => {
+                                    const Icon = IconMap[type.iconName] || Home
+                                    return (
+                                        <div 
+                                            key={type.id}
+                                            onClick={() => handlePropertyTypeClick(type.id)}
+                                            className={cn(
+                                                "cursor-pointer border rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-md h-40 text-center",
+                                                propertyType === type.id ? "border-[#00BFA6] bg-green-50/30 shadow-md" : "border-gray-200 hover:border-gray-300"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-8 w-8", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-400")} />
+                                            <span className={cn("text-sm font-medium", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-500")}>{type.label}</span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 4: Location */}
+                    {currentStep === 4 && (
                         <div className="w-full max-w-xl animate-fade-in text-left">
                             <div className="space-y-6">
                                 <div>
@@ -621,30 +645,6 @@ export default function DepositPage() {
                                     />
                                     {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
                                 </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 4: Property Type */}
-                    {currentStep === 4 && (
-                        <div className="w-full max-w-4xl animate-fade-in">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                {filteredPropertyTypes.map((type) => {
-                                    const Icon = IconMap[type.iconName] || Home
-                                    return (
-                                        <div 
-                                            key={type.id}
-                                            onClick={() => handlePropertyTypeClick(type.id)}
-                                            className={cn(
-                                                "cursor-pointer border rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-md h-40 text-center",
-                                                propertyType === type.id ? "border-[#00BFA6] bg-green-50/30 shadow-md" : "border-gray-200 hover:border-gray-300"
-                                            )}
-                                        >
-                                            <Icon className={cn("h-8 w-8", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-400")} />
-                                            <span className={cn("text-sm font-medium", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-500")}>{type.label}</span>
-                                        </div>
-                                    )
-                                })}
                             </div>
                         </div>
                     )}
@@ -800,7 +800,7 @@ export default function DepositPage() {
 
                 {/* Footer Actions */}
                 <div className="p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50">
-                    {currentStep === 3 ? (
+                    {currentStep === 4 ? (
                         <Button onClick={handleLocationSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             Continuer
                         </Button>
