@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { User, LogOut, Plus, ChevronDown, List, CreditCard, Search, PieChart, Bell, Globe, Heart, MessageSquare } from 'lucide-react';
+import { User, LogOut, Plus, ChevronDown, List, CreditCard, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Navbar() {
@@ -14,6 +14,30 @@ export function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Fonction pour obtenir le libellé du type de compte
+  const getUserTypeLabel = (userType: string) => {
+    switch(userType) {
+      case 'PARTICULIER':
+        return 'Compte Particulier';
+      case 'SOCIETE':
+        return 'Compte Société';
+      case 'ADMIN':
+        return 'Administrateur';
+      default:
+        return 'Espace Client';
+    }
+  };
+
+  // Fonction pour obtenir l'icône du type de compte
+  const getUserTypeIcon = (userType: string) => {
+    switch(userType) {
+      case 'SOCIETE':
+        return <Building2 className="h-3 w-3 mr-1" />;
+      default:
+        return <User className="h-3 w-3 mr-1" />;
+    }
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -37,16 +61,8 @@ export function Navbar() {
         const userData = JSON.parse(userStr);
         setUser(userData);
         // Si c'est un ADMIN, on ne l'affiche pas comme connecté sur le site public
-        // OU on affiche un bouton "Admin"
         if (userData.userType === 'ADMIN') {
-            setIsLoggedIn(false); // Option: Hide login state for admin on public site
-            // Or redirect/handle differently. 
-            // The user requested: "quand je me connecte à l'admin je trouve juste le compte société à valider et en haut ya mon compte particulier connecter l'administration doit être distinctes"
-            // This suggests session leak or shared local storage.
-            // Admin should have their own separate view, which they do (/admin).
-            // But if they go to /, they might see "Amel Benelhadj" if local storage is shared/not cleared.
-            
-            // Correction: If user is ADMIN, show Admin Link or nothing specific
+            setIsLoggedIn(false);
             setUserInitials("AD");
         } else {
             setUserInitials(`${userData.firstName?.[0] || ''}${userData.lastName?.[0] || ''}`.toUpperCase() || "AB");
@@ -107,7 +123,10 @@ export function Navbar() {
                <div className="flex items-center gap-4 relative" ref={menuRef}>
                   <div className="hidden lg:flex flex-col text-right cursor-pointer" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                      <span className="text-sm font-bold text-gray-800">{user?.firstName} {user?.lastName}</span>
-                     <span className="text-xs text-[#00908A] font-medium">Espace Client</span>
+                     <div className="flex items-center justify-end text-[#00908A]">
+                       {getUserTypeIcon(user?.userType)}
+                       <span className="text-xs font-medium">{getUserTypeLabel(user?.userType)}</span>
+                     </div>
                   </div>
                   <div 
                     className="h-10 w-10 bg-[#003B4A] rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all" 
@@ -121,7 +140,11 @@ export function Navbar() {
                     <div className="absolute top-14 right-0 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in fade-in zoom-in-95 duration-200 z-[100]">
                         <div className="px-4 py-3 border-b border-gray-100">
                             <p className="text-sm font-bold text-gray-900">{user?.firstName} {user?.lastName}</p>
-                            <p className="text-xs text-[#00908A]">{user?.email}</p>
+                            <div className="flex items-center text-xs text-[#00908A] mt-1">
+                              {getUserTypeIcon(user?.userType)}
+                              <span>{getUserTypeLabel(user?.userType)}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
                         </div>
                         
                         <div className="py-2">

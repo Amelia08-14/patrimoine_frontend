@@ -19,7 +19,7 @@ import {
   Bath, Sofa, Armchair, Table, Lamp, Bed,
   Ruler, MapPin, Navigation, Compass, Camera, Video, Speaker,
   Microscope, FlaskConical, Atom, Leaf, Flower, Cloud, CloudRain, CloudSun,
-  Moon, Stars, Sunset, Sunrise, Wind as WindIcon, Umbrella
+  Moon, Stars, Sunset, Sunrise, Wind as WindIcon, Umbrella, ArrowLeft
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -107,15 +107,15 @@ const IconMap: Record<string, any> = {
   Neige: Snowflake,
   Ventilateur: Fan,
   Cuisine: CookingPot,
-  Evier: Bath,  // Remplacé Sink par Bath
+  Evier: Bath,
   Baignoire: Bath,
-  Douche: Bath,  // Remplacé Shower par Bath
+  Douche: Bath,
   Canape: Sofa,
   Fauteuil: Armchair,
   Table: Table,
   Lampe: Lamp,
   Lit: Bed,
-  Armoire: Sofa,  // Remplacé Cabinet par Sofa
+  Armoire: Sofa,
   Regle: Ruler,
   Carte: MapPin,
   Navigation: Navigation,
@@ -139,8 +139,8 @@ const IconMap: Record<string, any> = {
   Parapluie: Umbrella
 }
 
-// Types d'immobilier
-const REAL_ESTATE_CATEGORIES = [
+// Types d'immobilier de base
+const BASE_REAL_ESTATE_CATEGORIES = [
   { id: "residential", label: "Immobilier Résidentiel", iconName: "Home" },
   { id: "industrial", label: "Immobilier Industriel", iconName: "Factory" },
   { id: "event", label: "Immobilier Évènementiel", iconName: "PartyPopper" },
@@ -149,8 +149,8 @@ const REAL_ESTATE_CATEGORIES = [
   { id: "accommodation", label: "Hébergement et Séjours", iconName: "BedDouble" },
 ]
 
-// Types de biens par catégorie avec icônes variées
-const PROPERTY_TYPES = [
+// Types de biens par catégorie
+const BASE_PROPERTY_TYPES = [
   // Immobilier Résidentiel
   { id: "villa", label: "Villa", categoryId: "residential", iconName: "Villa" },
   { id: "villa-level", label: "Niveau de villa", categoryId: "residential", iconName: "VillaLevel" },
@@ -185,9 +185,9 @@ const PROPERTY_TYPES = [
   { id: "flex-office", label: "Bureau flexible", categoryId: "office", iconName: "BureauFlexible" },
   { id: "office-building", label: "Immeuble de bureaux", categoryId: "office", iconName: "ImmeubleBureaux" },
   { id: "showroom", label: "Showroom", categoryId: "office", iconName: "Showroom" },
-  { id: "office-villa", label: "Villa", categoryId: "office", iconName: "VillaBureau" },
-  { id: "office-villa-level", label: "Niveau de villa", categoryId: "office", iconName: "NiveauVillaBureau" },
-  { id: "office-apartment", label: "Appartement", categoryId: "office", iconName: "AppartementBureau" },
+  { id: "office-villa", label: "Villa commerciale", categoryId: "office", iconName: "VillaBureau" },
+  { id: "office-villa-level", label: "Niveau de villa commerciale", categoryId: "office", iconName: "NiveauVillaBureau" },
+  { id: "office-apartment", label: "Appartement commercial", categoryId: "office", iconName: "AppartementBureau" },
   { id: "commercial-local", label: "Local commercial", categoryId: "office", iconName: "LocalCommercial" },
 
   // Hébergements et Séjours
@@ -201,10 +201,10 @@ const PROPERTY_TYPES = [
 const formSchema = z.object({
   transactionType: z.enum(["SALE", "RENTAL"]),
   realEstateType: z.string().min(1, "Type d'immobilier requis"),
-  propertyType: z.string().min(1, "Type de bien requis"),
   city: z.string().min(2, "Wilaya requise"),
   commune: z.string().min(2, "Commune requise"),
-  address: z.string().min(5, "Adresse requise"),
+  address: z.string().min(5, "Adresse du bien requise"),
+  propertyType: z.string().min(1, "Type de bien requis"),
   area: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface invalide"),
   price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Prix invalide"),
   rooms: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de pièces invalide"),
@@ -217,8 +217,8 @@ type FormData = z.infer<typeof formSchema>
 const steps = [
   { id: 1, name: "Type de transaction" },
   { id: 2, name: "Type d'immobilier" },
-  { id: 3, name: "Type de bien" },
-  { id: 4, name: "Localisation" },
+  { id: 3, name: "Localisation" },
+  { id: 4, name: "Type de bien" },
   { id: 5, name: "Caractéristiques" },
   { id: 6, name: "Commodités" },
   { id: 7, name: "Description & Photos" },
@@ -230,6 +230,7 @@ export default function DepositPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [userType, setUserType] = useState<string>("PARTICULIER")
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -245,6 +246,8 @@ export default function DepositPage() {
         alert("Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas encore déposer d'annonce.")
         router.push('/')
     }
+    
+    setUserType(user.userType || "PARTICULIER")
   }, [router])
 
   const {
@@ -265,6 +268,72 @@ export default function DepositPage() {
   const realEstateType = watch("realEstateType")
   const propertyType = watch("propertyType")
   const selectedCity = watch("city")
+
+  // Filtrer les catégories selon le type d'utilisateur et la transaction
+  const getFilteredCategories = () => {
+    let categories = [...BASE_REAL_ESTATE_CATEGORIES]
+
+    if (userType === "PARTICULIER") {
+      // Supprimer évènementiel et hôtelier pour les particuliers
+      categories = categories.filter(cat => 
+        cat.id !== "event" && cat.id !== "hotel"
+      )
+    }
+
+    // Pour la vente, hébergement disparaît pour tout le monde
+    if (transactionType === "SALE") {
+      categories = categories.filter(cat => cat.id !== "accommodation")
+      
+      // Pour les sociétés en vente, évènementiel disparaît aussi
+      if (userType === "SOCIETE") {
+        categories = categories.filter(cat => cat.id !== "event")
+      }
+    }
+
+    return categories
+  }
+
+  // Filtrer les types de biens selon le type d'utilisateur et la transaction
+  const getFilteredPropertyTypes = () => {
+    let types = [...BASE_PROPERTY_TYPES]
+
+    // Filtrer par catégorie sélectionnée
+    types = types.filter(t => t.categoryId === realEstateType)
+
+    if (userType === "PARTICULIER") {
+      // Enlever co-stockage pour les particuliers
+      types = types.filter(t => t.id !== "co-storage")
+      
+      // Enlever centre d'affaires, coworking et bureau flexible pour les particuliers (location et vente)
+      types = types.filter(t => 
+        !["business-center", "coworking", "flex-office"].includes(t.id)
+      )
+
+      // Pour l'hébergement en location, ajouter FORMULE HEBERGEMENT CHEZ L'HABITANT
+      if (realEstateType === "accommodation" && transactionType === "RENTAL") {
+        types = [{
+          id: "home-accommodation",
+          label: "FORMULE HEBERGEMENT CHEZ L'HABITANT",
+          categoryId: "accommodation",
+          iconName: "Home"
+        }]
+      }
+    }
+
+    if (userType === "SOCIETE") {
+      // Enlever co-stockage pour les sociétés aussi
+      types = types.filter(t => t.id !== "co-storage")
+
+      // Pour la vente, enlever certains types de bureaux
+      if (transactionType === "SALE") {
+        types = types.filter(t => 
+          !["business-center", "coworking", "flex-office"].includes(t.id)
+        )
+      }
+    }
+
+    return types
+  }
 
   const filteredCommunes = selectedCity 
     ? COMMUNES.filter(c => {
@@ -289,15 +358,40 @@ export default function DepositPage() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  const nextStep = async () => {
+  const handleTransactionTypeClick = (type: "SALE" | "RENTAL") => {
+    setValue("transactionType", type)
+    setCurrentStep(2) // Passer au type d'immobilier
+  }
+
+  const handleCategoryClick = (categoryId: string) => {
+    setValue("realEstateType", categoryId)
+    setCurrentStep(3) // Passer à la localisation
+  }
+
+  const handleLocationSubmit = async () => {
+    const isValid = await trigger(["city", "commune", "address"])
+    if (isValid) {
+      setCurrentStep(4) // Passer au type de bien
+    }
+  }
+
+  const handlePropertyTypeClick = (propertyId: string) => {
+    setValue("propertyType", propertyId)
+    setCurrentStep(5) // Passer aux caractéristiques
+  }
+
+  const goToStep = (step: number) => {
+    if (step < currentStep) {
+      setCurrentStep(step)
+    }
+  }
+
+  const validateAndGoToNext = async () => {
     let fieldsToValidate: (keyof FormData)[] = []
     
-    if (currentStep === 1) fieldsToValidate = ["transactionType"]
-    if (currentStep === 2) fieldsToValidate = ["realEstateType"]
-    if (currentStep === 3) fieldsToValidate = ["propertyType"]
-    if (currentStep === 4) fieldsToValidate = ["city", "commune", "address"]
     if (currentStep === 5) fieldsToValidate = ["area", "price", "rooms"]
     if (currentStep === 6) fieldsToValidate = ["amenities"]
+    if (currentStep === 7) fieldsToValidate = ["description"]
 
     const isValid = await trigger(fieldsToValidate)
     if (isValid) setCurrentStep((prev) => prev + 1)
@@ -316,10 +410,10 @@ export default function DepositPage() {
       const formData = new FormData()
       formData.append('transactionType', data.transactionType)
       formData.append('realEstateType', data.realEstateType)
-      formData.append('propertyType', data.propertyType)
       formData.append('city', data.city)
       formData.append('commune', data.commune)
       formData.append('address', data.address)
+      formData.append('propertyType', data.propertyType)
       formData.append('area', data.area)
       formData.append('price', data.price)
       formData.append('rooms', data.rooms)
@@ -373,6 +467,23 @@ export default function DepositPage() {
     )
   }
 
+  const filteredCategories = getFilteredCategories()
+  const filteredPropertyTypes = getFilteredPropertyTypes()
+
+  // Titre de l'étape courante
+  const getStepTitle = () => {
+    switch(currentStep) {
+      case 1: return "Choisissez votre type de transaction"
+      case 2: return "Type d'immobilier"
+      case 3: return "Localisation"
+      case 4: return "Décrivez-nous votre bien"
+      case 5: return "Caractéristiques"
+      case 6: return "Commodités"
+      case 7: return "Description & Photos"
+      default: return ""
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
         {/* Top Header Background */}
@@ -381,40 +492,53 @@ export default function DepositPage() {
         <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-4">
             
             {/* Progress Stepper */}
-            <div className="bg-white rounded-full px-8 py-4 shadow-lg mb-8 flex items-center gap-4">
-                {steps.map((step) => (
-                    <div 
-                        key={step.id} 
-                        className={cn("flex items-center cursor-pointer hover:opacity-80 transition-opacity", step.id > currentStep && "cursor-not-allowed opacity-50")}
-                        onClick={() => {
-                            if (step.id < currentStep) setCurrentStep(step.id)
-                        }}
-                    >
-                        <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all",
-                            currentStep > step.id ? "bg-[#00BFA6] border-[#00BFA6] text-white" : 
-                            currentStep === step.id ? "border-[#00BFA6] text-[#00BFA6]" : "border-gray-200 text-gray-300"
-                        )}>
-                            {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
+            <div className="bg-white rounded-full px-8 py-4 shadow-lg mb-8">
+                <div className="flex items-center gap-4">
+                    {steps.map((step) => (
+                        <div 
+                            key={step.id} 
+                            className={cn("flex items-center cursor-pointer hover:opacity-80 transition-opacity", step.id > currentStep && "cursor-not-allowed opacity-50")}
+                            onClick={() => goToStep(step.id)}
+                        >
+                            <div className={cn(
+                                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all",
+                                currentStep > step.id ? "bg-[#00BFA6] border-[#00BFA6] text-white" : 
+                                currentStep === step.id ? "border-[#00BFA6] text-[#00BFA6]" : "border-gray-200 text-gray-300"
+                            )}>
+                                {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
+                            </div>
+                            {step.id < steps.length && (
+                                <div className={cn("w-8 h-0.5 mx-2", currentStep > step.id ? "bg-[#00BFA6]" : "bg-gray-200")}></div>
+                            )}
                         </div>
-                        {step.id < steps.length && (
-                            <div className={cn("w-8 h-0.5 mx-2", currentStep > step.id ? "bg-[#00BFA6]" : "bg-gray-200")}></div>
-                        )}
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
             {/* Main Card */}
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden min-h-[500px] flex flex-col">
+                {/* Header avec titre et bouton retour */}
+                <div className="p-8 border-b border-gray-100 flex items-center">
+                    {currentStep > 1 && (
+                        <button 
+                            onClick={prevStep}
+                            className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium mr-4"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                            Retour
+                        </button>
+                    )}
+                    <h1 className="text-2xl font-bold text-gray-800">{getStepTitle()}</h1>
+                </div>
+
                 <div className="p-12 flex-1 flex flex-col items-center justify-center text-center">
                     
                     {/* Step 1: Transaction Type */}
                     {currentStep === 1 && (
                         <div className="w-full max-w-2xl animate-fade-in">
-                            <h2 className="text-3xl font-bold text-gray-700 mb-12">Choisissez votre type de transaction</h2>
                             <div className="grid grid-cols-2 gap-8">
                                 <div 
-                                    onClick={() => setValue("transactionType", "RENTAL")}
+                                    onClick={() => handleTransactionTypeClick("RENTAL")}
                                     className={cn(
                                         "cursor-pointer border-2 rounded-2xl p-10 flex flex-col items-center justify-center gap-4 transition-all hover:shadow-lg",
                                         transactionType === "RENTAL" ? "border-[#00BFA6] bg-green-50/30" : "border-gray-200 hover:border-gray-300"
@@ -424,7 +548,7 @@ export default function DepositPage() {
                                     <span className={cn("text-xl font-medium", transactionType === "RENTAL" ? "text-[#00BFA6]" : "text-gray-500")}>Location</span>
                                 </div>
                                 <div 
-                                    onClick={() => setValue("transactionType", "SALE")}
+                                    onClick={() => handleTransactionTypeClick("SALE")}
                                     className={cn(
                                         "cursor-pointer border-2 rounded-2xl p-10 flex flex-col items-center justify-center gap-4 transition-all hover:shadow-lg",
                                         transactionType === "SALE" ? "border-[#00BFA6] bg-green-50/30" : "border-gray-200 hover:border-gray-300"
@@ -440,14 +564,13 @@ export default function DepositPage() {
                     {/* Step 2: Real Estate Type */}
                     {currentStep === 2 && (
                         <div className="w-full max-w-4xl animate-fade-in">
-                            <h2 className="text-3xl font-bold text-gray-700 mb-12">Type d'immobilier</h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-                                {REAL_ESTATE_CATEGORIES.map((cat) => {
+                                {filteredCategories.map((cat) => {
                                     const Icon = IconMap[cat.iconName] || Home
                                     return (
                                         <div 
                                             key={cat.id}
-                                            onClick={() => setValue("realEstateType", cat.id)}
+                                            onClick={() => handleCategoryClick(cat.id)}
                                             className={cn(
                                                 "cursor-pointer border-2 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 transition-all hover:shadow-lg h-48 text-center",
                                                 realEstateType === cat.id ? "border-[#00BFA6] bg-green-50/30" : "border-gray-200 hover:border-gray-300"
@@ -462,35 +585,9 @@ export default function DepositPage() {
                         </div>
                     )}
 
-                    {/* Step 3: Property Type */}
+                    {/* Step 3: Location */}
                     {currentStep === 3 && (
-                        <div className="w-full max-w-4xl animate-fade-in">
-                            <h2 className="text-3xl font-bold text-gray-700 mb-12">Décrivez-nous votre bien</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                {PROPERTY_TYPES.filter(t => t.categoryId === realEstateType).map((type) => {
-                                    const Icon = IconMap[type.iconName] || Home
-                                    return (
-                                        <div 
-                                            key={type.id}
-                                            onClick={() => setValue("propertyType", type.id)}
-                                            className={cn(
-                                                "cursor-pointer border rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-md h-40 text-center",
-                                                propertyType === type.id ? "border-[#00BFA6] bg-green-50/30 shadow-md" : "border-gray-200 hover:border-gray-300"
-                                            )}
-                                        >
-                                            <Icon className={cn("h-8 w-8", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-400")} />
-                                            <span className={cn("text-sm font-medium", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-500")}>{type.label}</span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 4: Location */}
-                    {currentStep === 4 && (
                         <div className="w-full max-w-xl animate-fade-in text-left">
-                            <h2 className="text-3xl font-bold text-gray-700 mb-8 text-center">Localisation</h2>
                             <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2">Wilaya</label>
@@ -515,7 +612,7 @@ export default function DepositPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Adresse exacte</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Adresse du bien</label>
                                     <input 
                                       {...register("address")} 
                                       type="text" 
@@ -528,10 +625,33 @@ export default function DepositPage() {
                         </div>
                     )}
 
+                    {/* Step 4: Property Type */}
+                    {currentStep === 4 && (
+                        <div className="w-full max-w-4xl animate-fade-in">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                {filteredPropertyTypes.map((type) => {
+                                    const Icon = IconMap[type.iconName] || Home
+                                    return (
+                                        <div 
+                                            key={type.id}
+                                            onClick={() => handlePropertyTypeClick(type.id)}
+                                            className={cn(
+                                                "cursor-pointer border rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-md h-40 text-center",
+                                                propertyType === type.id ? "border-[#00BFA6] bg-green-50/30 shadow-md" : "border-gray-200 hover:border-gray-300"
+                                            )}
+                                        >
+                                            <Icon className={cn("h-8 w-8", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-400")} />
+                                            <span className={cn("text-sm font-medium", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-500")}>{type.label}</span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Step 5: Caractéristiques */}
                     {currentStep === 5 && (
                         <div className="w-full max-w-xl animate-fade-in text-left">
-                            <h2 className="text-3xl font-bold text-gray-700 mb-8 text-center">Caractéristiques</h2>
                             <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
@@ -557,7 +677,6 @@ export default function DepositPage() {
                     {/* Step 6: Commodités */}
                     {currentStep === 6 && (
                         <div className="w-full max-w-4xl animate-fade-in text-left">
-                            <h2 className="text-3xl font-bold text-gray-700 mb-8 text-center">Commodités</h2>
                             <div className="space-y-12">
                                 {/* Advantages */}
                                 <div>
@@ -636,7 +755,6 @@ export default function DepositPage() {
                     {/* Step 7: Description & Photos */}
                     {currentStep === 7 && (
                         <div className="w-full max-w-xl animate-fade-in text-left">
-                            <h2 className="text-3xl font-bold text-gray-700 mb-8 text-center">Description & Photos</h2>
                             <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
@@ -681,24 +799,20 @@ export default function DepositPage() {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-8 border-t border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    {currentStep > 1 ? (
-                        <button onClick={prevStep} className="text-gray-500 font-bold hover:text-gray-800 transition-colors underline decoration-2 underline-offset-4">
-                            Retour
-                        </button>
-                    ) : (
-                        <div></div>
-                    )}
-
-                    {currentStep < steps.length ? (
-                        <Button onClick={nextStep} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                <div className="p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50">
+                    {currentStep === 3 ? (
+                        <Button onClick={handleLocationSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             Continuer
                         </Button>
-                    ) : (
+                    ) : currentStep === 5 || currentStep === 6 || currentStep === 7 ? (
+                        <Button onClick={validateAndGoToNext} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                            Continuer
+                        </Button>
+                    ) : currentStep === 7 ? (
                         <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             {isSubmitting ? "Publication..." : "Publier l'annonce"}
                         </Button>
-                    )}
+                    ) : null}
                 </div>
             </div>
         </div>
