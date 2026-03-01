@@ -120,11 +120,10 @@ function AnnouncesContent() {
             // Filter announces where propertyType matches one of the valid types
             if (validTypes.length > 0) {
                 data = data.filter((a: any) => {
-                    // Try to match by ID first (if propertyType is stored as ID like "APPARTEMENT")
-                    if (validTypes.includes(a.property?.propertyType)) return true;
+                    // Try to match by ID first (case-insensitive)
+                    if (validTypes.includes(a.property?.propertyType?.toUpperCase())) return true;
                     
-                    // Fallback: Try to match by Label (if propertyType is stored as Label like "Appartement")
-                    // This handles potential inconsistency in how propertyType is stored in DB
+                    // Fallback: Try to match by Label
                     const typeObj = PROPERTY_TYPES.find(t => t.label === a.property?.propertyType);
                     return typeObj && typeObj.categoryId === filters.realEstateCategory;
                 });
@@ -134,10 +133,10 @@ function AnnouncesContent() {
           if (filters.propertyType) {
             // Precise filter by Property Type
             data = data.filter((a: any) => {
-                // Check direct ID match
-                if (a.property?.propertyType === filters.propertyType) return true;
+                // Check direct ID match (case-insensitive)
+                if (a.property?.propertyType?.toUpperCase() === filters.propertyType?.toUpperCase()) return true;
                 
-                // Check label match (e.g. if DB has "Maison d'hôtes" instead of "MAISON_HOTES")
+                // Check label match
                 const typeObj = PROPERTY_TYPES.find(t => t.id === filters.propertyType);
                 return typeObj && a.property?.propertyType === typeObj.label;
             })

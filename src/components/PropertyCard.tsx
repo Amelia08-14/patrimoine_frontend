@@ -18,7 +18,13 @@ const getImageUrl = (url: string) => {
 export const PropertyCard = ({ announce }: { announce: any }) => {
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
   const locationName = announce.property?.address?.town?.nameFr || announce.property?.address?.town?.city?.nameFr || "Algérie";
-  const categoryName = announce.property?.propertyType || "Immobilier";
+  
+  // Normalize Property Type for Display
+  const pType = announce.property?.propertyType;
+  // Try to find label in constants if it's an ID like "VILLA"
+  const typeObj = require("@/data/propertyTypes").PROPERTY_TYPES.find((t: any) => t.id === pType?.toUpperCase() || t.label === pType);
+  const categoryName = typeObj ? typeObj.label : (pType || "Immobilier");
+
   const [isFavorite, setIsFavorite] = useState(false); 
   
   const toggleFavorite = async (e: React.MouseEvent) => {

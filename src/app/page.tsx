@@ -46,14 +46,15 @@ const getIconColorById = (categoryId: string) => {
   }
 }
 
-// Section Carousel avec flèches rapprochées du titre
+// Section Carousel avec flèches de navigation
 const CarouselSection = ({ title, categoryId, items }: { title: string, categoryId: string, items: any[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
+      const scrollAmount = 400;
       scrollRef.current.scrollBy({
-        left: direction === 'left' ? -400 : 400,
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       })
     }
@@ -64,23 +65,23 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
   return (
     <section className="py-8 bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-gray-900 capitalize">{title}</h2>
-            <div className="flex gap-1">
+            <div className="flex gap-2">
               <button 
-                onClick={() => scroll('left')} 
-                className="p-1.5 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-[#00BFA6] transition-all group"
-                aria-label="Défiler vers la gauche"
+                onClick={() => scroll('left')}
+                className="p-2 rounded-full border border-gray-200 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] text-gray-600 transition-all shadow-sm"
+                aria-label="Défiler à gauche"
               >
-                <ChevronLeft className="h-4 w-4 text-gray-600 group-hover:text-[#00BFA6]" />
+                <ChevronLeft className="h-5 w-5" />
               </button>
               <button 
-                onClick={() => scroll('right')} 
-                className="p-1.5 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-[#00BFA6] transition-all group"
-                aria-label="Défiler vers la droite"
+                onClick={() => scroll('right')}
+                className="p-2 rounded-full border border-gray-200 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] text-gray-600 transition-all shadow-sm"
+                aria-label="Défiler à droite"
               >
-                <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-[#00BFA6]" />
+                <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -88,12 +89,14 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
         <div className={cn("w-16 h-1 rounded-full mb-6", getCategoryColorById(categoryId))}></div>
 
         <div 
-          ref={scrollRef} 
-          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar"
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory hide-scrollbar"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((item) => (
-            <PropertyCard key={item.id} announce={item} />
+            <div key={item.id} className="min-w-[280px] md:min-w-[300px] lg:min-w-[calc(25%-1.2rem)] snap-start">
+              <PropertyCard announce={item} />
+            </div>
           ))}
         </div>
       </div>
@@ -155,7 +158,14 @@ export default function HomePage() {
   });
 
   const groupedAnnounces = filteredAnnounces.reduce((acc, announce) => {
-    const pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType);
+    // Attempt to find property type by ID (case-insensitive) or Label
+    let pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType?.toUpperCase());
+    
+    // Fallback: try matching by label if ID match fails
+    if (!pType) {
+        pType = PROPERTY_TYPES.find(t => t.label === announce.property?.propertyType);
+    }
+
     if (pType) {
       const cat = REAL_ESTATE_CATEGORIES.find(c => c.id === pType.categoryId);
       if (cat) {

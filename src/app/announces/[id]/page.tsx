@@ -25,6 +25,49 @@ import { AnnounceFilter } from "@/components/AnnounceFilter"
   return icons[iconName] || Check
 }
 
+const LABELS: any = {
+    // State
+    NEW: "Neuf / Première main",
+    GOOD: "Bon état",
+    RENOVATED: "Rénové",
+    TO_RENOVATE: "A rénover",
+    UNDER_CONSTRUCTION: "En construction",
+    
+    // Usage
+    HABITATION: "Habitation",
+    PROFESSIONAL: "Professionnel / Bureau",
+    COMMERCIAL: "Commercial",
+    
+    // Kitchen
+    KITCHEN_EQUIPPED: "Cuisine Équipée",
+    KITCHEN_SEMI_EQUIPPED: "Semi-équipée",
+    KITCHEN_EMPTY: "Vide",
+    KITCHEN_OPEN: "Ouverte (Américaine)",
+    KITCHEN_CLOSED: "Fermée",
+    KITCHEN_ISLAND: "Avec Ilot",
+    
+    // Heating/AC
+    HEATING_CENTRAL: "Chauffage Central",
+    HEATING_GAS: "Chauffage à Gaz",
+    HEATING_ELEC: "Chauffage Électrique",
+    HEATING_FLOOR: "Chauffage au Sol",
+    AC_CENTRAL: "Climatisation Centrale",
+    AC_SPLIT: "Split System",
+    
+    // Counters
+    INDIVIDUAL: "Individuel",
+    COLLECTIVE: "Collectif",
+    
+    // Categories (Images)
+    bedrooms: "Chambres",
+    bathrooms: "Salles de bain & WC",
+    kitchen: "Cuisine",
+    exterior: "Extérieur",
+    common: "Espaces communs",
+    other: "Autres",
+    general: "Général"
+};
+
 export default function AnnounceDetailsPage() {
   const params = useParams()
   const router = useRouter()
@@ -32,6 +75,18 @@ export default function AnnounceDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [activeImage, setActiveImage] = useState(0)
   const [showGallery, setShowGallery] = useState(false)
+  const [activeTab, setActiveTab] = useState('ALL')
+
+  // Group images by category
+  const imagesByCategory = (announce?.property?.images || []).reduce((acc: any, img: any) => {
+    const cat = img.category || 'general';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(img);
+    return acc;
+  }, {});
+
+  const allImages = announce?.property?.images || [];
+  const displayImages = activeTab === 'ALL' ? allImages : (imagesByCategory[activeTab] || []);
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -108,6 +163,11 @@ export default function AnnounceDetailsPage() {
   const otherPieces = getAmenitiesList(AMENITIES_DATA.otherPieces)
   const advantages = getAmenitiesList(AMENITIES_DATA.advantages)
 
+  // Helper to determine if we should show Villa-specific layout
+  const isVilla = announce?.property?.propertyType === 'VILLA' || announce?.property?.propertyType === 'Villa' || announce?.property?.propertyType === 'villa';
+  const isRental = announce?.type === 'RENTAL';
+  const isVillaRental = isVilla && isRental;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header / Nav */}
@@ -142,78 +202,132 @@ export default function AnnounceDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Images Grid - Modern Layout */}
-        <div className="h-[400px] md:h-[500px] rounded-3xl overflow-hidden mb-8 shadow-sm">
-            {images.length === 0 ? (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">Pas d'image</div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-2 h-full">
-                    {/* Main Image (Left Half) */}
-                    <div 
-                        className="col-span-1 md:col-span-2 row-span-2 relative cursor-pointer group"
-                        onClick={() => setShowGallery(true)}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 px-2">Galerie Photos</h2>
+            
+            {/* Gallery Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-4 mb-4 hide-scrollbar px-2">
+                <button 
+                    onClick={() => setActiveTab('ALL')}
+                    className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm border-2 ${activeTab === 'ALL' ? 'border-[#00BFA6] bg-[#00BFA6] text-white' : 'border-gray-100 bg-white text-gray-600 hover:border-gray-300'}`}
+                >
+                    Tout ({allImages.length})
+                </button>
+                {Object.keys(imagesByCategory).map(cat => (
+                    <button 
+                        key={cat}
+                        onClick={() => setActiveTab(cat)}
+                        className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm border-2 ${activeTab === cat ? 'border-[#00BFA6] bg-[#00BFA6] text-white' : 'border-gray-100 bg-white text-gray-600 hover:border-gray-300'}`}
                     >
-                        <img 
-                            src={getImageUrl(images[0]?.url) || ''} 
-                            alt="Main view" 
-                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                        />
-                    </div>
+                        {LABELS[cat] || cat} ({imagesByCategory[cat].length})
+                    </button>
+                ))}
+            </div>
 
-                    {/* Top Middle */}
-                    <div 
-                        className="hidden md:block col-span-1 row-span-2 relative cursor-pointer group"
-                        onClick={() => setShowGallery(true)}
-                    >
-                         {images[1] && (
-                            <img 
-                                src={getImageUrl(images[1]?.url) || ''} 
-                                alt="View 2" 
-                                className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                            />
-                         )}
-                    </div>
-
-                    {/* Right Column (Stacked) */}
-                    <div className="hidden md:flex flex-col gap-2 col-span-1 row-span-2">
+            <div className="h-[400px] md:h-[500px] rounded-2xl overflow-hidden relative bg-gray-50">
+                {displayImages.length === 0 ? (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">Aucune image dans cette catégorie</div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-2 h-full">
+                        {/* Main Image (Left Half) */}
                         <div 
-                            className="flex-1 relative cursor-pointer group overflow-hidden"
-                            onClick={() => setShowGallery(true)}
+                            className="col-span-1 md:col-span-2 row-span-2 relative cursor-pointer group h-full"
+                            onClick={() => { setActiveImage(allImages.indexOf(displayImages[0])); setShowGallery(true); }}
                         >
-                            {images[2] && (
-                                <img 
-                                    src={getImageUrl(images[2]?.url) || ''} 
-                                    alt="View 3" 
-                                    className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                                />
+                            <img 
+                                src={getImageUrl(displayImages[0]?.url) || ''} 
+                                alt="Main view" 
+                                className="w-full h-full object-cover hover:opacity-95 transition-opacity rounded-l-2xl"
+                            />
+                            <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                                {LABELS[displayImages[0]?.category] || displayImages[0]?.category || 'Général'}
+                            </div>
+                        </div>
+
+                        {/* Top Middle */}
+                        <div 
+                            className="hidden md:block col-span-1 row-span-2 relative cursor-pointer group h-full"
+                            onClick={() => { setActiveImage(allImages.indexOf(displayImages[1])); setShowGallery(true); }}
+                        >
+                            {displayImages[1] ? (
+                                <>
+                                    <img 
+                                        src={getImageUrl(displayImages[1]?.url) || ''} 
+                                        alt="View 2" 
+                                        className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                                    />
+                                    <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                                        {LABELS[displayImages[1]?.category] || displayImages[1]?.category || 'Général'}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                    <Building2 className="h-8 w-8 text-gray-300" />
+                                </div>
                             )}
                         </div>
-                        <div 
-                            className="flex-1 relative cursor-pointer group overflow-hidden"
-                            onClick={() => setShowGallery(true)}
-                        >
-                            {images[3] && (
-                                <img 
-                                    src={getImageUrl(images[3]?.url) || ''} 
-                                    alt="View 4" 
-                                    className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                                />
-                            )}
-                            
-                            {/* "Show All" Button Overlay */}
-                            <div className="absolute inset-0 bg-black/20 hover:bg-black/30 transition-colors flex items-center justify-center">
-                                <Button 
-                                    variant="secondary" 
-                                    size="sm" 
-                                    className="bg-white/90 text-gray-900 font-bold hover:bg-white gap-2 shadow-lg"
-                                >
-                                    <Square className="h-4 w-4" />
-                                    Afficher toutes les photos
-                                </Button>
+
+                        {/* Right Column (Stacked) */}
+                        <div className="hidden md:flex flex-col gap-2 col-span-1 row-span-2 h-full">
+                            <div 
+                                className="flex-1 relative cursor-pointer group overflow-hidden rounded-tr-2xl"
+                                onClick={() => { setActiveImage(allImages.indexOf(displayImages[2])); setShowGallery(true); }}
+                            >
+                                {displayImages[2] ? (
+                                    <>
+                                        <img 
+                                            src={getImageUrl(displayImages[2]?.url) || ''} 
+                                            alt="View 3" 
+                                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                                        />
+                                        <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                                            {LABELS[displayImages[2]?.category] || displayImages[2]?.category || 'Général'}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                        <Building2 className="h-8 w-8 text-gray-300" />
+                                    </div>
+                                )}
+                            </div>
+                            <div 
+                                className="flex-1 relative cursor-pointer group overflow-hidden rounded-br-2xl"
+                                onClick={() => { setActiveImage(allImages.indexOf(displayImages[3] || displayImages[0])); setShowGallery(true); }}
+                            >
+                                {displayImages[3] ? (
+                                    <>
+                                        <img 
+                                            src={getImageUrl(displayImages[3]?.url) || ''} 
+                                            alt="View 4" 
+                                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                                        />
+                                        <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                                            {LABELS[displayImages[3]?.category] || displayImages[3]?.category || 'Général'}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                        <Building2 className="h-8 w-8 text-gray-300" />
+                                    </div>
+                                )}
+                                
+                                {/* "Show All" Button Overlay - Always visible on the last block if there are more images */}
+                                <div className="absolute inset-0 bg-black/40 hover:bg-black/50 transition-colors flex flex-col items-center justify-center text-white cursor-pointer">
+                                    <span className="text-3xl font-bold mb-2">+{displayImages.length > 4 ? displayImages.length - 4 : ''}</span>
+                                    <Button 
+                                        variant="secondary" 
+                                        size="sm" 
+                                        className="bg-white/90 text-gray-900 font-bold hover:bg-white gap-2 shadow-lg"
+                                    >
+                                        <Square className="h-4 w-4" />
+                                        Voir la galerie
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
 
         {/* Fullscreen Gallery Modal */}
@@ -290,34 +404,79 @@ export default function AnnounceDetailsPage() {
               </div>
 
               <div className="grid grid-cols-4 gap-4 py-6 border-t border-b border-gray-100 mt-6">
-                <div className="flex items-center gap-3 text-gray-700">
-                  <Square className="h-6 w-6 text-gray-400" />
-                  <div>
-                    <div className="font-bold text-lg">{property.area} m²</div>
-                    <div className="text-xs text-gray-500">Surface</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-gray-700">
-                  <BedDouble className="h-6 w-6 text-gray-400" />
-                  <div>
-                    <div className="font-bold text-lg">{property.nbRooms || '-'}</div>
-                    <div className="text-xs text-gray-500">Pièces</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-gray-700">
-                  <Bath className="h-6 w-6 text-gray-400" />
-                  <div>
-                    <div className="font-bold text-lg">{property.nbPieces || '-'}</div>
-                    <div className="text-xs text-gray-500">Chambres</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-gray-700">
-                  <Building2 className="h-6 w-6 text-gray-400" />
-                  <div>
-                    <div className="font-bold text-lg">{property.nbFloors || '-'}</div>
-                    <div className="text-xs text-gray-500">Etage</div>
-                  </div>
-                </div>
+                {isVillaRental ? (
+                    // Layout spécifique Villa
+                    <>
+                        {(property.landArea || property.area) && (
+                            <div className="flex items-center gap-3 text-gray-700">
+                                <Square className="h-6 w-6 text-gray-400" />
+                                <div>
+                                    <div className="font-bold text-lg">{property.landArea || property.area} m²</div>
+                                    <div className="text-xs text-gray-500">Surface Terrain</div>
+                                </div>
+                            </div>
+                        )}
+                        {property.typology && (
+                            <div className="flex items-center gap-3 text-gray-700">
+                                <Building2 className="h-6 w-6 text-gray-400" />
+                                <div>
+                                    <div className="font-bold text-lg">{property.typology}</div>
+                                    <div className="text-xs text-gray-500">Typologie</div>
+                                </div>
+                            </div>
+                        )}
+                        {(property.bedrooms || property.nbPieces) && (
+                            <div className="flex items-center gap-3 text-gray-700">
+                                <BedDouble className="h-6 w-6 text-gray-400" />
+                                <div>
+                                    <div className="font-bold text-lg">{property.bedrooms || property.nbPieces}</div>
+                                    <div className="text-xs text-gray-500">Chambres</div>
+                                </div>
+                            </div>
+                        )}
+                        {property.configuration && (
+                            <div className="flex items-center gap-3 text-gray-700">
+                                <Building2 className="h-6 w-6 text-gray-400" />
+                                <div>
+                                    <div className="font-bold text-lg">R+{property.configuration}</div>
+                                    <div className="text-xs text-gray-500">Niveaux</div>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    // Layout standard
+                    <>
+                        <div className="flex items-center gap-3 text-gray-700">
+                        <Square className="h-6 w-6 text-gray-400" />
+                        <div>
+                            <div className="font-bold text-lg">{property.area} m²</div>
+                            <div className="text-xs text-gray-500">Surface</div>
+                        </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700">
+                        <BedDouble className="h-6 w-6 text-gray-400" />
+                        <div>
+                            <div className="font-bold text-lg">{property.nbRooms || '-'}</div>
+                            <div className="text-xs text-gray-500">Pièces</div>
+                        </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700">
+                        <Bath className="h-6 w-6 text-gray-400" />
+                        <div>
+                            <div className="font-bold text-lg">{property.nbPieces || '-'}</div>
+                            <div className="text-xs text-gray-500">Chambres</div>
+                        </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700">
+                        <Building2 className="h-6 w-6 text-gray-400" />
+                        <div>
+                            <div className="font-bold text-lg">{property.nbFloors || '-'}</div>
+                            <div className="text-xs text-gray-500">Etage</div>
+                        </div>
+                        </div>
+                    </>
+                )}
               </div>
 
               <div className="mt-6 flex flex-wrap gap-4 text-gray-600">
@@ -332,6 +491,151 @@ export default function AnnounceDetailsPage() {
               <p className="text-gray-600 leading-relaxed whitespace-pre-line">
                 {property.description}
               </p>
+            </div>
+
+            {/* Caractéristiques Détaillées (New Section) */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Caractéristiques Détaillées</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
+                    {/* Structure */}
+                    {property.typology && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Typologie</span>
+                            <span className="font-bold text-gray-900">{property.typology}</span>
+                        </div>
+                    )}
+                    {property.configuration && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Configuration</span>
+                            <span className="font-bold text-gray-900">R + {property.configuration}</span>
+                        </div>
+                    )}
+                    {property.state && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">État Général</span>
+                            <span className="font-bold text-gray-900">{LABELS[property.state] || property.state}</span>
+                        </div>
+                    )}
+                    {property.usageType && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Usage Autorisé</span>
+                            <span className="font-bold text-gray-900">{LABELS[property.usageType] || property.usageType}</span>
+                        </div>
+                    )}
+
+                    {/* Surfaces */}
+                    {property.landArea && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Surface Terrain</span>
+                            <span className="font-bold text-gray-900">{property.landArea} m²</span>
+                        </div>
+                    )}
+                    {property.builtArea && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Surface Bâtie</span>
+                            <span className="font-bold text-gray-900">{property.builtArea} m²</span>
+                        </div>
+                    )}
+
+                    {/* Pièces */}
+                    {property.nbSuites && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Suites</span>
+                            <span className="font-bold text-gray-900">{property.nbSuites}</span>
+                        </div>
+                    )}
+                    {property.nbLivingRooms && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Salons</span>
+                            <span className="font-bold text-gray-900">{property.nbLivingRooms}</span>
+                        </div>
+                    )}
+                    {property.nbBathrooms && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Salles de bain</span>
+                            <span className="font-bold text-gray-900">{property.nbBathrooms}</span>
+                        </div>
+                    )}
+                    {property.nbToilets && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Toilettes (WC)</span>
+                            <span className="font-bold text-gray-900">{property.nbToilets}</span>
+                        </div>
+                    )}
+
+                    {/* Cuisine */}
+                    {property.kitchenType && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Type Cuisine</span>
+                            <span className="font-bold text-gray-900">{LABELS[property.kitchenType] || property.kitchenType}</span>
+                        </div>
+                    )}
+                    {property.kitchenState && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">État Cuisine</span>
+                            <span className="font-bold text-gray-900">{LABELS[property.kitchenState] || property.kitchenState}</span>
+                        </div>
+                    )}
+
+                    {/* Confort & Energie */}
+                    {property.heatingType && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Chauffage</span>
+                            <span className="font-bold text-gray-900">{LABELS[property.heatingType] || property.heatingType}</span>
+                        </div>
+                    )}
+                    {property.acType && (
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-gray-500 font-medium">Climatisation</span>
+                            <span className="font-bold text-gray-900">{LABELS[property.acType] || property.acType}</span>
+                        </div>
+                    )}
+                    
+                    {/* Compteurs */}
+                    {(property.waterCounter || property.elecCounter || property.gasCounter) && (
+                        <div className="col-span-1 md:col-span-2 mt-2">
+                            <span className="text-gray-500 font-medium block mb-2">Compteurs</span>
+                            <div className="flex gap-4">
+                                {property.waterCounter && (
+                                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-100">
+                                        Eau: {LABELS[property.waterCounter] || property.waterCounter}
+                                    </span>
+                                )}
+                                {property.elecCounter && (
+                                    <span className="px-3 py-1 bg-yellow-50 text-yellow-700 text-xs font-bold rounded-lg border border-yellow-100">
+                                        Élec: {LABELS[property.elecCounter] || property.elecCounter}
+                                    </span>
+                                )}
+                                {property.gasCounter && (
+                                    <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs font-bold rounded-lg border border-orange-100">
+                                        Gaz: {LABELS[property.gasCounter] || property.gasCounter}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Stationnement */}
+                    {(property.parkingCount || property.outdoorParking) && (
+                         <div className="col-span-1 md:col-span-2 mt-2 pt-2 border-t border-gray-100">
+                            <span className="text-gray-500 font-medium block mb-2">Stationnement</span>
+                            <div className="flex gap-6">
+                                {property.parkingCount > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-gray-100 p-2 rounded-full"><ParkingCircle className="h-4 w-4 text-gray-600"/></div>
+                                        <span className="font-bold text-gray-900">{property.parkingCount} Garage</span>
+                                    </div>
+                                )}
+                                {property.outdoorParking > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-gray-100 p-2 rounded-full"><Car className="h-4 w-4 text-gray-600"/></div>
+                                        <span className="font-bold text-gray-900">{property.outdoorParking} Extérieur</span>
+                                    </div>
+                                )}
+                            </div>
+                         </div>
+                    )}
+                </div>
             </div>
 
             {/* Amenities Sections */}
