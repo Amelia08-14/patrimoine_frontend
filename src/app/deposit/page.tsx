@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -21,7 +21,7 @@ import {
   Microscope, FlaskConical, Atom, Leaf, Flower, Cloud, CloudRain, CloudSun,
   Moon, Stars, Sunset, Sunrise, Wind as WindIcon, Umbrella, ArrowLeft,
   GripVertical, Image as ImageIcon,
-  Bath as BathIcon, Bed as BedIcon, Utensils as UtensilsIcon, Flower2 as GardenIcon, Zap, FileText, Phone
+  Bath as BathIcon, Bed as BedIcon, Utensils as UtensilsIcon, Flower2 as GardenIcon, Zap, FileText, Phone, RotateCw, Crop
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -92,6 +92,13 @@ type FormData = {
   
   // Étape 6 - Photos (géré séparément)
   description?: string
+  
+  // Contacts
+  contacts?: {
+    phone: string
+    hasWhatsapp: boolean
+    hasViber: boolean
+  }[]
   
   // Champs génériques (parfois calculés ou implicites)
   area?: string
@@ -333,6 +340,12 @@ interface PhotoCategory {
   photos: File[]
 }
 
+interface Contact {
+    phone: string
+    hasWhatsapp: boolean
+    hasViber: boolean
+}
+
 // Schéma de validation
 const formSchema = z.object({
   transactionType: z.enum(["SALE", "RENTAL"]),
@@ -381,6 +394,12 @@ const formSchema = z.object({
   connectivity: z.array(z.string()).optional(),
   garageCapacity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Capacité du garage invalide").optional(),
   additionalDescription: z.string().optional(),
+  
+  contacts: z.array(z.object({
+      phone: z.string().min(9, "Numéro invalide"),
+      hasWhatsapp: z.boolean(),
+      hasViber: z.boolean()
+  })).optional(),
 })
 
 const steps = [
@@ -389,7 +408,8 @@ const steps = [
   { id: 3, name: "Type de bien" },
   { id: 4, name: "Fiche descriptive" },
   { id: 5, name: "Localisation & Prix" },
-  { id: 6, name: "Photos du bien" },
+  { id: 6, name: "Contacts" },
+  { id: 7, name: "Photos du bien" },
 ]
 
 export default function DepositPage() {
@@ -406,9 +426,17 @@ export default function DepositPage() {
     { id: "common", label: "Espaces communs", icon: Home, photos: [] },
     { id: "other", label: "Autres photos", icon: ImageIcon, photos: [] },
   ])
+  const [mainPhoto, setMainPhoto] = useState<File | null>(null)
   const [photoOrganizationStep, setPhotoOrganizationStep] = useState<"upload" | "organize">("upload")
   const [userType, setUserType] = useState<string>("PARTICULIER")
   const [availabilityMode, setAvailabilityMode] = useState<'IMMEDIATE' | 'DATE'>('IMMEDIATE')
+  
+  // Contacts
+  const [contacts, setContacts] = useState<Contact[]>([{ phone: "", hasWhatsapp: false, hasViber: false }])
+  const [priceCentimes, setPriceCentimes] = useState<string>("")
+  
+  // Canvas Ref for rotation
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -450,9 +478,65 @@ export default function DepositPage() {
   const propertyType = watch("propertyType")
   const selectedCity = watch("city")
   const garageHasCapacity = watch("garageCapacity")
+  
+  // Re-hook the useEffect for price calculation since watch comes from useForm
+  // We need to move the useEffect logic AFTER useForm
+  const currentPrice = watch("price")
+  const currentPriceUnit = watch("priceUnit")
 
+  useEffect(() => {
+    if (!currentPrice) {
+        setPriceCentimes("")
+        return
+    }
+    
+    const val = Number(currentPrice.replace(/\s/g, ''))
+    if (isNaN(val)) {
+        setPriceCentimes("")
+        return
+    }
 
-  // Filtrer les catégories selon le type d'utilisateur et la transaction
+    // Calcul en Centimes (1 DA = 100 Centimes)
+    let totalCentimes = 0;
+    if (currentPriceUnit === 'DA') totalCentimes = val * 100;
+    else if (currentPriceUnit === 'MILLION') totalCentimes = val * 1000000 * 100;
+    else if (currentPriceUnit === 'MILLIARD') totalCentimes = val * 1000000000 * 100;
+
+    // Affichage texte
+    if (totalCentimes >= 1000000000) { 
+        const milliards = totalCentimes / 1000000000;
+        setPriceCentimes(`${milliards.toLocaleString('fr-FR')} Milliards de centimes`)
+    } else if (totalCentimes >= 1000000) { 
+        const millions = totalCentimes / 1000000;
+        setPriceCentimes(`${millions.toLocaleString('fr-FR')} Millions de centimes`)
+    } else {
+        setPriceCentimes(`${totalCentimes.toLocaleString('fr-FR')} Centimes`)
+    }
+  }, [currentPrice, currentPriceUnit])
+
+  // Conversion lors du changement d'unité
+  const handlePriceUnitChange = (newUnit: "DA" | "MILLION" | "MILLIARD") => {
+      const currentVal = Number(watch("price")?.replace(/\s/g, '') || 0);
+      
+      // Update unit immediately
+      setValue("priceUnit", newUnit);
+
+      if (currentVal === 0) return;
+      
+      // Convert logic
+      let valInDA = currentVal;
+      // FROM
+      if (currentPriceUnit === 'MILLION') valInDA = currentVal * 1000000;
+      else if (currentPriceUnit === 'MILLIARD') valInDA = currentVal * 1000000000;
+      
+      // TO
+      let newVal = valInDA;
+      if (newUnit === 'MILLION') newVal = valInDA / 1000000;
+      else if (newUnit === 'MILLIARD') newVal = valInDA / 1000000000;
+      
+      const formatted = Number.isInteger(newVal) ? newVal.toString() : newVal.toFixed(2);
+      setValue("price", formatted);
+  }
   const getFilteredCategories = () => {
     let categories = [...BASE_REAL_ESTATE_CATEGORIES]
     if (userType === "PARTICULIER") {
@@ -508,12 +592,62 @@ export default function DepositPage() {
         return
       }
       setSelectedFiles(prev => [...prev, ...newFiles])
+      
+      // Si aucune photo principale, on met la première
+      if (!mainPhoto && newFiles.length > 0) {
+          setMainPhoto(newFiles[0])
+      }
+      
       e.target.value = ''
     }
   }
 
   const removeFile = (index: number) => {
+    const fileToRemove = selectedFiles[index];
+    if (fileToRemove === mainPhoto) {
+        setMainPhoto(null);
+    }
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+  
+  // Rotation d'image
+  const rotateImage = async (file: File) => {
+      // Create an image element
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise(r => img.onload = r);
+      
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      // Rotate 90 degrees
+      canvas.width = img.height;
+      canvas.height = img.width;
+      
+      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.rotate(90 * Math.PI / 180);
+      ctx.drawImage(img, -img.width/2, -img.height/2);
+      
+      // Convert back to file
+      canvas.toBlob((blob) => {
+          if (blob) {
+              const newFile = new File([blob], file.name, { type: file.type, lastModified: Date.now() });
+              
+              // Replace in selectedFiles
+              setSelectedFiles(prev => prev.map(f => f === file ? newFile : f));
+              
+              // Update categories if organized
+              setPhotoCategories(prev => prev.map(c => ({
+                  ...c,
+                  photos: c.photos.map(p => p === file ? newFile : p)
+              })));
+              
+              // Update main photo if needed
+              if (mainPhoto === file) setMainPhoto(newFile);
+          }
+      }, file.type);
   }
 
   // Passer à l'organisation des photos
@@ -627,6 +761,16 @@ export default function DepositPage() {
     }
   }
 
+  const handleContactsSubmit = async () => {
+      // Validate contacts
+      const isValid = contacts.every(c => c.phone.length >= 9);
+      if (isValid) {
+          setCurrentStep(7)
+      } else {
+          alert("Veuillez saisir au moins un numéro de téléphone valide")
+      }
+  }
+
   const goToStep = (step: number) => {
     if (step < currentStep) {
       setCurrentStep(step)
@@ -699,10 +843,16 @@ export default function DepositPage() {
     const imagesMetadata = photoCategories.flatMap(c => 
         c.photos.map(p => ({
             filename: p.name,
-            category: c.id
+            category: c.id,
+            isMain: p === mainPhoto
         }))
     );
     formData.append('imagesMetadata', JSON.stringify(imagesMetadata));
+    
+    // 3. Contacts
+    if (contacts.length > 0 && contacts[0].phone) {
+        formData.append('contacts', JSON.stringify(contacts));
+    }
     
     // Debug
     console.log("Submitting form data:")
@@ -766,9 +916,27 @@ export default function DepositPage() {
       case 3: return "Décrivez-nous votre bien"
       case 4: return propertyType === "VILLA" ? "Fiche descriptive - Villa" : "Fiche descriptive"
       case 5: return "Localisation & Prix"
-      case 6: return "Photos du bien"
+      case 6: return "Contacts"
+      case 7: return "Photos du bien"
       default: return ""
     }
+  }
+
+  // Helper pour les contacts
+  const addContact = () => {
+      setContacts([...contacts, { phone: "", hasWhatsapp: false, hasViber: false }])
+  }
+
+  const removeContact = (index: number) => {
+      if (contacts.length > 1) {
+          setContacts(contacts.filter((_, i) => i !== index))
+      }
+  }
+
+  const updateContact = (index: number, field: keyof Contact, value: any) => {
+      const newContacts = [...contacts]
+      newContacts[index] = { ...newContacts[index], [field]: value }
+      setContacts(newContacts)
   }
 
   return (
@@ -1630,14 +1798,15 @@ export default function DepositPage() {
                                             <div className="flex gap-4">
                                                 {[
                                                     { value: "DA", label: "Dinars" },
-                                                    { value: "MILLION", label: "Millions" },
-                                                    { value: "MILLIARD", label: "Milliards" },
+                                                    { value: "MILLION", label: "Millions (Centimes)" },
+                                                    { value: "MILLIARD", label: "Milliards (Centimes)" },
                                                 ].map((unit) => (
                                                     <label key={unit.value} className="cursor-pointer flex-1">
                                                         <input 
                                                             type="radio" 
                                                             value={unit.value} 
-                                                            {...register("priceUnit")} 
+                                                            checked={currentPriceUnit === unit.value}
+                                                            onChange={() => handlePriceUnitChange(unit.value as any)}
                                                             className="peer sr-only" 
                                                         />
                                                         <div className="p-3 border-2 rounded-xl text-center font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
@@ -1653,21 +1822,25 @@ export default function DepositPage() {
                                             <div className="relative">
                                                 <input 
                                                     type="text" 
+                                                    value={watch("price") || ""}
                                                     onChange={(e) => {
                                                         const rawValue = e.target.value.replace(/\s/g, '');
-                                                        if (!/^\d*$/.test(rawValue)) return;
+                                                        if (!/^\d*\.?\d*$/.test(rawValue)) return;
                                                         
-                                                        const formatted = rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-                                                        e.target.value = formatted;
                                                         setValue("price", rawValue);
                                                     }}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white text-lg font-bold" 
                                                     placeholder="Saisissez le prix" 
                                                 />
                                                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">
-                                                    {watch("priceUnit") === "DA" ? "DA" : watch("priceUnit") === "MILLION" ? "Millions" : "Milliards"}
+                                                    {currentPriceUnit === "DA" ? "DA" : currentPriceUnit === "MILLION" ? "Millions" : "Milliards"}
                                                 </span>
                                             </div>
+                                            {priceCentimes && (
+                                                <p className="text-sm font-bold text-[#00BFA6] mt-2">
+                                                    Soit {priceCentimes}
+                                                </p>
+                                            )}
                                             {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
                                         </div>
                                     </div>
@@ -1676,8 +1849,79 @@ export default function DepositPage() {
                         </div>
                     )}
 
-                    {/* Step 6: Photos du bien */}
+                    {/* Step 6: Contacts */}
                     {currentStep === 6 && (
+                        <div className="w-full max-w-2xl animate-fade-in">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <Phone className="text-[#00BFA6]" /> Vos Coordonnées
+                            </h2>
+                            <p className="text-gray-600 mb-8">
+                                Ajoutez les numéros de téléphone sur lesquels les clients peuvent vous contacter.
+                            </p>
+                            
+                            <div className="space-y-6">
+                                {contacts.map((contact, index) => (
+                                    <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative">
+                                        {contacts.length > 1 && (
+                                            <button 
+                                                onClick={() => removeContact(index)}
+                                                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <X className="h-5 w-5" />
+                                            </button>
+                                        )}
+                                        
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Numéro de téléphone</label>
+                                            <input 
+                                                type="tel" 
+                                                value={contact.phone}
+                                                onChange={(e) => updateContact(index, 'phone', e.target.value)}
+                                                placeholder="0550..."
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none bg-white"
+                                            />
+                                        </div>
+                                        
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={contact.hasWhatsapp}
+                                                    onChange={(e) => updateContact(index, 'hasWhatsapp', e.target.checked)}
+                                                    className="accent-[#25D366] w-5 h-5" 
+                                                />
+                                                <span className="font-medium text-gray-700 flex items-center gap-1">
+                                                    WhatsApp
+                                                </span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={contact.hasViber}
+                                                    onChange={(e) => updateContact(index, 'hasViber', e.target.checked)}
+                                                    className="accent-[#7360f2] w-5 h-5" 
+                                                />
+                                                <span className="font-medium text-gray-700 flex items-center gap-1">
+                                                    Viber
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                ))}
+                                
+                                <Button 
+                                    onClick={addContact}
+                                    variant="outline"
+                                    className="w-full py-4 border-dashed border-2 border-gray-300 text-gray-500 hover:border-[#00BFA6] hover:text-[#00BFA6]"
+                                >
+                                    + Ajouter un autre numéro
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 7: Photos du bien */}
+                    {currentStep === 7 && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             {photoOrganizationStep === "upload" ? (
                                 /* Étape 1: Upload brut */
@@ -1706,21 +1950,53 @@ export default function DepositPage() {
 
                                     {selectedFiles.length > 0 && (
                                         <>
-                                            <div className="grid grid-cols-4 gap-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                 {selectedFiles.map((file, idx) => (
-                                                    <div key={idx} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group border-2 border-gray-200">
+                                                    <div key={idx} className={cn(
+                                                        "relative aspect-square bg-gray-100 rounded-lg overflow-hidden group border-2 transition-all",
+                                                        mainPhoto === file ? "border-[#00BFA6] ring-2 ring-[#00BFA6] ring-offset-2" : "border-gray-200"
+                                                    )}>
                                                         <img 
                                                             src={URL.createObjectURL(file)} 
                                                             alt={`preview-${idx}`} 
                                                             className="w-full h-full object-cover" 
                                                         />
-                                                        <button 
-                                                            onClick={() => removeFile(idx)}
-                                                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                                            type="button"
-                                                        >
-                                                            <X className="h-4 w-4" />
-                                                        </button>
+                                                        
+                                                        {/* Actions Overlay */}
+                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                                                            <button 
+                                                                onClick={() => setMainPhoto(file)}
+                                                                className={cn(
+                                                                    "px-3 py-1 rounded-full text-xs font-bold w-full transition-colors",
+                                                                    mainPhoto === file ? "bg-[#00BFA6] text-white" : "bg-white text-gray-900 hover:bg-gray-100"
+                                                                )}
+                                                            >
+                                                                {mainPhoto === file ? "Couverture" : "Définir couverture"}
+                                                            </button>
+                                                            
+                                                            <div className="flex gap-2 w-full">
+                                                                <button 
+                                                                    onClick={() => rotateImage(file)}
+                                                                    className="flex-1 bg-white/20 hover:bg-white/40 text-white rounded-lg p-1.5 flex items-center justify-center transition-colors"
+                                                                    title="Pivoter"
+                                                                >
+                                                                    <RotateCw className="h-4 w-4" />
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => removeFile(idx)}
+                                                                    className="flex-1 bg-red-500/80 hover:bg-red-600 text-white rounded-lg p-1.5 flex items-center justify-center transition-colors"
+                                                                    title="Supprimer"
+                                                                >
+                                                                    <X className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {mainPhoto === file && (
+                                                            <div className="absolute top-2 left-2 bg-[#00BFA6] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                                PRINCIPALE
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -1843,7 +2119,12 @@ export default function DepositPage() {
                             Continuer
                         </Button>
                     )}
-                    {currentStep === 6 && photoOrganizationStep === "upload" && selectedFiles.length >= 3 && (
+                    {currentStep === 6 && (
+                        <Button onClick={handleContactsSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                            Continuer
+                        </Button>
+                    )}
+                    {currentStep === 7 && photoOrganizationStep === "upload" && selectedFiles.length >= 3 && (
                         <Button onClick={proceedToPhotoOrganization} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             Organiser les photos
                         </Button>

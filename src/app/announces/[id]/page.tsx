@@ -733,6 +733,61 @@ export default function AnnounceDetailsPage() {
                 </div>
               </div>
 
+              {/* Contact Buttons */}
+              <div className="space-y-3 mb-6">
+                  {/* Parse contacts if available, otherwise fallback to user phone */}
+                  {(() => {
+                      let contactsList = [];
+                      try {
+                          if (property.contacts) {
+                              contactsList = JSON.parse(property.contacts);
+                          }
+                      } catch (e) {
+                          console.error("Failed to parse contacts", e);
+                      }
+
+                      // If no contacts list but user has phone, use that
+                      if (contactsList.length === 0 && announce.user?.phone) {
+                          contactsList.push({ phone: announce.user.phone, hasWhatsapp: false, hasViber: false });
+                      }
+
+                      return contactsList.map((contact: any, index: number) => (
+                          <div key={index} className="flex flex-col gap-2">
+                              <a 
+                                  href={`tel:${contact.phone}`} 
+                                  className="flex items-center justify-center gap-2 w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold transition-all shadow-lg shadow-gray-200"
+                              >
+                                  <Phone className="h-5 w-5" />
+                                  {contact.phone}
+                              </a>
+                              
+                              {(contact.hasWhatsapp || contact.hasViber) && (
+                                  <div className="flex gap-2">
+                                      {contact.hasWhatsapp && (
+                                          <a 
+                                              href={`https://wa.me/${contact.phone.replace(/\s+/g, '')}`} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-lg font-bold text-sm transition-colors"
+                                          >
+                                              WhatsApp
+                                          </a>
+                                      )}
+                                      {contact.hasViber && (
+                                          <a 
+                                              href={`viber://chat?number=${contact.phone.replace(/\s+/g, '')}`} 
+                                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#7360f2] hover:bg-[#6351ce] text-white rounded-lg font-bold text-sm transition-colors"
+                                          >
+                                              Viber
+                                          </a>
+                                      )}
+                                  </div>
+                              )}
+                          </div>
+                      ));
+                  })()}
+              </div>
+
               <form className="space-y-4">
                 <input type="text" placeholder="Votre nom" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#00BFA6] outline-none bg-gray-50 placeholder-gray-400" />
                 <input type="email" placeholder="Votre email" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#00BFA6] outline-none bg-gray-50 placeholder-gray-400" />

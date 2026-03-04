@@ -103,6 +103,162 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
     </section>
   )
 }
+
+// Carousel des Catégories avec effet loupe
+const CategoryCarousel = ({ categories, onCategoryClick }: { categories: any[], onCategoryClick: (id: string) => void }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scales, setScales] = useState<number[]>([]);
+
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    
+    const newScales = categories.map((_, index) => {
+        const item = container.children[index] as HTMLElement;
+        if (!item) return 0.9;
+        const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+        const distance = Math.abs(containerCenter - itemCenter);
+        
+        // Logic de scaling
+        const range = 250; 
+        let scale = 1.4 - (distance / range) * 0.5; 
+        return Math.max(0.9, Math.min(1.4, scale));
+    });
+    setScales(newScales);
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    
+    // Trouver l'élément le plus proche du centre actuel
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    Array.from(container.children).forEach((child, index) => {
+        const item = child as HTMLElement;
+        const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+        const distance = Math.abs(containerCenter - itemCenter);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestIndex = index;
+        }
+    });
+
+    // Calculer l'index cible (un par un)
+    let targetIndex = direction === 'left' ? closestIndex - 1 : closestIndex + 1;
+    targetIndex = Math.max(0, Math.min(categories.length - 1, targetIndex));
+
+    const targetItem = container.children[targetIndex] as HTMLElement;
+    if (targetItem) {
+        targetItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  };
+
+  useEffect(() => {
+    handleScroll();
+    const container = containerRef.current;
+    if (container) {
+        container.addEventListener('scroll', handleScroll);
+        window.addEventListener('resize', handleScroll);
+        
+        // Center initial view
+        setTimeout(() => {
+            if(container) {
+                const middleIndex = Math.floor(categories.length / 2);
+                const targetItem = container.children[middleIndex] as HTMLElement;
+                if(targetItem) {
+                    targetItem.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+                    handleScroll();
+                }
+            }
+        }, 100);
+
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleScroll);
+        }
+    }
+  }, [categories]);
+
+  return (
+    <div className="relative w-full py-12 group px-4 md:px-12">
+        {/* Navigation Arrows */}
+        <button 
+            onClick={() => scroll('left')}
+            className="absolute left-0 md:left-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg text-gray-800 hover:text-[#00BFA6] hover:scale-110 border border-gray-100 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+        >
+            <ChevronLeft className="h-6 w-6" />
+        </button>
+        <button 
+            onClick={() => scroll('right')}
+            className="absolute right-0 md:right-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg text-gray-800 hover:text-[#00BFA6] hover:scale-110 border border-gray-100 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+        >
+            <ChevronRight className="h-6 w-6" />
+        </button>
+
+        <div 
+            ref={containerRef}
+            className="flex overflow-x-auto gap-8 px-[calc(50%-60px)] snap-x snap-mandatory hide-scrollbar pb-12 pt-8 items-center"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+            {categories.map((category, index) => {
+                const Icon = getIcon(category.iconName);
+                const scale = scales[index] || 0.9;
+                const isActive = scale > 1.2;
+
+                return (
+                    <button
+                        key={category.id}
+                        onClick={() => {
+                            onCategoryClick(category.id);
+                            if (containerRef.current) {
+                                const item = containerRef.current.children[index] as HTMLElement;
+                                if (item) {
+                                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                }
+                            }
+                        }}
+                        className="snap-center flex flex-col items-center gap-6 transition-all duration-300 ease-out min-w-[120px] outline-none"
+                        style={{ 
+                            transform: `scale(${scale})`,
+                            zIndex: isActive ? 10 : 1,
+                            opacity: isActive ? 1 : 0.6
+                        }}
+                    >
+                        <div className={cn(
+                            "w-24 h-24 rounded-[2rem] flex items-center justify-center transition-all duration-300",
+                            isActive 
+                                ? cn("shadow-2xl shadow-gray-200 border-2 border-transparent ring-4 ring-gray-50", getCategoryColorById(category.id).replace('bg-', 'bg-').replace('500', '100').replace('400', '100'))
+                                : "bg-white shadow-md border border-gray-100"
+                        )}>
+                            <Icon className={cn(
+                                "h-10 w-10 transition-colors duration-300",
+                                isActive ? getIconColorById(category.id) : getIconColorById(category.id)
+                            )} />
+                        </div>
+                        <span className={cn(
+                            "text-[10px] md:text-xs uppercase font-bold text-center transition-colors duration-300 whitespace-nowrap max-w-[140px] truncate px-3 py-1.5 rounded-full tracking-widest",
+                            isActive 
+                                ? cn("bg-gray-100", getIconColorById(category.id))
+                                : "text-gray-400"
+                        )}>
+                            {category.label}
+                        </span>
+                    </button>
+                )
+            })}
+        </div>
+        
+        {/* Gradients */}
+        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-gray-50 to-transparent pointer-events-none z-20" />
+        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none z-20" />
+    </div>
+  )
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -242,26 +398,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Category Bubbles */}
-          <div className="mb-4 flex flex-wrap gap-4 justify-center">
-            {REAL_ESTATE_CATEGORIES.map((category) => {
-              const Icon = getIcon(category.iconName);
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => handleCategoryClick(category.id)}
-                  className="group flex flex-col items-center gap-2 p-2 min-w-[100px] hover:scale-105 transition-transform duration-200"
-                >
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center border-2 border-gray-100 bg-white shadow-sm group-hover:shadow-md transition-all">
-                    <Icon className={cn("h-8 w-8", getIconColorById(category.id))} />
-                  </div>
-                  <span className="text-xs font-medium text-gray-700 text-center group-hover:text-[#00BFA6] transition-colors">
-                    {category.label}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+          {/* Category Bubbles - Carousel */}
+          <CategoryCarousel 
+            categories={REAL_ESTATE_CATEGORIES}
+            onCategoryClick={handleCategoryClick}
+          />
         </div>
       </div>
 
