@@ -240,7 +240,7 @@ const CategoryCarousel = ({ categories, onCategoryClick }: { categories: any[], 
                             )} />
                         </div>
                         <span className={cn(
-                            "text-[10px] md:text-xs uppercase font-bold text-center transition-colors duration-300 whitespace-nowrap max-w-[140px] truncate px-3 py-1.5 rounded-full tracking-widest",
+                            "text-[10px] md:text-xs uppercase font-bold text-center transition-colors duration-300 max-w-[140px] px-3 py-1.5 rounded-full tracking-widest leading-tight",
                             isActive 
                                 ? cn("bg-gray-100", getIconColorById(category.id))
                                 : "text-gray-400"

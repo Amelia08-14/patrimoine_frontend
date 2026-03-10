@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, isBefore, startOfDay } from "date-fns"
+import { fr } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { 
   Check, Upload, Building2, Warehouse, Home, Key, Building, Store, Hotel, 
@@ -21,89 +23,15 @@ import {
   Microscope, FlaskConical, Atom, Leaf, Flower, Cloud, CloudRain, CloudSun,
   Moon, Stars, Sunset, Sunrise, Wind as WindIcon, Umbrella, ArrowLeft,
   GripVertical, Image as ImageIcon,
-  Bath as BathIcon, Bed as BedIcon, Utensils as UtensilsIcon, Flower2 as GardenIcon, Zap, FileText, Phone, RotateCw, Crop
+  Bath as BathIcon, Bed as BedIcon, Utensils as UtensilsIcon, Flower2 as GardenIcon, Zap, FileText, Phone, RotateCw, Crop, Info,
+  Thermometer, Network, Bell, Ban, Siren, Calendar as CalendarIcon, Video as VideoIcon
 } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
-
-// Types pour le formulaire
-type FormData = {
-  // Étape 1-2-3
-  transactionType: "SALE" | "RENTAL"
-  realEstateType: string
-  propertyType: string
-  
-  // Étape 4 - Villa
-  floorCount?: string
-  extraFloor?: "basement" | "entresol" | "attic" | "none"
-  typology?: string
-  typologyCustom?: string
-  bedrooms?: string
-  nbSuites?: string
-  livingRooms?: string
-  bathrooms?: string
-  bathroomType?: "shower" | "bathtub" | "both" | "none"
-  wc?: string
-  landArea?: string
-  builtArea?: string
-  habitableArea?: string
-  state?: "NEUF" | "RENOVE" | "BON_ETAT"
-  parkingCount?: string // Garage
-  outdoorParking?: string
-  usageType?: "UNIQUE" | "SEPARE"
-  
-  // Kitchen
-  kitchenType?: "AMERICAINE" | "FERMEE" | "SEMI_OUVERTE"
-  kitchenState?: "EQUIPEE" | "AMENAGEE" | "VIDE"
-
-  // Tech & Comfort
-  heatingType?: "CENTRAL" | "SOL" | "GAZ"
-  acType?: "CENTRAL" | "SPLIT" | "SANS"
-  
-  // Counters
-  waterCounter?: "INDIVIDUEL" | "COMMUN"
-  elecCounter?: "INDIVIDUEL" | "COMMUN"
-  gasCounter?: "INDIVIDUEL" | "COMMUN"
-
-  // Rental specific
-  depositMonths?: string
-  rentalUsage?: "HABITATION" | "PROFESSIONNEL"
-  chargesIncluded?: boolean
-  availableDate?: string
-
-  kitchenEquipment?: string[]
-  exteriorFeatures?: string[]
-  utilities?: string[]
-  securityFeatures?: string[]
-  connectivity?: string[]
-  
-  garageCapacity?: string
-  additionalDescription?: string
-  
-  // Étape 5 - Localisation & Prix
-  city?: string
-  commune?: string
-  address?: string
-  price?: string
-  priceUnit?: "DA" | "MILLION" | "MILLIARD"
-  
-  // Étape 6 - Photos (géré séparément)
-  description?: string
-  
-  // Contacts
-  contacts?: {
-    phone: string
-    hasWhatsapp: boolean
-    hasViber: boolean
-  }[]
-  
-  // Champs génériques (parfois calculés ou implicites)
-  area?: string
-  rooms?: string
-}
 
 // Icon mapping
 const IconMap: Record<string, React.ElementType> = {
@@ -276,12 +204,20 @@ const PROPERTY_STATES = [
 ]
 
 const USAGE_TYPES = [
-    { id: "UNIQUE", label: "Unique (Une seule famille)" },
-    { id: "SEPARE", label: "Séparé (Plusieurs familles)" }
+    { 
+        id: "UNIQUE", 
+        label: "Usage unique (Communicante)",
+        description: "Idéal pour une seule famille. Les espaces sont connectés et permettent une circulation fluide entre les pièces."
+    },
+    { 
+        id: "SEPARE", 
+        label: "Usage séparé",
+        description: "Conçu pour plusieurs familles ou pour une intimité maximale. Les espaces peuvent être indépendants avec des accès distincts."
+    }
 ]
 
 const KITCHEN_TYPES = [
-    { id: "AMERICAINE", label: "Américaine (Ouverte)" },
+    { id: "AMERICAINE", label: "Ouverte" },
     { id: "FERMEE", label: "Fermée" },
     { id: "SEMI_OUVERTE", label: "Semi-ouverte" }
 ]
@@ -293,22 +229,28 @@ const KITCHEN_STATES = [
 ]
 
 const HEATING_TYPES = [
-    { id: "CENTRAL", label: "Chauffage Central" },
-    { id: "SOL", label: "Chauffage au Sol" },
-    { id: "GAZ", label: "Chauffage à Gaz (Poêle)" }
+    { id: "CENTRAL", label: "Central", icon: "Thermometer" },
+    { id: "SOL", label: "Au Sol", icon: "Waves" },
+    { id: "GAZ", label: "À Gaz", icon: "Flame" }
 ]
 
 const AC_TYPES = [
-    { id: "CENTRAL", label: "Climatisation Centrale" },
-    { id: "SPLIT", label: "Split System (Climatiseurs muraux)" },
-    { id: "SANS", label: "Sans climatisation" }
+    { id: "CENTRAL", label: "Centrale", icon: "Wind" },
+    { id: "SPLIT", label: "Split", icon: "Fan" },
+    { id: "SANS", label: "Sans", icon: "X" }
 ]
 
 // Types d'équipements avec icônes
 const VILLA_EQUIPMENTS = {
   kitchen: [
-    { id: "kitchen_fitted", label: "Cuisine aménagée", icon: "Utensils" },
-    { id: "kitchen_equipped", label: "Cuisine équipée", icon: "CookingPot" },
+    { id: "plates", label: "Plaques", icon: "LayoutGrid" },
+    { id: "oven", label: "Four", icon: "CookingPot" },
+    { id: "hood", label: "Hotte", icon: "Fan" },
+    { id: "dishwasher", label: "Lave-vaisselle", icon: "Droplet" },
+    { id: "microwave", label: "Micro-onde", icon: "Zap" },
+    { id: "fridge", label: "Frigo", icon: "Snowflake" },
+    { id: "washing_machine", label: "Machine à laver", icon: "Waves" },
+    { id: "no_appliances", label: "Sans électroménager", icon: "X" },
   ],
   exterior: [
     { id: "garden", label: "Jardin", icon: "Trees" },
@@ -344,6 +286,7 @@ interface Contact {
     phone: string
     hasWhatsapp: boolean
     hasViber: boolean
+    hasTelegram: boolean
 }
 
 // Schéma de validation
@@ -353,37 +296,48 @@ const formSchema = z.object({
   propertyType: z.string().min(1, "Type de bien requis"),
   typologyCustom: z.string().optional(), // Ajout de ce champ
   
-  city: z.string().min(2, "Wilaya requise").optional(),
-  commune: z.string().min(2, "Commune requise").optional(),
-  address: z.string().min(5, "Adresse du bien requise").optional(),
-  price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Prix invalide").optional(),
-  priceUnit: z.enum(["DA", "MILLION", "MILLIARD"]).default("DA").optional(),
-  description: z.string().min(10, "Description requise (min 10 caractères)").optional(),
-  floorCount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 5, "Nombre d'étages invalide (0-5)").optional(),
-  extraFloor: z.enum(["basement", "entresol", "attic", "none"]).default("none").optional(),
-  typology: z.string().optional(),
-  bedrooms: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de chambres invalide").optional(),
+  city: z.string().min(2, "Wilaya requise"),
+  commune: z.string().min(2, "Commune requise"),
+  address: z.string().min(5, "Adresse du bien requise"),
+  mapsLink: z.string().url("Le lien doit être une URL valide").optional().or(z.literal("")),
+  price: z.string().min(1, "Prix requis").refine((val) => {
+      const num = Number(val.replace(/\s/g, ''));
+      return !isNaN(num) && num > 0;
+  }, "Prix invalide"),
+  priceUnit: z.enum(["DA", "MILLION", "MILLIARD"]),
+  priceType: z.enum(["FIXED", "NEGOTIABLE"]),
+  paymentModality: z.enum(["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL"]),
+  description: z.string().optional(),
+  
+  // Champs techniques pour le mapping
+  area: z.string().optional(),
+  rooms: z.string().optional(),
+
+  floorCount: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 5, "Nombre d'étages invalide (0-5)"),
+  extraFloor: z.enum(["basement", "entresol", "attic", "none"]),
+  typology: z.string().min(1, "Typologie requise"),
+  bedrooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de chambres invalide"),
   nbSuites: z.string().optional(),
-  livingRooms: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de salons invalide").optional(),
-  bathrooms: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salles de bain invalide").optional(),
-  bathroomType: z.enum(["shower", "bathtub", "both", "none"]).default("none").optional(),
-  wc: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de WC invalide").optional(),
-  landArea: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface du terrain invalide").optional(),
-  builtArea: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface bâtie invalide").optional(),
+  livingRooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de salons invalide"),
+  bathrooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salles de bain invalide"),
+  bathroomType: z.enum(["shower", "bathtub", "both", "none"]).optional(),
+  wc: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de WC invalide"),
+  landArea: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface du terrain invalide"),
+  builtArea: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface bâtie invalide"),
   habitableArea: z.string().optional(),
-  state: z.enum(["NEUF", "RENOVE", "BON_ETAT"]).optional(),
+  state: z.enum(["NEUF", "RENOVE", "BON_ETAT"]),
   parkingCount: z.string().optional(),
   outdoorParking: z.string().optional(),
-  usageType: z.enum(["UNIQUE", "SEPARE"]).optional(),
-  kitchenType: z.enum(["AMERICAINE", "FERMEE", "SEMI_OUVERTE"]).optional(),
+  usageType: z.enum(["UNIQUE", "SEPARE"]),
+  kitchenType: z.enum(["AMERICAINE", "FERMEE", "SEMI_OUVERTE"]),
   kitchenState: z.enum(["EQUIPEE", "AMENAGEE", "VIDE"]).optional(),
-  heatingType: z.enum(["CENTRAL", "SOL", "GAZ"]).optional(),
-  acType: z.enum(["CENTRAL", "SPLIT", "SANS"]).optional(),
-  waterCounter: z.enum(["INDIVIDUEL", "COMMUN"]).optional(),
-  elecCounter: z.enum(["INDIVIDUEL", "COMMUN"]).optional(),
-  gasCounter: z.enum(["INDIVIDUEL", "COMMUN"]).optional(),
+  heatingType: z.enum(["CENTRAL", "SOL", "GAZ"]),
+  acType: z.enum(["CENTRAL", "SPLIT", "SANS"]),
+  waterCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
+  elecCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
+  gasCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
   depositMonths: z.string().optional(),
-  rentalUsage: z.enum(["HABITATION", "PROFESSIONNEL"]).optional(),
+  rentalUsage: z.array(z.string()).optional(),
   chargesIncluded: z.boolean().optional(),
   availableDate: z.string().optional(),
   
@@ -398,8 +352,51 @@ const formSchema = z.object({
   contacts: z.array(z.object({
       phone: z.string().min(9, "Numéro invalide"),
       hasWhatsapp: z.boolean(),
-      hasViber: z.boolean()
+      hasViber: z.boolean(),
+      hasTelegram: z.boolean()
   })).optional(),
+}).superRefine((data, ctx) => {
+    if (!data.state) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "État du bien requis", path: ["state"] })
+    }
+    if (!data.usageType) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type d'usage requis", path: ["usageType"] })
+    }
+    if (!data.kitchenType) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de cuisine requis", path: ["kitchenType"] })
+    }
+    if (!data.heatingType) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de chauffage requis", path: ["heatingType"] })
+    }
+    if (!data.acType) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de climatisation requis", path: ["acType"] })
+    }
+    if (!data.waterCounter) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Compteur d'eau requis", path: ["waterCounter"] })
+    }
+    if (!data.elecCounter) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Compteur électrique requis", path: ["elecCounter"] })
+    }
+    if (!data.gasCounter) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Compteur gaz requis", path: ["gasCounter"] })
+    }
+
+    if (data.transactionType === "RENTAL") {
+        if (!data.depositMonths) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Caution requise",
+                path: ["depositMonths"]
+            })
+        }
+        if (!data.rentalUsage || data.rentalUsage.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Usage requis",
+                path: ["rentalUsage"]
+            })
+        }
+    }
 })
 
 const steps = [
@@ -407,10 +404,79 @@ const steps = [
   { id: 2, name: "Type d'immobilier" },
   { id: 3, name: "Type de bien" },
   { id: 4, name: "Fiche descriptive" },
-  { id: 5, name: "Localisation & Prix" },
-  { id: 6, name: "Contacts" },
+  { id: 5, name: "Prix & Modalités" },
+  { id: 6, name: "Localisation & Contacts" },
   { id: 7, name: "Photos du bien" },
 ]
+
+const InlineCalendar = ({ value, onChange }: { value?: Date, onChange: (date: Date) => void }) => {
+    const [currentMonth, setCurrentMonth] = useState(new Date())
+    
+    // Sync currentMonth if value changes and is valid
+    useEffect(() => {
+        if (value) setCurrentMonth(value)
+    }, [])
+
+    const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1))
+    const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1))
+
+    const days = eachDayOfInterval({
+        start: startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 }),
+        end: endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 })
+    })
+
+    const weekDays = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"]
+
+    return (
+        <div className="bg-white rounded-xl border-2 border-gray-200 p-4 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+                <button type="button" onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <span className="font-bold text-gray-900 capitalize">
+                    {format(currentMonth, "MMMM yyyy", { locale: fr })}
+                </span>
+                <button type="button" onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-gray-600 rotate-180" />
+                </button>
+            </div>
+            
+            <div className="grid grid-cols-7 gap-1 mb-2">
+                {weekDays.map(d => (
+                    <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">
+                        {d}
+                    </div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+                {days.map((day, idx) => {
+                    const isSelected = value ? isSameDay(day, value) : false
+                    const isCurrentMonth = isSameMonth(day, currentMonth)
+                    const isPast = isBefore(day, startOfDay(new Date()))
+
+                    return (
+                        <button
+                            key={day.toString()}
+                            type="button"
+                            disabled={isPast}
+                            onClick={() => onChange(day)}
+                            className={cn(
+                                "h-10 w-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all",
+                                !isCurrentMonth && "text-gray-300",
+                                isCurrentMonth && !isSelected && !isPast && "text-gray-700 hover:bg-gray-100 hover:text-[#00BFA6]",
+                                isSelected && "bg-[#00BFA6] text-white shadow-md shadow-[#00BFA6]/20",
+                                isPast && "text-gray-300 cursor-not-allowed opacity-50"
+                            )}
+                        >
+                            {format(day, "d")}
+                        </button>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
 
 export default function DepositPage() {
   const router = useRouter()
@@ -418,6 +484,7 @@ export default function DepositPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [selectedVideos, setSelectedVideos] = useState<File[]>([])
   const [photoCategories, setPhotoCategories] = useState<PhotoCategory[]>([
     { id: "bedrooms", label: "Chambres", icon: BedIcon, photos: [] },
     { id: "bathrooms", label: "Salles de bain & WC", icon: BathIcon, photos: [] },
@@ -432,7 +499,8 @@ export default function DepositPage() {
   const [availabilityMode, setAvailabilityMode] = useState<'IMMEDIATE' | 'DATE'>('IMMEDIATE')
   
   // Contacts
-  const [contacts, setContacts] = useState<Contact[]>([{ phone: "", hasWhatsapp: false, hasViber: false }])
+  const [contacts, setContacts] = useState<Contact[]>([{ phone: "", hasWhatsapp: false, hasViber: false, hasTelegram: false }])
+  const [userProfilePhone, setUserProfilePhone] = useState<string | null>(null)
   const [priceCentimes, setPriceCentimes] = useState<string>("")
   
   // Canvas Ref for rotation
@@ -454,6 +522,62 @@ export default function DepositPage() {
     }
     
     setUserType(user.userType || "PARTICULIER")
+    
+    // Fetch fresh profile data to ensure we have the phone number
+    const fetchProfile = async () => {
+        try {
+            // Fallback to localStorage IMMEDIATELY to avoid delay
+            // We update it later if API succeeds
+            if (user.phone) {
+                setUserProfilePhone(user.phone)
+                setContacts(prev => {
+                    if (prev.length === 1 && prev[0].phone === "") {
+                        return [{ phone: user.phone, hasWhatsapp: false, hasViber: false, hasTelegram: false }];
+                    }
+                    return prev;
+                });
+            }
+
+            // Using full URL to avoid port issues
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            // Correct endpoint seems to be /api/users/me based on profile page, or /users/profile based on complete profile page
+            // Let's try /users/profile first, then fallback to /api/users/me if needed
+            let response = await fetch(`${apiUrl}/users/profile`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                 // Try alternative endpoint
+                 response = await fetch(`${apiUrl}/api/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }
+            
+            if (response.ok) {
+                const profile = await response.json();
+                console.log("Profile fetched successfully:", profile);
+                if (profile.phone) {
+                    setUserProfilePhone(profile.phone);
+                    // Update contact if it was empty or matched old user.phone
+                    setContacts(prev => {
+                        if (prev.length === 1 && (prev[0].phone === "" || prev[0].phone === user.phone)) {
+                            return [{ phone: profile.phone, hasWhatsapp: false, hasViber: false, hasTelegram: false }];
+                        }
+                        return prev;
+                    });
+                }
+            } else {
+                console.error("Failed to fetch profile from both endpoints");
+                // LocalStorage fallback already applied at start
+            }
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+            // LocalStorage fallback already applied at start
+        }
+    };
+    
+    fetchProfile();
+    
   }, [router])
 
   const {
@@ -463,10 +587,25 @@ export default function DepositPage() {
     trigger,
     setValue,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       transactionType: "SALE",
+      realEstateType: "",
+      propertyType: "",
+      city: "",
+      commune: "",
+      address: "",
+      price: "",
+      description: "",
+      floorCount: "",
+      typology: "",
+      bedrooms: "",
+      livingRooms: "",
+      bathrooms: "",
+      wc: "",
+      landArea: "",
+      builtArea: "",
       extraFloor: "none",
       bathroomType: "none",
       priceUnit: "DA",
@@ -478,6 +617,7 @@ export default function DepositPage() {
   const propertyType = watch("propertyType")
   const selectedCity = watch("city")
   const garageHasCapacity = watch("garageCapacity")
+  const availableDate = watch("availableDate")
   
   // Re-hook the useEffect for price calculation since watch comes from useForm
   // We need to move the useEffect logic AFTER useForm
@@ -498,17 +638,18 @@ export default function DepositPage() {
 
     // Calcul en Centimes (1 DA = 100 Centimes)
     let totalCentimes = 0;
+    // La valeur saisie est déjà dans l'unité choisie
     if (currentPriceUnit === 'DA') totalCentimes = val * 100;
-    else if (currentPriceUnit === 'MILLION') totalCentimes = val * 1000000 * 100;
-    else if (currentPriceUnit === 'MILLIARD') totalCentimes = val * 1000000000 * 100;
+    else if (currentPriceUnit === 'MILLION') totalCentimes = val * 1000000;
+    else if (currentPriceUnit === 'MILLIARD') totalCentimes = val * 1000000000;
 
     // Affichage texte
     if (totalCentimes >= 1000000000) { 
         const milliards = totalCentimes / 1000000000;
-        setPriceCentimes(`${milliards.toLocaleString('fr-FR')} Milliards de centimes`)
+        setPriceCentimes(`${milliards.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} Milliards de centimes`)
     } else if (totalCentimes >= 1000000) { 
         const millions = totalCentimes / 1000000;
-        setPriceCentimes(`${millions.toLocaleString('fr-FR')} Millions de centimes`)
+        setPriceCentimes(`${millions.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} Millions de centimes`)
     } else {
         setPriceCentimes(`${totalCentimes.toLocaleString('fr-FR')} Centimes`)
     }
@@ -526,13 +667,13 @@ export default function DepositPage() {
       // Convert logic
       let valInDA = currentVal;
       // FROM
-      if (currentPriceUnit === 'MILLION') valInDA = currentVal * 1000000;
-      else if (currentPriceUnit === 'MILLIARD') valInDA = currentVal * 1000000000;
+      if (currentPriceUnit === 'MILLION') valInDA = currentVal * 10000;
+      else if (currentPriceUnit === 'MILLIARD') valInDA = currentVal * 10000000;
       
       // TO
       let newVal = valInDA;
-      if (newUnit === 'MILLION') newVal = valInDA / 1000000;
-      else if (newUnit === 'MILLIARD') newVal = valInDA / 1000000000;
+      if (newUnit === 'MILLION') newVal = valInDA / 10000;
+      else if (newUnit === 'MILLIARD') newVal = valInDA / 10000000;
       
       const formatted = Number.isInteger(newVal) ? newVal.toString() : newVal.toFixed(2);
       setValue("price", formatted);
@@ -610,6 +751,30 @@ export default function DepositPage() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
   
+  const onVideoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const newVideos = Array.from(event.target.files)
+      
+      // Limit to 2 videos max
+      if (selectedVideos.length + newVideos.length > 2) {
+          alert("Vous ne pouvez ajouter que 2 vidéos maximum")
+          return
+      }
+
+      // Max size 50MB
+      const validVideos = newVideos.filter(file => file.size <= 50 * 1024 * 1024)
+      if (validVideos.length < newVideos.length) {
+          alert("Certaines vidéos dépassent la taille limite de 50MB")
+      }
+
+      setSelectedVideos((prev) => [...prev, ...validVideos])
+    }
+  }
+
+  const removeVideo = (index: number) => {
+    setSelectedVideos((prev) => prev.filter((_, i) => i !== index))
+  }
+
   // Rotation d'image
   const rotateImage = async (file: File) => {
       // Create an image element
@@ -690,6 +855,7 @@ export default function DepositPage() {
   // Déplacer une photo entre catégories
   const movePhoto = (photo: File, fromCategoryId: string, toCategoryId: string) => {
     setPhotoCategories(prev => {
+      // Find source and destination categories
       const fromCategory = prev.find(c => c.id === fromCategoryId)
       const toCategory = prev.find(c => c.id === toCategoryId)
       
@@ -697,9 +863,11 @@ export default function DepositPage() {
       
       return prev.map(c => {
         if (c.id === fromCategoryId) {
+          // Remove from source
           return { ...c, photos: c.photos.filter(p => p !== photo) }
         }
         if (c.id === toCategoryId) {
+          // Add to destination
           return { ...c, photos: [...c.photos, photo] }
         }
         return c
@@ -754,19 +922,22 @@ export default function DepositPage() {
     }
   }
 
-  const handleLocationSubmit = async () => {
-    const isValid = await trigger(["city", "commune", "address", "price", "priceUnit"])
+  const handlePriceSubmit = async () => {
+    const isValid = await trigger(["price", "priceUnit", "priceType", "paymentModality"])
     if (isValid) {
       setCurrentStep(6)
     }
   }
 
-  const handleContactsSubmit = async () => {
+  const handleLocationAndContactsSubmit = async () => {
+      const isLocationValid = await trigger(["city", "commune", "address"])
+      
       // Validate contacts
-      const isValid = contacts.every(c => c.phone.length >= 9);
-      if (isValid) {
+      const isContactsValid = contacts.every(c => c.phone.length >= 9);
+      
+      if (isLocationValid && isContactsValid) {
           setCurrentStep(7)
-      } else {
+      } else if (!isContactsValid) {
           alert("Veuillez saisir au moins un numéro de téléphone valide")
       }
   }
@@ -779,7 +950,7 @@ export default function DepositPage() {
 
   const prevStep = () => setCurrentStep((prev) => prev - 1)
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     // Récupérer toutes les photos organisées
     const allPhotos = photoCategories.flatMap(c => c.photos)
     
@@ -796,10 +967,17 @@ export default function DepositPage() {
     
     // Calcul du prix final en fonction de l'unité
     let finalPrice = Number(data.price?.replace(/\s/g, '') || 0);
+    // Le prix stocké doit toujours être en DA
+    // Si l'utilisateur a choisi MILLION, il a rentré "10" pour "10 Millions". 
+    // Or 1 Million de centimes = 10 000 DA. Donc 10 * 10 000 = 100 000 DA.
     if (data.priceUnit === 'MILLION') {
-        finalPrice *= 1000000;
+        finalPrice *= 10000;
     } else if (data.priceUnit === 'MILLIARD') {
-        finalPrice *= 1000000000;
+        finalPrice *= 10000000;
+    } else if (data.priceUnit === 'DA') {
+        // Si c'est en DA, pas de conversion, c'est la valeur brute
+        // Mais attention si le backend attend des centimes ? 
+        // Non, standard = DA. 
     }
     
     // Si c'est une Villa, on mappe les champs spécifiques vers les champs génériques
@@ -838,8 +1016,18 @@ export default function DepositPage() {
     finalPhotos.forEach(photo => {
         formData.append('images', photo)
     })
+    
+    // 2b. Gestion des vidéos (Le backend attend 'videos')
+    // Le backend peut ne pas accepter le champ 'videos' si aucune vidéo n'est envoyée ou s'il n'est pas configuré pour.
+    // L'erreur 400 "Unexpected field" suggère que Multer (backend) ne s'attend pas à recevoir ce champ.
+    // On l'ajoute seulement si des vidéos sont présentes.
+    if (selectedVideos.length > 0) {
+        selectedVideos.forEach(video => {
+            formData.append('videos', video)
+        })
+    }
 
-    // 2b. Métadonnées des images (Catégories)
+    // 2c. Métadonnées des images (Catégories)
     const imagesMetadata = photoCategories.flatMap(c => 
         c.photos.map(p => ({
             filename: p.name,
@@ -875,9 +1063,28 @@ export default function DepositPage() {
       if (response.ok) {
         setIsSuccess(true)
       } else {
-        const errorData = await response.json()
-        console.error("Erreur création annonce:", errorData)
-        alert(`Erreur lors de la création de l'annonce: ${errorData.message || response.statusText}`)
+        let errorData;
+        try {
+            const text = await response.text();
+            try {
+                errorData = JSON.parse(text);
+            } catch {
+                errorData = { message: text || response.statusText };
+            }
+        } catch (e) {
+            errorData = { message: "Erreur inconnue" };
+        }
+        
+        console.error("Erreur création annonce:", response.status, errorData)
+        
+        if (response.status === 401) {
+            alert("Votre session a expiré. Veuillez vous reconnecter.")
+            // router.push('/auth/login') // Impossible d'utiliser router ici si non déclaré ou hors contexte, mais on peut utiliser window.location
+            window.location.href = '/auth/login'
+            return
+        }
+
+        alert(`Erreur (${response.status}): ${errorData.message || JSON.stringify(errorData)}`)
       }
     } catch (error) {
       console.error("Erreur réseau:", error)
@@ -915,16 +1122,16 @@ export default function DepositPage() {
       case 2: return "Type d'immobilier"
       case 3: return "Décrivez-nous votre bien"
       case 4: return propertyType === "VILLA" ? "Fiche descriptive - Villa" : "Fiche descriptive"
-      case 5: return "Localisation & Prix"
-      case 6: return "Contacts"
-      case 7: return "Photos du bien"
+      case 5: return "Prix & Modalités"
+      case 6: return "Localisation & Contacts"
+      case 7: return "Médias du bien"
       default: return ""
     }
   }
 
   // Helper pour les contacts
   const addContact = () => {
-      setContacts([...contacts, { phone: "", hasWhatsapp: false, hasViber: false }])
+      setContacts([...contacts, { phone: "", hasWhatsapp: false, hasViber: false, hasTelegram: false }])
   }
 
   const removeContact = (index: number) => {
@@ -938,6 +1145,13 @@ export default function DepositPage() {
       newContacts[index] = { ...newContacts[index], [field]: value }
       setContacts(newContacts)
   }
+
+  // Effect to ensure phone is filled when profile data is ready
+  useEffect(() => {
+    if (userProfilePhone && contacts.length === 1 && contacts[0].phone === "") {
+        setContacts([{ phone: userProfilePhone, hasWhatsapp: false, hasViber: false, hasTelegram: false }])
+    }
+  }, [userProfilePhone])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -1072,45 +1286,58 @@ export default function DepositPage() {
                                     <Building2 className="text-[#00BFA6]" /> Caractéristiques Générales & Structure
                                 </h2>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Typologie */}
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-gray-900 text-2xl">F</span>
-                                            <input 
-                                                type="number" 
-                                                min="1" max="10"
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    setValue("typology", `F${val}`);
-                                                    setValue("typologyCustom", val);
-                                                }}
-                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-lg" 
-                                                placeholder="Ex: 4"
-                                            />
+                                <div className="flex flex-col gap-5">
+                                    {/* Row 1: Typologie, Configuration, État Général */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        {/* Typologie */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-gray-900 text-2xl">F</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="1" max="10"
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setValue("typology", `F${val}`);
+                                                        setValue("typologyCustom", val);
+                                                    }}
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-lg" 
+                                                    placeholder="Ex: 4"
+                                                />
+                                            </div>
+                                            {errors.typology && <p className="text-red-500 text-sm mt-1">{errors.typology.message}</p>}
                                         </div>
-                                        {errors.typology && <p className="text-red-500 text-sm mt-1">{errors.typology.message}</p>}
+
+                                        {/* Configuration R+ */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Configuration (Nombre d&apos;étages) <span className="text-red-500">*</span></label>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-gray-900 text-2xl">R +</span>
+                                                <input 
+                                                    {...register("floorCount")} 
+                                                    type="number" 
+                                                    min="0" max="10"
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-lg" 
+                                                    placeholder="Ex: 2"
+                                                />
+                                            </div>
+                                            {errors.floorCount && <p className="text-red-500 text-sm mt-1">{errors.floorCount.message}</p>}
+                                        </div>
+
+                                        {/* État Général */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
+                                            <select {...register("state")} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900">
+                                                <option value="">Sélectionner</option>
+                                                {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                            </select>
+                                            {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>}
+                                        </div>
                                     </div>
 
-                                    {/* Configuration R+ */}
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Configuration (Nombre d&apos;étages) <span className="text-red-500">*</span></label>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-gray-900 text-2xl">R +</span>
-                                            <input 
-                                                {...register("floorCount")} 
-                                                type="number" 
-                                                min="0" max="10"
-                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-lg" 
-                                                placeholder="Ex: 2"
-                                            />
-                                        </div>
-                                        {errors.floorCount && <p className="text-red-500 text-sm mt-1">{errors.floorCount.message}</p>}
-                                    </div>
-
-                                    {/* Surfaces */}
-                                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {/* Row 2: Surfaces */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Surface Totale du Terrain (m²) <span className="text-red-500">*</span></label>
                                             <input {...register("landArea")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Ex: 400" />
@@ -1128,20 +1355,10 @@ export default function DepositPage() {
                                         </div>
                                     </div>
 
-                                    {/* État Général */}
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
-                                        <select {...register("state")} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900">
-                                            <option value="">Sélectionner</option>
-                                            {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                                        </select>
-                                        {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>}
-                                    </div>
-
-                                    {/* Stationnement */}
+                                    {/* Row 3: Stationnement */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Garage & Stationnement</label>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-4 md:max-w-md">
                                             <input {...register("parkingCount")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Garage (places)" />
                                             <input {...register("outdoorParking")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Extérieur (places)" />
                                         </div>
@@ -1158,10 +1375,17 @@ export default function DepositPage() {
                                     <label className="block text-sm font-bold text-gray-900 mb-3">Usage Autorisé <span className="text-red-500">*</span></label>
                                     <div className="flex flex-wrap gap-4">
                                         {USAGE_TYPES.map((u) => (
-                                            <label key={u.id} className="cursor-pointer">
+                                            <label key={u.id} className="cursor-pointer group relative">
                                                 <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
-                                                <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400">
+                                                <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
                                                     {u.label}
+                                                    <div className="relative group/info ml-1">
+                                                        <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
+                                                            {u.description}
+                                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </label>
                                         ))}
@@ -1175,50 +1399,56 @@ export default function DepositPage() {
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <BedDouble className="text-[#00BFA6]" /> Espaces de Vie
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Chambres <span className="text-red-500">*</span></label>
-                                        <input {...register("bedrooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
-                                        {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Dont Suites</label>
-                                        <input {...register("nbSuites")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Salons <span className="text-red-500">*</span></label>
-                                        <input {...register("livingRooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
-                                        {errors.livingRooms && <p className="text-red-500 text-sm mt-1">{errors.livingRooms.message}</p>}
-                                    </div>
-                                </div>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Salles de bain <span className="text-red-500">*</span></label>
-                                        <input {...register("bathrooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
-                                        {errors.bathrooms && <p className="text-red-500 text-sm mt-1">{errors.bathrooms.message}</p>}
+                                <div className="flex flex-col gap-5">
+                                    {/* Ligne 1: Chambres, Suites, Salons, Toilettes */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Chambres <span className="text-red-500">*</span></label>
+                                            <input {...register("bedrooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Dont Suites Parentales</label>
+                                            <input {...register("nbSuites")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Salons <span className="text-red-500">*</span></label>
+                                            <input {...register("livingRooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            {errors.livingRooms && <p className="text-red-500 text-sm mt-1">{errors.livingRooms.message}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Toilettes (WC) <span className="text-red-500">*</span></label>
+                                            <input {...register("wc")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            {errors.wc && <p className="text-red-500 text-sm mt-1">{errors.wc.message}</p>}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Toilettes (WC) <span className="text-red-500">*</span></label>
-                                        <input {...register("wc")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
-                                        {errors.wc && <p className="text-red-500 text-sm mt-1">{errors.wc.message}</p>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">Type de Salle de Bain</label>
-                                    <div className="flex gap-4 flex-wrap">
-                                        <label className="flex items-center gap-2 cursor-pointer bg-white p-2 border-2 border-gray-200 rounded-lg hover:border-[#00BFA6]">
-                                            <input type="radio" value="shower" {...register("bathroomType")} className="accent-[#00BFA6] w-5 h-5" /> 
-                                            <span className="font-medium text-gray-900">Douche Italienne</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer bg-white p-2 border-2 border-gray-200 rounded-lg hover:border-[#00BFA6]">
-                                            <input type="radio" value="bathtub" {...register("bathroomType")} className="accent-[#00BFA6] w-5 h-5" /> 
-                                            <span className="font-medium text-gray-900">Baignoire</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer bg-white p-2 border-2 border-gray-200 rounded-lg hover:border-[#00BFA6]">
-                                            <input type="radio" value="both" {...register("bathroomType")} className="accent-[#00BFA6] w-5 h-5" /> 
-                                            <span className="font-medium text-gray-900">Les deux</span>
-                                        </label>
+
+                                    {/* Ligne 2: SDB, Type SDB */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Salles de Bain <span className="text-red-500">*</span></label>
+                                            <input {...register("bathrooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            {errors.bathrooms && <p className="text-red-500 text-sm mt-1">{errors.bathrooms.message}</p>}
+                                        </div>
+
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Type de Salle de Bain</label>
+                                            <div className="flex flex-wrap gap-4">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                                    <input type="radio" value="shower" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
+                                                    <span className="text-sm font-bold text-gray-900">Douche Italienne</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                                    <input type="radio" value="bathtub" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
+                                                    <span className="text-sm font-bold text-gray-900">Baignoire</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                                    <input type="radio" value="both" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
+                                                    <span className="text-sm font-bold text-gray-900">Les deux</span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -1228,27 +1458,43 @@ export default function DepositPage() {
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Utensils className="text-[#00BFA6]" /> Cuisine et équipements
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                
+                                <div className="space-y-6">
+                                    {/* Type de Cuisine */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Type de Cuisine</label>
-                                        <div className="flex flex-col gap-3">
+                                        <div className="flex flex-wrap gap-4">
                                             {KITCHEN_TYPES.map(k => (
-                                                <label key={k.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 rounded-xl hover:bg-gray-50 transition-colors bg-white">
+                                                <label key={k.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white flex-1 justify-center">
                                                     <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-5 h-5" />
                                                     <span className="font-bold text-gray-900">{k.label}</span>
                                                 </label>
                                             ))}
                                         </div>
+                                        {errors.kitchenType && <p className="text-red-500 text-sm mt-1">{errors.kitchenType.message}</p>}
                                     </div>
+
+                                    {/* Équipements de la cuisine */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">État de la Cuisine</label>
-                                        <div className="flex flex-col gap-3">
-                                            {KITCHEN_STATES.map(k => (
-                                                <label key={k.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 rounded-xl hover:bg-gray-50 transition-colors bg-white">
-                                                    <input type="radio" value={k.id} {...register("kitchenState")} className="accent-[#00BFA6] w-5 h-5" />
-                                                    <span className="font-bold text-gray-900">{k.label}</span>
-                                                </label>
-                                            ))}
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Équipements de la cuisine</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {VILLA_EQUIPMENTS.kitchen.map((item) => {
+                                                const Icon = IconMap[item.icon] || Utensils
+                                                return (
+                                                    <label key={item.id} className="cursor-pointer group">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            value={item.id} 
+                                                            {...register("kitchenEquipment")} 
+                                                            className="peer sr-only" 
+                                                        />
+                                                        <div className="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center gap-2 text-center peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-white h-full justify-center">
+                                                            <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6] transition-colors" />
+                                                            <span className="text-sm font-bold text-gray-700 peer-checked:text-[#00BFA6] leading-tight">{item.label}</span>
+                                                        </div>
+                                                    </label>
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 </div>
@@ -1275,54 +1521,87 @@ export default function DepositPage() {
                                     </div>
                                 </div>
 
-                                {/* Commodités Techniques (Heating, AC) */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Chauffage</label>
-                                        <div className="flex flex-col gap-2">
-                                            {HEATING_TYPES.map(h => (
-                                                <label key={h.id} className="flex items-center gap-3 cursor-pointer bg-white p-2 rounded-lg border-2 border-transparent hover:border-gray-200">
-                                                    <input type="radio" value={h.id} {...register("heatingType")} className="accent-[#00BFA6] w-5 h-5" /> 
-                                                    <span className="font-medium text-gray-900">{h.label}</span>
-                                                </label>
-                                            ))}
+                                {/* Commodités, Sécurité & Connectivité */}
+                                <div className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Chauffage */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Chauffage</label>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {HEATING_TYPES.map(h => {
+                                                    const Icon = IconMap[h.icon] || Flame
+                                                    return (
+                                                        <label key={h.id} className="cursor-pointer group">
+                                                            <input type="radio" value={h.id} {...register("heatingType")} className="peer sr-only" />
+                                                            <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                                <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{h.label}</span>
+                                                            </div>
+                                                        </label>
+                                                    )
+                                                })}
+                                            </div>
+                                            {errors.heatingType && <p className="text-red-500 text-sm mt-1">{errors.heatingType.message}</p>}
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Climatisation</label>
-                                        <div className="flex flex-col gap-2">
-                                            {AC_TYPES.map(a => (
-                                                <label key={a.id} className="flex items-center gap-3 cursor-pointer bg-white p-2 rounded-lg border-2 border-transparent hover:border-gray-200">
-                                                    <input type="radio" value={a.id} {...register("acType")} className="accent-[#00BFA6] w-5 h-5" /> 
-                                                    <span className="font-medium text-gray-900">{a.label}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Sécurité & Connectivité */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Sécurité</label>
-                                        <div className="flex flex-col gap-2">
-                                            {VILLA_EQUIPMENTS.security.map(s => (
-                                                <label key={s.id} className="flex items-center gap-3 cursor-pointer bg-white p-2 rounded-lg border-2 border-transparent hover:border-gray-200">
-                                                    <input type="checkbox" value={s.id} {...register("securityFeatures")} className="accent-[#00BFA6] w-5 h-5" /> 
-                                                    <span className="font-medium text-gray-900">{s.label}</span>
-                                                </label>
-                                            ))}
+                                        {/* Climatisation */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Climatisation</label>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {AC_TYPES.map(a => {
+                                                    const Icon = IconMap[a.icon] || Fan
+                                                    return (
+                                                        <label key={a.id} className="cursor-pointer group">
+                                                            <input type="radio" value={a.id} {...register("acType")} className="peer sr-only" />
+                                                            <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                                <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{a.label}</span>
+                                                            </div>
+                                                        </label>
+                                                    )
+                                                })}
+                                            </div>
+                                            {errors.acType && <p className="text-red-500 text-sm mt-1">{errors.acType.message}</p>}
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Connectivité</label>
-                                        <div className="flex flex-col gap-2">
-                                            {VILLA_EQUIPMENTS.connectivity.map(c => (
-                                                <label key={c.id} className="flex items-center gap-3 cursor-pointer bg-white p-2 rounded-lg border-2 border-transparent hover:border-gray-200">
-                                                    <input type="checkbox" value={c.id} {...register("connectivity")} className="accent-[#00BFA6] w-5 h-5" /> 
-                                                    <span className="font-medium text-gray-900">{c.label}</span>
-                                                </label>
-                                            ))}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Sécurité */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Sécurité</label>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {VILLA_EQUIPMENTS.security.map(s => {
+                                                    const Icon = IconMap[s.icon] || Shield
+                                                    return (
+                                                        <label key={s.id} className="cursor-pointer group">
+                                                            <input type="checkbox" value={s.id} {...register("securityFeatures")} className="peer sr-only" />
+                                                            <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                                <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{s.label}</span>
+                                                            </div>
+                                                        </label>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Connectivité */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Connectivité</label>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {VILLA_EQUIPMENTS.connectivity.map(c => {
+                                                    const Icon = IconMap[c.icon] || Wifi
+                                                    return (
+                                                        <label key={c.id} className="cursor-pointer group">
+                                                            <input type="checkbox" value={c.id} {...register("connectivity")} className="peer sr-only" />
+                                                            <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                                <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{c.label}</span>
+                                                            </div>
+                                                        </label>
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1341,6 +1620,7 @@ export default function DepositPage() {
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Individuel</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Commun</label>
                                         </div>
+                                        {errors.waterCounter && <p className="text-red-500 text-sm mt-1">{errors.waterCounter.message}</p>}
                                     </div>
                                     {/* Électricité */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
@@ -1349,6 +1629,7 @@ export default function DepositPage() {
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Individuel</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Commun</label>
                                         </div>
+                                        {errors.elecCounter && <p className="text-red-500 text-sm mt-1">{errors.elecCounter.message}</p>}
                                     </div>
                                     {/* Gaz */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
@@ -1357,6 +1638,7 @@ export default function DepositPage() {
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Individuel</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Commun</label>
                                         </div>
+                                        {errors.gasCounter && <p className="text-red-500 text-sm mt-1">{errors.gasCounter.message}</p>}
                                     </div>
                                 </div>
                             </section>
@@ -1366,11 +1648,22 @@ export default function DepositPage() {
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <FileText className="text-[#00BFA6]" /> Conditions de Location
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Caution (Mois)</label>
-                                        <input {...register("depositMonths")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Ex: 1" />
-                                        {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Caution & Charges */}
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Caution (Mois)</label>
+                                            <input {...register("depositMonths")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Ex: 1" />
+                                            {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
+                                        </div>
+                                        
+                                        <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white group">
+                                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 group-hover:bg-[#00BFA6]/10 text-gray-500 group-hover:text-[#00BFA6] transition-colors">
+                                                <Zap className="w-5 h-5" />
+                                            </div>
+                                            <input type="checkbox" {...register("chargesIncluded")} className="accent-[#00BFA6] w-5 h-5" />
+                                            <span className="font-bold text-gray-900">Charges Comprises dans le Loyer</span>
+                                        </label>
                                     </div>
                                     
                                     {/* Disponibilité */}
@@ -1378,40 +1671,47 @@ export default function DepositPage() {
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Disponibilité</label>
                                         <div className="flex flex-col gap-3">
                                             <div className="flex gap-4">
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-2 rounded-lg hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group">
                                                     <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => setAvailabilityMode('IMMEDIATE')} className="accent-[#00BFA6] w-4 h-4" />
-                                                    <span className="text-gray-900 font-medium text-sm">Immédiate</span>
+                                                    <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Immédiate</span>
                                                 </label>
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-2 rounded-lg hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group">
                                                     <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => setAvailabilityMode('DATE')} className="accent-[#00BFA6] w-4 h-4" />
-                                                    <span className="text-gray-900 font-medium text-sm">À partir d&apos;une date</span>
+                                                    <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">À partir d&apos;une date</span>
                                                 </label>
                                             </div>
                                             {availabilityMode === 'DATE' && (
-                                                <input {...register("availableDate")} type="date" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                                <div className="mt-2 animate-fade-in">
+                                                    <InlineCalendar 
+                                                        value={availableDate ? new Date(availableDate) : undefined}
+                                                        onChange={(date) => setValue("availableDate", format(date, "yyyy-MM-dd"), { shouldValidate: true })}
+                                                    />
+                                                </div>
                                             )}
+                                            {errors.availableDate && <p className="text-red-500 text-sm mt-1">{errors.availableDate.message}</p>}
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Usage Autorisé</label>
-                                        <div className="flex gap-4">
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input type="radio" value="HABITATION" {...register("rentalUsage")} className="accent-[#00BFA6]" /> 
-                                                <span className="font-bold text-gray-900">Habitation</span>
+                                    {/* Usage Autorisé - Checkboxes */}
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Usage Autorisé</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <label className="cursor-pointer group">
+                                                <input type="checkbox" value="HABITATION" {...register("rentalUsage")} className="peer sr-only" />
+                                                <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                    <Home className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                    <span className="text-sm font-bold text-gray-700 peer-checked:text-[#00BFA6]">Habitation</span>
+                                                </div>
                                             </label>
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input type="radio" value="PROFESSIONNEL" {...register("rentalUsage")} className="accent-[#00BFA6]" /> 
-                                                <span className="font-bold text-gray-900">Professionnel / Bureau</span>
+                                            <label className="cursor-pointer group">
+                                                <input type="checkbox" value="PROFESSIONNEL" {...register("rentalUsage")} className="peer sr-only" />
+                                                <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                    <Briefcase className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                    <span className="text-sm font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">Professionnel / Bureau</span>
+                                                </div>
                                             </label>
                                         </div>
                                         {errors.rentalUsage && <p className="text-red-500 text-sm mt-1">{errors.rentalUsage.message}</p>}
-                                    </div>
-                                    <div className="flex items-center">
-                                        <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:bg-gray-50 w-full transition-colors bg-white">
-                                            <input type="checkbox" {...register("chargesIncluded")} className="accent-[#00BFA6] w-5 h-5" />
-                                            <span className="font-bold text-gray-900">Charges Comprises dans le Loyer</span>
-                                        </label>
                                     </div>
                                 </div>
                             </section>
@@ -1746,14 +2046,215 @@ export default function DepositPage() {
                         </div>
                     )}
 
-                    {/* Step 5: Localisation & Prix */}
+                    {/* Step 5: Prix & Modalités */}
                     {currentStep === 5 && (
+                        <div className="w-full max-w-2xl animate-fade-in">
+                            <div className="space-y-8">
+                                {/* Prix & Unité */}
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Prix</h3>
+                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Montant</label>
+                                            <div className="flex gap-4">
+                                                <div className="relative flex-1">
+                                                    <input 
+                                                        {...register("price")} 
+                                                        type="text"
+                                                        onChange={(e) => {
+                                                            // Allow only numbers and spaces
+                                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                                            // Add thousand separators
+                                                            const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+                                                            setValue("price", formatted);
+                                                        }}
+                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                                <div className="w-1/3">
+                                                    <select 
+                                                        value={currentPriceUnit}
+                                                        onChange={(e) => handlePriceUnitChange(e.target.value as any)}
+                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-medium h-full cursor-pointer"
+                                                    >
+                                                        <option value="DA">Dinars (DA)</option>
+                                                        <option value="MILLION">Millions</option>
+                                                        <option value="MILLIARD">Milliards</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            {priceCentimes && (
+                                                <p className="text-[#00BFA6] text-sm mt-2 font-medium flex items-center gap-1">
+                                                    <Info className="h-4 w-4" /> {priceCentimes}
+                                                </p>
+                                            )}
+                                            {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
+                                        </div>
+
+                                        {/* Type de Prix */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-3">Type de prix</label>
+                                            <div className="flex gap-4">
+                                                <label className="flex-1 cursor-pointer">
+                                                    <input type="radio" value="FIXED" {...register("priceType")} className="peer sr-only" />
+                                                    <div className="p-3 border-2 rounded-xl text-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white">
+                                                        Fixe
+                                                    </div>
+                                                </label>
+                                                <label className="flex-1 cursor-pointer">
+                                                    <input type="radio" value="NEGOTIABLE" {...register("priceType")} className="peer sr-only" />
+                                                    <div className="p-3 border-2 rounded-xl text-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white">
+                                                        Négociable
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Modalité de paiement */}
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Modalités de paiement</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {[
+                                            { id: "MONTHLY", label: "Mensuelle" },
+                                            { id: "QUARTERLY", label: "Trimestrielle" },
+                                            { id: "SEMI_ANNUAL", label: "Semestrielle" },
+                                            { id: "ANNUAL", label: "Annuelle" }
+                                        ].map((modality) => (
+                                            <label key={modality.id} className="cursor-pointer">
+                                                <input type="radio" value={modality.id} {...register("paymentModality")} className="peer sr-only" />
+                                                <div className="p-4 border-2 rounded-xl flex items-center justify-center text-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-gray-50">
+                                                    {modality.label}
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {errors.paymentModality && <p className="text-red-500 text-sm mt-1">Veuillez sélectionner une modalité de paiement</p>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 6: Localisation & Contacts */}
+                    {currentStep === 6 && (
                         <div className="w-full max-w-xl animate-fade-in">
-                            <div className="space-y-6">
+                            <div className="space-y-8">
+                                {/* Contacts */}
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Phone className="text-[#00BFA6]" /> Contacts
+                                    </h3>
+                                    <p className="text-gray-600 mb-4 text-sm">
+                                        Ajoutez les numéros de téléphone sur lesquels les clients peuvent vous contacter.
+                                    </p>
+
+                                    {/* Option to use profile phone if not already used */}
+                                    {userProfilePhone && contacts[0]?.phone !== userProfilePhone && (
+                                        <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center justify-between animate-fade-in">
+                                            <div>
+                                                <p className="font-bold text-blue-900 text-sm">Numéro de votre profil ({userProfilePhone})</p>
+                                                <p className="text-blue-700 text-xs">Voulez-vous utiliser ce numéro pour cette annonce ?</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => {
+                                                    const newContacts = [...contacts]
+                                                    newContacts[0] = { ...newContacts[0], phone: userProfilePhone }
+                                                    setContacts(newContacts)
+                                                }}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
+                                            >
+                                                Utiliser
+                                            </button>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="space-y-4">
+                                        {contacts.map((contact, index) => (
+                                            <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative">
+                                                {contacts.length > 1 && (
+                                                    <button 
+                                                        onClick={() => removeContact(index)}
+                                                        className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <X className="h-5 w-5" />
+                                                    </button>
+                                                )}
+                                                
+                                                <div className="mb-4">
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                                        {index === 0 ? "Numéro principal" : "Autre numéro"}
+                                                    </label>
+                                                    <input 
+                                                        type="tel" 
+                                                        value={contact.phone}
+                                                        onChange={(e) => updateContact(index, 'phone', e.target.value)}
+                                                        placeholder="0550..."
+                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none bg-white text-gray-900 font-bold"
+                                                    />
+                                                    {index === 0 && userProfilePhone && contact.phone === userProfilePhone && (
+                                                        <div className="mt-2 flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded-lg text-xs font-bold border border-green-100">
+                                                            <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                                            Numéro de profil utilisé
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className="flex gap-6 flex-wrap">
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={contact.hasWhatsapp}
+                                                            onChange={(e) => updateContact(index, 'hasWhatsapp', e.target.checked)}
+                                                            className="accent-[#25D366] w-5 h-5" 
+                                                        />
+                                                        <span className="font-medium text-gray-700 flex items-center gap-1">
+                                                            WhatsApp
+                                                        </span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={contact.hasViber}
+                                                            onChange={(e) => updateContact(index, 'hasViber', e.target.checked)}
+                                                            className="accent-[#7360f2] w-5 h-5" 
+                                                        />
+                                                        <span className="font-medium text-gray-700 flex items-center gap-1">
+                                                            Viber
+                                                        </span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={contact.hasTelegram}
+                                                            onChange={(e) => updateContact(index, 'hasTelegram', e.target.checked)}
+                                                            className="accent-[#0088cc] w-5 h-5" 
+                                                        />
+                                                        <span className="font-medium text-gray-700 flex items-center gap-1">
+                                                            Telegram
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        
+                                        <Button 
+                                            onClick={addContact}
+                                            variant="outline"
+                                            className="w-full py-4 border-dashed border-2 border-gray-300 text-gray-500 hover:border-[#00BFA6] hover:text-[#00BFA6]"
+                                        >
+                                            + Ajouter un autre numéro
+                                        </Button>
+                                    </div>
+                                </div>
+
                                 {/* Localisation */}
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Localisation</h3>
-                                    <div className="space-y-4">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <MapPin className="text-[#00BFA6]" /> Localisation
+                                    </h3>
+                                    <div className="space-y-4 bg-gray-50 p-6 rounded-xl border border-gray-200">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Wilaya</label>
                                             <select {...register("city")} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white">
@@ -1767,7 +2268,7 @@ export default function DepositPage() {
 
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Commune</label>
-                                            <select {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100">
+                                            <select {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100 disabled:text-gray-400">
                                                 <option value="">Sélectionner...</option>
                                                 {filteredCommunes.map((commune) => (
                                                     <option key={commune.id} value={commune.name}>{commune.name}</option>
@@ -1778,157 +2279,39 @@ export default function DepositPage() {
 
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Adresse complète</label>
-                                            <input 
-                                                {...register("address")} 
-                                                type="text" 
-                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900" 
-                                                placeholder="N° de rue, nom de la rue, quartier..." 
-                                            />
+                                            <input {...register("address")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" placeholder="N° de rue, nom de la rue, quartier..." />
                                             {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
                                         </div>
-                                    </div>
-                                </div>
-
-                                {/* Prix */}
-                                <div className="border-t pt-6">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Prix</h3>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Unité de prix</label>
-                                            <div className="flex gap-4">
-                                                {[
-                                                    { value: "DA", label: "Dinars" },
-                                                    { value: "MILLION", label: "Millions (Centimes)" },
-                                                    { value: "MILLIARD", label: "Milliards (Centimes)" },
-                                                ].map((unit) => (
-                                                    <label key={unit.value} className="cursor-pointer flex-1">
-                                                        <input 
-                                                            type="radio" 
-                                                            value={unit.value} 
-                                                            checked={currentPriceUnit === unit.value}
-                                                            onChange={() => handlePriceUnitChange(unit.value as any)}
-                                                            className="peer sr-only" 
-                                                        />
-                                                        <div className="p-3 border-2 rounded-xl text-center font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            {unit.label}
-                                                        </div>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
 
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Montant</label>
-                                            <div className="relative">
-                                                <input 
-                                                    type="text" 
-                                                    value={watch("price") || ""}
-                                                    onChange={(e) => {
-                                                        const rawValue = e.target.value.replace(/\s/g, '');
-                                                        if (!/^\d*\.?\d*$/.test(rawValue)) return;
-                                                        
-                                                        setValue("price", rawValue);
-                                                    }}
-                                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white text-lg font-bold" 
-                                                    placeholder="Saisissez le prix" 
-                                                />
-                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">
-                                                    {currentPriceUnit === "DA" ? "DA" : currentPriceUnit === "MILLION" ? "Millions" : "Milliards"}
-                                                </span>
-                                            </div>
-                                            {priceCentimes && (
-                                                <p className="text-sm font-bold text-[#00BFA6] mt-2">
-                                                    Soit {priceCentimes}
-                                                </p>
-                                            )}
-                                            {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 6: Contacts */}
-                    {currentStep === 6 && (
-                        <div className="w-full max-w-2xl animate-fade-in">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                <Phone className="text-[#00BFA6]" /> Vos Coordonnées
-                            </h2>
-                            <p className="text-gray-600 mb-8">
-                                Ajoutez les numéros de téléphone sur lesquels les clients peuvent vous contacter.
-                            </p>
-                            
-                            <div className="space-y-6">
-                                {contacts.map((contact, index) => (
-                                    <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative">
-                                        {contacts.length > 1 && (
-                                            <button 
-                                                onClick={() => removeContact(index)}
-                                                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
-                                            >
-                                                <X className="h-5 w-5" />
-                                            </button>
-                                        )}
-                                        
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Numéro de téléphone</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Lien Google Maps (Optionnel)</label>
                                             <input 
-                                                type="tel" 
-                                                value={contact.phone}
-                                                onChange={(e) => updateContact(index, 'phone', e.target.value)}
-                                                placeholder="0550..."
-                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none bg-white"
+                                                {...register("mapsLink")} 
+                                                type="url" 
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" 
+                                                placeholder="https://maps.google.com/..." 
                                             />
-                                        </div>
-                                        
-                                        <div className="flex gap-6">
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={contact.hasWhatsapp}
-                                                    onChange={(e) => updateContact(index, 'hasWhatsapp', e.target.checked)}
-                                                    className="accent-[#25D366] w-5 h-5" 
-                                                />
-                                                <span className="font-medium text-gray-700 flex items-center gap-1">
-                                                    WhatsApp
-                                                </span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={contact.hasViber}
-                                                    onChange={(e) => updateContact(index, 'hasViber', e.target.checked)}
-                                                    className="accent-[#7360f2] w-5 h-5" 
-                                                />
-                                                <span className="font-medium text-gray-700 flex items-center gap-1">
-                                                    Viber
-                                                </span>
-                                            </label>
+                                            {errors.mapsLink && <p className="text-red-500 text-sm mt-1">{errors.mapsLink.message}</p>}
                                         </div>
                                     </div>
-                                ))}
-                                
-                                <Button 
-                                    onClick={addContact}
-                                    variant="outline"
-                                    className="w-full py-4 border-dashed border-2 border-gray-300 text-gray-500 hover:border-[#00BFA6] hover:text-[#00BFA6]"
-                                >
-                                    + Ajouter un autre numéro
-                                </Button>
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {/* Step 7: Photos du bien */}
                     {currentStep === 7 && (
-                        <div className="w-full max-w-3xl animate-fade-in">
+                        <div className="w-full max-w-4xl animate-fade-in">
                             {photoOrganizationStep === "upload" ? (
                                 /* Étape 1: Upload brut */
-                                <div className="space-y-6">
+                                <div className="space-y-8">
+                                    
+                                    {/* SECTION PHOTOS */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-4">Téléchargez vos photos</label>
-                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                            <ImageIcon className="text-[#00BFA6]" /> Photos
+                                        </h3>
+                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
                                             <input 
                                                 type="file" 
                                                 multiple 
@@ -1936,21 +2319,19 @@ export default function DepositPage() {
                                                 onChange={onFileChange} 
                                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
                                             />
-                                            <Upload className="h-12 w-12 text-[#00BFA6] mx-auto mb-4" />
-                                            <p className="text-lg text-gray-600 mb-2">
+                                            <Upload className="h-10 w-10 text-[#00BFA6] mx-auto mb-3" />
+                                            <p className="text-gray-600 mb-1 font-medium">
                                                 {selectedFiles.length > 0 
                                                     ? `${selectedFiles.length} photo(s) sélectionnée(s)` 
-                                                    : "Cliquez ou glissez vos photos ici"}
+                                                    : "Ajouter des photos"}
                                             </p>
-                                            <p className="text-sm text-gray-400">
-                                                Formats acceptés : JPG, PNG (max 10MB par photo)
+                                            <p className="text-xs text-gray-400">
+                                                JPG, PNG (max 10MB)
                                             </p>
                                         </div>
-                                    </div>
 
-                                    {selectedFiles.length > 0 && (
-                                        <>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {selectedFiles.length > 0 && (
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                                 {selectedFiles.map((file, idx) => (
                                                     <div key={idx} className={cn(
                                                         "relative aspect-square bg-gray-100 rounded-lg overflow-hidden group border-2 transition-all",
@@ -1967,7 +2348,7 @@ export default function DepositPage() {
                                                             <button 
                                                                 onClick={() => setMainPhoto(file)}
                                                                 className={cn(
-                                                                    "px-3 py-1 rounded-full text-xs font-bold w-full transition-colors",
+                                                                    "px-2 py-1 rounded-md text-[10px] font-bold w-full transition-colors",
                                                                     mainPhoto === file ? "bg-[#00BFA6] text-white" : "bg-white text-gray-900 hover:bg-gray-100"
                                                                 )}
                                                             >
@@ -1980,14 +2361,14 @@ export default function DepositPage() {
                                                                     className="flex-1 bg-white/20 hover:bg-white/40 text-white rounded-lg p-1.5 flex items-center justify-center transition-colors"
                                                                     title="Pivoter"
                                                                 >
-                                                                    <RotateCw className="h-4 w-4" />
+                                                                    <RotateCw className="h-3 w-3" />
                                                                 </button>
                                                                 <button 
                                                                     onClick={() => removeFile(idx)}
                                                                     className="flex-1 bg-red-500/80 hover:bg-red-600 text-white rounded-lg p-1.5 flex items-center justify-center transition-colors"
                                                                     title="Supprimer"
                                                                 >
-                                                                    <X className="h-4 w-4" />
+                                                                    <X className="h-3 w-3" />
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -2000,15 +2381,66 @@ export default function DepositPage() {
                                                     </div>
                                                 ))}
                                             </div>
+                                        )}
+                                    </div>
 
-                                            <Button 
-                                                onClick={proceedToPhotoOrganization}
-                                                className="w-full bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl py-4 text-lg font-bold"
-                                            >
-                                                Organiser les photos
-                                            </Button>
-                                        </>
-                                    )}
+                                    {/* SECTION VIDEOS */}
+                                    <div className="pt-6 border-t border-gray-100">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                            <VideoIcon className="text-[#00BFA6]" /> Vidéos (Optionnel)
+                                        </h3>
+                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
+                                            <input 
+                                                type="file" 
+                                                multiple 
+                                                accept="video/*" 
+                                                onChange={onVideoChange} 
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                            />
+                                            <VideoIcon className="h-10 w-10 text-[#00BFA6] mx-auto mb-3" />
+                                            <p className="text-gray-600 mb-1 font-medium">
+                                                {selectedVideos.length > 0 
+                                                    ? `${selectedVideos.length} vidéo(s) sélectionnée(s)` 
+                                                    : "Ajouter une vidéo"}
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                MP4, MOV (max 50MB) - Max 2 vidéos
+                                            </p>
+                                        </div>
+
+                                        {selectedVideos.length > 0 && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {selectedVideos.map((file, idx) => (
+                                                    <div key={idx} className="relative bg-black rounded-lg overflow-hidden border border-gray-200 aspect-video group">
+                                                        <video 
+                                                            src={URL.createObjectURL(file)} 
+                                                            className="w-full h-full object-contain"
+                                                            controls
+                                                        />
+                                                        <button 
+                                                            onClick={() => removeVideo(idx)}
+                                                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                        <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                                                            {(file.size / (1024 * 1024)).toFixed(1)} MB
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-8">
+                                        <Button 
+                                            onClick={proceedToPhotoOrganization}
+                                            disabled={selectedFiles.length < 3}
+                                            className="w-full bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Continuer vers l'organisation
+                                        </Button>
+                                    </div>
                                 </div>
                             ) : (
                                 /* Étape 2: Organisation par catégorie */
@@ -2115,12 +2547,12 @@ export default function DepositPage() {
                         </Button>
                     )}
                     {currentStep === 5 && (
-                        <Button onClick={handleLocationSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                        <Button onClick={handlePriceSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             Continuer
                         </Button>
                     )}
                     {currentStep === 6 && (
-                        <Button onClick={handleContactsSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                        <Button onClick={handleLocationAndContactsSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             Continuer
                         </Button>
                     )}
