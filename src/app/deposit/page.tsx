@@ -32,6 +32,8 @@ import { useRouter } from "next/navigation"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 // Icon mapping
 const IconMap: Record<string, React.ElementType> = {
@@ -207,19 +209,31 @@ const USAGE_TYPES = [
     { 
         id: "UNIQUE", 
         label: "Usage unique (Communicante)",
-        description: "Idéal pour une seule famille. Les espaces sont connectés et permettent une circulation fluide entre les pièces."
+        description: "les étages de la villa communiquent de l’intérieur"
     },
     { 
         id: "SEPARE", 
-        label: "Usage séparé",
-        description: "Conçu pour plusieurs familles ou pour une intimité maximale. Les espaces peuvent être indépendants avec des accès distincts."
+        label: "Usage séparé (appartement)",
+        description: "chaque étage est indépendant"
     }
 ]
 
 const KITCHEN_TYPES = [
-    { id: "AMERICAINE", label: "Ouverte" },
-    { id: "FERMEE", label: "Fermée" },
-    { id: "SEMI_OUVERTE", label: "Semi-ouverte" }
+    { 
+        id: "AMERICAINE", 
+        label: "Ouverte",
+        description: "Cuisine ouverte sur le salon (style américain)"
+    },
+    { 
+        id: "FERMEE", 
+        label: "Fermée",
+        description: "Cuisine séparée par des murs et une porte"
+    },
+    { 
+        id: "SEMI_OUVERTE", 
+        label: "Semi-ouverte",
+        description: "Partiellement ouverte (verrière, bar, passe-plat)"
+    }
 ]
 
 const KITCHEN_STATES = [
@@ -306,7 +320,7 @@ const formSchema = z.object({
   }, "Prix invalide"),
   priceUnit: z.enum(["DA", "MILLION", "MILLIARD"]),
   priceType: z.enum(["FIXED", "NEGOTIABLE"]),
-  paymentModality: z.enum(["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL"]),
+  paymentModality: z.enum(["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL"]).optional(),
   description: z.string().optional(),
   
   // Champs techniques pour le mapping
@@ -317,17 +331,17 @@ const formSchema = z.object({
   extraFloor: z.enum(["basement", "entresol", "attic", "none"]),
   typology: z.string().min(1, "Typologie requise"),
   bedrooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de chambres invalide"),
-  nbSuites: z.string().optional(),
-  livingRooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de salons invalide"),
+  nbSuites: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
+  livingRooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salons invalide"),
   bathrooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salles de bain invalide"),
   bathroomType: z.enum(["shower", "bathtub", "both", "none"]).optional(),
   wc: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de WC invalide"),
   landArea: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface du terrain invalide"),
   builtArea: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface bâtie invalide"),
-  habitableArea: z.string().optional(),
+  habitableArea: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface invalide"),
   state: z.enum(["NEUF", "RENOVE", "BON_ETAT"]),
-  parkingCount: z.string().optional(),
-  outdoorParking: z.string().optional(),
+  parkingCount: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
+  outdoorParking: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   usageType: z.enum(["UNIQUE", "SEPARE"]),
   kitchenType: z.enum(["AMERICAINE", "FERMEE", "SEMI_OUVERTE"]),
   kitchenState: z.enum(["EQUIPEE", "AMENAGEE", "VIDE"]).optional(),
@@ -336,7 +350,7 @@ const formSchema = z.object({
   waterCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
   elecCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
   gasCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
-  depositMonths: z.string().optional(),
+  depositMonths: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   rentalUsage: z.array(z.string()).optional(),
   chargesIncluded: z.boolean().optional(),
   availableDate: z.string().optional(),
@@ -540,15 +554,15 @@ export default function DepositPage() {
 
             // Using full URL to avoid port issues
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            // Correct endpoint seems to be /api/users/me based on profile page, or /users/profile based on complete profile page
-            // Let's try /users/profile first, then fallback to /api/users/me if needed
-            let response = await fetch(`${apiUrl}/users/profile`, {
+            
+            // Correct endpoint is /users/me based on UsersController
+            let response = await fetch(`${apiUrl}/users/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
+            // If /users/me fails (e.g. older backend version), try /users/profile as fallback
             if (!response.ok) {
-                 // Try alternative endpoint
-                 response = await fetch(`${apiUrl}/api/users/me`, {
+                 response = await fetch(`${apiUrl}/users/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             }
@@ -556,18 +570,21 @@ export default function DepositPage() {
             if (response.ok) {
                 const profile = await response.json();
                 console.log("Profile fetched successfully:", profile);
-                if (profile.phone) {
-                    setUserProfilePhone(profile.phone);
-                    // Update contact if it was empty or matched old user.phone
+                // Profile phone might be under 'phone' or 'phoneNumber' depending on backend version
+                const phone = profile.phone || profile.phoneNumber;
+                
+                if (phone) {
+                    setUserProfilePhone(phone);
+                    // Update contact if it was empty or matched old user.phone from localStorage
                     setContacts(prev => {
-                        if (prev.length === 1 && (prev[0].phone === "" || prev[0].phone === user.phone)) {
-                            return [{ phone: profile.phone, hasWhatsapp: false, hasViber: false, hasTelegram: false }];
+                        if (prev.length === 1 && (prev[0].phone === "" || (user.phone && prev[0].phone === user.phone))) {
+                            return [{ phone: phone, hasWhatsapp: false, hasViber: false, hasTelegram: false }];
                         }
                         return prev;
                     });
                 }
             } else {
-                console.error("Failed to fetch profile from both endpoints");
+                console.error("Failed to fetch profile from endpoints");
                 // LocalStorage fallback already applied at start
             }
         } catch (error) {
@@ -586,6 +603,8 @@ export default function DepositPage() {
     watch,
     trigger,
     setValue,
+    getValues,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(formSchema),
@@ -609,6 +628,10 @@ export default function DepositPage() {
       extraFloor: "none",
       bathroomType: "none",
       priceUnit: "DA",
+      priceType: "FIXED",
+      depositMonths: "",
+      rentalUsage: [],
+      chargesIncluded: false,
     },
   })
 
@@ -822,17 +845,18 @@ export default function DepositPage() {
       return
     }
     
-    // Répartir les photos dans les catégories (aléatoirement pour l'instant)
-    const categorized = [...photoCategories]
-    const shuffled = [...selectedFiles].sort(() => 0.5 - Math.random())
+    // Mettre TOUTES les photos dans la catégorie "Autres" par défaut
+    // L'utilisateur devra ensuite les trier
+    setPhotoCategories(prev => prev.map(cat => {
+        if (cat.id === "other") {
+            // On met toutes les photos ici
+            return { ...cat, photos: [...selectedFiles] }
+        } else {
+            // On vide les autres catégories pour commencer proprement
+            return { ...cat, photos: [] }
+        }
+    }))
     
-    categorized.forEach((cat, index) => {
-      if (index < shuffled.length) {
-        cat.photos = [shuffled[index]]
-      }
-    })
-    
-    setPhotoCategories(categorized)
     setPhotoOrganizationStep("organize")
   }
 
@@ -902,7 +926,8 @@ export default function DepositPage() {
             "state", "parkingCount", "outdoorParking",
             "usageType", "bedrooms", "nbSuites", "livingRooms", "bathrooms", "wc", "bathroomType",
             "kitchenType", "kitchenState",
-            "depositMonths", "availableDate",
+            "heatingType", "acType",
+            "waterCounter", "elecCounter", "gasCounter",
             "typologyCustom"
         ]);
         
@@ -923,7 +948,30 @@ export default function DepositPage() {
   }
 
   const handlePriceSubmit = async () => {
-    const isValid = await trigger(["price", "priceUnit", "priceType", "paymentModality"])
+    // Basic price fields - paymentModality removed as it is hidden
+    const fieldsToValidate: any[] = ["price", "priceUnit", "priceType"]
+    
+    // Add rental specific fields if needed
+    if (transactionType === "RENTAL") {
+        fieldsToValidate.push("depositMonths")
+        fieldsToValidate.push("rentalUsage")
+        fieldsToValidate.push("chargesIncluded")
+        if (availabilityMode === 'DATE') {
+             fieldsToValidate.push("availableDate")
+        }
+    }
+
+    const isValid = await trigger(fieldsToValidate)
+    
+    // Debugging
+    console.log("Validation fields:", fieldsToValidate)
+    console.log("Validation result:", isValid)
+    if (!isValid) {
+        console.log("Validation errors:", errors)
+        // Force update to show errors
+        trigger(fieldsToValidate)
+    }
+
     if (isValid) {
       setCurrentStep(6)
     }
@@ -991,14 +1039,16 @@ export default function DepositPage() {
         else if (data.rooms) formData.append('rooms', data.rooms)
         else formData.append('rooms', '0')
 
-        if (!data.description && data.additionalDescription) formData.append('description', data.additionalDescription)
-        else if (data.description) formData.append('description', data.description)
-        else formData.append('description', 'Pas de description fournie')
+        // Description is now directly in data.description, no need to force it here if it exists in data
+        if (!data.description) formData.append('description', 'Pas de description fournie')
+    } else {
+        // Pour les autres types, si description est vide
+        if (!data.description) formData.append('description', 'Pas de description fournie')
     }
 
     // Ajouter toutes les autres données du formulaire
     Object.entries(data).forEach(([key, value]) => {
-      // On traite le prix manuellement
+      // On traite le prix manuellement, et description est déjà traité ou présent
       if (key === 'price') return;
       
       if (Array.isArray(value)) {
@@ -1202,27 +1252,58 @@ export default function DepositPage() {
                     
                     {/* Step 1: Transaction Type */}
                     {currentStep === 1 && (
-                        <div className="w-full max-w-2xl animate-fade-in">
-                            <div className="grid grid-cols-2 gap-8">
+                        <div className="w-full max-w-4xl animate-fade-in py-10">
+                            <div className="flex justify-center gap-16 md:gap-32">
+                                {/* Location */}
                                 <div 
                                     onClick={() => handleTransactionTypeClick("RENTAL")}
-                                    className={cn(
-                                        "cursor-pointer border-2 rounded-2xl p-10 flex flex-col items-center justify-center gap-4 transition-all hover:shadow-lg",
-                                        transactionType === "RENTAL" ? "border-[#00BFA6] bg-green-50/30" : "border-gray-200 hover:border-gray-300"
-                                    )}
+                                    className="flex flex-col items-center gap-6 cursor-pointer group"
                                 >
-                                    <Home className={cn("h-16 w-16", transactionType === "RENTAL" ? "text-[#00BFA6]" : "text-gray-400")} />
-                                    <span className={cn("text-xl font-medium", transactionType === "RENTAL" ? "text-[#00BFA6]" : "text-gray-500")}>Location</span>
+                                    <div className={cn(
+                                        "w-40 h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                        transactionType === "RENTAL" 
+                                            ? "bg-white border-[#00BFA6] shadow-[0_10px_20px_rgba(0,191,166,0.3)] transform -translate-y-2" 
+                                            : "bg-white border-gray-100 shadow-[0_10px_20px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
+                                    )}>
+                                        <div className={cn(
+                                            "w-32 h-32 rounded-full flex items-center justify-center transition-colors duration-300",
+                                            transactionType === "RENTAL" ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                                        )}>
+                                            <Home className="h-16 w-16" />
+                                        </div>
+                                    </div>
+                                    <span className={cn(
+                                        "text-2xl font-bold transition-colors",
+                                        transactionType === "RENTAL" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
+                                    )}>
+                                        Location
+                                    </span>
                                 </div>
+
+                                {/* Vente */}
                                 <div 
                                     onClick={() => handleTransactionTypeClick("SALE")}
-                                    className={cn(
-                                        "cursor-pointer border-2 rounded-2xl p-10 flex flex-col items-center justify-center gap-4 transition-all hover:shadow-lg",
-                                        transactionType === "SALE" ? "border-[#00BFA6] bg-green-50/30" : "border-gray-200 hover:border-gray-300"
-                                    )}
+                                    className="flex flex-col items-center gap-6 cursor-pointer group"
                                 >
-                                    <Key className={cn("h-16 w-16", transactionType === "SALE" ? "text-[#00BFA6]" : "text-gray-400")} />
-                                    <span className={cn("text-xl font-medium", transactionType === "SALE" ? "text-[#00BFA6]" : "text-gray-500")}>Vente</span>
+                                    <div className={cn(
+                                        "w-40 h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                        transactionType === "SALE" 
+                                            ? "bg-white border-[#00BFA6] shadow-[0_10px_20px_rgba(0,191,166,0.3)] transform -translate-y-2" 
+                                            : "bg-white border-gray-100 shadow-[0_10px_20px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
+                                    )}>
+                                        <div className={cn(
+                                            "w-32 h-32 rounded-full flex items-center justify-center transition-colors duration-300",
+                                            transactionType === "SALE" ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                                        )}>
+                                            <Key className="h-16 w-16" />
+                                        </div>
+                                    </div>
+                                    <span className={cn(
+                                        "text-2xl font-bold transition-colors",
+                                        transactionType === "SALE" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
+                                    )}>
+                                        Vente
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -1230,21 +1311,36 @@ export default function DepositPage() {
 
                     {/* Step 2: Real Estate Type */}
                     {currentStep === 2 && (
-                        <div className="w-full max-w-4xl animate-fade-in">
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+                        <div className="w-full max-w-5xl animate-fade-in py-8">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8 justify-items-center">
                                 {filteredCategories.map((cat) => {
                                     const Icon = IconMap[cat.iconName] || Home
+                                    const isSelected = realEstateType === cat.id
                                     return (
                                         <div 
                                             key={cat.id}
                                             onClick={() => handleCategoryClick(cat.id)}
-                                            className={cn(
-                                                "cursor-pointer border-2 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 transition-all hover:shadow-lg h-48 text-center",
-                                                realEstateType === cat.id ? "border-[#00BFA6] bg-green-50/30" : "border-gray-200 hover:border-gray-300"
-                                            )}
+                                            className="flex flex-col items-center gap-4 cursor-pointer group w-full"
                                         >
-                                            <Icon className={cn("h-12 w-12", realEstateType === cat.id ? "text-[#00BFA6]" : "text-gray-400")} />
-                                            <span className={cn("text-lg font-medium", realEstateType === cat.id ? "text-[#00BFA6]" : "text-gray-500")}>{cat.label}</span>
+                                            <div className={cn(
+                                                "w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                                isSelected 
+                                                    ? "bg-white border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.3)] transform -translate-y-2" 
+                                                    : "bg-white border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
+                                            )}>
+                                                <div className={cn(
+                                                    "w-24 h-24 rounded-full flex items-center justify-center transition-colors duration-300",
+                                                    isSelected ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                                                )}>
+                                                    <Icon className="h-10 w-10" />
+                                                </div>
+                                            </div>
+                                            <span className={cn(
+                                                "text-lg font-bold text-center max-w-[180px] transition-colors",
+                                                isSelected ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
+                                            )}>
+                                                {cat.label}
+                                            </span>
                                         </div>
                                     )
                                 })}
@@ -1254,21 +1350,36 @@ export default function DepositPage() {
 
                     {/* Step 3: Property Type */}
                     {currentStep === 3 && (
-                        <div className="w-full max-w-4xl animate-fade-in">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="w-full max-w-5xl animate-fade-in py-8">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 justify-items-center">
                                 {filteredPropertyTypes.map((type) => {
                                     const Icon = IconMap[type.iconName] || Home
+                                    const isSelected = propertyType === type.id
                                     return (
                                         <div 
                                             key={type.id}
                                             onClick={() => handlePropertyTypeClick(type.id)}
-                                            className={cn(
-                                                "cursor-pointer border rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-md h-40 text-center",
-                                                propertyType === type.id ? "border-[#00BFA6] bg-green-50/30 shadow-md" : "border-gray-200 hover:border-gray-300"
-                                            )}
+                                            className="flex flex-col items-center gap-3 cursor-pointer group w-full"
                                         >
-                                            <Icon className={cn("h-8 w-8", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-400")} />
-                                            <span className={cn("text-sm font-medium", propertyType === type.id ? "text-[#00BFA6]" : "text-gray-500")}>{type.label}</span>
+                                            <div className={cn(
+                                                "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                                isSelected 
+                                                    ? "bg-white border-[#00BFA6] shadow-[0_6px_12px_rgba(0,191,166,0.3)] transform -translate-y-1" 
+                                                    : "bg-white border-gray-100 shadow-[0_6px_12px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
+                                            )}>
+                                                <div className={cn(
+                                                    "w-16 h-16 rounded-full flex items-center justify-center transition-colors duration-300",
+                                                    isSelected ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                                                )}>
+                                                    <Icon className="h-8 w-8" />
+                                                </div>
+                                            </div>
+                                            <span className={cn(
+                                                "text-sm font-bold text-center max-w-[140px] transition-colors",
+                                                isSelected ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
+                                            )}>
+                                                {type.label}
+                                            </span>
                                         </div>
                                     )
                                 })}
@@ -1288,51 +1399,53 @@ export default function DepositPage() {
                                 
                                 <div className="flex flex-col gap-5">
                                     {/* Row 1: Typologie, Configuration, État Général */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="flex flex-wrap md:flex-nowrap gap-5 items-end">
                                         {/* Typologie */}
-                                        <div>
+                                        <div className="flex-1 min-w-[150px]">
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-gray-900 text-2xl">F</span>
+                                                <span className="font-bold text-gray-700 text-lg">F</span>
                                                 <input 
                                                     type="number" 
                                                     min="1" max="10"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     onChange={(e) => {
                                                         const val = e.target.value;
                                                         setValue("typology", `F${val}`);
                                                         setValue("typologyCustom", val);
                                                     }}
-                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-lg" 
+                                                    className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
                                                     placeholder="Ex: 4"
                                                 />
                                             </div>
-                                            {errors.typology && <p className="text-red-500 text-sm mt-1">{errors.typology.message}</p>}
+                                            {errors.typology && <p className="text-red-500 text-xs mt-1">{errors.typology.message}</p>}
                                         </div>
 
                                         {/* Configuration R+ */}
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Configuration (Nombre d&apos;étages) <span className="text-red-500">*</span></label>
+                                        <div className="flex-1 min-w-[180px]">
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages <span className="text-red-500">*</span></label>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-gray-900 text-2xl">R +</span>
+                                                <span className="font-bold text-gray-700 text-lg whitespace-nowrap">R +</span>
                                                 <input 
                                                     {...register("floorCount")} 
                                                     type="number" 
                                                     min="0" max="10"
-                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-lg" 
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
                                                     placeholder="Ex: 2"
                                                 />
                                             </div>
-                                            {errors.floorCount && <p className="text-red-500 text-sm mt-1">{errors.floorCount.message}</p>}
+                                            {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                         </div>
 
                                         {/* État Général */}
-                                        <div>
+                                        <div className="flex-1 min-w-[200px]">
                                             <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
-                                            <select {...register("state")} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900">
+                                            <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                 <option value="">Sélectionner</option>
                                                 {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                                             </select>
-                                            {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>}
+                                            {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                         </div>
                                     </div>
 
@@ -1340,18 +1453,39 @@ export default function DepositPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Surface Totale du Terrain (m²) <span className="text-red-500">*</span></label>
-                                            <input {...register("landArea")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Ex: 400" />
-                                            {errors.landArea && <p className="text-red-500 text-sm mt-1">{errors.landArea.message}</p>}
+                                            <input 
+                                                {...register("landArea")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                placeholder="Ex: 400" 
+                                            />
+                                            {errors.landArea && <p className="text-red-500 text-xs mt-1">{errors.landArea.message}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Surface Bâtie (m²) <span className="text-red-500">*</span></label>
-                                            <input {...register("builtArea")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Ex: 250" />
-                                            {errors.builtArea && <p className="text-red-500 text-sm mt-1">{errors.builtArea.message}</p>}
+                                            <input 
+                                                {...register("builtArea")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                placeholder="Ex: 250" 
+                                            />
+                                            {errors.builtArea && <p className="text-red-500 text-xs mt-1">{errors.builtArea.message}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Surface Habitable Totale (m²)</label>
-                                            <input {...register("habitableArea")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Ex: 200" />
-                                            {errors.habitableArea && <p className="text-red-500 text-sm mt-1">{errors.habitableArea.message}</p>}
+                                            <input 
+                                                {...register("habitableArea")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                placeholder="Ex: 200" 
+                                            />
+                                            {errors.habitableArea && <p className="text-red-500 text-xs mt-1">{errors.habitableArea.message}</p>}
                                         </div>
                                     </div>
 
@@ -1359,8 +1493,22 @@ export default function DepositPage() {
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Garage & Stationnement</label>
                                         <div className="grid grid-cols-2 gap-4 md:max-w-md">
-                                            <input {...register("parkingCount")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Garage (places)" />
-                                            <input {...register("outdoorParking")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Extérieur (places)" />
+                                            <input 
+                                                {...register("parkingCount")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                placeholder="Garage (places)" 
+                                            />
+                                            <input 
+                                                {...register("outdoorParking")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                placeholder="Extérieur (places)" 
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -1372,7 +1520,6 @@ export default function DepositPage() {
                                     <Users className="text-[#00BFA6]" /> Mode de vie
                                 </h2>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">Usage Autorisé <span className="text-red-500">*</span></label>
                                     <div className="flex flex-wrap gap-4">
                                         {USAGE_TYPES.map((u) => (
                                             <label key={u.id} className="cursor-pointer group relative">
@@ -1405,21 +1552,45 @@ export default function DepositPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Chambres <span className="text-red-500">*</span></label>
-                                            <input {...register("bedrooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            <input 
+                                                {...register("bedrooms")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                            />
                                             {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Dont Suites Parentales</label>
-                                            <input {...register("nbSuites")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            <input 
+                                                {...register("nbSuites")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                            />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Salons <span className="text-red-500">*</span></label>
-                                            <input {...register("livingRooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            <input 
+                                                {...register("livingRooms")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                            />
                                             {errors.livingRooms && <p className="text-red-500 text-sm mt-1">{errors.livingRooms.message}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Toilettes (WC) <span className="text-red-500">*</span></label>
-                                            <input {...register("wc")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            <input 
+                                                {...register("wc")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                            />
                                             {errors.wc && <p className="text-red-500 text-sm mt-1">{errors.wc.message}</p>}
                                         </div>
                                     </div>
@@ -1428,7 +1599,13 @@ export default function DepositPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Salles de Bain <span className="text-red-500">*</span></label>
-                                            <input {...register("bathrooms")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" />
+                                            <input 
+                                                {...register("bathrooms")} 
+                                                type="number" 
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                            />
                                             {errors.bathrooms && <p className="text-red-500 text-sm mt-1">{errors.bathrooms.message}</p>}
                                         </div>
 
@@ -1465,9 +1642,16 @@ export default function DepositPage() {
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Type de Cuisine</label>
                                         <div className="flex flex-wrap gap-4">
                                             {KITCHEN_TYPES.map(k => (
-                                                <label key={k.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white flex-1 justify-center">
-                                                    <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-5 h-5" />
-                                                    <span className="font-bold text-gray-900">{k.label}</span>
+                                                <label key={k.id} className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center relative group min-w-[140px]">
+                                                    <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-4 h-4" /> 
+                                                    <span className="text-sm font-bold text-gray-900">{k.label}</span>
+                                                    <div className="relative group/info ml-1">
+                                                        <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 font-normal text-left">
+                                                            {k.description}
+                                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                                        </div>
+                                                    </div>
                                                 </label>
                                             ))}
                                         </div>
@@ -1643,78 +1827,7 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
-                            {/* 7. Conditions de Location */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <FileText className="text-[#00BFA6]" /> Conditions de Location
-                                </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Caution & Charges */}
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Caution (Mois)</label>
-                                            <input {...register("depositMonths")} type="number" className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" placeholder="Ex: 1" />
-                                            {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
-                                        </div>
-                                        
-                                        <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white group">
-                                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 group-hover:bg-[#00BFA6]/10 text-gray-500 group-hover:text-[#00BFA6] transition-colors">
-                                                <Zap className="w-5 h-5" />
-                                            </div>
-                                            <input type="checkbox" {...register("chargesIncluded")} className="accent-[#00BFA6] w-5 h-5" />
-                                            <span className="font-bold text-gray-900">Charges Comprises dans le Loyer</span>
-                                        </label>
-                                    </div>
-                                    
-                                    {/* Disponibilité */}
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Disponibilité</label>
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex gap-4">
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group">
-                                                    <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => setAvailabilityMode('IMMEDIATE')} className="accent-[#00BFA6] w-4 h-4" />
-                                                    <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Immédiate</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group">
-                                                    <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => setAvailabilityMode('DATE')} className="accent-[#00BFA6] w-4 h-4" />
-                                                    <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">À partir d&apos;une date</span>
-                                                </label>
-                                            </div>
-                                            {availabilityMode === 'DATE' && (
-                                                <div className="mt-2 animate-fade-in">
-                                                    <InlineCalendar 
-                                                        value={availableDate ? new Date(availableDate) : undefined}
-                                                        onChange={(date) => setValue("availableDate", format(date, "yyyy-MM-dd"), { shouldValidate: true })}
-                                                    />
-                                                </div>
-                                            )}
-                                            {errors.availableDate && <p className="text-red-500 text-sm mt-1">{errors.availableDate.message}</p>}
-                                        </div>
-                                    </div>
 
-                                    {/* Usage Autorisé - Checkboxes */}
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Usage Autorisé</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <label className="cursor-pointer group">
-                                                <input type="checkbox" value="HABITATION" {...register("rentalUsage")} className="peer sr-only" />
-                                                <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
-                                                    <Home className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                    <span className="text-sm font-bold text-gray-700 peer-checked:text-[#00BFA6]">Habitation</span>
-                                                </div>
-                                            </label>
-                                            <label className="cursor-pointer group">
-                                                <input type="checkbox" value="PROFESSIONNEL" {...register("rentalUsage")} className="peer sr-only" />
-                                                <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
-                                                    <Briefcase className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                    <span className="text-sm font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">Professionnel / Bureau</span>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        {errors.rentalUsage && <p className="text-red-500 text-sm mt-1">{errors.rentalUsage.message}</p>}
-                                    </div>
-                                </div>
-                            </section>
                         </div>
                     )}
 
@@ -1802,7 +1915,8 @@ export default function DepositPage() {
                                         <input 
                                             {...register("bedrooms")} 
                                             type="number" 
-                                            min="1"
+                                            min="0"
+                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
                                             placeholder="Ex: 3"
                                         />
@@ -1813,7 +1927,8 @@ export default function DepositPage() {
                                         <input 
                                             {...register("livingRooms")} 
                                             type="number" 
-                                            min="1"
+                                            min="0"
+                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
                                             placeholder="Ex: 2"
                                         />
@@ -1829,6 +1944,7 @@ export default function DepositPage() {
                                             {...register("bathrooms")} 
                                             type="number" 
                                             min="0"
+                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
                                             placeholder="Ex: 2"
                                         />
@@ -1840,6 +1956,7 @@ export default function DepositPage() {
                                             {...register("wc")} 
                                             type="number" 
                                             min="0"
+                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
                                             placeholder="Ex: 3"
                                         />
@@ -1902,7 +2019,8 @@ export default function DepositPage() {
                                             <input 
                                                 {...register("landArea")} 
                                                 type="number" 
-                                                min="1"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
                                                 placeholder="Ex: 500"
                                             />
@@ -1913,7 +2031,8 @@ export default function DepositPage() {
                                             <input 
                                                 {...register("builtArea")} 
                                                 type="number" 
-                                                min="1"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
                                                 placeholder="Ex: 250"
                                             />
@@ -2022,7 +2141,8 @@ export default function DepositPage() {
                                                     <input 
                                                         {...register("garageCapacity")} 
                                                         type="number" 
-                                                        min="1"
+                                                        min="0"
+                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                         placeholder="Nombre de véhicules"
                                                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-gray-50 focus:bg-white" 
                                                     />
@@ -2032,14 +2152,14 @@ export default function DepositPage() {
                                     </div>
                                 </div>
 
-                                {/* Description Complémentaire */}
+                                {/* Description */}
                                 <div className="border-t pt-6">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Description Complémentaire</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Description du bien</label>
                                     <textarea 
-                                        {...register("additionalDescription")} 
+                                        {...register("description")} 
                                         rows={4}
                                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 placeholder:text-gray-400 bg-gray-50 focus:bg-white"
-                                        placeholder="Ensoleillement, voisinage, sécurité, état des finitions..."
+                                        placeholder="Décrivez votre bien : ensoleillement, voisinage, sécurité, état des finitions..."
                                     ></textarea>
                                 </div>
                             </div>
@@ -2053,35 +2173,51 @@ export default function DepositPage() {
                                 {/* Prix & Unité */}
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">Prix</h3>
-                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Montant</label>
-                                            <div className="flex gap-4">
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                                {transactionType === 'RENTAL' ? "Loyer mensuel" : "Montant"}
+                                            </label>
+                                            <div className="flex flex-col md:flex-row gap-4">
                                                 <div className="relative flex-1">
                                                     <input 
                                                         {...register("price")} 
                                                         type="text"
                                                         onChange={(e) => {
-                                                            // Allow only numbers and spaces
                                                             const val = e.target.value.replace(/[^0-9]/g, '');
-                                                            // Add thousand separators
                                                             const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-                                                            setValue("price", formatted);
+                                                            setValue("price", formatted, { shouldValidate: true });
                                                         }}
-                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
+                                                        className="w-full p-4 pr-32 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
                                                         placeholder="0"
                                                     />
+                                                    <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
+                                                        <select 
+                                                            value={currentPriceUnit}
+                                                            onChange={(e) => handlePriceUnitChange(e.target.value as any)}
+                                                            className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none"
+                                                        >
+                                                            <option value="DA">DA</option>
+                                                            <option value="MILLION">Millions</option>
+                                                            <option value="MILLIARD">Milliards</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
-                                                <div className="w-1/3">
-                                                    <select 
-                                                        value={currentPriceUnit}
-                                                        onChange={(e) => handlePriceUnitChange(e.target.value as any)}
-                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-medium h-full cursor-pointer"
-                                                    >
-                                                        <option value="DA">Dinars (DA)</option>
-                                                        <option value="MILLION">Millions</option>
-                                                        <option value="MILLIARD">Milliards</option>
-                                                    </select>
+                                                
+                                                {/* Type de prix - Inline */}
+                                                <div className="flex gap-2">
+                                                    <label className="cursor-pointer">
+                                                        <input type="radio" value="FIXED" {...register("priceType")} className="peer sr-only" />
+                                                        <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[100px]">
+                                                            Fixe
+                                                        </div>
+                                                    </label>
+                                                    <label className="cursor-pointer">
+                                                        <input type="radio" value="NEGOTIABLE" {...register("priceType")} className="peer sr-only" />
+                                                        <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[120px]">
+                                                            Négociable
+                                                        </div>
+                                                    </label>
                                                 </div>
                                             </div>
                                             {priceCentimes && (
@@ -2091,55 +2227,130 @@ export default function DepositPage() {
                                             )}
                                             {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
                                         </div>
+                                    </div>
+                                </div>
 
-                                        {/* Type de Prix */}
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-3">Type de prix</label>
-                                            <div className="flex gap-4">
-                                                <label className="flex-1 cursor-pointer">
-                                                    <input type="radio" value="FIXED" {...register("priceType")} className="peer sr-only" />
-                                                    <div className="p-3 border-2 rounded-xl text-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white">
-                                                        Fixe
+                                {/* Conditions de Location (Moved from Step 4) */}
+                                {transactionType === 'RENTAL' && (
+                                    <section className="space-y-6 pt-6 border-t">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <FileText className="text-[#00BFA6]" /> Conditions de Location
+                                        </h2>
+                                        <div className="space-y-6">
+                                            {/* Caution & Charges & Disponibilité Group */}
+                                            <div className="flex flex-col gap-6">
+                                                <div className="flex items-end gap-4 flex-wrap md:flex-nowrap">
+                                                    {/* Caution */}
+                                                    <div className="w-32 flex-shrink-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Caution (Mois)</label>
+                                                        <input 
+                                                            {...register("depositMonths")} 
+                                                            type="number" 
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                                            placeholder="1" 
+                                                        />
                                                     </div>
-                                                </label>
-                                                <label className="flex-1 cursor-pointer">
-                                                    <input type="radio" value="NEGOTIABLE" {...register("priceType")} className="peer sr-only" />
-                                                    <div className="p-3 border-2 rounded-xl text-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white">
-                                                        Négociable
+                                                    
+                                                    {/* Charges */}
+                                                    <div className="flex-shrink-0">
+                                                         <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white group h-[52px]">
+                                                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 group-hover:bg-[#00BFA6]/10 text-gray-500 group-hover:text-[#00BFA6] transition-colors">
+                                                                <Zap className="w-4 h-4" />
+                                                            </div>
+                                                            <input type="checkbox" {...register("chargesIncluded")} className="accent-[#00BFA6] w-5 h-5" />
+                                                            <span className="font-bold text-gray-900 text-sm">Charges Comprises</span>
+                                                        </label>
                                                     </div>
-                                                </label>
+
+                                                    {/* Disponibilité */}
+                                                    <div className="flex-1 relative">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Disponibilité</label>
+                                                        <div className="flex gap-4">
+                                                            <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
+                                                                <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => setAvailabilityMode('IMMEDIATE')} className="accent-[#00BFA6] w-4 h-4" />
+                                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Immédiate</span>
+                                                            </label>
+                                                            <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
+                                                                <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => setAvailabilityMode('DATE')} className="accent-[#00BFA6] w-4 h-4" />
+                                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Date précise</span>
+                                                            </label>
+                                                        </div>
+                                                        {errors.availableDate && <p className="text-red-500 text-sm mt-1">{errors.availableDate.message}</p>}
+                                                    </div>
+                                                </div>
+
+                                                {/* Calendar Section - Displayed below to avoid clipping */}
+                                                {availabilityMode === 'DATE' && (
+                                                    <div className="animate-fade-in flex justify-end">
+                                                        <div className="bg-white shadow-lg rounded-xl p-4 border border-gray-100">
+                                                            <InlineCalendar 
+                                                                value={availableDate ? new Date(availableDate) : undefined}
+                                                                onChange={(date) => setValue("availableDate", format(date, "yyyy-MM-dd"), { shouldValidate: true })}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
+                                            </div>
+
+                                            {/* Usage Autorisé - Card Style */}
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-3">Usage Autorisé</label>
+                                                <div className="flex gap-4 flex-wrap">
+                                                    <label className="cursor-pointer">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="usage_selection"
+                                                            className="peer sr-only"
+                                                            checked={watch("rentalUsage")?.length === 1 && watch("rentalUsage")?.includes("HABITATION")}
+                                                            onChange={() => setValue("rentalUsage", ["HABITATION"])}
+                                                        />
+                                                        <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
+                                                            Habitation uniquement
+                                                        </div>
+                                                    </label>
+
+                                                    <label className="cursor-pointer">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="usage_selection"
+                                                            className="peer sr-only"
+                                                            checked={watch("rentalUsage")?.length === 1 && watch("rentalUsage")?.includes("PROFESSIONNEL")}
+                                                            onChange={() => setValue("rentalUsage", ["PROFESSIONNEL"])}
+                                                        />
+                                                        <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
+                                                            Bureau / Professionnel
+                                                        </div>
+                                                    </label>
+
+                                                    <label className="cursor-pointer">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="usage_selection"
+                                                            className="peer sr-only"
+                                                            checked={watch("rentalUsage")?.length === 2}
+                                                            onChange={() => setValue("rentalUsage", ["HABITATION", "PROFESSIONNEL"])}
+                                                        />
+                                                        <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
+                                                            Les deux
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                {errors.rentalUsage && <p className="text-red-500 text-sm mt-1">{errors.rentalUsage.message}</p>}
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-
-                                {/* Modalité de paiement */}
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Modalités de paiement</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {[
-                                            { id: "MONTHLY", label: "Mensuelle" },
-                                            { id: "QUARTERLY", label: "Trimestrielle" },
-                                            { id: "SEMI_ANNUAL", label: "Semestrielle" },
-                                            { id: "ANNUAL", label: "Annuelle" }
-                                        ].map((modality) => (
-                                            <label key={modality.id} className="cursor-pointer">
-                                                <input type="radio" value={modality.id} {...register("paymentModality")} className="peer sr-only" />
-                                                <div className="p-4 border-2 rounded-xl flex items-center justify-center text-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-gray-50">
-                                                    {modality.label}
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
-                                    {errors.paymentModality && <p className="text-red-500 text-sm mt-1">Veuillez sélectionner une modalité de paiement</p>}
-                                </div>
+                                    </section>
+                                )}
                             </div>
                         </div>
                     )}
 
                     {/* Step 6: Localisation & Contacts */}
                     {currentStep === 6 && (
-                        <div className="w-full max-w-xl animate-fade-in">
+                        <div className="w-full max-w-4xl animate-fade-in">
                             <div className="space-y-8">
                                 {/* Contacts */}
                                 <div>
@@ -2172,27 +2383,34 @@ export default function DepositPage() {
                                     
                                     <div className="space-y-4">
                                         {contacts.map((contact, index) => (
-                                            <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative">
+                                            <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative flex flex-col md:flex-row gap-6 items-start">
                                                 {contacts.length > 1 && (
                                                     <button 
                                                         onClick={() => removeContact(index)}
-                                                        className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                                                        className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors z-10"
                                                     >
                                                         <X className="h-5 w-5" />
                                                     </button>
                                                 )}
                                                 
-                                                <div className="mb-4">
+                                                <div className="flex-1 w-full">
                                                     <label className="block text-sm font-bold text-gray-700 mb-2">
                                                         {index === 0 ? "Numéro principal" : "Autre numéro"}
                                                     </label>
-                                                    <input 
-                                                        type="tel" 
-                                                        value={contact.phone}
-                                                        onChange={(e) => updateContact(index, 'phone', e.target.value)}
-                                                        placeholder="0550..."
-                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none bg-white text-gray-900 font-bold"
-                                                    />
+                                                    <div className="relative">
+                                                        <PhoneInput
+                                                            country={'dz'}
+                                                            value={contact.phone}
+                                                            onChange={(phone) => updateContact(index, 'phone', phone)}
+                                                            enableSearch={true}
+                                                            containerClass="!w-full"
+                                                            inputClass="!w-full !h-[58px] !pl-[60px] !pr-4 !py-4 !border-gray-300 !rounded-xl focus:!ring-2 focus:!ring-[#00BFA6] !bg-white !text-gray-900 !font-bold !text-base !outline-none"
+                                                            buttonClass="!border-gray-300 !rounded-l-xl !bg-white !hover:bg-gray-50 !pl-2 !w-[50px]"
+                                                            dropdownClass="!shadow-xl !rounded-xl !border-gray-200 !mt-2 !z-50 !bg-white !text-gray-900"
+                                                            searchClass="!p-2 !border-b !border-gray-100 !bg-white !text-gray-900"
+                                                            placeholder="550..."
+                                                        />
+                                                    </div>
                                                     {index === 0 && userProfilePhone && contact.phone === userProfilePhone && (
                                                         <div className="mt-2 flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded-lg text-xs font-bold border border-green-100">
                                                             <div className="h-2 w-2 rounded-full bg-green-500"></div>
@@ -2201,39 +2419,33 @@ export default function DepositPage() {
                                                     )}
                                                 </div>
                                                 
-                                                <div className="flex gap-6 flex-wrap">
-                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                <div className="flex gap-4 flex-wrap pt-8">
+                                                    <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#25D366] transition-colors">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={contact.hasWhatsapp}
                                                             onChange={(e) => updateContact(index, 'hasWhatsapp', e.target.checked)}
-                                                            className="accent-[#25D366] w-5 h-5" 
+                                                            className="accent-[#25D366] w-4 h-4" 
                                                         />
-                                                        <span className="font-medium text-gray-700 flex items-center gap-1">
-                                                            WhatsApp
-                                                        </span>
+                                                        <span className="font-medium text-gray-700 text-sm">WhatsApp</span>
                                                     </label>
-                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                    <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#7360f2] transition-colors">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={contact.hasViber}
                                                             onChange={(e) => updateContact(index, 'hasViber', e.target.checked)}
-                                                            className="accent-[#7360f2] w-5 h-5" 
+                                                            className="accent-[#7360f2] w-4 h-4" 
                                                         />
-                                                        <span className="font-medium text-gray-700 flex items-center gap-1">
-                                                            Viber
-                                                        </span>
+                                                        <span className="font-medium text-gray-700 text-sm">Viber</span>
                                                     </label>
-                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                    <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#0088cc] transition-colors">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={contact.hasTelegram}
                                                             onChange={(e) => updateContact(index, 'hasTelegram', e.target.checked)}
-                                                            className="accent-[#0088cc] w-5 h-5" 
+                                                            className="accent-[#0088cc] w-4 h-4" 
                                                         />
-                                                        <span className="font-medium text-gray-700 flex items-center gap-1">
-                                                            Telegram
-                                                        </span>
+                                                        <span className="font-medium text-gray-700 text-sm">Telegram</span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -2254,33 +2466,36 @@ export default function DepositPage() {
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <MapPin className="text-[#00BFA6]" /> Localisation
                                     </h3>
-                                    <div className="space-y-4 bg-gray-50 p-6 rounded-xl border border-gray-200">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Wilaya</label>
-                                            <select {...register("city")} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white">
-                                                <option value="">Sélectionner...</option>
-                                                {WILAYAS.map((wilaya) => (
-                                                    <option key={wilaya.id} value={wilaya.name}>{wilaya.code} - {wilaya.name}</option>
-                                                ))}
-                                            </select>
-                                            {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>}
-                                        </div>
+                                    <div className="space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
+                                        {/* Wilaya, Commune, Quartier - Inline */}
+                                        <div className="flex flex-col md:flex-row gap-4">
+                                            <div className="flex-1">
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Wilaya</label>
+                                                <select {...register("city")} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white">
+                                                    <option value="">Sélectionner...</option>
+                                                    {WILAYAS.map((wilaya) => (
+                                                        <option key={wilaya.id} value={wilaya.name}>{wilaya.code} - {wilaya.name}</option>
+                                                    ))}
+                                                </select>
+                                                {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Commune</label>
-                                            <select {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100 disabled:text-gray-400">
-                                                <option value="">Sélectionner...</option>
-                                                {filteredCommunes.map((commune) => (
-                                                    <option key={commune.id} value={commune.name}>{commune.name}</option>
-                                                ))}
-                                            </select>
-                                            {errors.commune && <p className="text-red-500 text-sm mt-1">{errors.commune.message}</p>}
-                                        </div>
+                                            <div className="flex-1">
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Commune</label>
+                                                <select {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100 disabled:text-gray-400">
+                                                    <option value="">Sélectionner...</option>
+                                                    {filteredCommunes.map((commune) => (
+                                                        <option key={commune.id} value={commune.name}>{commune.name}</option>
+                                                    ))}
+                                                </select>
+                                                {errors.commune && <p className="text-red-500 text-sm mt-1">{errors.commune.message}</p>}
+                                            </div>
 
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Adresse complète</label>
-                                            <input {...register("address")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" placeholder="N° de rue, nom de la rue, quartier..." />
-                                            {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
+                                            <div className="flex-[2]">
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Quartier (Adresse)</label>
+                                                <input {...register("address")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" placeholder="Nom du quartier, rue..." />
+                                                {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
+                                            </div>
                                         </div>
 
                                         <div>
@@ -2526,7 +2741,10 @@ export default function DepositPage() {
                                             Retour à l&apos;upload
                                         </Button>
                                         <Button 
-                                            onClick={handleSubmit(onSubmit)} 
+                                            onClick={handleSubmit(onSubmit, (errors) => {
+                                                console.error("Erreurs de validation:", errors);
+                                                alert(`Veuillez corriger les erreurs suivantes:\n${Object.keys(errors).map(key => `- ${key}: ${(errors as any)[key]?.message}`).join('\n')}`);
+                                            })} 
                                             disabled={isSubmitting}
                                             className="bg-[#00BFA6] hover:bg-[#00908A] text-white px-8 py-3 text-lg font-bold"
                                         >
