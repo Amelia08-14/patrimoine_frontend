@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
-import { useAuth } from '@/hooks/useAuth'; // Assuming this exists or I'll check auth context
 
 const contactSchema = z.object({
   name: z.string().min(5, 'Name must be at least 5 characters').max(150),

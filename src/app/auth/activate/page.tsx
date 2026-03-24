@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
-export default function ActivatePage() {
+function ActivatePageContent() {
   const searchParams = useSearchParams()
   const key = searchParams.get("key")
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
@@ -74,5 +74,24 @@ export default function ActivatePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ActivatePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="flex flex-col items-center">
+              <Loader2 className="h-16 w-16 text-[#00BFA6] animate-spin mb-4" />
+              <h2 className="text-xl font-bold text-gray-900">Activation en cours...</h2>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <ActivatePageContent />
+    </Suspense>
   )
 }

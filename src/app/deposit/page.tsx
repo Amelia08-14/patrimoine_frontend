@@ -597,6 +597,16 @@ export default function DepositPage() {
     
   }, [router])
 
+  useEffect(() => {
+    if (!userProfilePhone) return
+    setContacts((prev) => {
+      if (prev.length === 1 && prev[0].phone === "") {
+        return [{ phone: userProfilePhone, hasWhatsapp: false, hasViber: false, hasTelegram: false }]
+      }
+      return prev
+    })
+  }, [userProfilePhone])
+
   const {
     register,
     handleSubmit,
@@ -1000,6 +1010,7 @@ export default function DepositPage() {
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     // Récupérer toutes les photos organisées
+    // Récupérer toutes les photos organisées
     const allPhotos = photoCategories.flatMap(c => c.photos)
     
     if (allPhotos.length < 3) {
@@ -1038,12 +1049,6 @@ export default function DepositPage() {
         if (!data.rooms && data.bedrooms) formData.append('rooms', data.bedrooms)
         else if (data.rooms) formData.append('rooms', data.rooms)
         else formData.append('rooms', '0')
-
-        // Description is now directly in data.description, no need to force it here if it exists in data
-        if (!data.description) formData.append('description', 'Pas de description fournie')
-    } else {
-        // Pour les autres types, si description est vide
-        if (!data.description) formData.append('description', 'Pas de description fournie')
     }
 
     // Ajouter toutes les autres données du formulaire
@@ -1196,37 +1201,30 @@ export default function DepositPage() {
       setContacts(newContacts)
   }
 
-  // Effect to ensure phone is filled when profile data is ready
-  useEffect(() => {
-    if (userProfilePhone && contacts.length === 1 && contacts[0].phone === "") {
-        setContacts([{ phone: userProfilePhone, hasWhatsapp: false, hasViber: false, hasTelegram: false }])
-    }
-  }, [userProfilePhone])
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="bg-[#00908A] h-[200px] w-full absolute top-0 left-0 z-0"></div>
 
-        <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-4">
+        <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-[96px] md:pt-4">
             
             {/* Progress Stepper */}
-            <div className="bg-white rounded-full px-8 py-4 shadow-lg mb-8">
-                <div className="flex items-center gap-4">
-                    {steps.map((step) => (
-                        <div 
-                            key={step.id} 
-                            className={cn("flex items-center cursor-pointer hover:opacity-80 transition-opacity", step.id > currentStep && "cursor-not-allowed opacity-50")}
-                            onClick={() => goToStep(step.id)}
-                        >
-                            <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all",
-                                currentStep > step.id ? "bg-[#00BFA6] border-[#00BFA6] text-white" : 
-                                currentStep === step.id ? "border-[#00BFA6] text-[#00BFA6]" : "border-gray-200 text-gray-300"
-                            )}>
+            <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-4xl">
+                <div className="flex items-center w-full">
+                    {steps.map((step, idx) => (
+                        <div key={step.id} className="flex items-center flex-1 min-w-0">
+                            <div
+                                className={cn(
+                                    "w-7 h-7 md:w-7 md:h-7 rounded-full flex items-center justify-center text-xs md:text-xs font-bold border-2 transition-all cursor-pointer hover:opacity-80",
+                                    step.id > currentStep && "cursor-not-allowed opacity-50",
+                                    currentStep > step.id ? "bg-[#00BFA6] border-[#00BFA6] text-white" :
+                                    currentStep === step.id ? "border-[#00BFA6] text-[#00BFA6]" : "border-gray-400 text-gray-600"
+                                )}
+                                onClick={() => goToStep(step.id)}
+                            >
                                 {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
                             </div>
-                            {step.id < steps.length && (
-                                <div className={cn("w-8 h-0.5 mx-2", currentStep > step.id ? "bg-[#00BFA6]" : "bg-gray-200")}></div>
+                            {idx < steps.length - 1 && (
+                                <div className={cn("flex-1 min-w-0 h-0.5 mx-2", currentStep > step.id ? "bg-[#00BFA6]" : "bg-gray-300")}></div>
                             )}
                         </div>
                     ))}
@@ -1234,8 +1232,8 @@ export default function DepositPage() {
             </div>
 
             {/* Main Card */}
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden min-h-[500px] flex flex-col">
-                <div className="p-8 border-b border-gray-100 flex items-center">
+            <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden min-h-[500px] flex flex-col">
+                <div className="p-4 md:p-8 border-b border-gray-100 flex items-center">
                     {currentStep > 1 && (
                         <button 
                             onClick={prevStep}
@@ -1245,35 +1243,35 @@ export default function DepositPage() {
                             Retour
                         </button>
                     )}
-                    <h1 className="text-2xl font-bold text-gray-800">{getStepTitle()}</h1>
+                    <h1 className="text-lg md:text-2xl font-bold text-gray-800">{getStepTitle()}</h1>
                 </div>
 
-                <div className="p-12 flex-1 flex flex-col items-center justify-center text-left">
+                <div className="p-6 md:p-12 flex-1 flex flex-col items-center justify-center text-left">
                     
                     {/* Step 1: Transaction Type */}
                     {currentStep === 1 && (
-                        <div className="w-full max-w-4xl animate-fade-in py-10">
-                            <div className="flex justify-center gap-16 md:gap-32">
+                        <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
+                            <div className="flex justify-center gap-8 md:gap-32">
                                 {/* Location */}
                                 <div 
                                     onClick={() => handleTransactionTypeClick("RENTAL")}
                                     className="flex flex-col items-center gap-6 cursor-pointer group"
                                 >
                                     <div className={cn(
-                                        "w-40 h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                        "w-28 h-28 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
                                         transactionType === "RENTAL" 
                                             ? "bg-white border-[#00BFA6] shadow-[0_10px_20px_rgba(0,191,166,0.3)] transform -translate-y-2" 
                                             : "bg-white border-gray-100 shadow-[0_10px_20px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
                                     )}>
                                         <div className={cn(
-                                            "w-32 h-32 rounded-full flex items-center justify-center transition-colors duration-300",
+                                            "w-20 h-20 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-colors duration-300",
                                             transactionType === "RENTAL" ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                                         )}>
-                                            <Home className="h-16 w-16" />
+                                            <Home className="h-10 w-10 md:h-16 md:w-16" />
                                         </div>
                                     </div>
                                     <span className={cn(
-                                        "text-2xl font-bold transition-colors",
+                                        "text-lg md:text-2xl font-bold transition-colors",
                                         transactionType === "RENTAL" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                     )}>
                                         Location
@@ -1286,20 +1284,20 @@ export default function DepositPage() {
                                     className="flex flex-col items-center gap-6 cursor-pointer group"
                                 >
                                     <div className={cn(
-                                        "w-40 h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                        "w-28 h-28 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
                                         transactionType === "SALE" 
                                             ? "bg-white border-[#00BFA6] shadow-[0_10px_20px_rgba(0,191,166,0.3)] transform -translate-y-2" 
                                             : "bg-white border-gray-100 shadow-[0_10px_20px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
                                     )}>
                                         <div className={cn(
-                                            "w-32 h-32 rounded-full flex items-center justify-center transition-colors duration-300",
+                                            "w-20 h-20 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-colors duration-300",
                                             transactionType === "SALE" ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                                         )}>
-                                            <Key className="h-16 w-16" />
+                                            <Key className="h-10 w-10 md:h-16 md:w-16" />
                                         </div>
                                     </div>
                                     <span className={cn(
-                                        "text-2xl font-bold transition-colors",
+                                        "text-lg md:text-2xl font-bold transition-colors",
                                         transactionType === "SALE" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                     )}>
                                         Vente

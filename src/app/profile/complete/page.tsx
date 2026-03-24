@@ -8,19 +8,20 @@ import { Button } from "@/components/ui/button"
 import { Building2, User, MapPin, Phone, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WILAYAS } from "@/data/wilayas"
+import { COMMUNES } from "@/data/communes"
 
 // Schéma de validation
 const profileSchema = z.object({
-  civility: z.enum(["M", "MME"]).optional(),
-  lastName: z.string().min(2, "Nom requis").optional(),
-  firstName: z.string().min(2, "Prénom requis").optional(),
+  civility: z.enum(["M", "MME"], { message: "Civilité requise" }),
+  lastName: z.string().min(2, "Nom requis"),
+  firstName: z.string().min(2, "Prénom requis"),
   dateOfBirth: z.string().optional(),
   
   phone: z.string().min(9, "Téléphone requis"),
   landline: z.string().optional(),
   address: z.string().min(5, "Adresse requise"),
-  wilaya: z.string().min(1, "Wilaya requise"), // Simplifié pour l'exemple
-  commune: z.string().min(1, "Commune requise"), // Simplifié
+  wilaya: z.string().min(1, "Wilaya requise"),
+  commune: z.string().min(1, "Commune requise"),
 
   // Société Specific
   commercialRegister: z.string().optional(),
@@ -42,6 +43,8 @@ export default function CompleteProfilePage() {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
   })
+  const wilayaRegister = register("wilaya")
+  const communeRegister = register("commune")
 
   useEffect(() => {
     // Charger l'utilisateur depuis le localStorage
@@ -77,7 +80,7 @@ export default function CompleteProfilePage() {
         if (data.agreementDocument?.[0]) formData.append('agreementDocument', data.agreementDocument[0])
         if (data.agencyLogo?.[0]) formData.append('agencyLogo', data.agencyLogo[0])
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/profile`, {
             method: 'PUT',
             headers: { 
                 'Authorization': `Bearer ${token}`
@@ -92,7 +95,8 @@ export default function CompleteProfilePage() {
             alert("Profil mis à jour avec succès !")
             window.location.href = '/'
         } else {
-            alert("Erreur lors de la mise à jour")
+            const text = await response.text().catch(() => "")
+            alert(text || "Erreur lors de la mise à jour")
         }
     } catch (error) {
         console.error(error)
@@ -209,6 +213,7 @@ export default function CompleteProfilePage() {
                                 <span className="text-sm font-bold">Madame</span>
                             </label>
                         </div>
+                        {errors.civility && <p className="text-red-500 text-xs pl-1 mt-1">{errors.civility.message}</p>}
                     </div>
                     
                     <div className="hidden md:block"></div> {/* Spacer */}
@@ -216,10 +221,12 @@ export default function CompleteProfilePage() {
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Nom *</label>
                         <input {...register("lastName")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                        {errors.lastName && <p className="text-red-500 text-xs pl-1">{errors.lastName.message}</p>}
                     </div>
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Prénom *</label>
                         <input {...register("firstName")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                        {errors.firstName && <p className="text-red-500 text-xs pl-1">{errors.firstName.message}</p>}
                     </div>
                     
                     {user.userType === 'PARTICULIER' && (
@@ -244,25 +251,38 @@ export default function CompleteProfilePage() {
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Adresse complète *</label>
                         <input {...register("address")} placeholder="Cité, Rue, Bâtiment..." className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                        {errors.address && <p className="text-red-500 text-xs pl-1">{errors.address.message}</p>}
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-gray-500 uppercase ml-1">Wilaya *</label>
-                            <select {...register("wilaya")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500">
+                            <select
+                              {...wilayaRegister}
+                              onChange={(e) => {
+                                wilayaRegister.onChange(e)
+                                setValue("commune", "")
+                              }}
+                              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500"
+                            >
                                 <option value="">Sélectionner</option>
                                 {WILAYAS.map((wilaya) => (
                                     <option key={wilaya.id} value={wilaya.code}>{wilaya.code} - {wilaya.name}</option>
                                 ))}
                             </select>
+                            {errors.wilaya && <p className="text-red-500 text-xs pl-1">{errors.wilaya.message}</p>}
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-gray-500 uppercase ml-1">Commune *</label>
-                            <select {...register("commune")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500">
+                            <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 disabled:opacity-60">
                                 <option value="">Sélectionner</option>
-                                <option value="Alger Centre">Alger Centre</option>
-                                <option value="Hydra">Hydra</option>
+                                {COMMUNES.filter((c) => c.wilayaCode === watch("wilaya")).map((c) => (
+                                  <option key={c.id} value={c.name}>
+                                    {c.name}
+                                  </option>
+                                ))}
                             </select>
+                            {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
                         </div>
                     </div>
 
@@ -270,6 +290,7 @@ export default function CompleteProfilePage() {
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-gray-500 uppercase ml-1">Téléphone Mobile *</label>
                             <input type="tel" {...register("phone")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                            {errors.phone && <p className="text-red-500 text-xs pl-1">{errors.phone.message}</p>}
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-gray-500 uppercase ml-1">Téléphone Fixe</label>

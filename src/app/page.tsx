@@ -229,7 +229,7 @@ const CategoryCarousel = ({ categories, onCategoryClick }: { categories: any[], 
                         }}
                     >
                         <div className={cn(
-                            "w-24 h-24 rounded-[2rem] flex items-center justify-center transition-all duration-300",
+                            "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300",
                             isActive 
                                 ? cn("shadow-2xl shadow-gray-200 border-2 border-transparent ring-4 ring-gray-50", getCategoryColorById(category.id).replace('bg-', 'bg-').replace('500', '100').replace('400', '100'))
                                 : "bg-white shadow-md border border-gray-100"

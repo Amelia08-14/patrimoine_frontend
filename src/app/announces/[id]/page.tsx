@@ -485,14 +485,6 @@ export default function AnnounceDetailsPage() {
               </div>
             </div>
 
-            {/* Description */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Description</h2>
-              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                {property.description}
-              </p>
-            </div>
-
             {/* Caractéristiques Détaillées (New Section) */}
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Caractéristiques Détaillées</h2>

@@ -54,13 +54,15 @@ const researchSchema = z.object({
   receiveAlert: z.boolean().optional(),
 });
 
-type ResearchFormValues = z.infer<typeof researchSchema>;
+type ResearchFormInput = z.input<typeof researchSchema>;
+type ResearchFormOutput = z.output<typeof researchSchema>;
 
 // Steps
 const STEPS = ['Transaction', 'Type de Bien', 'Critères', 'Budget & Lieu', 'Vos Coordonnées'];
 
 export default function ResearchPage() {
   const router = useRouter();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refData, setRefData] = useState<{
@@ -77,7 +79,7 @@ export default function ResearchPage() {
     amenities: [],
   });
 
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<ResearchFormValues>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<ResearchFormInput, any, ResearchFormOutput>({
     resolver: zodResolver(researchSchema),
     defaultValues: {
       transaction: TransactionType.SALE,
@@ -96,8 +98,8 @@ export default function ResearchPage() {
     const fetchData = async () => {
       try {
         const [retRes, cityRes] = await Promise.all([
-          axios.get('http://localhost:8000/real-estate-types'), // Adjust endpoint
-          axios.get('http://localhost:8000/cities'),
+          axios.get(`${apiUrl}/real-estate-types`), // Adjust endpoint
+          axios.get(`${apiUrl}/cities`),
         ]);
         setRefData(prev => ({ ...prev, realEstateTypes: retRes.data, cities: cityRes.data }));
       } catch (err) {
@@ -112,7 +114,7 @@ export default function ResearchPage() {
   const selectedCityId = watch('cityId');
   useEffect(() => {
     if (selectedCityId) {
-      axios.get(`http://localhost:8000/cities/${selectedCityId}/towns`) // Adjust endpoint
+      axios.get(`${apiUrl}/cities/${selectedCityId}/towns`) // Adjust endpoint
         .then(res => setRefData(prev => ({ ...prev, towns: res.data })))
         .catch(err => console.error(err));
     }
@@ -122,13 +124,13 @@ export default function ResearchPage() {
   const selectedRetId = watch('realEstateTypeId');
   useEffect(() => {
     if (selectedRetId) {
-      axios.get(`http://localhost:8000/real-estate-types/${selectedRetId}/property-types`) // Adjust endpoint
+      axios.get(`${apiUrl}/real-estate-types/${selectedRetId}/property-types`) // Adjust endpoint
         .then(res => setRefData(prev => ({ ...prev, propertyTypes: res.data })))
         .catch(err => console.error(err));
     }
   }, [selectedRetId]);
 
-  const onSubmit = async (data: ResearchFormValues) => {
+  const onSubmit = async (data: ResearchFormOutput) => {
     setLoading(true);
     try {
       // Transform data for backend
@@ -137,7 +139,7 @@ export default function ResearchPage() {
         towns: JSON.stringify(data.towns),
         amenities: JSON.stringify(data.amenities),
       };
-      await axios.post('http://localhost:8000/entrusted-research', payload);
+      await axios.post(`${apiUrl}/entrusted-research`, payload);
       alert('Recherche confiée avec succès !');
       router.push('/');
     } catch (err) {
