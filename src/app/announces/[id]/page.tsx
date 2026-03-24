@@ -150,7 +150,28 @@ export default function AnnounceDetailsPage() {
 
   const property = announce.property
   const images = property.images || []
-  const amenitiesIds = property.amenities ? JSON.parse(property.amenities) : []
+  const parseAmenitiesIds = (raw: any): string[] => {
+    if (!raw) return []
+    if (Array.isArray(raw)) return raw.map((x) => String(x))
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw)
+        return parseAmenitiesIds(parsed)
+      } catch {
+        return []
+      }
+    }
+    if (typeof raw === "object") {
+      const out: string[] = []
+      for (const v of Object.values(raw as Record<string, any>)) {
+        if (Array.isArray(v)) out.push(...v.map((x) => String(x)))
+      }
+      return out
+    }
+    return []
+  }
+
+  const amenitiesIds = parseAmenitiesIds(property.amenities)
 
   // Helper to filter amenities
   const getAmenitiesList = (sourceList: any[]) => {
