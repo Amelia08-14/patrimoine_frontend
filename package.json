@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "set NEXT_DISABLE_TURBOPACK=1&& next dev -p 3001",
-    "build": "next build",
+    "dev": "powershell -NoProfile -Command \"$env:NEXT_DISABLE_TURBOPACK='1'; next dev -p 3001\"",
+    "build": "powershell -NoProfile -Command \"$env:NEXT_DISABLE_TURBOPACK='1'; next build\"",
     "start": "next start -p 3001",
     "lint": "eslint"
   },

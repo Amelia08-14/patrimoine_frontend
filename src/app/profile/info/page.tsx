@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Lock, Save, Loader2 } from "lucide-react";
+import { User, Lock, Save, Loader2, Building2, Upload, Check } from "lucide-react";
 
 export default function ProfileInfoPage() {
   const [user, setUser] = useState<any>(null);
@@ -19,7 +19,18 @@ export default function ProfileInfoPage() {
     address: "",
     currentPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    // Champs Société
+    companyName: "",
+    commercialRegister: "",
+    agreementNumber: "",
+    position: ""
+  });
+  
+  const [files, setFiles] = useState({
+    rcDocument: null as File | null,
+    agreementDocument: null as File | null,
+    agencyLogo: null as File | null
   });
 
   useEffect(() => {
@@ -36,7 +47,11 @@ export default function ProfileInfoPage() {
             lastName: userData.lastName || "",
             email: userData.email || "",
             phone: userData.phone || "",
-            address: userData.address || ""
+            address: userData.address || "",
+            companyName: userData.companyName || "",
+            commercialRegister: userData.commercialRegister || "",
+            agreementNumber: userData.agreementNumber || "",
+            position: userData.position || ""
         }));
         setLoading(false);
     } else {
@@ -49,23 +64,60 @@ export default function ProfileInfoPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, files: selectedFiles } = e.target;
+    if (selectedFiles && selectedFiles.length > 0) {
+        setFiles(prev => ({ ...prev, [name]: selectedFiles[0] }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     
     try {
         const token = localStorage.getItem('token');
-        // This endpoint needs to be implemented on backend
-        // await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, formData, { ... });
+        const submitData = new FormData();
         
-        // Simulation
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Update local storage
-        const updatedUser = { ...user, ...formData };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        alert("Profil mis à jour avec succès !");
+        // Append text data
+        Object.entries(formData).forEach(([key, value]) => {
+            if (value) submitData.append(key, value);
+        });
+
+        // Append files if they exist
+        if (files.rcDocument) submitData.append('rcDocument', files.rcDocument);
+        if (files.agreementDocument) submitData.append('agreementDocument', files.agreementDocument);
+        if (files.agencyLogo) submitData.append('agencyLogo', files.agencyLogo);
+
+        // Real API call
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/profile`, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `Bearer ${token}`
+            },
+            body: submitData,
+        });
+
+        if (response.ok) {
+            const updatedUser = await response.json();
+            
+            // Generate full URL for logo if it's a relative path from backend
+            if (updatedUser.agencyLogoUrl && !updatedUser.agencyLogoUrl.startsWith('http')) {
+                 updatedUser.agencyLogoUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${updatedUser.agencyLogoUrl}`;
+            }
+
+            localStorage.setItem('user', JSON.stringify({ ...user, ...updatedUser }));
+            setUser({ ...user, ...updatedUser });
+            alert("Profil mis à jour avec succès !");
+            
+            // Si le mot de passe a été changé, on peut réinitialiser les champs
+            if (formData.newPassword) {
+                setFormData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
+            }
+        } else {
+            const text = await response.text().catch(() => "");
+            alert(text || "Erreur lors de la mise à jour");
+        }
     } catch (error) {
         console.error(error);
         alert("Erreur lors de la mise à jour");
@@ -95,7 +147,7 @@ export default function ProfileInfoPage() {
                                 name="firstName" 
                                 value={formData.firstName} 
                                 onChange={handleChange} 
-                                className="bg-gray-50 border-gray-200 focus:border-[#00BFA6]" 
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
                             />
                         </div>
                         <div className="space-y-2">
@@ -104,7 +156,7 @@ export default function ProfileInfoPage() {
                                 name="lastName" 
                                 value={formData.lastName} 
                                 onChange={handleChange} 
-                                className="bg-gray-50 border-gray-200 focus:border-[#00BFA6]" 
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
                             />
                         </div>
                         <div className="space-y-2">
@@ -113,7 +165,7 @@ export default function ProfileInfoPage() {
                                 name="email" 
                                 value={formData.email} 
                                 disabled 
-                                className="bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed" 
+                                className="bg-gray-100 border-2 border-gray-200 text-gray-500 cursor-not-allowed font-medium h-[42px]" 
                             />
                         </div>
                         <div className="space-y-2">
@@ -122,7 +174,7 @@ export default function ProfileInfoPage() {
                                 name="phone" 
                                 value={formData.phone} 
                                 onChange={handleChange} 
-                                className="bg-gray-50 border-gray-200 focus:border-[#00BFA6]" 
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
                             />
                         </div>
                         <div className="col-span-1 md:col-span-2 space-y-2">
@@ -131,11 +183,85 @@ export default function ProfileInfoPage() {
                                 name="address" 
                                 value={formData.address} 
                                 onChange={handleChange} 
-                                className="bg-gray-50 border-gray-200 focus:border-[#00BFA6]" 
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
                             />
                         </div>
                     </div>
                 </div>
+
+                {/* Société Section */}
+                {user.userType === 'SOCIETE' && (
+                    <div>
+                        <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
+                            <Building2 className="w-5 h-5 text-gray-400" /> Informations Société
+                        </h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Raison Sociale</label>
+                                <Input 
+                                    name="companyName" 
+                                    value={formData.companyName} 
+                                    onChange={handleChange} 
+                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Poste du représentant</label>
+                                <Input 
+                                    name="position" 
+                                    value={formData.position} 
+                                    onChange={handleChange} 
+                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Registre Commerce</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.rcDocument || user.rcDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                    <span className="flex items-center gap-2">
+                                        {files.rcDocument || user.rcDocumentUrl ? (
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.rcDocument ? files.rcDocument.name : 'Document existant'}</>
+                                        ) : (
+                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                        )}
+                                    </span>
+                                    <input type="file" name="rcDocument" onChange={handleFileChange} className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
+                                </label>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Agrément</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agreementDocument || user.agreementDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                    <span className="flex items-center gap-2">
+                                        {files.agreementDocument || user.agreementDocumentUrl ? (
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agreementDocument ? files.agreementDocument.name : 'Document existant'}</>
+                                        ) : (
+                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                        )}
+                                    </span>
+                                    <input type="file" name="agreementDocument" onChange={handleFileChange} className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
+                                </label>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Logo de l'agence</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agencyLogo || user.agencyLogoUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                    <span className="flex items-center gap-2">
+                                        {files.agencyLogo || user.agencyLogoUrl ? (
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agencyLogo ? files.agencyLogo.name : 'Logo existant'}</>
+                                        ) : (
+                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                        )}
+                                    </span>
+                                    <input type="file" name="agencyLogo" onChange={handleFileChange} className="hidden" accept=".jpg,.jpeg,.png,.svg,.webp" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Password Change */}
                 <div>
@@ -151,7 +277,7 @@ export default function ProfileInfoPage() {
                                 value={formData.newPassword} 
                                 onChange={handleChange} 
                                 placeholder="Laisser vide pour ne pas changer"
-                                className="bg-gray-50 border-gray-200 focus:border-[#00BFA6]" 
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
                             />
                         </div>
                         {formData.newPassword && (
@@ -162,7 +288,7 @@ export default function ProfileInfoPage() {
                                     name="confirmPassword" 
                                     value={formData.confirmPassword} 
                                     onChange={handleChange} 
-                                    className="bg-gray-50 border-gray-200 focus:border-[#00BFA6]" 
+                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
                                 />
                             </div>
                         )}

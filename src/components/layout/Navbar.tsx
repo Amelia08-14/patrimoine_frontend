@@ -196,12 +196,31 @@ export function Navbar() {
                        <span className="text-xs font-medium">{getNavbarSubtitle(user)}</span>
                      </div>
                   </div>
-                  <div 
-                    className="h-10 w-10 bg-[#003B4A] rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all" 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  >
-                     {userInitials}
-                  </div>
+                  {user?.userType === 'SOCIETE' && user?.agencyLogoUrl ? (
+                      <div 
+                        className="h-10 w-10 rounded-full cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all overflow-hidden border border-gray-200 bg-white flex items-center justify-center"
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                      >
+                          <img 
+                              src={user.agencyLogoUrl.startsWith('http') ? user.agencyLogoUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${user.agencyLogoUrl.replace(/^\/+/, '')}`} 
+                              alt="Logo agence" 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                  // Fallback to initials if image fails to load
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement!.innerHTML = userInitials;
+                                  e.currentTarget.parentElement!.className = "h-10 w-10 bg-[#003B4A] rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all";
+                              }}
+                          />
+                      </div>
+                  ) : (
+                      <div 
+                        className="h-10 w-10 bg-[#003B4A] rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all" 
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                      >
+                         {userInitials}
+                      </div>
+                  )}
 
                   {/* Dropdown Menu */}
                   {isMenuOpen && (

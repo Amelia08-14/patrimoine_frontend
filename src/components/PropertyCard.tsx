@@ -48,11 +48,11 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
   };
 
   return (
-    <Link href={`/announces/${announce.id}`} className="block h-full">
-      <div className="bg-white rounded-3xl shadow-md hover:shadow-2xl transition-all duration-300 group cursor-pointer border border-gray-100 h-full flex flex-col overflow-hidden relative">
+    <Link href={`/announces/${announce.id}`} className="block h-full w-full">
+      <div className="bg-white rounded-3xl shadow-md hover:shadow-2xl transition-all duration-300 group cursor-pointer border border-gray-100 h-full w-full flex flex-col overflow-hidden relative">
         
         {/* Image Section - Full Bleed */}
-        <div className="relative h-[260px] overflow-hidden">
+        <div className="relative h-[260px] min-h-[260px] overflow-hidden">
           {announce.property?.images?.[0] ? (
             <img 
                 src={getImageUrl(announce.property.images[0].url) || ''}
@@ -118,24 +118,26 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
         </div>
 
         {/* Content Section */}
-        <div className="p-6 flex flex-col gap-2 flex-1 relative">
-            {/* Category */}
-            <span className="text-[#00BFA6] font-extrabold text-[11px] uppercase tracking-widest">
-                {categoryName}
-            </span>
-            
-            {/* Title */}
-            <h3 className="text-gray-900 font-bold text-lg leading-tight line-clamp-1 group-hover:text-[#00BFA6] transition-colors">
-                {announce.property?.description ? announce.property.description.substring(0, 40) + (announce.property.description.length > 40 ? "..." : "") : `${categoryName} à ${locationName}`}
-            </h3>
+        <div className="p-6 flex flex-col justify-between flex-1 relative min-h-[140px]">
+            <div className="flex flex-col gap-2">
+                {/* Category */}
+                <span className="text-[#00BFA6] font-extrabold text-[11px] uppercase tracking-widest">
+                    {categoryName}
+                </span>
+                
+                {/* Title */}
+                <h3 className="text-gray-900 font-bold text-lg leading-tight line-clamp-1 group-hover:text-[#00BFA6] transition-colors" title={announce.title || `${categoryName} à ${locationName}`}>
+                    {announce.title ? announce.title : `${categoryName} à ${locationName}`}
+                </h3>
+            </div>
             
             {/* Price & Location & Agency */}
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-end justify-between mt-auto pt-2">
                 <div className="flex flex-col">
-                    <span className="text-2xl font-black text-gray-900">
+                    <span className="text-2xl font-black text-gray-900 leading-none">
                         {new Intl.NumberFormat('fr-DZ').format(announce.price)} <span className="text-sm text-gray-500 font-bold">DA</span>
                     </span>
-                    <div className="flex items-center text-gray-400 text-xs font-semibold gap-1.5 mt-1">
+                    <div className="flex items-center text-gray-400 text-xs font-semibold gap-1.5 mt-2">
                         <MapPin className="h-4 w-4 text-[#00BFA6]" />
                         {locationName}
                     </div>

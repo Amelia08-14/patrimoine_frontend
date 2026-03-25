@@ -46,13 +46,38 @@ const getIconColorById = (categoryId: string) => {
   }
 }
 
-// Section Carousel avec flèches de navigation
+// Section Carousel avec flèches de navigation et auto-scroll
 const CarouselSection = ({ title, categoryId, items }: { title: string, categoryId: string, items: any[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [isHovered, setIsHovered] = useState(false)
+
+  // Auto-scroll effect
+  useEffect(() => {
+    if (items.length <= 4 || isHovered) return;
+
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        // Calculate exact width of one card + gap (using an approximation based on current layout)
+        // lg:min-w-[calc(25%-1.125rem)] + 1.5rem gap (gap-6 = 24px)
+        const itemWidth = (clientWidth / 4); // Roughly one item's width including gap
+        
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          // Reached the end, scroll back to start smoothly
+          scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          // Scroll one item width to the right
+          scrollRef.current.scrollBy({ left: itemWidth, behavior: 'smooth' });
+        }
+      }
+    }, 4000); // Change slide every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [items.length, isHovered]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 400;
+      const scrollAmount = scrollRef.current.clientWidth / 4; // Scroll by roughly one item width
       scrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -63,7 +88,11 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
   if (items.length === 0) return null;
 
   return (
-    <section className="py-8 bg-white border-b border-gray-100">
+    <section 
+      className="py-8 bg-white border-b border-gray-100"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -90,12 +119,14 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
 
         <div 
           ref={scrollRef}
-          className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory hide-scrollbar"
+          className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory hide-scrollbar scroll-smooth items-stretch"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((item) => (
-            <div key={item.id} className="min-w-[280px] md:min-w-[300px] lg:min-w-[calc(25%-1.2rem)] snap-start">
-              <PropertyCard announce={item} />
+            <div key={item.id} className="min-w-[280px] md:min-w-[300px] lg:w-[calc(25%-1.125rem)] lg:min-w-[calc(25%-1.125rem)] flex-shrink-0 snap-start flex">
+              <div className="w-full">
+                <PropertyCard announce={item} />
+              </div>
             </div>
           ))}
         </div>

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
-import { Building2, User, MapPin, Phone, Upload } from "lucide-react"
+import { Building2, User, MapPin, Phone, Upload, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
@@ -27,6 +27,7 @@ const profileSchema = z.object({
   commercialRegister: z.string().optional(),
   agreementNumber: z.string().optional(),
   companyName: z.string().optional(),
+  position: z.string().optional(),
   
   // Files
   rcDocument: z.any().optional(),
@@ -166,10 +167,6 @@ export default function CompleteProfilePage() {
             </div>
 
             <div className="flex items-center gap-2 text-sm text-gray-400">
-               <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full w-full bg-[#00BFA6]"></div>
-               </div>
-               <span>Étape 2/2</span>
             </div>
          </div>
       </div>
@@ -194,45 +191,51 @@ export default function CompleteProfilePage() {
                     {user.userType === 'PARTICULIER' ? 'Mes coordonnées' : 'Représentant légal'}
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="col-span-2 md:col-span-1">
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-3">Civilité *</label>
+                <div className={cn("grid grid-cols-1 gap-6 items-start", user.userType === 'SOCIETE' ? "md:grid-cols-4" : "md:grid-cols-3")}>
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">Civilité *</label>
                         <div className="flex gap-4">
                             <label className={cn(
-                                "flex-1 flex items-center justify-center gap-2 cursor-pointer border rounded-xl p-3 transition-all",
-                                watch("civility") === "M" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:bg-gray-50"
+                                "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
+                                watch("civility") === "M" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:border-gray-300 bg-gray-50"
                             )}>
                                 <input type="radio" value="M" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold">Monsieur</span>
+                                <span className="text-sm font-bold text-gray-700">Mr</span>
                             </label>
                             <label className={cn(
-                                "flex-1 flex items-center justify-center gap-2 cursor-pointer border rounded-xl p-3 transition-all",
-                                watch("civility") === "MME" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:bg-gray-50"
+                                "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
+                                watch("civility") === "MME" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:border-gray-300 bg-gray-50"
                             )}>
                                 <input type="radio" value="MME" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold">Madame</span>
+                                <span className="text-sm font-bold text-gray-700">Mme</span>
                             </label>
                         </div>
                         {errors.civility && <p className="text-red-500 text-xs pl-1 mt-1">{errors.civility.message}</p>}
                     </div>
-                    
-                    <div className="hidden md:block"></div> {/* Spacer */}
 
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Nom *</label>
-                        <input {...register("lastName")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">Nom *</label>
+                        <input {...register("lastName")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                         {errors.lastName && <p className="text-red-500 text-xs pl-1">{errors.lastName.message}</p>}
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Prénom *</label>
-                        <input {...register("firstName")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">Prénom *</label>
+                        <input {...register("firstName")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                         {errors.firstName && <p className="text-red-500 text-xs pl-1">{errors.firstName.message}</p>}
                     </div>
                     
+                    {user.userType === 'SOCIETE' && (
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">Poste *</label>
+                            <input {...register("position")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" placeholder="Ex: Gérant, Directeur..." />
+                            {errors.position && <p className="text-red-500 text-xs pl-1">{errors.position.message}</p>}
+                        </div>
+                    )}
+                    
                     {user.userType === 'PARTICULIER' && (
-                        <div className="col-span-2 space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Date de naissance *</label>
-                            <input type="date" {...register("dateOfBirth")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                        <div className="col-span-1 md:col-span-3 space-y-1 mt-2">
+                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">Date de naissance *</label>
+                            <input type="date" {...register("dateOfBirth")} className="w-full md:w-1/3 px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                         </div>
                     )}
                 </div>
@@ -248,43 +251,42 @@ export default function CompleteProfilePage() {
                 </h3>
                 
                 <div className="space-y-6">
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Adresse complète *</label>
-                        <input {...register("address")} placeholder="Cité, Rue, Bâtiment..." className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
-                        {errors.address && <p className="text-red-500 text-xs pl-1">{errors.address.message}</p>}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Wilaya *</label>
-                            <select
-                              {...wilayaRegister}
-                              onChange={(e) => {
-                                wilayaRegister.onChange(e)
-                                setValue("commune", "")
-                              }}
-                              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500"
-                            >
-                                <option value="">Sélectionner</option>
-                                {WILAYAS.map((wilaya) => (
-                                    <option key={wilaya.id} value={wilaya.code}>{wilaya.code} - {wilaya.name}</option>
-                                ))}
-                            </select>
-                            {errors.wilaya && <p className="text-red-500 text-xs pl-1">{errors.wilaya.message}</p>}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-1">
+                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">Wilaya *</label>
+                                 <select
+                                   {...wilayaRegister}
+                                   onChange={(e) => {
+                                     wilayaRegister.onChange(e)
+                                     setValue("commune", "")
+                                   }}
+                                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]"
+                                 >
+                                     <option value="">Sélectionner</option>
+                                     {WILAYAS.map((wilaya) => (
+                                         <option key={wilaya.id} value={wilaya.code}>{wilaya.code} - {wilaya.name}</option>
+                                     ))}
+                                 </select>
+                                 {errors.wilaya && <p className="text-red-500 text-xs pl-1">{errors.wilaya.message}</p>}
+                             </div>
+                             <div className="space-y-1">
+                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">Commune *</label>
+                                 <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px] disabled:opacity-60">
+                                     <option value="">Sélectionner</option>
+                                     {COMMUNES.filter((c) => c.wilayaCode === watch("wilaya")).map((c) => (
+                                       <option key={c.id} value={c.name}>
+                                         {c.name}
+                                       </option>
+                                     ))}
+                                 </select>
+                                 {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
+                             </div>
+                             <div className="space-y-1">
+                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">Quartier / Adresse *</label>
+                                 <input {...register("address")} placeholder="Cité, Rue, Bâtiment..." className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
+                                 {errors.address && <p className="text-red-500 text-xs pl-1">{errors.address.message}</p>}
+                             </div>
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Commune *</label>
-                            <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 disabled:opacity-60">
-                                <option value="">Sélectionner</option>
-                                {COMMUNES.filter((c) => c.wilayaCode === watch("wilaya")).map((c) => (
-                                  <option key={c.id} value={c.name}>
-                                    {c.name}
-                                  </option>
-                                ))}
-                            </select>
-                            {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
-                        </div>
-                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
@@ -315,39 +317,53 @@ export default function CompleteProfilePage() {
                             <label className="text-xs font-bold text-gray-500 uppercase ml-1">Raison Sociale *</label>
                             <input {...register("companyName")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase ml-1">N° Registre Commerce</label>
-                                <div className="flex gap-2">
-                                    <input {...register("commercialRegister")} className="flex-1 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
-                                    <label className="cursor-pointer bg-[#00BFA6] text-white w-[54px] rounded-xl hover:bg-[#00908A] transition-colors flex items-center justify-center shadow-lg shadow-[#00BFA6]/20">
-                                        <Upload className="w-5 h-5" />
-                                        <input type="file" className="hidden" {...register("rcDocument")} accept=".pdf,.jpg,.jpeg,.png" />
-                                    </label>
-                                </div>
+                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">Registre Commerce</label>
+                                <label className={cn(
+                                    "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
+                                    watch("rcDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
+                                )}>
+                                    <span className="flex items-center gap-2">
+                                        {watch("rcDocument")?.[0] ? (
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> Document importé</>
+                                        ) : (
+                                            <><Upload className="w-4 h-4" /> Uploader</>
+                                        )}
+                                    </span>
+                                    <input type="file" className="hidden" {...register("rcDocument")} accept=".pdf,.jpg,.jpeg,.png" />
+                                </label>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase ml-1">N° Agrément</label>
-                                <div className="flex gap-2">
-                                    <input {...register("agreementNumber")} className="flex-1 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
-                                    <label className="cursor-pointer bg-[#00BFA6] text-white w-[54px] rounded-xl hover:bg-[#00908A] transition-colors flex items-center justify-center shadow-lg shadow-[#00BFA6]/20">
-                                        <Upload className="w-5 h-5" />
-                                        <input type="file" className="hidden" {...register("agreementDocument")} accept=".pdf,.jpg,.jpeg,.png" />
-                                    </label>
-                                </div>
+                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">Agrément</label>
+                                <label className={cn(
+                                    "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
+                                    watch("agreementDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
+                                )}>
+                                    <span className="flex items-center gap-2">
+                                        {watch("agreementDocument")?.[0] ? (
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> Document importé</>
+                                        ) : (
+                                            <><Upload className="w-4 h-4" /> Uploader</>
+                                        )}
+                                    </span>
+                                    <input type="file" className="hidden" {...register("agreementDocument")} accept=".pdf,.jpg,.jpeg,.png" />
+                                </label>
                             </div>
-                        </div>
-                        
-                        <div className="pt-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase mb-3 block ml-1">Logo de l'agence</label>
-                            <div className="flex items-center justify-center w-full">
-                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-[#00BFA6] transition-all">
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <Upload className="w-8 h-8 mb-3 text-gray-400" />
-                                        <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Cliquez pour télécharger</span></p>
-                                        <p className="text-xs text-gray-500">SVG, PNG, JPG (MAX. 5MB)</p>
-                                    </div>
-                                    <input type="file" className="hidden" {...register("agencyLogo")} accept=".jpg,.jpeg,.png,.svg" />
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">Logo de l'agence</label>
+                                <label className={cn(
+                                    "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
+                                    watch("agencyLogo")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
+                                )}>
+                                    <span className="flex items-center gap-2">
+                                        {watch("agencyLogo")?.[0] ? (
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> Logo importé</>
+                                        ) : (
+                                            <><Upload className="w-4 h-4" /> Uploader le logo</>
+                                        )}
+                                    </span>
+                                    <input type="file" className="hidden" {...register("agencyLogo")} accept=".jpg,.jpeg,.png,.svg,.webp" />
                                 </label>
                             </div>
                         </div>

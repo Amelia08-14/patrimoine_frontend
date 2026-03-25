@@ -40,6 +40,7 @@ const IconMap: Record<string, React.ElementType> = {
   Home, Building, Building2, Warehouse, Hotel, Briefcase, Store, BedDouble, 
   PartyPopper, Factory, Tent, Archive, ParkingCircle, DoorOpen, Trees, Sun,
   Utensils, CookingPot, Droplet, Battery, Flame, Video, Lock, Shield, Wifi, Phone,
+  LayoutGrid, Zap, Snowflake, Waves, Fan, Ban,
   Villa: Home,
   VillaLevel: Layers,
   Apartment: Building,
@@ -264,7 +265,7 @@ const VILLA_EQUIPMENTS = {
     { id: "microwave", label: "Micro-onde", icon: "Zap" },
     { id: "fridge", label: "Frigo", icon: "Snowflake" },
     { id: "washing_machine", label: "Machine à laver", icon: "Waves" },
-    { id: "no_appliances", label: "Sans électroménager", icon: "X" },
+    { id: "no_appliances", label: "Vide", icon: "Ban" },
   ],
   exterior: [
     { id: "garden", label: "Jardin", icon: "Trees" },
@@ -304,11 +305,20 @@ interface Contact {
 }
 
 // Schéma de validation
+const stringArrayOptional = z.preprocess((v) => {
+  if (v === "" || v === null || v === undefined) return undefined
+  if (Array.isArray(v)) return v
+  return [v]
+}, z.array(z.string()).optional())
+
 const formSchema = z.object({
   transactionType: z.enum(["SALE", "RENTAL"]),
   realEstateType: z.string().min(1, "Type d'immobilier requis"),
   propertyType: z.string().min(1, "Type de bien requis"),
   typologyCustom: z.string().optional(), // Ajout de ce champ
+  
+  title: z.string().min(5, "Le titre doit contenir au moins 5 caractères").max(100, "Le titre est trop long").optional().or(z.literal("")),
+  shortDescription: z.string().max(300, "La description est trop longue").optional().or(z.literal("")),
   
   city: z.string().min(2, "Wilaya requise"),
   commune: z.string().min(2, "Commune requise"),
@@ -321,7 +331,6 @@ const formSchema = z.object({
   priceUnit: z.enum(["DA", "MILLION", "MILLIARD"]),
   priceType: z.enum(["FIXED", "NEGOTIABLE"]),
   paymentModality: z.enum(["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL"]).optional(),
-  description: z.string().optional(),
   
   // Champs techniques pour le mapping
   area: z.string().optional(),
@@ -351,17 +360,20 @@ const formSchema = z.object({
   elecCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
   gasCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
   depositMonths: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
-  rentalUsage: z.array(z.string()).optional(),
-  chargesIncluded: z.boolean().optional(),
+  rentalUsage: stringArrayOptional,
+  chargesIncluded: z.preprocess((v) => {
+    if (v === "true") return true
+    if (v === "false") return false
+    return v
+  }, z.boolean().optional()),
   availableDate: z.string().optional(),
   
-  kitchenEquipment: z.array(z.string()).optional(),
-  exteriorFeatures: z.array(z.string()).optional(),
-  utilities: z.array(z.string()).optional(),
-  securityFeatures: z.array(z.string()).optional(),
-  connectivity: z.array(z.string()).optional(),
+  kitchenEquipment: stringArrayOptional,
+  exteriorFeatures: stringArrayOptional,
+  utilities: stringArrayOptional,
+  securityFeatures: stringArrayOptional,
+  connectivity: stringArrayOptional,
   garageCapacity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Capacité du garage invalide").optional(),
-  additionalDescription: z.string().optional(),
   
   contacts: z.array(z.object({
       phone: z.string().min(9, "Numéro invalide"),
@@ -413,13 +425,15 @@ const formSchema = z.object({
     }
 })
 
+type DepositFormValues = z.infer<typeof formSchema>
+
 const steps = [
   { id: 1, name: "Type de transaction" },
   { id: 2, name: "Type d'immobilier" },
   { id: 3, name: "Type de bien" },
   { id: 4, name: "Fiche descriptive" },
   { id: 5, name: "Prix & Modalités" },
-  { id: 6, name: "Localisation & Contacts" },
+  { id: 6, name: "Informations et Contact" },
   { id: 7, name: "Photos du bien" },
 ]
 
@@ -500,17 +514,20 @@ export default function DepositPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [selectedVideos, setSelectedVideos] = useState<File[]>([])
   const [photoCategories, setPhotoCategories] = useState<PhotoCategory[]>([
+    { id: "other", label: "Autres photos", icon: ImageIcon, photos: [] },
     { id: "bedrooms", label: "Chambres", icon: BedIcon, photos: [] },
     { id: "bathrooms", label: "Salles de bain & WC", icon: BathIcon, photos: [] },
     { id: "kitchen", label: "Cuisine", icon: UtensilsIcon, photos: [] },
     { id: "exterior", label: "Extérieur (jardin, piscine)", icon: GardenIcon, photos: [] },
     { id: "common", label: "Espaces communs", icon: Home, photos: [] },
-    { id: "other", label: "Autres photos", icon: ImageIcon, photos: [] },
   ])
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([])
   const [mainPhoto, setMainPhoto] = useState<File | null>(null)
   const [photoOrganizationStep, setPhotoOrganizationStep] = useState<"upload" | "organize">("upload")
   const [userType, setUserType] = useState<string>("PARTICULIER")
+  const [userCompanyActivity, setUserCompanyActivity] = useState<string | null>(null)
   const [availabilityMode, setAvailabilityMode] = useState<'IMMEDIATE' | 'DATE'>('IMMEDIATE')
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   
   // Contacts
   const [contacts, setContacts] = useState<Contact[]>([{ phone: "", hasWhatsapp: false, hasViber: false, hasTelegram: false }])
@@ -536,6 +553,7 @@ export default function DepositPage() {
     }
     
     setUserType(user.userType || "PARTICULIER")
+    setUserCompanyActivity(user.companyActivity || null)
     
     // Fetch fresh profile data to ensure we have the phone number
     const fetchProfile = async () => {
@@ -616,8 +634,8 @@ export default function DepositPage() {
     getValues,
     setError,
     formState: { errors },
-  } = useForm({
-    resolver: zodResolver(formSchema),
+  } = useForm<DepositFormValues>({
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       transactionType: "SALE",
       realEstateType: "",
@@ -625,8 +643,9 @@ export default function DepositPage() {
       city: "",
       commune: "",
       address: "",
+      title: "",
+      shortDescription: "",
       price: "",
-      description: "",
       floorCount: "",
       typology: "",
       bedrooms: "",
@@ -871,42 +890,67 @@ export default function DepositPage() {
   }
 
   // Drag and drop pour réorganisation
-  const handleDragEnd = (categoryId: string, result: DropResult) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return
-    
-    const category = photoCategories.find(c => c.id === categoryId)
-    if (!category) return
-    
-    const items = Array.from(category.photos)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
-    
-    setPhotoCategories(prev => 
-      prev.map(c => c.id === categoryId ? { ...c, photos: items } : c)
-    )
+    const { source, destination } = result
+
+    if (source.droppableId === destination.droppableId) {
+        const categoryId = source.droppableId
+        const category = photoCategories.find(c => c.id === categoryId)
+        if (!category) return
+        
+        const items = Array.from(category.photos)
+        const [reorderedItem] = items.splice(source.index, 1)
+        items.splice(destination.index, 0, reorderedItem)
+        
+        setPhotoCategories(prev => 
+            prev.map(c => c.id === categoryId ? { ...c, photos: items } : c)
+        )
+    } else {
+        setPhotoCategories(prev => {
+            const sourceCategory = prev.find(c => c.id === source.droppableId)
+            const destCategory = prev.find(c => c.id === destination.droppableId)
+            
+            if (!sourceCategory || !destCategory) return prev
+            
+            const sourceItems = Array.from(sourceCategory.photos)
+            const destItems = Array.from(destCategory.photos)
+            
+            const [movedItem] = sourceItems.splice(source.index, 1)
+            destItems.splice(destination.index, 0, movedItem)
+            
+            return prev.map(c => {
+                if (c.id === source.droppableId) return { ...c, photos: sourceItems }
+                if (c.id === destination.droppableId) return { ...c, photos: destItems }
+                return c
+            })
+        })
+    }
   }
 
-  // Déplacer une photo entre catégories
-  const movePhoto = (photo: File, fromCategoryId: string, toCategoryId: string) => {
-    setPhotoCategories(prev => {
-      // Find source and destination categories
-      const fromCategory = prev.find(c => c.id === fromCategoryId)
-      const toCategory = prev.find(c => c.id === toCategoryId)
+  const togglePhotoSelection = (photo: File) => {
+      setSelectedPhotos(prev => 
+          prev.includes(photo) ? prev.filter(p => p !== photo) : [...prev, photo]
+      )
+  }
+
+  const moveSelectedPhotos = (targetCategoryId: string) => {
+      if (selectedPhotos.length === 0) return;
       
-      if (!fromCategory || !toCategory) return prev
+      setPhotoCategories(prev => {
+          return prev.map(cat => {
+              // Remove from all categories
+              let newPhotos = cat.photos.filter(p => !selectedPhotos.includes(p));
+              
+              // Add to target category
+              if (cat.id === targetCategoryId) {
+                  newPhotos = [...newPhotos, ...selectedPhotos];
+              }
+              return { ...cat, photos: newPhotos };
+          })
+      });
       
-      return prev.map(c => {
-        if (c.id === fromCategoryId) {
-          // Remove from source
-          return { ...c, photos: c.photos.filter(p => p !== photo) }
-        }
-        if (c.id === toCategoryId) {
-          // Add to destination
-          return { ...c, photos: [...c.photos, photo] }
-        }
-        return c
-      })
-    })
+      setSelectedPhotos([]);
   }
 
   const handleTransactionTypeClick = (type: "SALE" | "RENTAL") => {
@@ -932,7 +976,7 @@ export default function DepositPage() {
     if (propertyType === "VILLA") {
         isValid = await trigger([
             "typology", "floorCount", 
-            "landArea", "builtArea", "habitableArea",
+            "landArea", "builtArea",
             "state", "parkingCount", "outdoorParking",
             "usageType", "bedrooms", "nbSuites", "livingRooms", "bathrooms", "wc", "bathroomType",
             "kitchenType", "kitchenState",
@@ -988,7 +1032,7 @@ export default function DepositPage() {
   }
 
   const handleLocationAndContactsSubmit = async () => {
-      const isLocationValid = await trigger(["city", "commune", "address"])
+      const isLocationValid = await trigger(["title", "shortDescription", "city", "commune", "address", "mapsLink"])
       
       // Validate contacts
       const isContactsValid = contacts.every(c => c.phone.length >= 9);
@@ -1178,7 +1222,7 @@ export default function DepositPage() {
       case 3: return "Décrivez-nous votre bien"
       case 4: return propertyType === "VILLA" ? "Fiche descriptive - Villa" : "Fiche descriptive"
       case 5: return "Prix & Modalités"
-      case 6: return "Localisation & Contacts"
+      case 6: return "Informations et Contact"
       case 7: return "Médias du bien"
       default: return ""
     }
@@ -1201,6 +1245,13 @@ export default function DepositPage() {
       setContacts(newContacts)
   }
 
+  const isEligibleUser = userType === "PARTICULIER" || 
+      (userType === "SOCIETE" && userCompanyActivity && ["AGENCE_IMMOBILIERE", "PROMOTEUR_IMMOBILIER", "ADMINISTRATEUR_BIENS", "AUTRES_PROFESSIONNELS"].includes(userCompanyActivity));
+
+  const isEligibleProperty = propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE");
+
+  const isFormAvailable = isEligibleUser && isEligibleProperty;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="bg-[#00908A] h-[200px] w-full absolute top-0 left-0 z-0"></div>
@@ -1208,8 +1259,8 @@ export default function DepositPage() {
         <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-[96px] md:pt-4">
             
             {/* Progress Stepper */}
-            <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-4xl">
-                <div className="flex items-center w-full">
+            <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-4xl flex justify-center">
+                <div className="flex items-center w-full max-w-3xl">
                     {steps.map((step, idx) => (
                         <div key={step.id} className="flex items-center flex-1 min-w-0">
                             <div
@@ -1232,7 +1283,7 @@ export default function DepositPage() {
             </div>
 
             {/* Main Card */}
-            <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden min-h-[500px] flex flex-col">
+            <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-4xl overflow-visible min-h-[500px] flex flex-col">
                 <div className="p-4 md:p-8 border-b border-gray-100 flex items-center">
                     {currentStep > 1 && (
                         <button 
@@ -1247,8 +1298,29 @@ export default function DepositPage() {
                 </div>
 
                 <div className="p-6 md:p-12 flex-1 flex flex-col items-center justify-center text-left">
-                    
-                    {/* Step 1: Transaction Type */}
+                    {!isFormAvailable && currentStep > 3 ? (
+                        <div className="w-full max-w-2xl text-center space-y-6 py-12">
+                            <div className="bg-orange-50 text-orange-600 p-8 rounded-2xl border border-orange-200">
+                                <Info className="h-12 w-12 mx-auto mb-4 opacity-80" />
+                                <h3 className="text-xl font-bold mb-2">Formulaire en cours de création</h3>
+                                <p className="text-orange-700/80">
+                                    Le formulaire détaillé pour ce type de bien ({(filteredPropertyTypes.find(t => t.id === propertyType) || {}).label || propertyType}) 
+                                    et votre profil ({userType === "SOCIETE" ? "Société" : "Particulier"}) sera bientôt disponible.
+                                </p>
+                                <p className="text-sm mt-4 text-orange-600/60">
+                                    Actuellement, seul le dépôt pour les Villas (Résidentiel) est actif.
+                                </p>
+                            </div>
+                            <Button 
+                                onClick={() => setCurrentStep(1)}
+                                className="bg-gray-900 text-white rounded-full px-8"
+                            >
+                                Recommencer
+                            </Button>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Step 1: Transaction Type */}
                     {currentStep === 1 && (
                         <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
                             <div className="flex justify-center gap-8 md:gap-32">
@@ -1310,7 +1382,7 @@ export default function DepositPage() {
                     {/* Step 2: Real Estate Type */}
                     {currentStep === 2 && (
                         <div className="w-full max-w-5xl animate-fade-in py-8">
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8 justify-items-center">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-8 justify-items-center">
                                 {filteredCategories.map((cat) => {
                                     const Icon = IconMap[cat.iconName] || Home
                                     const isSelected = realEstateType === cat.id
@@ -1385,8 +1457,8 @@ export default function DepositPage() {
                         </div>
                     )}
 
-                    {/* Step 4: Fiche descriptive - Villa (Location) */}
-                    {currentStep === 4 && propertyType === "VILLA" && transactionType === "RENTAL" && (
+                    {/* Step 4: Fiche descriptive - Villa */}
+                    {currentStep === 4 && propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && (
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
                             
                             {/* 1. Caractéristiques Générales & Structure */}
@@ -1396,10 +1468,9 @@ export default function DepositPage() {
                                 </h2>
                                 
                                 <div className="flex flex-col gap-5">
-                                    {/* Row 1: Typologie, Configuration, État Général */}
-                                    <div className="flex flex-wrap md:flex-nowrap gap-5 items-end">
-                                        {/* Typologie */}
-                                        <div className="flex-1 min-w-[150px]">
+                                    {/* Row 1: Typologie, Nombre d'étages, Surface terrain, Surface bâtie */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-end">
+                                        <div className="min-w-0">
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
                                             <div className="flex items-center gap-2">
                                                 <span className="font-bold text-gray-700 text-lg">F</span>
@@ -1419,8 +1490,7 @@ export default function DepositPage() {
                                             {errors.typology && <p className="text-red-500 text-xs mt-1">{errors.typology.message}</p>}
                                         </div>
 
-                                        {/* Configuration R+ */}
-                                        <div className="flex-1 min-w-[180px]">
+                                        <div className="min-w-0">
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages <span className="text-red-500">*</span></label>
                                             <div className="flex items-center gap-2">
                                                 <span className="font-bold text-gray-700 text-lg whitespace-nowrap">R +</span>
@@ -1436,21 +1506,8 @@ export default function DepositPage() {
                                             {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                         </div>
 
-                                        {/* État Général */}
-                                        <div className="flex-1 min-w-[200px]">
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
-                                            <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
-                                                <option value="">Sélectionner</option>
-                                                {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                                            </select>
-                                            {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
-                                        </div>
-                                    </div>
-
-                                    {/* Row 2: Surfaces */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface Totale du Terrain (m²) <span className="text-red-500">*</span></label>
+                                        <div className="min-w-0">
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²) <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("landArea")} 
                                                 type="number" 
@@ -1461,8 +1518,8 @@ export default function DepositPage() {
                                             />
                                             {errors.landArea && <p className="text-red-500 text-xs mt-1">{errors.landArea.message}</p>}
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface Bâtie (m²) <span className="text-red-500">*</span></label>
+                                        <div className="min-w-0">
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²) <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("builtArea")} 
                                                 type="number" 
@@ -1473,40 +1530,41 @@ export default function DepositPage() {
                                             />
                                             {errors.builtArea && <p className="text-red-500 text-xs mt-1">{errors.builtArea.message}</p>}
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface Habitable Totale (m²)</label>
-                                            <input 
-                                                {...register("habitableArea")} 
-                                                type="number" 
-                                                min="0"
-                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                placeholder="Ex: 200" 
-                                            />
-                                            {errors.habitableArea && <p className="text-red-500 text-xs mt-1">{errors.habitableArea.message}</p>}
-                                        </div>
                                     </div>
 
-                                    {/* Row 3: Stationnement */}
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage & Stationnement</label>
-                                        <div className="grid grid-cols-2 gap-4 md:max-w-md">
+                                    {/* Row 2: État Général, Garage, Stationnement */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                        <div className="min-w-0">
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
+                                            <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
+                                                <option value="">Sélectionner</option>
+                                                {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                            </select>
+                                            {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
                                             <input 
                                                 {...register("parkingCount")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                placeholder="Garage (places)" 
+                                                placeholder="Ex: 1" 
                                             />
+                                            {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
                                             <input 
                                                 {...register("outdoorParking")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                placeholder="Extérieur (places)" 
+                                                placeholder="Ex: 2" 
                                             />
+                                            {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
                                         </div>
                                     </div>
                                 </div>
@@ -1659,7 +1717,7 @@ export default function DepositPage() {
                                     {/* Équipements de la cuisine */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Équipements de la cuisine</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 return (
@@ -1670,9 +1728,13 @@ export default function DepositPage() {
                                                             {...register("kitchenEquipment")} 
                                                             className="peer sr-only" 
                                                         />
-                                                        <div className="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center gap-2 text-center peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-white h-full justify-center">
-                                                            <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6] transition-colors" />
-                                                            <span className="text-sm font-bold text-gray-700 peer-checked:text-[#00BFA6] leading-tight">{item.label}</span>
+                                                        <div className="p-2 border-2 border-gray-200 rounded-xl flex flex-col items-center gap-1 text-center peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-white h-20 justify-start">
+                                                            <div className="h-7 flex items-center justify-center">
+                                                                <Icon className="h-5 w-5 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6] transition-colors" />
+                                                            </div>
+                                                            <div className="min-h-[36px] flex items-start justify-center px-1">
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                            </div>
                                                         </div>
                                                     </label>
                                                 )
@@ -1691,20 +1753,24 @@ export default function DepositPage() {
                                 {/* Extérieur Checkboxes */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
-                                    <div className="flex flex-wrap gap-4">
-                                        {VILLA_EQUIPMENTS.exterior.map((item) => (
-                                            <label key={item.id} className="cursor-pointer">
-                                                <input type="checkbox" value={item.id} {...register("exteriorFeatures")} className="peer sr-only" />
-                                                <div className="px-4 py-2 border-2 rounded-lg text-sm font-bold text-gray-900 peer-checked:bg-[#00BFA6] peer-checked:text-white transition-all bg-white hover:border-[#00BFA6]">
-                                                    {item.label}
-                                                </div>
-                                            </label>
-                                        ))}
+                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                                        {VILLA_EQUIPMENTS.exterior.map((item) => {
+                                            const Icon = IconMap[item.icon] || Trees
+                                            return (
+                                                <label key={item.id} className="cursor-pointer group">
+                                                    <input type="checkbox" value={item.id} {...register("exteriorFeatures")} className="peer sr-only" />
+                                                    <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                        <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                        <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                    </div>
+                                                </label>
+                                            )
+                                        })}
                                     </div>
                                 </div>
 
                                 {/* Commodités, Sécurité & Connectivité */}
-                                <div className="space-y-8">
+                                <div className="space-y-8 border-t border-gray-100 pt-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         {/* Chauffage */}
                                         <div>
@@ -1757,9 +1823,13 @@ export default function DepositPage() {
                                                     return (
                                                         <label key={s.id} className="cursor-pointer group">
                                                             <input type="checkbox" value={s.id} {...register("securityFeatures")} className="peer sr-only" />
-                                                            <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
-                                                                <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{s.label}</span>
+                                                            <div className="flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                                <div className="h-7 flex items-center justify-center">
+                                                                    <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                                </div>
+                                                                <div className="min-h-[32px] flex items-center justify-center">
+                                                                    <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{s.label}</span>
+                                                                </div>
                                                             </div>
                                                         </label>
                                                     )
@@ -1776,9 +1846,13 @@ export default function DepositPage() {
                                                     return (
                                                         <label key={c.id} className="cursor-pointer group">
                                                             <input type="checkbox" value={c.id} {...register("connectivity")} className="peer sr-only" />
-                                                            <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
-                                                                <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{c.label}</span>
+                                                            <div className="flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                                <div className="h-7 flex items-center justify-center">
+                                                                    <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                                </div>
+                                                                <div className="min-h-[32px] flex items-center justify-center">
+                                                                    <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{c.label}</span>
+                                                                </div>
                                                             </div>
                                                         </label>
                                                     )
@@ -2046,7 +2120,7 @@ export default function DepositPage() {
                                     {/* Cuisine */}
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Cuisine</label>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 return (
@@ -2057,9 +2131,13 @@ export default function DepositPage() {
                                                             {...register("kitchenEquipment")} 
                                                             className="peer sr-only" 
                                                         />
-                                                        <div className="p-4 border-2 rounded-xl flex items-center gap-3 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            <Icon className="h-5 w-5 text-gray-500 peer-checked:text-[#00BFA6]" />
-                                                            <span className="text-sm font-medium text-gray-600 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                        <div className="p-2 border-2 rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50 h-24">
+                                                            <div className="flex-1 flex items-end justify-center pb-2">
+                                                                <Icon className="h-6 w-6 text-gray-500 peer-checked:text-[#00BFA6]" />
+                                                            </div>
+                                                            <div className="flex-1 flex items-start justify-center pt-0">
+                                                                <span className="text-[10px] md:text-[11px] font-bold text-gray-600 peer-checked:text-[#00BFA6] text-center leading-tight">{item.label}</span>
+                                                            </div>
                                                         </div>
                                                     </label>
                                                 )
@@ -2070,7 +2148,7 @@ export default function DepositPage() {
                                     {/* Extérieur */}
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Extérieur</label>
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.exterior.map((item) => {
                                                 const Icon = IconMap[item.icon] || Trees
                                                 return (
@@ -2081,9 +2159,13 @@ export default function DepositPage() {
                                                             {...register("exteriorFeatures")} 
                                                             className="peer sr-only" 
                                                         />
-                                                        <div className="p-4 border-2 rounded-xl flex flex-col items-center gap-2 text-center peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            <Icon className="h-6 w-6 text-gray-500 peer-checked:text-[#00BFA6]" />
-                                                            <span className="text-sm font-medium text-gray-600 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                        <div className="p-2 border-2 rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50 h-24">
+                                                            <div className="flex-1 flex items-end justify-center pb-2">
+                                                                <Icon className="h-6 w-6 text-gray-500 peer-checked:text-[#00BFA6]" />
+                                                            </div>
+                                                            <div className="flex-1 flex items-start justify-center pt-0">
+                                                                <span className="text-[10px] md:text-[11px] font-bold text-gray-600 peer-checked:text-[#00BFA6] text-center leading-tight">{item.label}</span>
+                                                            </div>
                                                         </div>
                                                     </label>
                                                 )
@@ -2094,7 +2176,7 @@ export default function DepositPage() {
                                     {/* Eau/Énergie */}
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Eau/Énergie</label>
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.utilities.map((item) => {
                                                 const Icon = IconMap[item.icon] || Droplet
                                                 return (
@@ -2105,9 +2187,13 @@ export default function DepositPage() {
                                                             {...register("utilities")} 
                                                             className="peer sr-only" 
                                                         />
-                                                        <div className="p-4 border-2 rounded-xl flex flex-col items-center gap-2 text-center peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            <Icon className="h-6 w-6 text-gray-500 peer-checked:text-[#00BFA6]" />
-                                                            <span className="text-sm font-medium text-gray-600 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                        <div className="p-2 border-2 rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50 h-24">
+                                                            <div className="flex-1 flex items-end justify-center pb-2">
+                                                                <Icon className="h-6 w-6 text-gray-500 peer-checked:text-[#00BFA6]" />
+                                                            </div>
+                                                            <div className="flex-1 flex items-start justify-center pt-0">
+                                                                <span className="text-[10px] md:text-[11px] font-bold text-gray-600 peer-checked:text-[#00BFA6] text-center leading-tight">{item.label}</span>
+                                                            </div>
                                                         </div>
                                                     </label>
                                                 )
@@ -2148,17 +2234,6 @@ export default function DepositPage() {
                                             )}
                                         </div>
                                     </div>
-                                </div>
-
-                                {/* Description */}
-                                <div className="border-t pt-6">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Description du bien</label>
-                                    <textarea 
-                                        {...register("description")} 
-                                        rows={4}
-                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 placeholder:text-gray-400 bg-gray-50 focus:bg-white"
-                                        placeholder="Décrivez votre bien : ensoleillement, voisinage, sécurité, état des finitions..."
-                                    ></textarea>
                                 </div>
                             </div>
                         </div>
@@ -2267,29 +2342,39 @@ export default function DepositPage() {
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">Disponibilité</label>
                                                         <div className="flex gap-4">
                                                             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
-                                                                <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => setAvailabilityMode('IMMEDIATE')} className="accent-[#00BFA6] w-4 h-4" />
+                                                                <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => { setAvailabilityMode('IMMEDIATE'); setIsCalendarOpen(false); }} className="accent-[#00BFA6] w-4 h-4" />
                                                                 <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Immédiate</span>
                                                             </label>
-                                                            <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
-                                                                <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => setAvailabilityMode('DATE')} className="accent-[#00BFA6] w-4 h-4" />
-                                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Date précise</span>
+                                                            <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]" onClick={() => { if (availabilityMode === 'DATE') setIsCalendarOpen(!isCalendarOpen); }}>
+                                                                <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => { setAvailabilityMode('DATE'); setIsCalendarOpen(true); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">
+                                                                    {availabilityMode === 'DATE' && availableDate ? format(new Date(availableDate), "dd MMM yyyy", { locale: fr }) : "Date précise"}
+                                                                </span>
                                                             </label>
                                                         </div>
                                                         {errors.availableDate && <p className="text-red-500 text-sm mt-1">{errors.availableDate.message}</p>}
+
+                                                        {/* Calendar Popover */}
+                                                        {availabilityMode === 'DATE' && isCalendarOpen && (
+                                                            <div className="absolute right-0 top-full mt-2 z-[100] animate-fade-in">
+                                                                <div className="bg-white shadow-2xl rounded-xl p-4 border border-gray-200 relative">
+                                                                    <button type="button" onClick={() => setIsCalendarOpen(false)} className="absolute top-2 right-2 p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors">
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                    <div className="pt-2">
+                                                                        <InlineCalendar 
+                                                                            value={availableDate ? new Date(availableDate) : undefined}
+                                                                            onChange={(date) => {
+                                                                                setValue("availableDate", format(date, "yyyy-MM-dd"), { shouldValidate: true });
+                                                                                setIsCalendarOpen(false);
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-
-                                                {/* Calendar Section - Displayed below to avoid clipping */}
-                                                {availabilityMode === 'DATE' && (
-                                                    <div className="animate-fade-in flex justify-end">
-                                                        <div className="bg-white shadow-lg rounded-xl p-4 border border-gray-100">
-                                                            <InlineCalendar 
-                                                                value={availableDate ? new Date(availableDate) : undefined}
-                                                                onChange={(date) => setValue("availableDate", format(date, "yyyy-MM-dd"), { shouldValidate: true })}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )}
 
                                                 {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
                                             </div>
@@ -2346,10 +2431,45 @@ export default function DepositPage() {
                         </div>
                     )}
 
-                    {/* Step 6: Localisation & Contacts */}
+                    {/* Step 6: Informations et Contact */}
                     {currentStep === 6 && (
                         <div className="w-full max-w-4xl animate-fade-in">
                             <div className="space-y-8">
+                                {/* Informations de l'annonce */}
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <FileText className="text-[#00BFA6]" /> Informations de l'annonce
+                                    </h3>
+                                    
+                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                                Titre accrocheur <span className="text-gray-400 font-normal">(Optionnel)</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                {...register("title")}
+                                                placeholder="Ex: Magnifique villa avec piscine vue sur mer..." 
+                                                className="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 placeholder:text-gray-500 bg-white font-medium"
+                                            />
+                                            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                                Description courte <span className="text-gray-400 font-normal">(Optionnel)</span>
+                                            </label>
+                                            <textarea 
+                                                {...register("shortDescription")}
+                                                rows={4}
+                                                placeholder="Décrivez brièvement les points forts de votre bien..." 
+                                                className="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 placeholder:text-gray-500 bg-white resize-none font-medium"
+                                            ></textarea>
+                                            {errors.shortDescription && <p className="text-red-500 text-sm mt-1">{errors.shortDescription.message}</p>}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Contacts */}
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -2659,76 +2779,93 @@ export default function DepositPage() {
                                 /* Étape 2: Organisation par catégorie */
                                 <div className="space-y-8">
                                     <p className="text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                        Organisez vos photos par catégorie. Vous pouvez glisser-déposer pour les réorganiser.
+                                        Sélectionnez une ou plusieurs photos en cliquant dessus, puis utilisez les boutons pour les déplacer, ou glissez-déposez les directement.
                                     </p>
 
-                                    {photoCategories.map((category) => (
-                                        <div key={category.id} className="border rounded-xl p-6 bg-gray-50">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <category.icon className="h-6 w-6 text-[#00BFA6]" />
-                                                <h3 className="text-lg font-bold text-gray-700">{category.label}</h3>
-                                                <span className="text-sm text-gray-500 ml-auto bg-white px-3 py-1 rounded-full border border-gray-200">
-                                                    {category.photos.length} photo(s)
-                                                </span>
-                                            </div>
+                                    <DragDropContext onDragEnd={handleDragEnd}>
+                                        {photoCategories.map((category) => (
+                                            <div key={category.id} className="border rounded-xl p-6 bg-gray-50">
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <category.icon className="h-6 w-6 text-[#00BFA6]" />
+                                                    <h3 className="text-lg font-bold text-gray-700">{category.label}</h3>
+                                                    <span className="text-sm text-gray-500 ml-auto bg-white px-3 py-1 rounded-full border border-gray-200">
+                                                        {category.photos.length} photo(s)
+                                                    </span>
+                                                </div>
 
-                                            <DragDropContext onDragEnd={(result) => handleDragEnd(category.id, result)}>
                                                 <Droppable droppableId={category.id} direction="horizontal">
                                                     {(provided) => (
                                                         <div 
                                                             ref={provided.innerRef}
                                                             {...provided.droppableProps}
-                                                            className="grid grid-cols-4 gap-4 min-h-[120px]"
+                                                            className="grid grid-cols-2 md:grid-cols-4 gap-4 min-h-[120px]"
                                                         >
-                                                            {category.photos.map((photo, index) => (
-                                                                <Draggable 
-                                                                    key={`${category.id}-${index}`} 
-                                                                    draggableId={`${category.id}-${index}`} 
-                                                                    index={index}
-                                                                >
-                                                                    {(provided) => (
-                                                                        <div
-                                                                            ref={provided.innerRef}
-                                                                            {...provided.draggableProps}
-                                                                            {...provided.dragHandleProps}
-                                                                            className="relative aspect-square bg-white rounded-lg overflow-hidden group cursor-move border-2 border-gray-200 hover:border-[#00BFA6] transition-all"
-                                                                        >
-                                                                            <img 
-                                                                                src={URL.createObjectURL(photo)} 
-                                                                                alt={`${category.label}-${index}`} 
-                                                                                className="w-full h-full object-cover" 
-                                                                            />
-                                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                                <GripVertical className="h-6 w-6 text-white" />
+                                                            {category.photos.map((photo, index) => {
+                                                                const isSelected = selectedPhotos.includes(photo);
+                                                                return (
+                                                                    <Draggable 
+                                                                        key={`${category.id}-${index}`} 
+                                                                        draggableId={`${category.id}-${index}`} 
+                                                                        index={index}
+                                                                    >
+                                                                        {(provided) => (
+                                                                            <div
+                                                                                ref={provided.innerRef}
+                                                                                {...provided.draggableProps}
+                                                                                {...provided.dragHandleProps}
+                                                                                onClick={() => togglePhotoSelection(photo)}
+                                                                                className={cn(
+                                                                                    "relative aspect-square bg-white rounded-lg overflow-hidden group cursor-move transition-all",
+                                                                                    isSelected ? "border-4 border-[#00BFA6] ring-2 ring-[#00BFA6]/20 shadow-lg" : "border-2 border-gray-200 hover:border-[#00BFA6]"
+                                                                                )}
+                                                                            >
+                                                                                <img 
+                                                                                    src={URL.createObjectURL(photo)} 
+                                                                                    alt={`${category.label}-${index}`} 
+                                                                                    className={cn("w-full h-full object-cover transition-all", isSelected ? "scale-95 rounded-sm" : "")} 
+                                                                                />
+                                                                                {isSelected && (
+                                                                                    <div className="absolute top-2 right-2 bg-[#00BFA6] text-white rounded-full p-1 z-10 shadow-md">
+                                                                                        <Check className="h-4 w-4" />
+                                                                                    </div>
+                                                                                )}
+                                                                                {!isSelected && (
+                                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                                        <GripVertical className="h-6 w-6 text-white" />
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
-                                                                        </div>
-                                                                    )}
-                                                                </Draggable>
-                                                            ))}
+                                                                        )}
+                                                                    </Draggable>
+                                                                )
+                                                            })}
                                                             {provided.placeholder}
                                                         </div>
                                                     )}
                                                 </Droppable>
-                                            </DragDropContext>
 
-                                            {/* Menu pour déplacer vers d'autres catégories */}
-                                            {category.photos.length > 0 && (
-                                                <div className="mt-4 flex gap-2 flex-wrap">
-                                                    {photoCategories
-                                                        .filter(c => c.id !== category.id)
-                                                        .map(targetCat => (
-                                                            <button
-                                                                key={targetCat.id}
-                                                                onClick={() => movePhoto(category.photos[0], category.id, targetCat.id)}
-                                                                className="text-sm px-3 py-1 bg-white border border-gray-300 rounded-full hover:bg-gray-100 transition-colors text-gray-600"
-                                                            >
-                                                                Déplacer vers {targetCat.label}
-                                                            </button>
-                                                        ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                {/* Menu pour déplacer vers d'autres catégories */}
+                                                {category.photos.length > 0 && selectedPhotos.some(p => category.photos.includes(p)) && (
+                                                    <div className="mt-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                                        <p className="text-sm font-bold text-gray-700 mb-3">Déplacer la sélection vers :</p>
+                                                        <div className="flex gap-2 flex-wrap">
+                                                            {photoCategories
+                                                                .filter(c => c.id !== category.id)
+                                                                .map(targetCat => (
+                                                                    <button
+                                                                        key={targetCat.id}
+                                                                        onClick={() => moveSelectedPhotos(targetCat.id)}
+                                                                        className="text-sm px-4 py-2 bg-gray-50 border border-gray-300 rounded-full text-gray-800 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] transition-all font-bold"
+                                                                    >
+                                                                        {targetCat.label}
+                                                                    </button>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </DragDropContext>
 
                                     <div className="flex justify-between pt-4">
                                         <Button 
@@ -2739,7 +2876,7 @@ export default function DepositPage() {
                                             Retour à l&apos;upload
                                         </Button>
                                         <Button 
-                                            onClick={handleSubmit(onSubmit, (errors) => {
+                                            onClick={handleSubmit(onSubmit as any, (errors) => {
                                                 console.error("Erreurs de validation:", errors);
                                                 alert(`Veuillez corriger les erreurs suivantes:\n${Object.keys(errors).map(key => `- ${key}: ${(errors as any)[key]?.message}`).join('\n')}`);
                                             })} 
@@ -2753,11 +2890,14 @@ export default function DepositPage() {
                             )}
                         </div>
                     )}
+                    </>
+                    )}
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50">
-                    {currentStep === 4 && (
+                {isFormAvailable && currentStep >= 4 && currentStep <= 7 && (
+                    <div className="p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50">
+                        {currentStep === 4 && (
                         <Button onClick={handleDescriptiveSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             Continuer
                         </Button>
@@ -2777,7 +2917,8 @@ export default function DepositPage() {
                             Organiser les photos
                         </Button>
                     )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     </div>
