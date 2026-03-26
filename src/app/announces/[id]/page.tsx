@@ -77,16 +77,27 @@ export default function AnnounceDetailsPage() {
   const [showGallery, setShowGallery] = useState(false)
   const [activeTab, setActiveTab] = useState('ALL')
 
-  // Group images by category
-  const imagesByCategory = (announce?.property?.images || []).reduce((acc: any, img: any) => {
+  const allImages = announce?.property?.images || [];
+  
+  // Find the main image
+  const mainImageIndex = allImages.findIndex((img: any) => img.isMain);
+  
+  // Reorder images to put main image first if it exists
+  const orderedAllImages = [...allImages];
+  if (mainImageIndex > 0) {
+      const mainImg = orderedAllImages.splice(mainImageIndex, 1)[0];
+      orderedAllImages.unshift(mainImg);
+  }
+
+  // Re-group for categories but use ordered images
+  const imagesByCategory = orderedAllImages.reduce((acc: any, img: any) => {
     const cat = img.category || 'general';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(img);
     return acc;
   }, {});
 
-  const allImages = announce?.property?.images || [];
-  const displayImages = activeTab === 'ALL' ? allImages : (imagesByCategory[activeTab] || []);
+  const displayImages = activeTab === 'ALL' ? orderedAllImages : (imagesByCategory[activeTab] || []);
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -205,17 +216,14 @@ export default function AnnounceDetailsPage() {
         </div>
       </div>
 
-      {/* --- ADVANCED SEARCH BAR (From Home) --- */}
+      {/* --- ADVANCED SEARCH BAR REPLACED WITH AD SPACE --- */}
       <div className="bg-[#00BFA6] py-6 shadow-md relative z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-             <h2 className="text-white text-center font-bold text-xl mb-4">Remplissez Les Filtres <span className="font-normal text-white/90">Pour un bon resultat de recherche</span></h2>
-             
-             <div className="bg-white rounded-xl shadow-lg p-2 flex flex-col md:flex-row items-center gap-2">
-                  <AnnounceFilter 
-                    filters={filters}
-                    onFilterChange={handleFilterChange}
-                    onSearch={handleSearch}
-                  />
+             <div className="bg-white/20 rounded-xl p-8 flex flex-col items-center justify-center border-2 border-dashed border-white/40 min-h-[120px]">
+                  <p className="text-white font-bold text-xl mb-2">Espace Publicitaire</p>
+                  <p className="text-white/80 text-sm">
+                      Publicité ciblée pour la catégorie : <span className="font-bold">{announce?.realEstateCategory || 'Immobilier'}</span>
+                  </p>
              </div>
         </div>
       </div>
@@ -224,7 +232,7 @@ export default function AnnounceDetailsPage() {
         
         {/* Images Grid - Modern Layout */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 px-2">Galerie Photos</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 px-2">{announce?.title || 'Galerie Photos'}</h2>
             
             {/* Gallery Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-4 mb-4 hide-scrollbar px-2">

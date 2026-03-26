@@ -25,6 +25,10 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
   const typeObj = require("@/data/propertyTypes").PROPERTY_TYPES.find((t: any) => t.id === pType?.toUpperCase() || t.label === pType);
   const categoryName = typeObj ? typeObj.label : (pType || "Immobilier");
 
+  // Get main image (first image with isMain = true, fallback to first image)
+  const images = announce.property?.images || [];
+  const mainImage = images.find((img: any) => img.isMain) || images[0];
+
   const [isFavorite, setIsFavorite] = useState(false); 
   
   const toggleFavorite = async (e: React.MouseEvent) => {
@@ -53,9 +57,9 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
         
         {/* Image Section - Full Bleed */}
         <div className="relative h-[260px] min-h-[260px] overflow-hidden">
-          {announce.property?.images?.[0] ? (
+          {mainImage ? (
             <img 
-                src={getImageUrl(announce.property.images[0].url) || ''}
+                src={getImageUrl(mainImage.url) || ''}
                 alt={announce.reference} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
