@@ -343,7 +343,7 @@ const formSchema = z.object({
   nbSuites: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   livingRooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salons invalide"),
   bathrooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salles de bain invalide"),
-  bathroomType: z.enum(["shower", "bathtub", "both", "none"]).optional(),
+  bathroomType: z.enum(["italian_shower", "bathtub", "both", "none"]).optional(),
   wc: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de WC invalide"),
   landArea: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface du terrain invalide"),
   builtArea: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Surface bâtie invalide"),
@@ -1100,12 +1100,24 @@ export default function DepositPage() {
       // On traite le prix manuellement, et description est déjà traité ou présent
       if (key === 'price') return;
       
+      // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
+      // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend
+      // les lit individuellement (parseJsonArray(kitchenEquipment)) pour les remettre dans amenities.
+      if (key === 'bathroomType') {
+          return;
+      }
+      
       if (Array.isArray(value)) {
         formData.append(key, JSON.stringify(value))
       } else if (value !== undefined && value !== null) {
         formData.append(key, String(value))
       }
     })
+    
+    // Ajouter le type de salle de bain explicitement dans son propre champ maintenant qu'il existe dans la BDD
+    if (data.bathroomType) {
+        formData.append('bathroomType', data.bathroomType);
+    }
     
     // Ajouter le prix calculé
     formData.append('price', String(finalPrice));
@@ -1669,7 +1681,7 @@ export default function DepositPage() {
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Type de Salle de Bain</label>
                                             <div className="flex flex-wrap gap-4">
                                                 <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
-                                                    <input type="radio" value="shower" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
+                                                    <input type="radio" value="italian_shower" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
                                                     <span className="text-sm font-bold text-gray-900">Douche Italienne</span>
                                                 </label>
                                                 <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
