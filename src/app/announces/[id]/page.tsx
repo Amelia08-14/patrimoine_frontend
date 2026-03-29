@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { 
   ArrowLeft, MapPin, BedDouble, Bath, Square, Heart, Share2, 
   Phone, Mail, User, Check, Building2, Car, Wind, Sun, 
-  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers
+  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users, Info
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import Link from "next/link"
@@ -74,7 +74,15 @@ const LABELS: any = {
     exterior: "Extérieur",
     common: "Espaces communs",
     other: "Autres",
-    general: "Général"
+    general: "Général",
+
+    // Heating & AC Types
+    CENTRAL: "Central",
+    SOL: "Au Sol",
+    GAZ: "À Gaz",
+    SPLIT: "Split",
+    NONE: "Sans",
+    SANS: "Sans",
 };
 
 export default function AnnounceDetailsPage() {
@@ -209,16 +217,31 @@ export default function AnnounceDetailsPage() {
   // Parse specific amenities categories based on JSON structure in DB
   let kitchenEquipments: string[] = [];
   let bathroomTypes: string[] = [];
+  let securityFeatures: string[] = [];
+  let connectivityFeatures: string[] = [];
+  let exteriorFeatures: string[] = [];
   
   if (property.amenities) {
       try {
           // It could be a stringified JSON string, or already parsed object depending on API
           let parsedAmenities = property.amenities;
           if (typeof property.amenities === 'string') {
+             let jsonStr = property.amenities.trim();
              try {
-                parsedAmenities = JSON.parse(property.amenities);
+                parsedAmenities = JSON.parse(jsonStr);
              } catch (e) {
-                // If it fails, maybe it's just a raw string, ignore
+                // Try to recover truncated JSON object
+                if (jsonStr.startsWith('{') && !jsonStr.endsWith('}')) {
+                    try {
+                        const lastValidBracket = jsonStr.lastIndexOf(']');
+                        if (lastValidBracket > 0) {
+                            jsonStr = jsonStr.substring(0, lastValidBracket + 1) + '}';
+                            parsedAmenities = JSON.parse(jsonStr);
+                        }
+                    } catch (innerE) {
+                        console.error("Failed to recover amenities JSON string", innerE);
+                    }
+                }
              }
           }
           
@@ -233,6 +256,18 @@ export default function AnnounceDetailsPage() {
                   } else if (typeof parsedAmenities.bathroomType === 'string') {
                       bathroomTypes = [parsedAmenities.bathroomType];
                   }
+              }
+
+              if (parsedAmenities.securityFeatures && Array.isArray(parsedAmenities.securityFeatures)) {
+                  securityFeatures = parsedAmenities.securityFeatures;
+              }
+              
+              if (parsedAmenities.connectivity && Array.isArray(parsedAmenities.connectivity)) {
+                  connectivityFeatures = parsedAmenities.connectivity;
+              }
+
+              if (parsedAmenities.exterior && Array.isArray(parsedAmenities.exterior)) {
+                  exteriorFeatures = parsedAmenities.exterior;
               }
           }
       } catch (e) {
@@ -250,7 +285,23 @@ export default function AnnounceDetailsPage() {
           microwave: "Micro-onde",
           fridge: "Frigo",
           washing_machine: "Machine à laver",
-          no_appliances: "Vide"
+          no_appliances: "Vide",
+          // Security
+          cameras: "Caméras",
+          alarm: "Alarme",
+          guard: "Gardiennage 24/7",
+          intercom: "Interphone",
+          digicode: "Digicode",
+          // Connectivity
+          fiber: "Fibre optique",
+          adsl: "ADSL",
+          phone_line: "Ligne téléphonique",
+          // Exterior
+          garden: "Jardin",
+          terrace: "Terrasse",
+          balcony: "Balcon",
+          pool: "Piscine",
+          barbecue: "Barbecue"
       };
       return map[id] || id;
   };
@@ -273,24 +324,12 @@ export default function AnnounceDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Header / Nav */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => router.back()} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="h-5 w-5" />
-            Retour
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon"><Heart className="h-5 w-5" /></Button>
-            <Button variant="outline" size="icon"><Share2 className="h-5 w-5" /></Button>
-          </div>
-        </div>
-      </div>
-
+      {/* Header / Nav Removed */}
+      
       {/* --- ADVANCED SEARCH BAR REPLACED WITH AD SPACE --- */}
-      <div className="bg-[#00BFA6] py-6 shadow-md relative z-40">
+      <div className="bg-[#00BFA6] py-12 shadow-md relative z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-             <div className="bg-white/20 rounded-xl p-8 flex flex-col items-center justify-center border-2 border-dashed border-white/40 min-h-[120px]">
+             <div className="bg-white/20 rounded-xl p-8 flex flex-col items-center justify-center border-2 border-dashed border-white/40 min-h-[160px]">
                   <p className="text-white font-bold text-xl mb-2">Espace Publicitaire</p>
                   <p className="text-white/80 text-sm">
                       Publicité ciblée pour la catégorie : <span className="font-bold">{announce?.realEstateCategory || 'Immobilier'}</span>
@@ -303,7 +342,22 @@ export default function AnnounceDetailsPage() {
         
         {/* Images Grid - Modern Layout */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 px-2">{announce?.title || 'Galerie Photos'}</h2>
+            <div className="flex justify-between items-center mb-6 px-2">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <ArrowLeft className="h-6 w-6 text-gray-700" />
+                    </button>
+                    <h2 className="text-2xl font-bold text-gray-900">{announce?.title || 'Galerie Photos'}</h2>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm">
+                        <Heart className="h-5 w-5" />
+                    </Button>
+                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm">
+                        <Share2 className="h-5 w-5" />
+                    </Button>
+                </div>
+            </div>
             
             {/* Gallery Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-4 mb-4 hide-scrollbar px-2">
@@ -508,10 +562,17 @@ export default function AnnounceDetailsPage() {
           <div className="lg:col-span-2 space-y-8">
             
             {/* Header Information */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.propertyType}</h1>
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                      <h1 className="text-3xl font-bold text-gray-900">{property.propertyType}</h1>
+                      {property.state && (
+                          <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
+                              {LABELS[property.state] || property.state}
+                          </span>
+                      )}
+                  </div>
                   <div className="flex items-center text-gray-500 text-lg">
                     <MapPin className="h-5 w-5 mr-2 text-[#00BFA6]" />
                     {property.address?.town?.nameFr || property.address?.street}, {property.address?.town?.city?.nameFr}
@@ -519,15 +580,23 @@ export default function AnnounceDetailsPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-[#00BFA6]">{announce.price?.toLocaleString()} DZD</div>
-                  <div className="text-sm text-gray-500 uppercase font-semibold mt-1 tracking-wide">{announce.type === 'RENTAL' ? 'Location' : announce.type === 'SALE' ? 'Vente' : announce.type}</div>
+                  <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
+                      <span className="uppercase">{announce.type === 'RENTAL' ? 'Location' : announce.type === 'SALE' ? 'Vente' : announce.type}</span>
+                      {announce.priceType && (
+                          <>
+                              <span className="text-gray-300">|</span>
+                              <span className="text-gray-600">{announce.priceType === 'FIXED' ? 'Prix Fixe' : announce.priceType === 'NEGOTIABLE' ? 'Prix Négociable' : 'Offert'}</span>
+                          </>
+                      )}
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-8 border-t border-b border-gray-100 mt-6">
+              <div className="flex flex-wrap justify-between items-center gap-6 py-5 border-t border-b border-gray-100 mt-5">
                 {/* 1. Typologie */}
                 {property.typology && (
-                    <div className="flex items-center gap-4 text-gray-700">
-                        <Building2 className="h-8 w-8 text-gray-400 stroke-1" />
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.typology}</div>
                             <div className="text-sm text-gray-500">Typologie</div>
@@ -536,9 +605,9 @@ export default function AnnounceDetailsPage() {
                 )}
                 
                 {/* 2. Nombre d'étages */}
-                {property.nbFloors && (
-                    <div className="flex items-center gap-4 text-gray-700">
-                        <Layers className="h-8 w-8 text-gray-400 stroke-1" />
+                {property.nbFloors !== undefined && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.nbFloors}</div>
                             <div className="text-sm text-gray-500">Étages</div>
@@ -546,45 +615,109 @@ export default function AnnounceDetailsPage() {
                     </div>
                 )}
 
-                {/* 3. Surface (Terrain) */}
-                {(property.landArea || property.builtArea) && (
-                    <div className="flex items-center gap-4 text-gray-700">
-                        <Square className="h-8 w-8 text-gray-400 stroke-1" />
+                {/* 3. Surface Totale */}
+                {property.landArea !== undefined && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{property.landArea || property.builtArea} m²</div>
-                            <div className="text-sm text-gray-500">Surface</div>
+                            <div className="font-bold text-xl">{property.landArea} m²</div>
+                            <div className="text-sm text-gray-500">Surf. Totale</div>
                         </div>
                     </div>
                 )}
 
-                {/* 4. Parking (Garage) */}
-                {(property.garageCount > 0 || property.parkingCount > 0) && (
-                    <div className="flex items-center gap-4 text-gray-700">
-                        <Car className="h-8 w-8 text-gray-400 stroke-1" />
+                {/* 4. Surface Bâtie */}
+                {property.builtArea !== undefined && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{property.garageCount || property.parkingCount}</div>
-                            <div className="text-sm text-gray-500">Parking</div>
+                            <div className="font-bold text-xl">{property.builtArea} m²</div>
+                            <div className="text-sm text-gray-500">Surf. Bâtie</div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 5. Parking (Garage & Extérieur) */}
+                {(property.parkingCount > 0 || property.outdoorParking > 0) && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Car className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                        <div className="flex flex-col gap-1.5">
+                            <div className="font-bold text-gray-900 leading-none">Parking</div>
+                            <div className="flex flex-col gap-1">
+                                {property.parkingCount > 0 && (
+                                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded uppercase w-fit">
+                                        INTÉRIEUR: {property.parkingCount}
+                                    </span>
+                                )}
+                                {property.outdoorParking > 0 && (
+                                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded uppercase w-fit">
+                                        EXTÉRIEUR: {property.outdoorParking}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
               </div>
 
               {/* Contacts Row */}
-              <div className="mt-8 flex flex-wrap gap-4 text-gray-600">
+              <div className="mt-5 flex flex-wrap gap-4 text-gray-600">
                   {(() => {
                       let contactsList = [];
                       try {
                           if (property.contacts) {
-                              contactsList = JSON.parse(property.contacts);
+                              if (typeof property.contacts === 'string') {
+                                  // Attempt to fix common JSON string issues before parsing
+                                  let jsonStr = property.contacts.trim();
+                                  
+                                  // If it looks like it might be truncated or invalid, try to parse what we can
+                                  try {
+                                      contactsList = JSON.parse(jsonStr);
+                                  } catch (e) {
+                                      console.warn("Initial JSON parse failed, attempting to fix string:", jsonStr);
+                                      // If it starts with [ but doesn't end with ], append ]
+                                      if (jsonStr.startsWith('[') && !jsonStr.endsWith(']')) {
+                                          try {
+                                              // Find the last complete object
+                                              const lastValidBrace = jsonStr.lastIndexOf('}');
+                                              if (lastValidBrace > 0) {
+                                                  jsonStr = jsonStr.substring(0, lastValidBrace + 1) + ']';
+                                                  contactsList = JSON.parse(jsonStr);
+                                              }
+                                          } catch (innerE) {
+                                              console.error("Failed to recover JSON string", innerE);
+                                          }
+                                      }
+                                  }
+                              } else if (Array.isArray(property.contacts)) {
+                                  contactsList = property.contacts;
+                              }
                           }
                       } catch (e) {
                           console.error("Failed to parse contacts", e);
                       }
 
+                      // Ensure contactsList is an array
+                      if (!Array.isArray(contactsList)) {
+                          contactsList = [];
+                      }
+
                       // If no contacts list but user has phone, use that
                       if (contactsList.length === 0 && announce.user?.phone) {
-                          contactsList.push({ phone: announce.user.phone, hasWhatsapp: false, hasViber: false, hasTelegram: false });
+                          contactsList.push({ 
+                              phone: announce.user.phone, 
+                              email: announce.user.email,
+                              hasWhatsapp: false, 
+                              hasViber: false, 
+                              hasTelegram: false 
+                          });
                       }
+
+                      // Ensure email is present in contacts if it's missing but user has it
+                      contactsList = contactsList.map((c: any) => ({
+                          ...c,
+                          email: c.email || announce.user?.email
+                      }));
 
                       return contactsList.map((contact: any, index: number) => (
                           <div key={index} className="relative group">
@@ -600,6 +733,11 @@ export default function AnnounceDetailsPage() {
                                       <a href={`tel:${contact.phone}`} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title="Appeler">
                                           <Phone className="h-5 w-5" />
                                       </a>
+                                      {contact.email && (
+                                          <a href={`mailto:${contact.email}`} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title="Email">
+                                              <Mail className="h-5 w-5" />
+                                          </a>
+                                      )}
                                       {contact.hasWhatsapp && (
                                           <a href={`https://wa.me/${contact.phone.replace(/\s+/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-[#25D366]/10 text-[#25D366] rounded-lg transition-colors" title="WhatsApp">
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -611,7 +749,7 @@ export default function AnnounceDetailsPage() {
                                           </a>
                                       )}
                                       {contact.hasTelegram && (
-                                          <a href={`tg://resolve?domain=${contact.phone.replace(/^0/, '+213').replace(/\s+/g, '')}`} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title="Telegram">
+                                          <a href={`https://t.me/${contact.phone.replace(/^0/, '+213').replace(/\s+/g, '')}`} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title="Telegram">
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm5.894-17.502L15.34 20.35c-.208.92-.746 1.144-1.503.682l-4.16-3.07-2.006 1.93c-.22.22-.405.405-.83.405l.3-4.225 7.684-6.94c.334-.3-.074-.466-.518-.214L4.8 15.38.704 14.1c-.89-.28-.908-.89.186-1.316l15.68-6.04c.725-.268 1.356.168 1.324 1.15z"/></svg>
                                           </a>
                                       )}
@@ -664,124 +802,316 @@ export default function AnnounceDetailsPage() {
 
       {/* Details & Amenities Full Width */}
       <div className="w-full mb-8">
-          {/* Caractéristiques Détaillées */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Caractéristiques Détaillées</h2>
+          
+          {/* Nouvelle section : Description et Mode de vie */}
+          {(announce.shortDescription || property.usageType) && (
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Description Courte */}
+                      {announce.shortDescription && (
+                          <div>
+                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <Layers className="h-5 w-5 text-[#00BFA6]" />
+                                  Description
+                              </h2>
+                              <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                                  {announce.shortDescription}
+                              </p>
+                          </div>
+                      )}
 
-              <div className="space-y-8">
-                  {/* Ligne 01: Informations générales */}
-                  <div>
-                      <div className="flex items-center gap-2 mb-4">
-                          <Building2 className="h-5 w-5 text-[#00BFA6]" />
-                          <h3 className="text-lg font-bold text-gray-900">Informations générales</h3>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-                          {property.typology && (
-                              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                  <span className="text-gray-500 font-medium text-sm">Typologie</span>
-                                  <span className="font-bold text-gray-900 text-sm">{property.typology}</span>
+                      {/* Mode de vie */}
+                      {property.usageType && (
+                          <div>
+                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <Users className="h-5 w-5 text-[#00BFA6]" />
+                                  Mode de vie
+                              </h2>
+                              <div className="flex gap-4">
+                                  {property.usageType === 'UNIQUE' || property.usageType === 'Unique' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Usage unique (Communicante)</span>
+                                          <span className="text-gray-500 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
+                                      </div>
+                                  ) : property.usageType === 'SEPARE' || property.usageType === 'Séparé' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
+                                          <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
+                                      </div>
+                                  ) : (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">{property.usageType}</span>
+                                      </div>
+                                  )}
                               </div>
-                          )}
-                          {property.nbFloors !== undefined && (
-                              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                  <span className="text-gray-500 font-medium text-sm">Nombre d'étages</span>
-                                  <span className="font-bold text-gray-900 text-sm">{property.nbFloors}</span>
-                              </div>
-                          )}
-                          {property.landArea !== undefined && (
-                              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                  <span className="text-gray-500 font-medium text-sm">Surface terrain</span>
-                                  <span className="font-bold text-gray-900 text-sm">{property.landArea} m²</span>
-                              </div>
-                          )}
-                          {property.state && (
-                              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                  <span className="text-gray-500 font-medium text-sm">État général</span>
-                                  <span className="font-bold text-gray-900 text-sm">{LABELS[property.state] || property.state}</span>
-                              </div>
-                          )}
-                      </div>
+                          </div>
+                      )}
                   </div>
+              </div>
+          )}
 
-                  {/* Ligne 02: Espace de Vie */}
-                  <div>
+          {/* Informations Générales (Detailed) */}
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-10">
+                  {/* Colonne 01: Espace de Vie */}
+                  <div className="space-y-6">
                       <div className="flex items-center gap-2 mb-4">
                           <BedDouble className="h-5 w-5 text-[#00BFA6]" />
                           <h3 className="text-lg font-bold text-gray-900">Espace de Vie</h3>
                       </div>
                       <div className="space-y-4">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-                              {property.nbBedrooms !== undefined && (
-                                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                      <span className="text-gray-500 font-medium text-sm">Nombre de chambres</span>
-                                      <span className="font-bold text-gray-900 text-sm">{property.nbBedrooms}</span>
-                                  </div>
-                              )}
-                              {property.nbSuites !== undefined && (
-                                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                      <span className="text-gray-500 font-medium text-sm">Suites parentales</span>
-                                      <span className="font-bold text-gray-900 text-sm">{property.nbSuites}</span>
-                                  </div>
-                              )}
-                              {property.nbLivingRooms !== undefined && (
-                                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                      <span className="text-gray-500 font-medium text-sm">Salons</span>
-                                      <span className="font-bold text-gray-900 text-sm">{property.nbLivingRooms}</span>
-                                  </div>
-                              )}
-                              {property.nbToilets !== undefined && (
-                                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                      <span className="text-gray-500 font-medium text-sm">Toilettes</span>
-                                      <span className="font-bold text-gray-900 text-sm">{property.nbToilets}</span>
-                                  </div>
-                              )}
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Chambres</span>
+                              <span className="font-bold text-gray-900">{property.nbBedrooms || 0}</span>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-                              {property.nbBathrooms !== undefined && (
-                                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                      <span className="text-gray-500 font-medium text-sm">Salles de bain</span>
-                                      <span className="font-bold text-gray-900 text-sm">{property.nbBathrooms}</span>
-                                  </div>
-                              )}
-                              {(property.bathroomType || bathroomTypes.length > 0) && (
-                                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                      <span className="text-gray-500 font-medium text-sm">Type de salle de bain</span>
-                                      <span className="font-bold text-gray-900 text-sm text-right">
-                                          {bathroomTypes.length > 0 
-                                              ? bathroomTypes.map(t => LABELS[t] || t).join(', ')
-                                              : ((property.bathroomType === 'LES_DEUX' || property.bathroomType === 'les_deux' || property.bathroomType === 'both') 
-                                                  ? 'Baignoire et douche italienne' 
-                                                  : (LABELS[property.bathroomType] || property.bathroomType))}
-                                      </span>
-                                  </div>
-                              )}
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Suites parentales</span>
+                              <span className="font-bold text-gray-900">{property.nbSuites || 0}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Salons</span>
+                              <span className="font-bold text-gray-900">{property.nbLivingRooms || 0}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">WC / Toilettes</span>
+                              <span className="font-bold text-gray-900">{property.nbToilets || 0}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Salles de bain</span>
+                              <span className="font-bold text-gray-900">{property.nbBathrooms || 0}</span>
+                          </div>
+                          <div className="flex flex-col gap-2 pt-1">
+                              <span className="text-gray-500 text-sm">Type de salle de bain</span>
+                              <div className="flex flex-wrap gap-2">
+                                  {bathroomTypes.length > 0 ? (
+                                      bathroomTypes.map((t, i) => (
+                                          <span key={i} className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">
+                                              {LABELS[t] || t}
+                                          </span>
+                                      ))
+                                  ) : (
+                                      (property.bathroomType === 'LES_DEUX' || property.bathroomType === 'both') ? (
+                                          <>
+                                              <span className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">Baignoire</span>
+                                              <span className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">Douche italienne</span>
+                                          </>
+                                      ) : property.bathroomType ? (
+                                          <span className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">
+                                              {LABELS[property.bathroomType] || property.bathroomType}
+                                          </span>
+                                      ) : null
+                                  )}
+                              </div>
                           </div>
                       </div>
                   </div>
 
-                  {/* Ligne 03: Cuisine et équipements */}
-                  <div>
+                  {/* Colonne 02: Cuisine et équipements */}
+                  <div className="space-y-6">
                       <div className="flex items-center gap-2 mb-4">
                           <Wind className="h-5 w-5 text-[#00BFA6]" />
                           <h3 className="text-lg font-bold text-gray-900">Cuisine et équipements</h3>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-                          {property.kitchenType && (
-                              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                  <span className="text-gray-500 font-medium text-sm">Type de cuisine</span>
-                                  <span className="font-bold text-gray-900 text-sm">{LABELS[property.kitchenType] || property.kitchenType}</span>
-                              </div>
-                          )}
-                          {(kitchens.length > 0 || kitchenEquipments.length > 0) && (
-                              <div className="flex justify-between items-center py-2 border-b border-gray-100 md:col-span-3">
-                                  <span className="text-gray-500 font-medium text-sm">Équipements</span>
-                                  <span className="font-bold text-gray-900 text-sm text-right">
-                                      {kitchenEquipments.length > 0 
-                                          ? kitchenEquipments.map(k => getEquipmentLabel(k)).join(', ')
-                                          : kitchens.map(k => k.label).join(', ')}
+                      <div className="space-y-4">
+                          <div className="flex flex-col gap-2 border-b border-gray-50 pb-4">
+                              <span className="text-gray-500 text-sm">Type de cuisine</span>
+                              {property.kitchenType && (
+                                  <span className="px-4 py-1.5 bg-[#00BFA6]/10 text-[#00BFA6] text-sm font-bold rounded-full w-fit">
+                                      {LABELS[property.kitchenType] || property.kitchenType}
                                   </span>
+                              )}
+                          </div>
+                          <div className="flex flex-col gap-3">
+                              <span className="text-gray-500 text-sm">Équipements</span>
+                              <div className="grid grid-cols-2 gap-2">
+                                  {kitchenEquipments.length > 0 ? (
+                                      kitchenEquipments.map((k, i) => (
+                                          <span key={i} className="px-2 py-1.5 bg-gray-50 text-gray-600 text-[10px] font-bold rounded border border-gray-100 flex items-center justify-center text-center">
+                                              {getEquipmentLabel(k)}
+                                          </span>
+                                      ))
+                                  ) : kitchens.length > 0 ? (
+                                      kitchens.map((k, i) => (
+                                          <span key={i} className="px-2 py-1.5 bg-gray-50 text-gray-600 text-[10px] font-bold rounded border border-gray-100 flex items-center justify-center text-center">
+                                              {k.label}
+                                          </span>
+                                      ))
+                                  ) : (
+                                      <span className="text-gray-400 text-xs italic">Non équipé</span>
+                                  )}
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Colonne 03: Commodités et compteurs */}
+                  <div className="space-y-6">
+                      <div className="flex items-center gap-2 mb-4">
+                          <Check className="h-5 w-5 text-[#00BFA6]" />
+                          <h3 className="text-lg font-bold text-gray-900">Commodités</h3>
+                      </div>
+                      <div className="space-y-6">
+                          
+                          {/* Espaces Extérieurs */}
+                          {(exteriorFeatures.length > 0) && (
+                              <div className="space-y-2">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-2">Espaces Extérieurs</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {exteriorFeatures.map((item, idx) => (
+                                          <span key={`ext-${idx}`} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                              {getEquipmentLabel(item)}
+                                          </span>
+                                      ))}
+                                  </div>
                               </div>
                           )}
+
+                          {/* Chauffage et Climatisation */}
+                          {(property.heatingType || property.acType) && (
+                              <div className="grid grid-cols-2 gap-4">
+                                  {property.heatingType && (
+                                      <div className="space-y-2">
+                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Chauffage</h4>
+                                          <span className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200 inline-block">
+                                              {LABELS[property.heatingType] || property.heatingType}
+                                          </span>
+                                      </div>
+                                  )}
+                                  {property.acType && (
+                                      <div className="space-y-2">
+                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Climatisation</h4>
+                                          <span className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200 inline-block">
+                                              {LABELS[property.acType] || property.acType}
+                                          </span>
+                                      </div>
+                                  )}
+                              </div>
+                          )}
+
+                          {/* Sécurité et Connectivité */}
+                          {(securityFeatures.length > 0 || connectivityFeatures.length > 0) && (
+                              <div className="grid grid-cols-2 gap-4">
+                                  {securityFeatures.length > 0 && (
+                                      <div className="space-y-2">
+                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Sécurité</h4>
+                                          <div className="flex flex-wrap gap-2">
+                                              {securityFeatures.map((item, idx) => (
+                                                  <span key={`sec-${idx}`} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                                      {getEquipmentLabel(item)}
+                                                  </span>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+                                  {connectivityFeatures.length > 0 && (
+                                      <div className="space-y-2">
+                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Connectivité</h4>
+                                          <div className="flex flex-wrap gap-2">
+                                              {connectivityFeatures.map((item, idx) => (
+                                                  <span key={`con-${idx}`} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                                      {getEquipmentLabel(item)}
+                                                  </span>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+                              </div>
+                          )}
+
+                          {/* Other active amenities fallback */}
+                          {[...conveniences, ...heaters, ...otherPieces, ...advantages].length > 0 && (
+                              <div className="space-y-2">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-2">Autres Commodités</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {[...conveniences, ...heaters, ...otherPieces, ...advantages].slice(0, 10).map((item, idx) => (
+                                          <span key={idx} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                              {item.label}
+                                          </span>
+                                      ))}
+                                  </div>
+                              </div>
+                          )}
+
+                          {/* Counters Section */}
+                          <div className="space-y-3 pt-4 border-t border-gray-100">
+                              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Compteurs</h4>
+                              <div className="flex flex-col gap-2">
+                                  {property.waterCounter && (
+                                      <div className="flex justify-between items-center px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100">
+                                          <span className="text-blue-700 text-[10px] font-bold uppercase">Eau</span>
+                                          <span className="text-blue-900 text-[10px] font-black uppercase">{property.waterCounter === 'INDIVIDUAL' || property.waterCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
+                                      </div>
+                                  )}
+                                  {property.elecCounter && (
+                                      <div className="flex justify-between items-center px-3 py-2 bg-yellow-50/50 rounded-lg border border-yellow-100">
+                                          <span className="text-yellow-700 text-[10px] font-bold uppercase">Électricité</span>
+                                          <span className="text-yellow-900 text-[10px] font-black uppercase">{property.elecCounter === 'INDIVIDUAL' || property.elecCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
+                                      </div>
+                                  )}
+                                  {property.gasCounter && (
+                                      <div className="flex justify-between items-center px-3 py-2 bg-orange-50/50 rounded-lg border border-orange-100">
+                                          <span className="text-orange-700 text-[10px] font-bold uppercase">Gaz</span>
+                                          <span className="text-orange-900 text-[10px] font-black uppercase">{property.gasCounter === 'INDIVIDUAL' || property.gasCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
+                                      </div>
+                                  )}
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Colonne 04: Conditions de location */}
+                  <div className="space-y-6">
+                      <div className="flex items-center gap-2 mb-4">
+                          <Search className="h-5 w-5 text-[#00BFA6]" />
+                          <h3 className="text-lg font-bold text-gray-900">Conditions</h3>
+                      </div>
+                      <div className="space-y-4">
+                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Usage Autorisé</span>
+                              <span className="font-bold text-gray-900 text-sm">
+                                  {property.rentalUsage ? 
+                                      (typeof property.rentalUsage === 'string' && property.rentalUsage.startsWith('[')) 
+                                          ? JSON.parse(property.rentalUsage).map((u: string) => LABELS[u] || u).join(', ')
+                                          : (LABELS[property.rentalUsage] || property.rentalUsage)
+                                      : 'Non spécifié'}
+                              </span>
+                          </div>
+                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Cautionnement</span>
+                              <span className="font-bold text-gray-900 text-sm">
+                                  {property.depositMonths > 0 
+                                      ? `${property.depositMonths} Mois` 
+                                      : 'Aucune Caution'}
+                              </span>
+                          </div>
+                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Charges</span>
+                              <span className="font-bold text-gray-900 text-sm">
+                                  {property.chargesIncluded === 1 || property.chargesIncluded === true || String(property.chargesIncluded).trim() === '1' || String(property.chargesIncluded).trim() === '01' || String(property.chargesIncluded).toLowerCase() === 'true'
+                                      ? 'Charges incluses' 
+                                      : 'Sans charges'}
+                              </span>
+                          </div>
+                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                              <span className="text-gray-500 text-sm">Disponibilité</span>
+                              <span className="font-bold text-[#00BFA6] text-sm">
+                                  {property.availableDate
+                                      ? (() => {
+                                          try {
+                                              const dateObj = new Date(property.availableDate);
+                                              if (!isNaN(dateObj.getTime())) {
+                                                  return `À partir du ${dateObj.toLocaleDateString('fr-FR')}`;
+                                              }
+                                              return 'Immédiate';
+                                          } catch (e) {
+                                              return 'Immédiate';
+                                          }
+                                      })()
+                                      : 'Immédiate'}
+                              </span>
+                          </div>
                       </div>
                   </div>
               </div>
