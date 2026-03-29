@@ -864,7 +864,7 @@ export default function AnnounceDetailsPage() {
                       <div className="space-y-4">
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
                               <span className="text-gray-500 text-sm">Chambres</span>
-                              <span className="font-bold text-gray-900">{property.nbBedrooms || 0}</span>
+                              <span className="font-bold text-gray-900">{property.nbPieces || 0}</span>
                           </div>
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
                               <span className="text-gray-500 text-sm">Suites parentales</span>
