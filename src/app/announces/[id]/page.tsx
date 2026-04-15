@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { 
   ArrowLeft, MapPin, BedDouble, Bath, Square, Heart, Share2, 
   Phone, Mail, User, Check, Building2, Car, Wind, Sun, 
-  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users, Info
+  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import Link from "next/link"
@@ -266,7 +266,9 @@ export default function AnnounceDetailsPage() {
                   connectivityFeatures = parsedAmenities.connectivity;
               }
 
-              if (parsedAmenities.exterior && Array.isArray(parsedAmenities.exterior)) {
+              if (parsedAmenities.exteriorFeatures && Array.isArray(parsedAmenities.exteriorFeatures)) {
+                  exteriorFeatures = parsedAmenities.exteriorFeatures;
+              } else if (parsedAmenities.exterior && Array.isArray(parsedAmenities.exterior)) {
                   exteriorFeatures = parsedAmenities.exterior;
               }
           }
@@ -300,6 +302,7 @@ export default function AnnounceDetailsPage() {
           garden: "Jardin",
           terrace: "Terrasse",
           balcony: "Balcon",
+          elevator: "Ascenseur",
           pool: "Piscine",
           barbecue: "Barbecue"
       };
@@ -837,6 +840,28 @@ export default function AnnounceDetailsPage() {
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
                                           <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
+                                      </div>
+                                  ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Entrée indépendante</span>
+                                          <span className="text-gray-500 text-sm">(accès indépendant au niveau de villa)</span>
+                                      </div>
+                                  ) : property.usageType === 'ENTREE_COMMUNE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Entrée commune</span>
+                                          <span className="text-gray-500 text-sm">(accès partagé / entrée commune)</span>
+                                      </div>
+                                  ) : property.usageType === 'QUARTIER_OUVERT' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Quartier ouvert</span>
+                                      </div>
+                                  ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Résidence clôturée</span>
+                                      </div>
+                                  ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Promotion immobilière</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
