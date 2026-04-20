@@ -24,7 +24,7 @@ import {
   Moon, Stars, Sunset, Sunrise, Wind as WindIcon, Umbrella, ArrowLeft,
   GripVertical, Image as ImageIcon,
   Bath as BathIcon, Bed as BedIcon, Utensils as UtensilsIcon, Flower2 as GardenIcon, Zap, FileText, Phone, RotateCw, Crop, Info,
-  Thermometer, Network, Bell, Ban, Siren, Calendar as CalendarIcon, Video as VideoIcon
+  Thermometer, Network, Bell, Ban, Siren, Calendar as CalendarIcon, Video as VideoIcon, LifeBuoy
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -39,7 +39,7 @@ import 'react-phone-input-2/lib/style.css'
 const IconMap: Record<string, React.ElementType> = {
   Home, Building, Building2, Warehouse, Hotel, Briefcase, Store, BedDouble, 
   PartyPopper, Factory, Tent, Archive, ParkingCircle, DoorOpen, Trees, Sun,
-  Utensils, CookingPot, Droplet, Battery, Flame, Video, Lock, Shield, Wifi, Phone, Layers,
+  Utensils, CookingPot, Droplet, Battery, Flame, Video, Lock, Shield, Wifi, Phone, Layers, LifeBuoy,
   LayoutGrid, Zap, Snowflake, Waves, Fan, Ban,
   Villa: Home,
   VillaLevel: Layers,
@@ -251,8 +251,32 @@ const APARTMENT_LIFESTYLE_TYPES = [
 ]
 
 const BUILDING_TYPOLOGY_MODES = [
-    { id: "SIMILAIRES", label: "Similaires" },
-    { id: "DIFFERENTES", label: "Différentes" }
+    { id: "SIMILAIRES", label: "Immeuble avec Appartements de typologies similaires" },
+    { id: "DIFFERENTES", label: "Immeuble avec Appartements de typologies différentes" }
+]
+
+const BUILDING_SURFACE_MODES = [
+    { id: "UNIQUE", label: "Surface unique" },
+    { id: "MULTI", label: "Multi-surfaces" }
+]
+
+const BUILDING_APARTMENT_STYLES = [
+    { id: "SIMPLEX", label: "Simplex" },
+    { id: "DUPLEX", label: "Duplex" },
+    { id: "TRIPLEX", label: "Triplex" }
+]
+
+const BUILDING_APARTMENT_TYPOLOGIES = [
+    { id: "F2", label: "F2" },
+    { id: "F3", label: "F3" },
+    { id: "F4", label: "F4" },
+    { id: "F5", label: "F5" },
+    { id: "F6", label: "F6" },
+    { id: "F7", label: "F7" },
+    { id: "F8", label: "F8" },
+    { id: "F9", label: "F9" },
+    { id: "F10", label: "F10" },
+    { id: "F10_PLUS", label: "+ de F10" },
 ]
 
 const KITCHEN_TYPES = [
@@ -307,6 +331,9 @@ const VILLA_EQUIPMENTS = {
     { id: "garden", label: "Jardin", icon: "Trees" },
     { id: "terrace", label: "Terrasse", icon: "Sun" },
     { id: "balcony", label: "Balcon", icon: "Home" },
+    { id: "pool", label: "Piscine", icon: "LifeBuoy" },
+    { id: "playground", label: "Espace de jeux", icon: "Dumbbell" },
+    { id: "barbecue", label: "Barbecue", icon: "Flame" },
     { id: "elevator", label: "Ascenseur", icon: "Layers" },
   ],
   utilities: [
@@ -315,14 +342,14 @@ const VILLA_EQUIPMENTS = {
     { id: "central_heating", label: "Chauffage central", icon: "Flame" },
   ],
   security: [
-    { id: "cameras", label: "Caméras de surveillance", icon: "Video" },
+    { id: "cameras", label: "Caméras", icon: "Video" },
     { id: "alarm", label: "Alarme", icon: "Lock" },
     { id: "guardian", label: "Gardiennage 24/7", icon: "Shield" },
   ],
   connectivity: [
-    { id: "fiber", label: "Fibre optique", icon: "Wifi" },
+    { id: "fiber", label: "Fibre", icon: "Wifi" },
     { id: "adsl", label: "ADSL", icon: "Reseau" },
-    { id: "phone_line", label: "Ligne téléphonique", icon: "Phone" },
+    { id: "phone_line", label: "Ligne fixe", icon: "Phone" },
   ]
 }
 
@@ -378,7 +405,11 @@ const formSchema = z.object({
   typology: z.string().optional(),
   buildingTypologyMode: z.enum(["SIMILAIRES", "DIFFERENTES"]).optional(),
   buildingApartmentTypologyCustom: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Typologie invalide"),
+  buildingTotalApartments: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
+  buildingSurfaceMode: z.enum(["UNIQUE", "MULTI"]).optional(),
   buildingApartmentTypologies: stringArrayOptional,
+  buildingApartmentTypologyOther: z.string().optional(),
+  buildingApartmentStyle: stringArrayOptional,
   buildingCountF3: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
   buildingCountF4: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
   buildingCountF5: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
@@ -491,28 +522,42 @@ const formSchema = z.object({
     }
     
     if (data.propertyType === "IMMEUBLE_RESIDENTIEL") {
-        if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
-        }
         if (!data.buildingTypologyMode) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie requise", path: ["buildingTypologyMode"] })
-        } else if (data.buildingTypologyMode === "SIMILAIRES") {
+        }
+        if (!data.floorCount) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'étages requis", path: ["floorCount"] })
+        }
+        
+        if (data.buildingTypologyMode === "SIMILAIRES") {
             if (!data.buildingApartmentTypologyCustom) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie d'appartements requise", path: ["buildingApartmentTypologyCustom"] })
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie des appartements requise", path: ["buildingApartmentTypologyCustom"] })
             }
-        } else if (data.buildingTypologyMode === "DIFFERENTES") {
+            if (!data.buildingTotalApartments) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingTotalApartments"] })
+            }
+            if (!data.buildingSurfaceMode) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Choisissez le type de surface", path: ["buildingSurfaceMode"] })
+            } else if (data.buildingSurfaceMode === "UNIQUE") {
+                if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
+                }
+            }
+        }
+        
+        if (data.buildingTypologyMode === "DIFFERENTES") {
             const selected = data.buildingApartmentTypologies || []
             if (selected.length === 0) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Sélectionnez au moins une typologie", path: ["buildingApartmentTypologies"] })
             }
-            if (selected.includes("F3") && !data.buildingCountF3) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingCountF3"] })
+            if (!data.buildingTotalApartments) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingTotalApartments"] })
             }
-            if (selected.includes("F4") && !data.buildingCountF4) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingCountF4"] })
+            if (selected.includes("F10_PLUS") && (!data.buildingApartmentTypologyOther || data.buildingApartmentTypologyOther.trim().length === 0)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Saisissez les typologies au-delà de F10", path: ["buildingApartmentTypologyOther"] })
             }
-            if (selected.includes("F5") && !data.buildingCountF5) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingCountF5"] })
+            if (!data.buildingApartmentStyle || data.buildingApartmentStyle.length === 0) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Style d'appartement requis", path: ["buildingApartmentStyle"] })
             }
         }
     }
@@ -801,6 +846,8 @@ export default function DepositPage() {
   const availableDate = watch("availableDate")
   const buildingTypologyMode = watch("buildingTypologyMode")
   const buildingApartmentTypologies = watch("buildingApartmentTypologies")
+  const buildingApartmentTypologyOther = watch("buildingApartmentTypologyOther")
+  const buildingSurfaceMode = watch("buildingSurfaceMode")
   
   // Re-hook the useEffect for price calculation since watch comes from useForm
   // We need to move the useEffect logic AFTER useForm
@@ -811,8 +858,21 @@ export default function DepositPage() {
     if (propertyType !== "IMMEUBLE_RESIDENTIEL") return
     if (buildingTypologyMode !== "DIFFERENTES") return
     const selected = Array.isArray(buildingApartmentTypologies) ? buildingApartmentTypologies : []
-    setValue("typology", selected.join(","), { shouldValidate: true })
-  }, [propertyType, buildingTypologyMode, buildingApartmentTypologies, setValue])
+    const normalized = selected.filter((t) => t && t !== "F10_PLUS")
+    const otherRaw = typeof buildingApartmentTypologyOther === "string" ? buildingApartmentTypologyOther : ""
+    const other = otherRaw
+        .split(/[,\s]+/)
+        .map((x) => x.trim())
+        .filter(Boolean)
+    setValue("typology", [...normalized, ...other].join(","), { shouldValidate: true })
+  }, [propertyType, buildingTypologyMode, buildingApartmentTypologies, buildingApartmentTypologyOther, setValue])
+
+  useEffect(() => {
+    if (propertyType !== "IMMEUBLE_RESIDENTIEL") return
+    if (buildingTypologyMode !== "SIMILAIRES") return
+    if (buildingSurfaceMode !== "MULTI") return
+    setValue("area", "", { shouldValidate: true })
+  }, [propertyType, buildingTypologyMode, buildingSurfaceMode, setValue])
 
   useEffect(() => {
     if (!currentPrice) {
@@ -1121,7 +1181,7 @@ export default function DepositPage() {
             "heatingType", "acType",
             "waterCounter", "elecCounter", "gasCounter",
             "typologyCustom"
-        ]);
+        ], { shouldFocus: true });
         
         console.log("Villa validation result:", isValid);
         if (!isValid) console.log("Errors:", errors);
@@ -1135,7 +1195,7 @@ export default function DepositPage() {
             "heatingType", "acType",
             "waterCounter", "elecCounter", "gasCounter",
             "typologyCustom"
-        ]);
+        ], { shouldFocus: true });
     } else if (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO") {
         isValid = await trigger([
             "typology", "floorCount", "area",
@@ -1145,15 +1205,16 @@ export default function DepositPage() {
             "heatingType", "acType",
             "waterCounter", "elecCounter", "gasCounter",
             "typologyCustom"
-        ]);
+        ], { shouldFocus: true });
     } else if (propertyType === "IMMEUBLE_RESIDENTIEL") {
         isValid = await trigger([
             "buildingTypologyMode",
             "buildingApartmentTypologyCustom",
+            "buildingTotalApartments",
+            "buildingSurfaceMode",
             "buildingApartmentTypologies",
-            "buildingCountF3",
-            "buildingCountF4",
-            "buildingCountF5",
+            "buildingApartmentTypologyOther",
+            "buildingApartmentStyle",
             "floorCount",
             "area",
             "state",
@@ -1174,13 +1235,13 @@ export default function DepositPage() {
             "gasCounter",
             "typologyCustom",
             "typology",
-        ]);
+        ], { shouldFocus: true });
     } else {
         // Autres types de biens
         isValid = await trigger([
             "floorCount", "extraFloor", "typology", "bedrooms", "livingRooms",
             "bathrooms", "bathroomType", "wc", "landArea", "builtArea"
-        ]);
+        ], { shouldFocus: true });
     }
     
     if (isValid) {
@@ -1469,8 +1530,8 @@ export default function DepositPage() {
         <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-[96px] md:pt-4">
             
             {/* Progress Stepper */}
-            <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-4xl flex justify-center">
-                <div className="flex items-center w-full max-w-3xl">
+            <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-5xl flex justify-center">
+                <div className="flex items-center w-full max-w-4xl">
                     {steps.map((step, idx) => (
                         <div key={step.id} className="flex items-center flex-1 min-w-0">
                             <div
@@ -1493,7 +1554,7 @@ export default function DepositPage() {
             </div>
 
             {/* Main Card */}
-            <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-4xl overflow-visible min-h-[500px] flex flex-col">
+            <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col">
                 <div className="p-4 md:p-8 border-b border-gray-100 flex items-center">
                     {currentStep > 1 && (
                         <button 
@@ -1507,7 +1568,7 @@ export default function DepositPage() {
                     <h1 className="text-lg md:text-2xl font-bold text-gray-800">{getStepTitle()}</h1>
                 </div>
 
-                <div className="p-6 md:p-12 flex-1 flex flex-col items-center justify-center text-left">
+                <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-left">
                     {!isFormAvailable && currentStep > 3 ? (
                         <div className="w-full max-w-2xl text-center space-y-6 py-12">
                             <div className="bg-orange-50 text-orange-600 p-8 rounded-2xl border border-orange-200">
@@ -1675,7 +1736,7 @@ export default function DepositPage() {
                             ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER")
                         )
                     ) && (
-                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+                        <div className="w-full max-w-5xl animate-fade-in space-y-10">
                             
                             {/* 1. Caractéristiques Générales & Structure */}
                             <section className="space-y-6">
@@ -1686,130 +1747,176 @@ export default function DepositPage() {
                                 <div className="flex flex-col gap-5">
                                     {propertyType === "IMMEUBLE_RESIDENTIEL" ? (
                                         <div className="flex flex-col gap-5">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
-                                                    <div className="flex flex-wrap gap-4">
-                                                        {BUILDING_TYPOLOGY_MODES.map((m) => (
-                                                            <label key={m.id} className="cursor-pointer">
-                                                                <input type="radio" value={m.id} {...register("buildingTypologyMode")} className="peer sr-only" />
-                                                                <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400">
-                                                                    {m.label}
-                                                                </div>
-                                                            </label>
-                                                        ))}
-                                                    </div>
-                                                    {errors.buildingTypologyMode && <p className="text-red-500 text-xs mt-1">{errors.buildingTypologyMode.message as any}</p>}
+                                            <div className="min-w-0">
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {BUILDING_TYPOLOGY_MODES.map((m) => (
+                                                        <label key={m.id} className="cursor-pointer">
+                                                            <input type="radio" value={m.id} {...register("buildingTypologyMode")} className="peer sr-only" />
+                                                            <div className="w-full min-h-[64px] flex items-center justify-center px-4 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 text-center whitespace-normal leading-snug">
+                                                                {m.label}
+                                                            </div>
+                                                        </label>
+                                                    ))}
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages dans l&apos;immeuble <span className="text-red-500">*</span></label>
-                                                    <input 
-                                                        {...register("floorCount")} 
-                                                        type="number" 
-                                                        min="0" max="50"
-                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                        placeholder="Ex: 8"
-                                                    />
-                                                    {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
-                                                </div>
+                                                {errors.buildingTypologyMode && <p className="text-red-500 text-xs mt-1">{errors.buildingTypologyMode.message as any}</p>}
                                             </div>
 
-                                            {buildingTypologyMode === "SIMILAIRES" ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
-                                                    <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Typologie d&apos;appartements <span className="text-red-500">*</span></label>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-bold text-gray-700 text-lg">F</span>
-                                                            <input 
-                                                                {...register("buildingApartmentTypologyCustom")}
-                                                                type="number" 
-                                                                min="1" max="10"
-                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value
-                                                                    setValue("buildingApartmentTypologyCustom", val, { shouldValidate: true })
-                                                                    setValue("typology", val ? `F${val}` : "", { shouldValidate: true })
-                                                                    setValue("typologyCustom", val)
-                                                                }}
-                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 4"
-                                                            />
-                                                        </div>
-                                                        {errors.buildingApartmentTypologyCustom && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologyCustom.message as any}</p>}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
-                                                        <input 
-                                                            {...register("area")} 
-                                                            type="number" 
-                                                            min="0"
-                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                            placeholder="Ex: 120" 
-                                                        />
-                                                        {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area.message as any}</p>}
-                                                    </div>
-                                                </div>
-                                            ) : buildingTypologyMode === "DIFFERENTES" ? (
-                                                <div className="space-y-3">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                                            {buildingTypologyMode === "SIMILAIRES" && (
+                                                <div className="flex flex-col gap-5">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_1.1fr_1.4fr] gap-3 items-end">
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Typologies <span className="text-red-500">*</span></label>
-                                                            <div className="flex gap-3 flex-wrap">
-                                                                {TYPOLOGIES.map((t) => (
-                                                                    <label key={t.id} className="cursor-pointer">
-                                                                        <input type="checkbox" value={t.id} {...register("buildingApartmentTypologies")} className="peer sr-only" />
-                                                                        <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">
-                                                                            {t.label}
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Nbr d&apos;étages dans l&apos;immeuble <span className="text-red-500">*</span></label>
+                                                            <input 
+                                                                {...register("floorCount")} 
+                                                                type="number" 
+                                                                min="0" max="50"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
+                                                                placeholder="Ex: 8"
+                                                            />
+                                                            {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Typologie des appartements <span className="text-red-500">*</span></label>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-bold text-gray-700 text-lg">F</span>
+                                                                <input 
+                                                                    {...register("buildingApartmentTypologyCustom")}
+                                                                    type="number" 
+                                                                    min="1" max="99"
+                                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value
+                                                                        setValue("buildingApartmentTypologyCustom", val, { shouldValidate: true })
+                                                                        setValue("typology", val ? `F${val}` : "", { shouldValidate: true })
+                                                                        setValue("typologyCustom", val)
+                                                                    }}
+                                                                    className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
+                                                                    placeholder="Ex: 4"
+                                                                />
+                                                            </div>
+                                                            {errors.buildingApartmentTypologyCustom && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologyCustom.message as any}</p>}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Nombre d&apos;appartements <span className="text-red-500">*</span></label>
+                                                            <input 
+                                                                {...register("buildingTotalApartments")} 
+                                                                type="number" 
+                                                                min="1"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
+                                                                placeholder="Ex: 24" 
+                                                            />
+                                                            {errors.buildingTotalApartments && <p className="text-red-500 text-xs mt-1">{errors.buildingTotalApartments.message as any}</p>}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Surface <span className="text-red-500">*</span></label>
+                                                            <div className="grid grid-cols-2 gap-2 p-1 border-2 border-gray-200 rounded-lg bg-white">
+                                                                {BUILDING_SURFACE_MODES.map((m) => (
+                                                                    <label key={m.id} className="cursor-pointer">
+                                                                        <input type="radio" value={m.id} {...register("buildingSurfaceMode")} className="peer sr-only" />
+                                                                        <div className="w-full px-2 py-2 rounded-md text-[11px] font-bold text-gray-700 peer-checked:bg-[#00BFA6] peer-checked:text-white transition-colors text-center whitespace-nowrap">
+                                                                            {m.label}
                                                                         </div>
                                                                     </label>
                                                                 ))}
                                                             </div>
-                                                            {errors.buildingApartmentTypologies && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologies.message as any}</p>}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
-                                                            <input 
-                                                                {...register("area")} 
-                                                                type="number" 
-                                                                min="0"
-                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 120" 
-                                                            />
-                                                            {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area.message as any}</p>}
+                                                            {errors.buildingSurfaceMode && <p className="text-red-500 text-xs mt-1">{errors.buildingSurfaceMode.message as any}</p>}
                                                         </div>
                                                     </div>
-                                                    {Array.isArray(buildingApartmentTypologies) && buildingApartmentTypologies.includes("F3") && (
+
+                                                    {buildingSurfaceMode === "UNIQUE" && (
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
                                                             <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;appartements (F3) <span className="text-red-500">*</span></label>
-                                                                <input {...register("buildingCountF3")} type="number" min="1" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="Ex: 6" />
-                                                                {errors.buildingCountF3 && <p className="text-red-500 text-xs mt-1">{errors.buildingCountF3.message as any}</p>}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {Array.isArray(buildingApartmentTypologies) && buildingApartmentTypologies.includes("F4") && (
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
-                                                            <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;appartements (F4) <span className="text-red-500">*</span></label>
-                                                                <input {...register("buildingCountF4")} type="number" min="1" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="Ex: 8" />
-                                                                {errors.buildingCountF4 && <p className="text-red-500 text-xs mt-1">{errors.buildingCountF4.message as any}</p>}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {Array.isArray(buildingApartmentTypologies) && buildingApartmentTypologies.includes("F5") && (
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
-                                                            <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;appartements (F5) <span className="text-red-500">*</span></label>
-                                                                <input {...register("buildingCountF5")} type="number" min="1" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="Ex: 4" />
-                                                                {errors.buildingCountF5 && <p className="text-red-500 text-xs mt-1">{errors.buildingCountF5.message as any}</p>}
+                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
+                                                                <input 
+                                                                    {...register("area")} 
+                                                                    type="number" 
+                                                                    min="0"
+                                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                    className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                                    placeholder="Ex: 120" 
+                                                                />
+                                                                {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area.message as any}</p>}
                                                             </div>
                                                         </div>
                                                     )}
                                                 </div>
-                                            ) : null}
+                                            )}
+
+                                            {buildingTypologyMode === "DIFFERENTES" && (
+                                                <div className="flex flex-col gap-5">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                                        <div className="min-w-0">
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages dans l&apos;immeuble <span className="text-red-500">*</span></label>
+                                                            <input 
+                                                                {...register("floorCount")} 
+                                                                type="number" 
+                                                                min="0" max="50"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                                placeholder="Ex: 8"
+                                                            />
+                                                            {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;appartements <span className="text-red-500">*</span></label>
+                                                            <input 
+                                                                {...register("buildingTotalApartments")} 
+                                                                type="number" 
+                                                                min="1"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                                placeholder="Ex: 24" 
+                                                            />
+                                                            {errors.buildingTotalApartments && <p className="text-red-500 text-xs mt-1">{errors.buildingTotalApartments.message as any}</p>}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Style d&apos;appartement <span className="text-red-500">*</span></label>
+                                                            <div className="flex flex-wrap gap-3">
+                                                                {BUILDING_APARTMENT_STYLES.map((s) => (
+                                                                    <label key={s.id} className="cursor-pointer">
+                                                                        <input type="checkbox" value={s.id} {...register("buildingApartmentStyle")} className="peer sr-only" />
+                                                                        <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">
+                                                                            {s.label}
+                                                                        </div>
+                                                                    </label>
+                                                                ))}
+                                                            </div>
+                                                            {errors.buildingApartmentStyle && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentStyle.message as any}</p>}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Typologies <span className="text-red-500">*</span></label>
+                                                        <div className="flex gap-3 flex-wrap">
+                                                            {BUILDING_APARTMENT_TYPOLOGIES.map((t) => (
+                                                                <label key={t.id} className="cursor-pointer">
+                                                                    <input type="checkbox" value={t.id} {...register("buildingApartmentTypologies")} className="peer sr-only" />
+                                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">
+                                                                        {t.label}
+                                                                    </div>
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                        {errors.buildingApartmentTypologies && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologies.message as any}</p>}
+                                                    </div>
+
+                                                    {Array.isArray(buildingApartmentTypologies) && buildingApartmentTypologies.includes("F10_PLUS") && (
+                                                        <div className="min-w-0">
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Typologies au-delà de F10 <span className="text-red-500">*</span></label>
+                                                            <input
+                                                                {...register("buildingApartmentTypologyOther")}
+                                                                type="text"
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                                placeholder="Ex: F11, F12"
+                                                            />
+                                                            {errors.buildingApartmentTypologyOther && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologyOther.message as any}</p>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <>
@@ -1981,80 +2088,80 @@ export default function DepositPage() {
                                 
                                 <div className="flex flex-col gap-5">
                                     {/* Ligne 1: Chambres, Suites, Salons, Toilettes */}
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Chambres <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">Chambres <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("bedrooms")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                                className="w-full p-2.5 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
                                             />
                                             {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Dont Suites Parentales</label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">Suites parentales</label>
                                             <input 
                                                 {...register("nbSuites")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                                className="w-full p-2.5 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Salons <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">Salons <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("livingRooms")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                                className="w-full p-2.5 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
                                             />
                                             {errors.livingRooms && <p className="text-red-500 text-sm mt-1">{errors.livingRooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Toilettes (WC) <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">WC <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("wc")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                                className="w-full p-2.5 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
                                             />
                                             {errors.wc && <p className="text-red-500 text-sm mt-1">{errors.wc.message}</p>}
                                         </div>
                                     </div>
 
                                     {/* Ligne 2: SDB, Type SDB */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de Salles de Bain <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">Salles de bain <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("bathrooms")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                                className="w-full p-2.5 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
                                             />
                                             {errors.bathrooms && <p className="text-red-500 text-sm mt-1">{errors.bathrooms.message}</p>}
                                         </div>
 
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Type de Salle de Bain</label>
-                                            <div className="flex flex-wrap gap-4">
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">Type de salle de bain</label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
                                                     <input type="radio" value="italian_shower" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-sm font-bold text-gray-900">Douche Italienne</span>
+                                                    <span className="text-xs font-bold text-gray-900">Douche italienne</span>
                                                 </label>
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
                                                     <input type="radio" value="bathtub" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-sm font-bold text-gray-900">Baignoire</span>
+                                                    <span className="text-xs font-bold text-gray-900">Baignoire</span>
                                                 </label>
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
                                                     <input type="radio" value="both" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-sm font-bold text-gray-900">Les deux</span>
+                                                    <span className="text-xs font-bold text-gray-900">Les deux</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -2130,7 +2237,18 @@ export default function DepositPage() {
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
                                     <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                                        {VILLA_EQUIPMENTS.exterior.filter((item) => item.id !== 'elevator' || ['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO'].includes(propertyType)).map((item) => {
+                                        {VILLA_EQUIPMENTS.exterior.filter((item) => {
+                                            if (propertyType === 'VILLA' || propertyType === 'NIVEAU_VILLA') {
+                                                return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
+                                            }
+                                            if (['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO'].includes(propertyType)) {
+                                                return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
+                                            }
+                                            if (propertyType === 'IMMEUBLE_RESIDENTIEL') {
+                                                return ['garden', 'terrace', 'balcony', 'pool', 'playground'].includes(item.id)
+                                            }
+                                            return item.id !== 'elevator'
+                                        }).map((item) => {
                                             const Icon = IconMap[item.icon] || Trees
                                             return (
                                                 <label key={item.id} className="cursor-pointer group">
@@ -2529,7 +2647,18 @@ export default function DepositPage() {
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Extérieur</label>
                                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                            {VILLA_EQUIPMENTS.exterior.filter((item) => item.id !== 'elevator' || ['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO'].includes(propertyType)).map((item) => {
+                                            {VILLA_EQUIPMENTS.exterior.filter((item) => {
+                                                if (propertyType === 'VILLA' || propertyType === 'NIVEAU_VILLA') {
+                                                    return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
+                                                }
+                                                if (['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO'].includes(propertyType)) {
+                                                    return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
+                                                }
+                                                if (propertyType === 'IMMEUBLE_RESIDENTIEL') {
+                                                    return ['garden', 'terrace', 'balcony', 'pool', 'playground'].includes(item.id)
+                                                }
+                                                return item.id !== 'elevator'
+                                            }).map((item) => {
                                                 const Icon = IconMap[item.icon] || Trees
                                                 return (
                                                     <label key={item.id} className="cursor-pointer">

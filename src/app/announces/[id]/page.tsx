@@ -9,6 +9,7 @@ import {
   Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
+import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import Link from "next/link"
 import { AnnounceFilter } from "@/components/AnnounceFilter"
 
@@ -220,6 +221,7 @@ export default function AnnounceDetailsPage() {
   let securityFeatures: string[] = [];
   let connectivityFeatures: string[] = [];
   let exteriorFeatures: string[] = [];
+  let buildingTypology: any = null;
   
   if (property.amenities) {
       try {
@@ -271,6 +273,10 @@ export default function AnnounceDetailsPage() {
               } else if (parsedAmenities.exterior && Array.isArray(parsedAmenities.exterior)) {
                   exteriorFeatures = parsedAmenities.exterior;
               }
+              
+              if (parsedAmenities.buildingTypology && typeof parsedAmenities.buildingTypology === 'object') {
+                  buildingTypology = parsedAmenities.buildingTypology;
+              }
           }
       } catch (e) {
           console.error("Failed to parse amenities for specific categories", e);
@@ -295,15 +301,16 @@ export default function AnnounceDetailsPage() {
           intercom: "Interphone",
           digicode: "Digicode",
           // Connectivity
-          fiber: "Fibre optique",
+          fiber: "Fibre",
           adsl: "ADSL",
-          phone_line: "Ligne téléphonique",
+          phone_line: "Ligne fixe",
           // Exterior
           garden: "Jardin",
           terrace: "Terrasse",
           balcony: "Balcon",
           elevator: "Ascenseur",
           pool: "Piscine",
+          playground: "Espace de jeux",
           barbecue: "Barbecue"
       };
       return map[id] || id;
@@ -324,6 +331,23 @@ export default function AnnounceDetailsPage() {
   const isVilla = announce?.property?.propertyType === 'VILLA' || announce?.property?.propertyType === 'Villa' || announce?.property?.propertyType === 'villa';
   const isRental = announce?.type === 'RENTAL';
   const isVillaRental = isVilla && isRental;
+  
+  const normalizedPropertyType = typeof property.propertyType === "string" ? property.propertyType.toUpperCase() : "";
+  const propertyTypeLabel = PROPERTY_TYPES.find((t) => t.id === normalizedPropertyType)?.label || property.propertyType;
+  const hasElevator = exteriorFeatures.includes("elevator");
+  const displayArea = property.area ?? property.habitableArea ?? property.builtArea ?? property.landArea;
+  const formatUnitFloor = (v: any) => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return String(v);
+      const i = Math.trunc(n);
+      if (i === 0) return "RDC";
+      if (i === 1) return "1er étage";
+      return `${i}ème étage`;
+  }
+  
+  const tagBaseClass = "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold leading-none";
+  const tagNeutralClass = `${tagBaseClass} bg-white text-gray-700 border-gray-200`;
+  const tagPrimaryClass = `${tagBaseClass} bg-[#00BFA6]/10 text-[#007B73] border-[#00BFA6]/25`;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -569,7 +593,7 @@ export default function AnnounceDetailsPage() {
               <div className="flex justify-between items-start mb-2">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-3">
-                      <h1 className="text-3xl font-bold text-gray-900">{property.propertyType}</h1>
+                      <h1 className="text-3xl font-bold text-gray-900">{propertyTypeLabel}</h1>
                       {property.state && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
                               {LABELS[property.state] || property.state}
@@ -596,8 +620,7 @@ export default function AnnounceDetailsPage() {
               </div>
 
               <div className="flex flex-wrap justify-between items-center gap-6 py-5 border-t border-b border-gray-100 mt-5">
-                {/* 1. Typologie */}
-                {property.typology && (
+                {normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && property.typology && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
@@ -607,40 +630,95 @@ export default function AnnounceDetailsPage() {
                     </div>
                 )}
                 
-                {/* 2. Nombre d'étages */}
-                {property.nbFloors !== undefined && (
+                {property.nbFloors !== undefined && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{property.nbFloors}</div>
-                            <div className="text-sm text-gray-500">Étages</div>
+                            <div className="font-bold text-xl">
+                                {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
+                            </div>
+                            <div className="text-sm text-gray-500">{normalizedPropertyType === "VILLA" ? "Étages" : "Étage"}</div>
                         </div>
                     </div>
                 )}
 
-                {/* 3. Surface Totale */}
-                {property.landArea !== undefined && (
+                {normalizedPropertyType === "VILLA" && property.landArea !== undefined && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.landArea} m²</div>
-                            <div className="text-sm text-gray-500">Surf. Totale</div>
+                            <div className="text-sm text-gray-500">Surf. terrain</div>
                         </div>
                     </div>
                 )}
 
-                {/* 4. Surface Bâtie */}
-                {property.builtArea !== undefined && (
+                {normalizedPropertyType === "VILLA" && property.builtArea !== undefined && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.builtArea} m²</div>
-                            <div className="text-sm text-gray-500">Surf. Bâtie</div>
+                            <div className="text-sm text-gray-500">Surf. bâtie</div>
                         </div>
                     </div>
                 )}
 
-                {/* 5. Parking (Garage & Extérieur) */}
+                {normalizedPropertyType !== "VILLA" && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && displayArea !== undefined && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                            <div className="font-bold text-xl">{displayArea} m²</div>
+                            <div className="text-sm text-gray-500">Surface</div>
+                        </div>
+                    </div>
+                )}
+
+                {normalizedPropertyType !== "VILLA" && hasElevator && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                            <div className="font-bold text-xl">Oui</div>
+                            <div className="text-sm text-gray-500">Ascenseur</div>
+                        </div>
+                    </div>
+                )}
+
+                {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && (
+                    <>
+                        {property.nbFloors !== undefined && (
+                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                                <div>
+                                    <div className="font-bold text-xl">{property.nbFloors}</div>
+                                    <div className="text-sm text-gray-500">Étages</div>
+                                </div>
+                            </div>
+                        )}
+                        {buildingTypology?.totalApartments !== undefined && (
+                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                                <div>
+                                    <div className="font-bold text-xl">{buildingTypology.totalApartments}</div>
+                                    <div className="text-sm text-gray-500">Appartements</div>
+                                </div>
+                            </div>
+                        )}
+                        {(buildingTypology?.apartmentTypology || buildingTypology?.apartmentTypologies?.length || buildingTypology?.apartmentTypologiesOther?.length) && (
+                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                                <div>
+                                    <div className="font-bold text-xl">
+                                        {buildingTypology.apartmentTypology || [
+                                            ...(Array.isArray(buildingTypology.apartmentTypologies) ? buildingTypology.apartmentTypologies : []),
+                                            ...(Array.isArray(buildingTypology.apartmentTypologiesOther) ? buildingTypology.apartmentTypologiesOther : []),
+                                        ].join(", ")}
+                                    </div>
+                                    <div className="text-sm text-gray-500">Typologies</div>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+
                 {(property.parkingCount > 0 || property.outdoorParking > 0) && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Car className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
@@ -806,8 +884,8 @@ export default function AnnounceDetailsPage() {
       {/* Details & Amenities Full Width */}
       <div className="w-full mb-8">
           
-          {/* Nouvelle section : Description et Mode de vie */}
-          {(announce.shortDescription || property.usageType) && (
+          {/* Nouvelle section : Description et informations spécifiques */}
+          {(announce.shortDescription || property.usageType || (normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && buildingTypology)) && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
@@ -824,48 +902,105 @@ export default function AnnounceDetailsPage() {
                       )}
 
                       {/* Mode de vie */}
-                      {property.usageType && (
+                      {property.usageType && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  Mode de vie
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Accès" : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") ? "Environnement" : "Mode de vie"}
                               </h2>
                               <div className="flex gap-4">
-                                  {property.usageType === 'UNIQUE' || property.usageType === 'Unique' ? (
+                                  {(normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'UNIQUE' || property.usageType === 'Unique') ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Usage unique (Communicante)</span>
                                           <span className="text-gray-500 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
                                       </div>
-                                  ) : property.usageType === 'SEPARE' || property.usageType === 'Séparé' ? (
+                                  ) : (normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'SEPARE' || property.usageType === 'Séparé') ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
                                           <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
                                       </div>
-                                  ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
+                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_INDEPENDANTE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Entrée indépendante</span>
                                           <span className="text-gray-500 text-sm">(accès indépendant au niveau de villa)</span>
                                       </div>
-                                  ) : property.usageType === 'ENTREE_COMMUNE' ? (
+                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_COMMUNE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Entrée commune</span>
                                           <span className="text-gray-500 text-sm">(accès partagé / entrée commune)</span>
                                       </div>
-                                  ) : property.usageType === 'QUARTIER_OUVERT' ? (
+                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'QUARTIER_OUVERT' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Quartier ouvert</span>
                                       </div>
-                                  ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
+                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'RESIDENCE_CLOTUREE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Résidence clôturée</span>
                                       </div>
-                                  ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
+                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'PROMOTION_IMMOBILIERE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Promotion immobilière</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">{property.usageType}</span>
+                                      </div>
+                                  )}
+                              </div>
+                          </div>
+                      )}
+                      
+                      {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && buildingTypology && (
+                          <div>
+                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <Building2 className="h-5 w-5 text-[#00BFA6]" />
+                                  Composition de l'immeuble
+                              </h2>
+                              <div className="space-y-3">
+                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                                      <span className="text-gray-500 text-sm">Typologie</span>
+                                      <span className="font-bold text-gray-900">{buildingTypology.mode === "SIMILAIRES" ? "Similaires" : buildingTypology.mode === "DIFFERENTES" ? "Différentes" : buildingTypology.mode}</span>
+                                  </div>
+                                  {buildingTypology.apartmentTypology && (
+                                      <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                                          <span className="text-gray-500 text-sm">Typologie des appartements</span>
+                                          <span className="font-bold text-gray-900">{buildingTypology.apartmentTypology}</span>
+                                      </div>
+                                  )}
+                                  {buildingTypology.totalApartments !== undefined && (
+                                      <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                                          <span className="text-gray-500 text-sm">Nombre d'appartements</span>
+                                          <span className="font-bold text-gray-900">{buildingTypology.totalApartments}</span>
+                                      </div>
+                                  )}
+                                  {(buildingTypology.apartmentTypologies?.length || buildingTypology.apartmentTypologiesOther?.length) && (
+                                      <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50">
+                                          <span className="text-gray-500 text-sm">Typologies</span>
+                                          <div className="flex flex-wrap gap-2">
+                                              {[...(Array.isArray(buildingTypology.apartmentTypologies) ? buildingTypology.apartmentTypologies : []), ...(Array.isArray(buildingTypology.apartmentTypologiesOther) ? buildingTypology.apartmentTypologiesOther : [])].map((t: string, i: number) => (
+                                                  <span key={i} className={tagNeutralClass}>
+                                                      {t}
+                                                  </span>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+                                  {buildingTypology.apartmentStyle && (
+                                      <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                                          <span className="text-gray-500 text-sm">Style</span>
+                                          <span className="font-bold text-gray-900">
+                                              {Array.isArray(buildingTypology.apartmentStyle)
+                                                  ? buildingTypology.apartmentStyle
+                                                      .map((s: string) => (s === "SIMPLEX" ? "Simplex" : s === "DUPLEX" ? "Duplex" : s === "TRIPLEX" ? "Triplex" : s))
+                                                      .join(", ")
+                                                  : buildingTypology.apartmentStyle}
+                                          </span>
+                                      </div>
+                                  )}
+                                  {buildingTypology.surfaceMode && (
+                                      <div className="flex justify-between items-center py-1.5">
+                                          <span className="text-gray-500 text-sm">Surface</span>
+                                          <span className="font-bold text-gray-900">{buildingTypology.surfaceMode === "UNIQUE" ? "Unique" : buildingTypology.surfaceMode === "MULTI" ? "Multi-surfaces" : buildingTypology.surfaceMode}</span>
                                       </div>
                                   )}
                               </div>
@@ -879,9 +1014,9 @@ export default function AnnounceDetailsPage() {
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Colonne 01: Espace de Vie */}
-                  <div className="space-y-6">
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
                       <div className="flex items-center gap-2 mb-4">
                           <BedDouble className="h-5 w-5 text-[#00BFA6]" />
                           <h3 className="text-lg font-bold text-gray-900">Espace de Vie</h3>
@@ -912,18 +1047,18 @@ export default function AnnounceDetailsPage() {
                               <div className="flex flex-wrap gap-2">
                                   {bathroomTypes.length > 0 ? (
                                       bathroomTypes.map((t, i) => (
-                                          <span key={i} className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">
+                                          <span key={i} className={tagNeutralClass}>
                                               {LABELS[t] || t}
                                           </span>
                                       ))
                                   ) : (
                                       (property.bathroomType === 'LES_DEUX' || property.bathroomType === 'both') ? (
                                           <>
-                                              <span className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">Baignoire</span>
-                                              <span className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">Douche italienne</span>
+                                              <span className={tagNeutralClass}>Baignoire</span>
+                                              <span className={tagNeutralClass}>Douche italienne</span>
                                           </>
                                       ) : property.bathroomType ? (
-                                          <span className="px-2 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded uppercase border border-gray-200">
+                                          <span className={tagNeutralClass}>
                                               {LABELS[property.bathroomType] || property.bathroomType}
                                           </span>
                                       ) : null
@@ -934,7 +1069,7 @@ export default function AnnounceDetailsPage() {
                   </div>
 
                   {/* Colonne 02: Cuisine et équipements */}
-                  <div className="space-y-6">
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
                       <div className="flex items-center gap-2 mb-4">
                           <Wind className="h-5 w-5 text-[#00BFA6]" />
                           <h3 className="text-lg font-bold text-gray-900">Cuisine et équipements</h3>
@@ -943,23 +1078,23 @@ export default function AnnounceDetailsPage() {
                           <div className="flex flex-col gap-2 border-b border-gray-50 pb-4">
                               <span className="text-gray-500 text-sm">Type de cuisine</span>
                               {property.kitchenType && (
-                                  <span className="px-4 py-1.5 bg-[#00BFA6]/10 text-[#00BFA6] text-sm font-bold rounded-full w-fit">
+                                  <span className={tagPrimaryClass}>
                                       {LABELS[property.kitchenType] || property.kitchenType}
                                   </span>
                               )}
                           </div>
                           <div className="flex flex-col gap-3">
                               <span className="text-gray-500 text-sm">Équipements</span>
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-wrap gap-2">
                                   {kitchenEquipments.length > 0 ? (
                                       kitchenEquipments.map((k, i) => (
-                                          <span key={i} className="px-2 py-1.5 bg-gray-50 text-gray-600 text-[10px] font-bold rounded border border-gray-100 flex items-center justify-center text-center">
+                                          <span key={i} className={tagNeutralClass}>
                                               {getEquipmentLabel(k)}
                                           </span>
                                       ))
                                   ) : kitchens.length > 0 ? (
                                       kitchens.map((k, i) => (
-                                          <span key={i} className="px-2 py-1.5 bg-gray-50 text-gray-600 text-[10px] font-bold rounded border border-gray-100 flex items-center justify-center text-center">
+                                          <span key={i} className={tagNeutralClass}>
                                               {k.label}
                                           </span>
                                       ))
@@ -972,7 +1107,7 @@ export default function AnnounceDetailsPage() {
                   </div>
 
                   {/* Colonne 03: Commodités et compteurs */}
-                  <div className="space-y-6">
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
                       <div className="flex items-center gap-2 mb-4">
                           <Check className="h-5 w-5 text-[#00BFA6]" />
                           <h3 className="text-lg font-bold text-gray-900">Commodités</h3>
@@ -985,7 +1120,7 @@ export default function AnnounceDetailsPage() {
                                   <h4 className="text-sm font-bold text-gray-900 mb-2">Espaces Extérieurs</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {exteriorFeatures.map((item, idx) => (
-                                          <span key={`ext-${idx}`} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                          <span key={`ext-${idx}`} className={tagNeutralClass}>
                                               {getEquipmentLabel(item)}
                                           </span>
                                       ))}
@@ -999,7 +1134,7 @@ export default function AnnounceDetailsPage() {
                                   {property.heatingType && (
                                       <div className="space-y-2">
                                           <h4 className="text-sm font-bold text-gray-900 mb-2">Chauffage</h4>
-                                          <span className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200 inline-block">
+                                          <span className={tagNeutralClass}>
                                               {LABELS[property.heatingType] || property.heatingType}
                                           </span>
                                       </div>
@@ -1007,7 +1142,7 @@ export default function AnnounceDetailsPage() {
                                   {property.acType && (
                                       <div className="space-y-2">
                                           <h4 className="text-sm font-bold text-gray-900 mb-2">Climatisation</h4>
-                                          <span className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200 inline-block">
+                                          <span className={tagNeutralClass}>
                                               {LABELS[property.acType] || property.acType}
                                           </span>
                                       </div>
@@ -1023,7 +1158,7 @@ export default function AnnounceDetailsPage() {
                                           <h4 className="text-sm font-bold text-gray-900 mb-2">Sécurité</h4>
                                           <div className="flex flex-wrap gap-2">
                                               {securityFeatures.map((item, idx) => (
-                                                  <span key={`sec-${idx}`} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                                  <span key={`sec-${idx}`} className={tagNeutralClass}>
                                                       {getEquipmentLabel(item)}
                                                   </span>
                                               ))}
@@ -1035,7 +1170,7 @@ export default function AnnounceDetailsPage() {
                                           <h4 className="text-sm font-bold text-gray-900 mb-2">Connectivité</h4>
                                           <div className="flex flex-wrap gap-2">
                                               {connectivityFeatures.map((item, idx) => (
-                                                  <span key={`con-${idx}`} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                                  <span key={`con-${idx}`} className={tagNeutralClass}>
                                                       {getEquipmentLabel(item)}
                                                   </span>
                                               ))}
@@ -1051,7 +1186,7 @@ export default function AnnounceDetailsPage() {
                                   <h4 className="text-sm font-bold text-gray-900 mb-2">Autres Commodités</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {[...conveniences, ...heaters, ...otherPieces, ...advantages].slice(0, 10).map((item, idx) => (
-                                          <span key={idx} className="px-3 py-1 bg-gray-50 text-gray-700 text-[10px] font-bold rounded-full uppercase border border-gray-200">
+                                          <span key={idx} className={tagNeutralClass}>
                                               {item.label}
                                           </span>
                                       ))}
@@ -1086,59 +1221,60 @@ export default function AnnounceDetailsPage() {
                       </div>
                   </div>
 
-                  {/* Colonne 04: Conditions de location */}
-                  <div className="space-y-6">
-                      <div className="flex items-center gap-2 mb-4">
-                          <Search className="h-5 w-5 text-[#00BFA6]" />
-                          <h3 className="text-lg font-bold text-gray-900">Conditions</h3>
-                      </div>
-                      <div className="space-y-4">
-                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Usage Autorisé</span>
-                              <span className="font-bold text-gray-900 text-sm">
-                                  {property.rentalUsage ? 
-                                      (typeof property.rentalUsage === 'string' && property.rentalUsage.startsWith('[')) 
-                                          ? JSON.parse(property.rentalUsage).map((u: string) => LABELS[u] || u).join(', ')
-                                          : (LABELS[property.rentalUsage] || property.rentalUsage)
-                                      : 'Non spécifié'}
-                              </span>
+                  {announce.type === 'RENTAL' && (
+                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
+                          <div className="flex items-center gap-2 mb-4">
+                              <Search className="h-5 w-5 text-[#00BFA6]" />
+                              <h3 className="text-lg font-bold text-gray-900">Conditions</h3>
                           </div>
-                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Cautionnement</span>
-                              <span className="font-bold text-gray-900 text-sm">
-                                  {property.depositMonths > 0 
-                                      ? `${property.depositMonths} Mois` 
-                                      : 'Aucune Caution'}
-                              </span>
-                          </div>
-                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Charges</span>
-                              <span className="font-bold text-gray-900 text-sm">
-                                  {property.chargesIncluded === 1 || property.chargesIncluded === true || String(property.chargesIncluded).trim() === '1' || String(property.chargesIncluded).trim() === '01' || String(property.chargesIncluded).toLowerCase() === 'true'
-                                      ? 'Charges incluses' 
-                                      : 'Sans charges'}
-                              </span>
-                          </div>
-                          <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Disponibilité</span>
-                              <span className="font-bold text-[#00BFA6] text-sm">
-                                  {property.availableDate
-                                      ? (() => {
-                                          try {
-                                              const dateObj = new Date(property.availableDate);
-                                              if (!isNaN(dateObj.getTime())) {
-                                                  return `À partir du ${dateObj.toLocaleDateString('fr-FR')}`;
+                          <div className="space-y-4">
+                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                                  <span className="text-gray-500 text-sm">Usage Autorisé</span>
+                                  <span className="font-bold text-gray-900 text-sm">
+                                      {property.rentalUsage ? 
+                                          (typeof property.rentalUsage === 'string' && property.rentalUsage.startsWith('[')) 
+                                              ? JSON.parse(property.rentalUsage).map((u: string) => LABELS[u] || u).join(', ')
+                                              : (LABELS[property.rentalUsage] || property.rentalUsage)
+                                          : 'Non spécifié'}
+                                  </span>
+                              </div>
+                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                                  <span className="text-gray-500 text-sm">Cautionnement</span>
+                                  <span className="font-bold text-gray-900 text-sm">
+                                      {property.depositMonths > 0 
+                                          ? `${property.depositMonths} Mois` 
+                                          : 'Aucune Caution'}
+                                  </span>
+                              </div>
+                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                                  <span className="text-gray-500 text-sm">Charges</span>
+                                  <span className="font-bold text-gray-900 text-sm">
+                                      {property.chargesIncluded === 1 || property.chargesIncluded === true || String(property.chargesIncluded).trim() === '1' || String(property.chargesIncluded).trim() === '01' || String(property.chargesIncluded).toLowerCase() === 'true'
+                                          ? 'Charges incluses' 
+                                          : 'Sans charges'}
+                                  </span>
+                              </div>
+                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                                  <span className="text-gray-500 text-sm">Disponibilité</span>
+                                  <span className="font-bold text-[#00BFA6] text-sm">
+                                      {property.availableDate
+                                          ? (() => {
+                                              try {
+                                                  const dateObj = new Date(property.availableDate);
+                                                  if (!isNaN(dateObj.getTime())) {
+                                                      return `À partir du ${dateObj.toLocaleDateString('fr-FR')}`;
+                                                  }
+                                                  return 'Immédiate';
+                                              } catch (e) {
+                                                  return 'Immédiate';
                                               }
-                                              return 'Immédiate';
-                                          } catch (e) {
-                                              return 'Immédiate';
-                                          }
-                                      })()
-                                      : 'Immédiate'}
-                              </span>
+                                          })()
+                                          : 'Immédiate'}
+                                  </span>
+                              </div>
                           </div>
                       </div>
-                  </div>
+                  )}
               </div>
           </div>
       </div>

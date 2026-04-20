@@ -9,7 +9,7 @@ export const AMENITIES_DATA = {
   // Commodités (From convenience.csv)
   conveniences: [
     { id: "GARDEN", label: "Jardin", icon: "Flower2" },
-    { id: "SECURITY_CAMERAS", label: "Caméras de surveillance", icon: "Cctv" },
+    { id: "SECURITY_CAMERAS", label: "Caméras", icon: "Cctv" },
     { id: "TERRACE", label: "Terrasse", icon: "Sun" },
     { id: "POOL", label: "Piscine", icon: "Waves" },
     { id: "GARAGE", label: "Garage", icon: "Car" },

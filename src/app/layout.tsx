@@ -1,4 +1,5 @@
 import localFont from "next/font/local";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -9,12 +10,19 @@ const geistSans = localFont({
   variable: "--font-geist-sans",
 });
 
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={`${geistSans.variable} ${montserrat.variable}`}>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} antialiased min-h-screen flex flex-col`}
+        className="antialiased min-h-screen flex flex-col"
       >
         <Navbar />
         <main className="flex-grow">{children}</main>
