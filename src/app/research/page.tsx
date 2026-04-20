@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from '@/data/propertyTypes';
 
 // Enums (matching Prisma/Backend)
 enum TransactionType {
@@ -18,8 +19,8 @@ const researchSchema = z.object({
   transaction: z.nativeEnum(TransactionType),
   
   // Property Criteria
-  realEstateTypeId: z.number().optional(),
-  propertyTypeId: z.number().optional(),
+  realEstateType: z.string().optional(),
+  propertyType: z.string().optional(),
   
   minSurface: z.coerce.number().min(1, 'Surface min requise'),
   maxSurface: z.coerce.number().min(1, 'Surface max requise'),
@@ -97,11 +98,8 @@ export default function ResearchPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [retRes, cityRes] = await Promise.all([
-          axios.get(`${apiUrl}/real-estate-types`), // Adjust endpoint
-          axios.get(`${apiUrl}/cities`),
-        ]);
-        setRefData(prev => ({ ...prev, realEstateTypes: retRes.data, cities: cityRes.data }));
+        const cityRes = await axios.get(`${apiUrl}/cities`);
+        setRefData(prev => ({ ...prev, realEstateTypes: REAL_ESTATE_CATEGORIES, cities: cityRes.data }));
       } catch (err) {
         console.error("Error fetching ref data", err);
         // Fallback or mock if endpoints fail
@@ -121,12 +119,10 @@ export default function ResearchPage() {
   }, [selectedCityId]);
 
   // Fetch Property Types when Real Estate Type changes
-  const selectedRetId = watch('realEstateTypeId');
+  const selectedRetId = watch('realEstateType');
   useEffect(() => {
     if (selectedRetId) {
-      axios.get(`${apiUrl}/real-estate-types/${selectedRetId}/property-types`) // Adjust endpoint
-        .then(res => setRefData(prev => ({ ...prev, propertyTypes: res.data })))
-        .catch(err => console.error(err));
+      setRefData(prev => ({ ...prev, propertyTypes: PROPERTY_TYPES.filter(p => p.categoryId === selectedRetId) }));
     }
   }, [selectedRetId]);
 
@@ -180,12 +176,12 @@ export default function ResearchPage() {
           <div className="space-y-6">
              <h2 className="text-2xl font-bold text-center">Type de Bien</h2>
              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {refData.realEstateTypes.map(type => (
-                  <label key={type.id} className={`cursor-pointer p-4 border rounded-lg text-center ${watch('realEstateTypeId') === type.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+               {refData.realEstateTypes.map(type => (
+                  <label key={type.id} className={`cursor-pointer p-4 border rounded-lg text-center ${watch('realEstateType') === type.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
                     <input 
                       type="radio" 
                       value={type.id} 
-                      {...register('realEstateTypeId', { valueAsNumber: true })}
+                      {...register('realEstateType')}
                       className="hidden" 
                     />
                     <span>{type.nameFr || type.name}</span>
@@ -197,11 +193,11 @@ export default function ResearchPage() {
                  <h3 className="font-semibold mb-3">Type de Propriété</h3>
                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                    {refData.propertyTypes.map(pt => (
-                     <label key={pt.id} className={`cursor-pointer p-4 border rounded-lg text-center ${watch('propertyTypeId') === pt.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                     <label key={pt.id} className={`cursor-pointer p-4 border rounded-lg text-center ${watch('propertyType') === pt.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
                        <input 
                          type="radio" 
                          value={pt.id} 
-                         {...register('propertyTypeId', { valueAsNumber: true })} 
+                         {...register('propertyType')} 
                          className="hidden" 
                        />
                        <span>{pt.nameFr || pt.name}</span>

@@ -349,6 +349,21 @@ export default function AnnounceDetailsPage() {
   const tagNeutralClass = `${tagBaseClass} bg-white text-gray-700 border-gray-200`;
   const tagPrimaryClass = `${tagBaseClass} bg-[#00BFA6]/10 text-[#007B73] border-[#00BFA6]/25`;
 
+  const toIntlDigits = (raw: string) => {
+      const digits = String(raw || "").replace(/\D/g, "")
+      if (!digits) return ""
+      if (digits.startsWith("2130")) return "213" + digits.slice(4)
+      if (digits.startsWith("213")) return digits
+      if (digits.startsWith("0")) return "213" + digits.slice(1)
+      return digits
+  }
+  const formatDisplayPhone = (raw: string) => {
+      const digits = String(raw || "").replace(/\D/g, "")
+      if (!digits) return raw
+      if (digits.startsWith("213")) return `+213 ${digits.slice(3)}`
+      return raw
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header / Nav Removed */}
@@ -805,13 +820,13 @@ export default function AnnounceDetailsPage() {
                               {/* Phone Button */}
                               <div className="flex items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900">
                                   <Phone className="h-4 w-4 text-[#00BFA6]" /> 
-                                  {contact.phone}
+                                  {formatDisplayPhone(contact.phone)}
                               </div>
 
                               {/* Hover Icons Dropdown */}
                               {(contact.hasWhatsapp || contact.hasViber || contact.hasTelegram) && (
                                   <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-xl border border-gray-100 flex gap-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 w-max">
-                                      <a href={`tel:${contact.phone}`} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title="Appeler">
+                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title="Appeler">
                                           <Phone className="h-5 w-5" />
                                       </a>
                                       {contact.email && (
@@ -820,17 +835,17 @@ export default function AnnounceDetailsPage() {
                                           </a>
                                       )}
                                       {contact.hasWhatsapp && (
-                                          <a href={`https://wa.me/${contact.phone.replace(/\s+/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-[#25D366]/10 text-[#25D366] rounded-lg transition-colors" title="WhatsApp">
+                                          <a href={`https://wa.me/${toIntlDigits(contact.phone)}`} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-[#25D366]/10 text-[#25D366] rounded-lg transition-colors" title="WhatsApp">
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                                           </a>
                                       )}
                                       {contact.hasViber && (
-                                          <a href={`viber://add?number=${contact.phone.replace(/^0/, '+213').replace(/\s+/g, '')}`} className="p-2 hover:bg-[#7360f2]/10 text-[#7360f2] rounded-lg transition-colors" title="Viber">
+                                          <a href={`viber://add?number=+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-[#7360f2]/10 text-[#7360f2] rounded-lg transition-colors" title="Viber">
                                               <svg viewBox="0 0 512 512" className="h-5 w-5 fill-current"><path d="M437.1 146.4c-6.1-24.5-22.3-43.9-46.7-48.4-38.3-6.9-106.8-6.9-134.4-6.9-27.6 0-96.1 0-134.4 6.9-24.4 4.5-40.6 23.9-46.7 48.4-5.3 21.6-5.3 64.1-5.3 109.6s0 88 5.3 109.6c6.1 24.5 22.3 43.9 46.7 48.4 38.3 6.9 106.8 6.9 134.4 6.9 27.6 0 96.1 0 134.4-6.9 24.4-4.5 40.6-23.9 46.7-48.4 5.3-21.6 5.3-64.1 5.3-109.6s0-88-5.3-109.6zm-175 145.4v13.5c0 23.8-19.3 43.1-43.1 43.1h-43.1c-23.8 0-43.1-19.3-43.1-43.1v-43.1c0-23.8 19.3-43.1 43.1-43.1h13.5v-67h-13.5c-23.8 0-43.1-19.3-43.1-43.1V66c0-23.8 19.3-43.1 43.1-43.1h43.1c23.8 0 43.1 19.3 43.1 43.1v43.1c0 23.8-19.3 43.1-43.1 43.1h-13.5v67zm120.3 43.1c0 23.8-19.3 43.1-43.1 43.1h-43.1c-23.8 0-43.1-19.3-43.1-43.1v-43.1c0-23.8 19.3-43.1 43.1-43.1h13.5v-67h-13.5c-23.8 0-43.1-19.3-43.1-43.1V66c0-23.8 19.3-43.1 43.1-43.1h43.1c23.8 0 43.1 19.3 43.1 43.1v43.1c0 23.8-19.3 43.1-43.1 43.1h-13.5v67h13.5c23.8 0 43.1 19.3 43.1 43.1v43.1z"/></svg>
                                           </a>
                                       )}
                                       {contact.hasTelegram && (
-                                          <a href={`https://t.me/${contact.phone.replace(/^0/, '+213').replace(/\s+/g, '')}`} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title="Telegram">
+                                          <a href={`https://t.me/+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title="Telegram">
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm5.894-17.502L15.34 20.35c-.208.92-.746 1.144-1.503.682l-4.16-3.07-2.006 1.93c-.22.22-.405.405-.83.405l.3-4.225 7.684-6.94c.334-.3-.074-.466-.518-.214L4.8 15.38.704 14.1c-.89-.28-.908-.89.186-1.316l15.68-6.04c.725-.268 1.356.168 1.324 1.15z"/></svg>
                                           </a>
                                       )}

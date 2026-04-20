@@ -368,6 +368,22 @@ interface Contact {
     hasTelegram: boolean
 }
 
+const upsertArrayValue = (arr: unknown, value: string, checked: boolean) => {
+    const base = Array.isArray(arr) ? arr.map(String) : []
+    if (checked) return Array.from(new Set([...base, value]))
+    return base.filter((v) => v !== value)
+}
+
+const normalizeDzPhoneToIntlDigits = (raw: string) => {
+    const digits = String(raw || "").replace(/\D/g, "")
+    if (!digits) return ""
+    if (digits.startsWith("2130")) return "213" + digits.slice(4)
+    if (digits.startsWith("213")) return digits
+    if (digits.startsWith("0")) return "213" + digits.slice(1)
+    if (digits.length === 9) return "213" + digits
+    return digits
+}
+
 // Schéma de validation
 const stringArrayOptional = z.preprocess((v) => {
   if (v === "" || v === null || v === undefined) return undefined
@@ -738,7 +754,7 @@ export default function DepositPage() {
                 setUserProfilePhone(user.phone)
                 setContacts(prev => {
                     if (prev.length === 1 && prev[0].phone === "") {
-                        return [{ phone: user.phone, hasWhatsapp: false, hasViber: false, hasTelegram: false }];
+                        return [{ phone: normalizeDzPhoneToIntlDigits(user.phone), hasWhatsapp: false, hasViber: false, hasTelegram: false }];
                     }
                     return prev;
                 });
@@ -770,7 +786,7 @@ export default function DepositPage() {
                     // Update contact if it was empty or matched old user.phone from localStorage
                     setContacts(prev => {
                         if (prev.length === 1 && (prev[0].phone === "" || (user.phone && prev[0].phone === user.phone))) {
-                            return [{ phone: phone, hasWhatsapp: false, hasViber: false, hasTelegram: false }];
+                            return [{ phone: normalizeDzPhoneToIntlDigits(phone), hasWhatsapp: false, hasViber: false, hasTelegram: false }];
                         }
                         return prev;
                     });
@@ -793,7 +809,7 @@ export default function DepositPage() {
     if (!userProfilePhone) return
     setContacts((prev) => {
       if (prev.length === 1 && prev[0].phone === "") {
-        return [{ phone: userProfilePhone, hasWhatsapp: false, hasViber: false, hasTelegram: false }]
+        return [{ phone: normalizeDzPhoneToIntlDigits(userProfilePhone), hasWhatsapp: false, hasViber: false, hasTelegram: false }]
       }
       return prev
     })
@@ -1182,10 +1198,6 @@ export default function DepositPage() {
             "waterCounter", "elecCounter", "gasCounter",
             "typologyCustom"
         ], { shouldFocus: true });
-        
-        console.log("Villa validation result:", isValid);
-        if (!isValid) console.log("Errors:", errors);
-        
     } else if (propertyType === "NIVEAU_VILLA") {
         isValid = await trigger([
             "typology", "floorCount", "area",
@@ -2203,12 +2215,26 @@ export default function DepositPage() {
                                         <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
+                                                const kitchenRegister = register("kitchenEquipment")
                                                 return (
                                                     <label key={item.id} className="cursor-pointer group">
                                                         <input 
                                                             type="checkbox" 
                                                             value={item.id} 
-                                                            {...register("kitchenEquipment")} 
+                                                            {...kitchenRegister} 
+                                                            onChange={(e) => {
+                                                                kitchenRegister.onChange(e)
+                                                                const checked = e.target.checked
+                                                                const id = String(e.target.value)
+                                                                const current = getValues("kitchenEquipment")
+                                                                const next =
+                                                                    id === "no_appliances"
+                                                                        ? checked
+                                                                            ? ["no_appliances"]
+                                                                            : (Array.isArray(current) ? current.filter((x) => x !== "no_appliances") : [])
+                                                                        : upsertArrayValue((Array.isArray(current) ? current.filter((x) => x !== "no_appliances") : []), id, checked)
+                                                                setValue("kitchenEquipment", next as any, { shouldValidate: true })
+                                                            }}
                                                             className="peer sr-only" 
                                                         />
                                                         <div className="p-2 border-2 border-gray-200 rounded-xl flex flex-col items-center gap-1 text-center peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-white h-20 justify-start">
@@ -2621,12 +2647,26 @@ export default function DepositPage() {
                                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
+                                                const kitchenRegister = register("kitchenEquipment")
                                                 return (
                                                     <label key={item.id} className="cursor-pointer">
                                                         <input 
                                                             type="checkbox" 
                                                             value={item.id} 
-                                                            {...register("kitchenEquipment")} 
+                                                            {...kitchenRegister} 
+                                                            onChange={(e) => {
+                                                                kitchenRegister.onChange(e)
+                                                                const checked = e.target.checked
+                                                                const id = String(e.target.value)
+                                                                const current = getValues("kitchenEquipment")
+                                                                const next =
+                                                                    id === "no_appliances"
+                                                                        ? checked
+                                                                            ? ["no_appliances"]
+                                                                            : (Array.isArray(current) ? current.filter((x) => x !== "no_appliances") : [])
+                                                                        : upsertArrayValue((Array.isArray(current) ? current.filter((x) => x !== "no_appliances") : []), id, checked)
+                                                                setValue("kitchenEquipment", next as any, { shouldValidate: true })
+                                                            }}
                                                             className="peer sr-only" 
                                                         />
                                                         <div className="p-2 border-2 rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50 h-24">
@@ -2989,7 +3029,7 @@ export default function DepositPage() {
                                     </p>
 
                                     {/* Option to use profile phone if not already used */}
-                                    {userProfilePhone && contacts[0]?.phone !== userProfilePhone && (
+                                    {userProfilePhone && contacts[0]?.phone !== normalizeDzPhoneToIntlDigits(userProfilePhone) && (
                                         <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center justify-between animate-fade-in">
                                             <div>
                                                 <p className="font-bold text-blue-900 text-sm">Numéro de votre profil ({userProfilePhone})</p>
@@ -2998,7 +3038,7 @@ export default function DepositPage() {
                                             <button 
                                                 onClick={() => {
                                                     const newContacts = [...contacts]
-                                                    newContacts[0] = { ...newContacts[0], phone: userProfilePhone }
+                                                    newContacts[0] = { ...newContacts[0], phone: normalizeDzPhoneToIntlDigits(userProfilePhone) }
                                                     setContacts(newContacts)
                                                 }}
                                                 className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
@@ -3028,17 +3068,32 @@ export default function DepositPage() {
                                                         <PhoneInput
                                                             country={'dz'}
                                                             value={contact.phone}
-                                                            onChange={(phone) => updateContact(index, 'phone', phone)}
+                                                            onChange={(value, country: any) => {
+                                                                const dial = country?.dialCode ? String(country.dialCode) : ""
+                                                                const rawDigits = String(value || "").replace(/\D/g, "")
+                                                                let normalized = rawDigits
+                                                                if (dial) {
+                                                                    if (!normalized.startsWith(dial)) {
+                                                                        normalized = dial + normalized.replace(/^0+/, "")
+                                                                    }
+                                                                    if (normalized.startsWith(dial + "0")) {
+                                                                        normalized = dial + normalized.slice(dial.length + 1)
+                                                                    }
+                                                                }
+                                                                updateContact(index, 'phone', normalized)
+                                                            }}
                                                             enableSearch={true}
+                                                            countryCodeEditable={false}
+                                                            prefix="+"
                                                             containerClass="!w-full"
-                                                            inputClass="!w-full !h-[58px] !pl-[60px] !pr-4 !py-4 !border-gray-300 !rounded-xl focus:!ring-2 focus:!ring-[#00BFA6] !bg-white !text-gray-900 !font-bold !text-base !outline-none"
-                                                            buttonClass="!border-gray-300 !rounded-l-xl !bg-white !hover:bg-gray-50 !pl-2 !w-[50px]"
+                                                            inputClass="!w-full !h-[58px] !pl-[72px] !pr-4 !py-4 !border-gray-300 !rounded-xl focus:!ring-2 focus:!ring-[#00BFA6] !bg-white !text-gray-900 !font-bold !text-base !outline-none"
+                                                            buttonClass="!border-gray-300 !rounded-l-xl !bg-white !hover:bg-gray-50 !pl-2 !w-[60px]"
                                                             dropdownClass="!shadow-xl !rounded-xl !border-gray-200 !mt-2 !z-50 !bg-white !text-gray-900"
                                                             searchClass="!p-2 !border-b !border-gray-100 !bg-white !text-gray-900"
                                                             placeholder="550..."
                                                         />
                                                     </div>
-                                                    {index === 0 && userProfilePhone && contact.phone === userProfilePhone && (
+                                                    {index === 0 && userProfilePhone && contact.phone === normalizeDzPhoneToIntlDigits(userProfilePhone) && (
                                                         <div className="mt-2 flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded-lg text-xs font-bold border border-green-100">
                                                             <div className="h-2 w-2 rounded-full bg-green-500"></div>
                                                             Numéro de profil utilisé
