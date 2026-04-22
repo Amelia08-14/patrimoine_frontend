@@ -46,6 +46,30 @@ const getIconColorById = (categoryId: string) => {
   }
 }
 
+const getCategoryHeroGradientById = (categoryId: string) => {
+  switch (categoryId) {
+    case "HEBERGEMENT": return "from-yellow-500 to-amber-400";
+    case "BUREAUX_COMMERCES": return "from-blue-600 to-sky-400";
+    case "HOTELIER": return "from-orange-600 to-amber-400";
+    case "EVENEMENTIEL": return "from-red-600 to-rose-400";
+    case "INDUSTRIEL": return "from-gray-700 to-gray-500";
+    case "RESIDENTIEL": return "from-green-700 to-emerald-500";
+    default: return "from-[#00BFA6] to-emerald-400";
+  }
+}
+
+const getCategoryHeroImageById = (categoryId: string) => {
+  switch (categoryId) {
+    case "RESIDENTIEL": return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=2400&q=80"
+    case "INDUSTRIEL": return "https://images.unsplash.com/photo-1581091870627-3c5f1d0d2c32?auto=format&fit=crop&w=2400&q=80"
+    case "BUREAUX_COMMERCES": return "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2400&q=80"
+    case "HOTELIER": return "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2400&q=80"
+    case "EVENEMENTIEL": return "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2400&q=80"
+    case "HEBERGEMENT": return "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=2400&q=80"
+    default: return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=2400&q=80"
+  }
+}
+
 // Section Carousel avec flèches de navigation et auto-scroll
 const CarouselSection = ({ title, categoryId, items }: { title: string, categoryId: string, items: any[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -305,17 +329,9 @@ export default function HomePage() {
     router.push(`/announces?${params.toString()}`)
   }
 
-  const heroImages = [
-    "/hero1.jpg",
-    "/hero2.jpg",
-    "/hero3.png",
-    "/hero4.png",
-    "/Hero5.jpg"
-  ];
-
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+      setCurrentSlide((prev) => (prev + 1) % REAL_ESTATE_CATEGORIES.length);
     }, 5000);
     return () => clearInterval(timer);
   }, []);
@@ -335,8 +351,8 @@ export default function HomePage() {
     fetchAnnounces();
   }, []);
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroImages.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroImages.length) % heroImages.length);
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % REAL_ESTATE_CATEGORIES.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + REAL_ESTATE_CATEGORIES.length) % REAL_ESTATE_CATEGORIES.length);
 
   const filteredAnnounces = announces.filter(a => {
     return searchType === 'all' ? true :
@@ -381,17 +397,57 @@ export default function HomePage() {
       {/* HERO SECTION */}
       <div className="relative h-[450px] w-full group">
         <div className="absolute inset-0 overflow-hidden rounded-b-[50px] bg-gray-900">
-          {heroImages.map((img, index) => (
-            <div 
-              key={img}
-              className={cn(
-                "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-                index === currentSlide ? "opacity-100" : "opacity-0"
-              )}
-            >
-              <img src={img} alt={`Hero Slide ${index + 1}`} className="w-full h-full object-cover"/>
-            </div>
-          ))}
+          {REAL_ESTATE_CATEGORIES.map((category, index) => {
+            const Icon = getIcon(category.iconName)
+            const isActive = index === currentSlide
+            return (
+              <div
+                key={category.id}
+                className={cn(
+                  "absolute inset-0 transition-opacity duration-1000 ease-in-out",
+                  isActive ? "opacity-100" : "opacity-0"
+                )}
+              >
+                <img
+                  src={getCategoryHeroImageById(category.id)}
+                  alt={category.label}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className={cn("absolute inset-0 bg-gradient-to-r opacity-65", getCategoryHeroGradientById(category.id))} />
+                <div className="absolute inset-0 bg-black/45" />
+
+                <div className="relative h-full w-full">
+                  <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 h-full flex items-center justify-end">
+                    <div className="w-full max-w-xl min-h-[260px] bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-7 sm:p-10 flex flex-col justify-center">
+                      <div className="flex items-center gap-4">
+                        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-white/20 border border-white/20 flex items-center justify-center">
+                          <Icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-white/85 text-xs font-extrabold tracking-[0.2em] uppercase">Catégorie</div>
+                          <div className="text-white text-2xl sm:text-3xl font-extrabold leading-tight">{category.label}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 text-white/90 text-sm sm:text-base leading-relaxed">
+                        Découvrez les meilleures opportunités en {category.label.toLowerCase()} : annonces vérifiées, photos, prix clair.
+                      </div>
+
+                      <div className="mt-7 flex flex-col sm:flex-row gap-3">
+                        <Button
+                          onClick={() => handleCategoryClick(category.id)}
+                          className="bg-white text-gray-900 hover:bg-white/90 rounded-full px-8 py-6 text-base font-extrabold"
+                        >
+                          Voir les annonces
+                          <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
           <button onClick={prevSlide} className="absolute left-8 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/30 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-20">
             <ChevronLeft className="h-8 w-8" />
           </button>
@@ -401,7 +457,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* CATEGORY BUBBLES */}
+      {/* FILTER BAR */}
       <div className="relative py-6 px-4 z-40 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           
@@ -428,12 +484,6 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-
-          {/* Category Bubbles - Carousel */}
-          <CategoryCarousel 
-            categories={REAL_ESTATE_CATEGORIES}
-            onCategoryClick={handleCategoryClick}
-          />
         </div>
       </div>
 
