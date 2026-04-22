@@ -344,6 +344,12 @@ export default function AnnounceDetailsPage() {
       if (i === 1) return "1er étage";
       return `${i}ème étage`;
   }
+
+  const formatFloorsLabel = (v: any) => {
+      const n = Number(v)
+      if (!Number.isFinite(n)) return "Étages"
+      return n === 1 ? "Étage" : "Étages"
+  }
   
   const tagBaseClass = "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold leading-none";
   const tagNeutralClass = `${tagBaseClass} bg-white text-gray-700 border-gray-200`;
@@ -368,18 +374,6 @@ export default function AnnounceDetailsPage() {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header / Nav Removed */}
       
-      {/* --- ADVANCED SEARCH BAR REPLACED WITH AD SPACE --- */}
-      <div className="bg-[#00BFA6] py-12 shadow-md relative z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-             <div className="bg-white/20 rounded-xl p-8 flex flex-col items-center justify-center border-2 border-dashed border-white/40 min-h-[160px]">
-                  <p className="text-white font-bold text-xl mb-2">Espace Publicitaire</p>
-                  <p className="text-white/80 text-sm">
-                      Publicité ciblée pour la catégorie : <span className="font-bold">{announce?.realEstateCategory || 'Immobilier'}</span>
-                  </p>
-             </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Images Grid - Modern Layout */}
@@ -652,7 +646,7 @@ export default function AnnounceDetailsPage() {
                             <div className="font-bold text-xl">
                                 {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
                             </div>
-                            <div className="text-sm text-gray-500">{normalizedPropertyType === "VILLA" ? "Étages" : "Étage"}</div>
+                            <div className="text-sm text-gray-500">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
                         </div>
                     </div>
                 )}
@@ -704,7 +698,7 @@ export default function AnnounceDetailsPage() {
                                 <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">{property.nbFloors}</div>
-                                    <div className="text-sm text-gray-500">Étages</div>
+                                    <div className="text-sm text-gray-500">{formatFloorsLabel(property.nbFloors)}</div>
                                 </div>
                             </div>
                         )}
@@ -892,6 +886,16 @@ export default function AnnounceDetailsPage() {
                   <Mail className="h-5 w-5" />
                   Envoyer un message
               </Button>
+
+              {announce.user?.email && (
+                  <a
+                      href={`mailto:${announce.user.email}`}
+                      className="mt-3 w-full py-4 text-base bg-white hover:bg-gray-50 text-gray-900 rounded-xl border border-gray-200 shadow-sm flex items-center justify-center gap-2 font-bold"
+                  >
+                      <Mail className="h-5 w-5 text-red-500" />
+                      Envoyer un email
+                  </a>
+              )}
             </div>
           </div>
         </div>

@@ -490,8 +490,7 @@ const formSchema = z.object({
         data.propertyType === "APPARTEMENT" ||
         data.propertyType === "DUPLEX" ||
         data.propertyType === "TRIPLEX" ||
-        data.propertyType === "STUDIO" ||
-        data.propertyType === "IMMEUBLE_RESIDENTIEL"
+        data.propertyType === "STUDIO"
     ) {
         if (!data.typology) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie requise", path: ["typology"] })
@@ -726,8 +725,12 @@ export default function DepositPage() {
   
   // Canvas Ref for rotation
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const didFetchProfileRef = useRef(false)
 
   useEffect(() => {
+    if (didFetchProfileRef.current) return
+    didFetchProfileRef.current = true
+
     const token = localStorage.getItem('token')
     const userStr = localStorage.getItem('user')
     
@@ -740,6 +743,7 @@ export default function DepositPage() {
     if (!user.adminVerified) {
         alert("Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas encore déposer d'annonce.")
         router.push('/')
+        return
     }
     
     setUserType(user.userType || "PARTICULIER")
@@ -777,7 +781,6 @@ export default function DepositPage() {
             
             if (response.ok) {
                 const profile = await response.json();
-                console.log("Profile fetched successfully:", profile);
                 // Profile phone might be under 'phone' or 'phoneNumber' depending on backend version
                 const phone = profile.phone || profile.phoneNumber;
                 
@@ -792,12 +795,10 @@ export default function DepositPage() {
                     });
                 }
             } else {
-                console.error("Failed to fetch profile from endpoints");
-                // LocalStorage fallback already applied at start
+                console.warn("Failed to fetch profile from endpoints", { apiUrl, status: response.status })
             }
         } catch (error) {
-            console.error("Error fetching profile:", error);
-            // LocalStorage fallback already applied at start
+            console.warn("Error fetching profile:", error)
         }
     };
     
@@ -815,43 +816,47 @@ export default function DepositPage() {
     })
   }, [userProfilePhone])
 
+  const initialDefaultValues = {
+    transactionType: "SALE",
+    realEstateType: "",
+    propertyType: "",
+    city: "",
+    commune: "",
+    address: "",
+    title: "",
+    shortDescription: "",
+    price: "",
+    floorCount: "",
+    typology: "",
+    bedrooms: "",
+    livingRooms: "",
+    bathrooms: "",
+    wc: "",
+    landArea: "",
+    builtArea: "",
+    extraFloor: "none",
+    bathroomType: "none",
+    priceUnit: "DA",
+    priceType: "FIXED",
+    depositMonths: "",
+    rentalUsage: [],
+    chargesIncluded: false,
+  } satisfies Partial<DepositFormValues>
+
   const {
     register,
     handleSubmit,
     watch,
     trigger,
+    reset,
     setValue,
     getValues,
     setError,
+    clearErrors,
     formState: { errors },
   } = useForm<DepositFormValues>({
     resolver: zodResolver(formSchema) as any,
-    defaultValues: {
-      transactionType: "SALE",
-      realEstateType: "",
-      propertyType: "",
-      city: "",
-      commune: "",
-      address: "",
-      title: "",
-      shortDescription: "",
-      price: "",
-      floorCount: "",
-      typology: "",
-      bedrooms: "",
-      livingRooms: "",
-      bathrooms: "",
-      wc: "",
-      landArea: "",
-      builtArea: "",
-      extraFloor: "none",
-      bathroomType: "none",
-      priceUnit: "DA",
-      priceType: "FIXED",
-      depositMonths: "",
-      rentalUsage: [],
-      chargesIncluded: false,
-    },
+    defaultValues: initialDefaultValues as any,
   })
 
    const transactionType = watch("transactionType")
@@ -889,6 +894,27 @@ export default function DepositPage() {
     if (buildingSurfaceMode !== "MULTI") return
     setValue("area", "", { shouldValidate: true })
   }, [propertyType, buildingTypologyMode, buildingSurfaceMode, setValue])
+
+  useEffect(() => {
+    if (propertyType !== "IMMEUBLE_RESIDENTIEL") return
+    if (!buildingTypologyMode) return
+
+    if (buildingTypologyMode === "SIMILAIRES") {
+      setValue("buildingApartmentTypologies", [], { shouldValidate: false })
+      setValue("buildingApartmentTypologyOther", "", { shouldValidate: false })
+      setValue("buildingApartmentStyle", [], { shouldValidate: false })
+      clearErrors(["buildingApartmentTypologies", "buildingApartmentTypologyOther", "buildingApartmentStyle"] as any)
+      return
+    }
+
+    if (buildingTypologyMode === "DIFFERENTES") {
+      setValue("buildingApartmentTypologyCustom", "", { shouldValidate: false })
+      setValue("buildingSurfaceMode", undefined as any, { shouldValidate: false })
+      setValue("area", "", { shouldValidate: false })
+      setValue("typologyCustom", "", { shouldValidate: false })
+      clearErrors(["buildingApartmentTypologyCustom", "buildingSurfaceMode", "area"] as any)
+    }
+  }, [propertyType, buildingTypologyMode, setValue, clearErrors])
 
   useEffect(() => {
     if (!currentPrice) {
@@ -1173,12 +1199,27 @@ export default function DepositPage() {
   }
 
   const handleCategoryClick = (categoryId: string) => {
-    setValue("realEstateType", categoryId)
+    reset(
+      {
+        ...initialDefaultValues,
+        transactionType: getValues("transactionType"),
+        realEstateType: categoryId,
+      } as any,
+      { keepDefaultValues: true }
+    )
     setCurrentStep(3)
   }
 
   const handlePropertyTypeClick = (propertyId: string) => {
-    setValue("propertyType", propertyId)
+    reset(
+      {
+        ...initialDefaultValues,
+        transactionType: getValues("transactionType"),
+        realEstateType: getValues("realEstateType"),
+        propertyType: propertyId,
+      } as any,
+      { keepDefaultValues: true }
+    )
     // Après le choix du bien, aller à la fiche descriptive
     setCurrentStep(4)
   }
@@ -1275,16 +1316,7 @@ export default function DepositPage() {
         }
     }
 
-    const isValid = await trigger(fieldsToValidate)
-    
-    // Debugging
-    console.log("Validation fields:", fieldsToValidate)
-    console.log("Validation result:", isValid)
-    if (!isValid) {
-        console.log("Validation errors:", errors)
-        // Force update to show errors
-        trigger(fieldsToValidate)
-    }
+    const isValid = await trigger(fieldsToValidate, { shouldFocus: true })
 
     if (isValid) {
       setCurrentStep(6)
@@ -1929,6 +1961,41 @@ export default function DepositPage() {
                                                     )}
                                                 </div>
                                             )}
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                                <div className="min-w-0">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
+                                                    <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
+                                                        <option value="">Sélectionner</option>
+                                                        {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                                    </select>
+                                                    {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                                    <input
+                                                        {...register("parkingCount")}
+                                                        type="number"
+                                                        min="0"
+                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                        className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                        placeholder="Ex: 1"
+                                                    />
+                                                    {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                                    <input
+                                                        {...register("outdoorParking")}
+                                                        type="number"
+                                                        min="0"
+                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                        className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                        placeholder="Ex: 2"
+                                                    />
+                                                    {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
+                                                </div>
+                                            </div>
                                         </div>
                                     ) : (
                                         <>
