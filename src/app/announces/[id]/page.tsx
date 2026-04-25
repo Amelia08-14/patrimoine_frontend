@@ -1035,12 +1035,12 @@ export default function AnnounceDetailsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Colonne 01: Espace de Vie */}
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
-                      <div className="flex items-center gap-2 mb-4">
-                          <BedDouble className="h-5 w-5 text-[#00BFA6]" />
-                          <h3 className="text-lg font-bold text-gray-900">Espace de Vie</h3>
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                          <BedDouble className="h-5 w-5 text-[#00BFA6] mt-0.5" />
+                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Espace de Vie</h3>
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-4 flex-1">
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
                               <span className="text-gray-500 text-sm">Chambres</span>
                               <span className="font-bold text-gray-900">{property.nbPieces || 0}</span>
@@ -1088,12 +1088,15 @@ export default function AnnounceDetailsPage() {
                   </div>
 
                   {/* Colonne 02: Cuisine et équipements */}
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
-                      <div className="flex items-center gap-2 mb-4">
-                          <Wind className="h-5 w-5 text-[#00BFA6]" />
-                          <h3 className="text-lg font-bold text-gray-900">Cuisine et équipements</h3>
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                          <Wind className="h-5 w-5 text-[#00BFA6] mt-0.5" />
+                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">
+                              <span className="xl:hidden">Cuisine</span>
+                              <span className="hidden xl:inline">Cuisine </span>
+                          </h3>
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-4 flex-1">
                           <div className="flex flex-col gap-2 border-b border-gray-50 pb-4">
                               <span className="text-gray-500 text-sm">Type de cuisine</span>
                               {property.kitchenType && (
@@ -1126,12 +1129,12 @@ export default function AnnounceDetailsPage() {
                   </div>
 
                   {/* Colonne 03: Commodités et compteurs */}
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
-                      <div className="flex items-center gap-2 mb-4">
-                          <Check className="h-5 w-5 text-[#00BFA6]" />
-                          <h3 className="text-lg font-bold text-gray-900">Commodités</h3>
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                          <Check className="h-5 w-5 text-[#00BFA6] mt-0.5" />
+                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Commodités</h3>
                       </div>
-                      <div className="space-y-6">
+                      <div className="space-y-6 flex-1">
                           
                           {/* Espaces Extérieurs */}
                           {(exteriorFeatures.length > 0) && (
@@ -1241,13 +1244,13 @@ export default function AnnounceDetailsPage() {
                   </div>
 
                   {announce.type === 'RENTAL' && (
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-6">
-                          <div className="flex items-center gap-2 mb-4">
-                              <Search className="h-5 w-5 text-[#00BFA6]" />
-                              <h3 className="text-lg font-bold text-gray-900">Conditions</h3>
+                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                          <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                              <Search className="h-5 w-5 text-[#00BFA6] mt-0.5" />
+                              <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Conditions</h3>
                           </div>
-                          <div className="space-y-4">
-                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                          <div className="space-y-4 flex-1">
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
                                   <span className="text-gray-500 text-sm">Usage Autorisé</span>
                                   <span className="font-bold text-gray-900 text-sm">
                                       {property.rentalUsage ? 
@@ -1257,7 +1260,7 @@ export default function AnnounceDetailsPage() {
                                           : 'Non spécifié'}
                                   </span>
                               </div>
-                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
                                   <span className="text-gray-500 text-sm">Cautionnement</span>
                                   <span className="font-bold text-gray-900 text-sm">
                                       {property.depositMonths > 0 
@@ -1265,7 +1268,7 @@ export default function AnnounceDetailsPage() {
                                           : 'Aucune Caution'}
                                   </span>
                               </div>
-                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
                                   <span className="text-gray-500 text-sm">Charges</span>
                                   <span className="font-bold text-gray-900 text-sm">
                                       {property.chargesIncluded === 1 || property.chargesIncluded === true || String(property.chargesIncluded).trim() === '1' || String(property.chargesIncluded).trim() === '01' || String(property.chargesIncluded).toLowerCase() === 'true'
@@ -1273,7 +1276,7 @@ export default function AnnounceDetailsPage() {
                                           : 'Sans charges'}
                                   </span>
                               </div>
-                              <div className="flex flex-col gap-1.5 py-2 border-b border-gray-50">
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
                                   <span className="text-gray-500 text-sm">Disponibilité</span>
                                   <span className="font-bold text-[#00BFA6] text-sm">
                                       {property.availableDate

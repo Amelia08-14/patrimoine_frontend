@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, isBefore, startOfDay } from "date-fns"
@@ -203,7 +203,8 @@ const BATHROOM_TYPES = [
 const PROPERTY_STATES = [
     { id: "NEUF", label: "Neuf (Jamais habité)" },
     { id: "RENOVE", label: "Rénové" },
-    { id: "BON_ETAT", label: "Bon état" }
+    { id: "BON_ETAT", label: "Bon état" },
+    { id: "A_DEMOLIR", label: "À démolir" }
 ]
 
 const USAGE_TYPES = [
@@ -408,7 +409,7 @@ const formSchema = z.object({
       const num = Number(val.replace(/\s/g, ''));
       return !isNaN(num) && num > 0;
   }, "Prix invalide"),
-  priceUnit: z.enum(["DA", "MILLION", "MILLIARD"]),
+  priceUnit: z.enum(["DA", "DA_M2", "MILLION", "MILLION_M2", "MILLIARD"]),
   priceType: z.enum(["FIXED", "NEGOTIABLE"]),
   paymentModality: z.enum(["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL"]).optional(),
   
@@ -429,16 +430,17 @@ const formSchema = z.object({
   buildingCountF3: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
   buildingCountF4: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
   buildingCountF5: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
-  bedrooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Nombre de chambres invalide"),
+  bedrooms: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre de chambres invalide"),
   nbSuites: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
-  livingRooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salons invalide"),
-  bathrooms: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de salles de bain invalide"),
+  livingRooms: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre de salons invalide"),
+  bathrooms: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre de salles de bain invalide"),
   bathroomType: z.enum(["italian_shower", "bathtub", "both", "none"]).optional(),
-  wc: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Nombre de WC invalide"),
+  wc: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre de WC invalide"),
   landArea: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface du terrain invalide"),
   builtArea: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface bâtie invalide"),
   habitableArea: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface invalide"),
-  state: z.enum(["NEUF", "RENOVE", "BON_ETAT"]),
+  facadesCount: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
+  state: z.enum(["NEUF", "RENOVE", "BON_ETAT", "A_DEMOLIR"]),
   parkingCount: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   outdoorParking: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   usageType: z.enum([
@@ -450,13 +452,13 @@ const formSchema = z.object({
       "RESIDENCE_CLOTUREE",
       "PROMOTION_IMMOBILIERE"
   ]).optional(),
-  kitchenType: z.enum(["AMERICAINE", "FERMEE", "SEMI_OUVERTE"]),
+  kitchenType: z.enum(["AMERICAINE", "FERMEE", "SEMI_OUVERTE"]).optional(),
   kitchenState: z.enum(["EQUIPEE", "AMENAGEE", "VIDE"]).optional(),
-  heatingType: z.enum(["CENTRAL", "SOL", "GAZ"]),
-  acType: z.enum(["CENTRAL", "SPLIT", "SANS"]),
-  waterCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
-  elecCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
-  gasCounter: z.enum(["INDIVIDUEL", "COMMUN"]),
+  heatingType: z.enum(["CENTRAL", "SOL", "GAZ"]).optional(),
+  acType: z.enum(["CENTRAL", "SPLIT", "SANS"]).optional(),
+  waterCounter: z.enum(["INDIVIDUEL", "COMMUN"]).optional(),
+  elecCounter: z.enum(["INDIVIDUEL", "COMMUN"]).optional(),
+  gasCounter: z.enum(["INDIVIDUEL", "COMMUN"]).optional(),
   depositMonths: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   rentalUsage: stringArrayOptional,
   chargesIncluded: z.preprocess((v) => {
@@ -465,6 +467,9 @@ const formSchema = z.object({
     return v
   }, z.boolean().optional()),
   availableDate: z.string().optional(),
+
+  acceptsBankCredit: z.enum(["YES", "NO", "NO_PREFERENCE"]).optional(),
+  legalDocuments: stringArrayOptional,
   
   kitchenEquipment: stringArrayOptional,
   exteriorFeatures: stringArrayOptional,
@@ -480,6 +485,8 @@ const formSchema = z.object({
       hasTelegram: z.boolean()
   })).optional(),
 }).superRefine((data, ctx) => {
+    const isVillaDemolition = data.propertyType === "VILLA" && data.state === "A_DEMOLIR"
+    const isBuildingDemolition = data.transactionType === "SALE" && data.propertyType === "IMMEUBLE_RESIDENTIEL" && data.state === "A_DEMOLIR"
     if (!data.state) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "État du bien requis", path: ["state"] })
     }
@@ -504,8 +511,10 @@ const formSchema = z.object({
         if (!data.builtArea) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface bâtie requise", path: ["builtArea"] })
         }
-        if (!(data.usageType === "UNIQUE" || data.usageType === "SEPARE")) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mode de vie requis", path: ["usageType"] })
+        if (!isVillaDemolition) {
+            if (!(data.usageType === "UNIQUE" || data.usageType === "SEPARE")) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mode de vie requis", path: ["usageType"] })
+            }
         }
     }
 
@@ -537,53 +546,59 @@ const formSchema = z.object({
     }
     
     if (data.propertyType === "IMMEUBLE_RESIDENTIEL") {
-        if (!data.buildingTypologyMode) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie requise", path: ["buildingTypologyMode"] })
-        }
-        if (!data.floorCount) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'étages requis", path: ["floorCount"] })
-        }
-        
-        if (data.buildingTypologyMode === "SIMILAIRES") {
-            if (!data.buildingApartmentTypologyCustom) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie des appartements requise", path: ["buildingApartmentTypologyCustom"] })
+        if (isBuildingDemolition) {
+            if (!data.landArea || isNaN(Number(data.landArea)) || Number(data.landArea) <= 0) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface terrain requise", path: ["landArea"] })
             }
-            if (!data.buildingTotalApartments) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingTotalApartments"] })
+        } else {
+            if (!data.buildingTypologyMode) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie requise", path: ["buildingTypologyMode"] })
             }
-            if (!data.buildingSurfaceMode) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Choisissez le type de surface", path: ["buildingSurfaceMode"] })
-            } else if (data.buildingSurfaceMode === "UNIQUE") {
-                if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
+            if (!data.floorCount) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'étages requis", path: ["floorCount"] })
+            }
+            
+            if (data.buildingTypologyMode === "SIMILAIRES") {
+                if (!data.buildingApartmentTypologyCustom) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie des appartements requise", path: ["buildingApartmentTypologyCustom"] })
+                }
+                if (!data.buildingTotalApartments) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingTotalApartments"] })
+                }
+                if (!data.buildingSurfaceMode) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Choisissez le type de surface", path: ["buildingSurfaceMode"] })
+                } else if (data.buildingSurfaceMode === "UNIQUE") {
+                    if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
+                        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
+                    }
                 }
             }
-        }
-        
-        if (data.buildingTypologyMode === "DIFFERENTES") {
-            const selected = data.buildingApartmentTypologies || []
-            if (selected.length === 0) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Sélectionnez au moins une typologie", path: ["buildingApartmentTypologies"] })
-            }
-            if (!data.buildingTotalApartments) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingTotalApartments"] })
-            }
-            if (selected.includes("F10_PLUS") && (!data.buildingApartmentTypologyOther || data.buildingApartmentTypologyOther.trim().length === 0)) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Saisissez les typologies au-delà de F10", path: ["buildingApartmentTypologyOther"] })
-            }
-            if (!data.buildingApartmentStyle || data.buildingApartmentStyle.length === 0) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Style d'appartement requis", path: ["buildingApartmentStyle"] })
+            
+            if (data.buildingTypologyMode === "DIFFERENTES") {
+                const selected = data.buildingApartmentTypologies || []
+                if (selected.length === 0) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Sélectionnez au moins une typologie", path: ["buildingApartmentTypologies"] })
+                }
+                if (!data.buildingTotalApartments) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'appartements requis", path: ["buildingTotalApartments"] })
+                }
+                if (selected.includes("F10_PLUS") && (!data.buildingApartmentTypologyOther || data.buildingApartmentTypologyOther.trim().length === 0)) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Saisissez les typologies au-delà de F10", path: ["buildingApartmentTypologyOther"] })
+                }
+                if (!data.buildingApartmentStyle || data.buildingApartmentStyle.length === 0) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Style d'appartement requis", path: ["buildingApartmentStyle"] })
+                }
             }
         }
     }
 
-    if (!data.kitchenType) {
+    if (!isVillaDemolition && !isBuildingDemolition && !data.kitchenType) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de cuisine requis", path: ["kitchenType"] })
     }
-    if (!data.heatingType) {
+    if (!isVillaDemolition && !isBuildingDemolition && !data.heatingType) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de chauffage requis", path: ["heatingType"] })
     }
-    if (!data.acType) {
+    if (!isVillaDemolition && !isBuildingDemolition && !data.acType) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de climatisation requis", path: ["acType"] })
     }
     if (!data.waterCounter) {
@@ -594,6 +609,21 @@ const formSchema = z.object({
     }
     if (!data.gasCounter) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Compteur gaz requis", path: ["gasCounter"] })
+    }
+
+    if (!isVillaDemolition && !isBuildingDemolition) {
+        if (!data.bedrooms) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Requis", path: ["bedrooms"] })
+        }
+        if (!data.livingRooms) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Requis", path: ["livingRooms"] })
+        }
+        if (!data.bathrooms) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Requis", path: ["bathrooms"] })
+        }
+        if (!data.wc) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Requis", path: ["wc"] })
+        }
     }
 
     if (data.transactionType === "RENTAL") {
@@ -610,6 +640,11 @@ const formSchema = z.object({
                 message: "Usage requis",
                 path: ["rentalUsage"]
             })
+        }
+    }
+    if (data.transactionType === "SALE") {
+        if (!data.acceptsBankCredit) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Requis", path: ["acceptsBankCredit"] })
         }
     }
 })
@@ -841,9 +876,12 @@ export default function DepositPage() {
     depositMonths: "",
     rentalUsage: [],
     chargesIncluded: false,
+    acceptsBankCredit: "NO_PREFERENCE",
+    legalDocuments: [],
   } satisfies Partial<DepositFormValues>
 
   const {
+    control,
     register,
     handleSubmit,
     watch,
@@ -869,6 +907,21 @@ export default function DepositPage() {
   const buildingApartmentTypologies = watch("buildingApartmentTypologies")
   const buildingApartmentTypologyOther = watch("buildingApartmentTypologyOther")
   const buildingSurfaceMode = watch("buildingSurfaceMode")
+  const currentState = useWatch({ control, name: "state" })
+  const isSaleParticulierApartment =
+    transactionType === "SALE" &&
+    userType === "PARTICULIER" &&
+    ["APPARTEMENT", "DUPLEX", "TRIPLEX", "STUDIO"].includes(propertyType)
+  const isSaleParticulierNiveauVilla =
+    transactionType === "SALE" &&
+    userType === "PARTICULIER" &&
+    propertyType === "NIVEAU_VILLA"
+  const isSaleBuilding = propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE"
+  const isBuildingDemolition = isSaleBuilding && currentState === "A_DEMOLIR"
+  const allowDemolirOption = propertyType === "VILLA" || isSaleBuilding
+  const isVillaDemolition =
+    propertyType === "VILLA" &&
+    (currentState === "A_DEMOLIR" || String(currentState || "").toUpperCase().includes("DEMOLIR"))
   
   // Re-hook the useEffect for price calculation since watch comes from useForm
   // We need to move the useEffect logic AFTER useForm
@@ -931,8 +984,8 @@ export default function DepositPage() {
     // Calcul en Centimes (1 DA = 100 Centimes)
     let totalCentimes = 0;
     // La valeur saisie est déjà dans l'unité choisie
-    if (currentPriceUnit === 'DA') totalCentimes = val * 100;
-    else if (currentPriceUnit === 'MILLION') totalCentimes = val * 1000000;
+    if (currentPriceUnit === 'DA' || currentPriceUnit === 'DA_M2') totalCentimes = val * 100;
+    else if (currentPriceUnit === 'MILLION' || currentPriceUnit === 'MILLION_M2') totalCentimes = val * 1000000;
     else if (currentPriceUnit === 'MILLIARD') totalCentimes = val * 1000000000;
 
     // Affichage texte
@@ -948,7 +1001,7 @@ export default function DepositPage() {
   }, [currentPrice, currentPriceUnit])
 
   // Conversion lors du changement d'unité
-  const handlePriceUnitChange = (newUnit: "DA" | "MILLION" | "MILLIARD") => {
+  const handlePriceUnitChange = (newUnit: "DA" | "DA_M2" | "MILLION" | "MILLION_M2" | "MILLIARD") => {
       const currentVal = Number(watch("price")?.replace(/\s/g, '') || 0);
       
       // Update unit immediately
@@ -959,17 +1012,140 @@ export default function DepositPage() {
       // Convert logic
       let valInDA = currentVal;
       // FROM
-      if (currentPriceUnit === 'MILLION') valInDA = currentVal * 10000;
+      if (currentPriceUnit === 'MILLION' || currentPriceUnit === 'MILLION_M2') valInDA = currentVal * 10000;
       else if (currentPriceUnit === 'MILLIARD') valInDA = currentVal * 10000000;
       
       // TO
       let newVal = valInDA;
-      if (newUnit === 'MILLION') newVal = valInDA / 10000;
+      if (newUnit === 'MILLION' || newUnit === 'MILLION_M2') newVal = valInDA / 10000;
       else if (newUnit === 'MILLIARD') newVal = valInDA / 10000000;
       
       const formatted = Number.isInteger(newVal) ? newVal.toString() : newVal.toFixed(2);
       setValue("price", formatted);
   }
+
+  useEffect(() => {
+    if (!isVillaDemolition) return
+
+    setValue("usageType", undefined as any, { shouldValidate: false })
+    setValue("bedrooms", "", { shouldValidate: false })
+    setValue("nbSuites", "", { shouldValidate: false })
+    setValue("livingRooms", "", { shouldValidate: false })
+    setValue("bathrooms", "", { shouldValidate: false })
+    setValue("wc", "", { shouldValidate: false })
+    setValue("bathroomType", "none" as any, { shouldValidate: false })
+
+    setValue("kitchenType", undefined as any, { shouldValidate: false })
+    setValue("kitchenState", undefined as any, { shouldValidate: false })
+    setValue("kitchenEquipment", undefined as any, { shouldValidate: false })
+
+    setValue("exteriorFeatures", undefined as any, { shouldValidate: false })
+    setValue("securityFeatures", undefined as any, { shouldValidate: false })
+    setValue("connectivity", undefined as any, { shouldValidate: false })
+
+    setValue("heatingType", undefined as any, { shouldValidate: false })
+    setValue("acType", undefined as any, { shouldValidate: false })
+
+    clearErrors([
+      "usageType",
+      "bedrooms",
+      "nbSuites",
+      "livingRooms",
+      "bathrooms",
+      "wc",
+      "bathroomType",
+      "kitchenType",
+      "kitchenState",
+      "kitchenEquipment",
+      "exteriorFeatures",
+      "securityFeatures",
+      "connectivity",
+      "heatingType",
+      "acType",
+    ] as any)
+  }, [isVillaDemolition, setValue, clearErrors])
+
+  useEffect(() => {
+    if (!isBuildingDemolition) return
+
+    setValue("buildingTypologyMode", undefined as any, { shouldValidate: false })
+    setValue("buildingApartmentTypologyCustom", "", { shouldValidate: false })
+    setValue("buildingTotalApartments", "", { shouldValidate: false })
+    setValue("buildingSurfaceMode", undefined as any, { shouldValidate: false })
+    setValue("buildingApartmentTypologies", [], { shouldValidate: false })
+    setValue("buildingApartmentTypologyOther", "", { shouldValidate: false })
+    setValue("buildingApartmentStyle", [], { shouldValidate: false })
+    setValue("buildingCountF3", "", { shouldValidate: false })
+    setValue("buildingCountF4", "", { shouldValidate: false })
+    setValue("buildingCountF5", "", { shouldValidate: false })
+
+    setValue("floorCount", "", { shouldValidate: false })
+    setValue("area", "", { shouldValidate: false })
+    setValue("typology", "", { shouldValidate: false })
+    setValue("typologyCustom", "", { shouldValidate: false })
+
+    setValue("parkingCount", "", { shouldValidate: false })
+    setValue("outdoorParking", "", { shouldValidate: false })
+
+    setValue("usageType", undefined as any, { shouldValidate: false })
+    setValue("bedrooms", "", { shouldValidate: false })
+    setValue("nbSuites", "", { shouldValidate: false })
+    setValue("livingRooms", "", { shouldValidate: false })
+    setValue("bathrooms", "", { shouldValidate: false })
+    setValue("wc", "", { shouldValidate: false })
+    setValue("bathroomType", "none" as any, { shouldValidate: false })
+
+    setValue("kitchenType", undefined as any, { shouldValidate: false })
+    setValue("kitchenState", undefined as any, { shouldValidate: false })
+    setValue("kitchenEquipment", undefined as any, { shouldValidate: false })
+
+    setValue("exteriorFeatures", undefined as any, { shouldValidate: false })
+    setValue("securityFeatures", undefined as any, { shouldValidate: false })
+    setValue("connectivity", undefined as any, { shouldValidate: false })
+    setValue("heatingType", undefined as any, { shouldValidate: false })
+    setValue("acType", undefined as any, { shouldValidate: false })
+
+    clearErrors([
+      "buildingTypologyMode",
+      "buildingApartmentTypologyCustom",
+      "buildingTotalApartments",
+      "buildingSurfaceMode",
+      "buildingApartmentTypologies",
+      "buildingApartmentTypologyOther",
+      "buildingApartmentStyle",
+      "buildingCountF3",
+      "buildingCountF4",
+      "buildingCountF5",
+      "floorCount",
+      "area",
+      "typology",
+      "typologyCustom",
+      "parkingCount",
+      "outdoorParking",
+      "usageType",
+      "bedrooms",
+      "nbSuites",
+      "livingRooms",
+      "bathrooms",
+      "wc",
+      "bathroomType",
+      "kitchenType",
+      "kitchenState",
+      "kitchenEquipment",
+      "exteriorFeatures",
+      "securityFeatures",
+      "connectivity",
+      "heatingType",
+      "acType",
+    ] as any)
+  }, [isBuildingDemolition, setValue, clearErrors])
+
+  useEffect(() => {
+    if (propertyType === "VILLA") return
+    if (currentState !== "A_DEMOLIR") return
+    if (propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE") return
+    setValue("state", "" as any, { shouldValidate: true })
+  }, [propertyType, transactionType, currentState, setValue])
   const getFilteredCategories = () => {
     let categories = [...BASE_REAL_ESTATE_CATEGORIES]
     if (userType === "PARTICULIER") {
@@ -1229,20 +1405,39 @@ export default function DepositPage() {
     
     // Validation selon le type de bien
     if (propertyType === "VILLA") {
-        isValid = await trigger([
-            "typology", "floorCount", 
-            "landArea", "builtArea",
-            "state", "parkingCount", "outdoorParking",
-            "usageType", "bedrooms", "nbSuites", "livingRooms", "bathrooms", "wc", "bathroomType",
-            "kitchenType", "kitchenState",
-            "heatingType", "acType",
-            "waterCounter", "elecCounter", "gasCounter",
-            "typologyCustom"
-        ], { shouldFocus: true });
+        if (isVillaDemolition) {
+            isValid = await trigger([
+                "typology",
+                "floorCount",
+                "landArea",
+                "builtArea",
+                "facadesCount",
+                "state",
+                "parkingCount",
+                "outdoorParking",
+                "waterCounter",
+                "elecCounter",
+                "gasCounter",
+                "typologyCustom",
+            ], { shouldFocus: true })
+        } else {
+            isValid = await trigger([
+                "typology", "floorCount", 
+                "landArea", "builtArea",
+                "facadesCount",
+                "state", "parkingCount", "outdoorParking",
+                "usageType", "bedrooms", "nbSuites", "livingRooms", "bathrooms", "wc", "bathroomType",
+                "kitchenType", "kitchenState",
+                "heatingType", "acType",
+                "waterCounter", "elecCounter", "gasCounter",
+                "typologyCustom"
+            ], { shouldFocus: true })
+        }
     } else if (propertyType === "NIVEAU_VILLA") {
         isValid = await trigger([
             "typology", "floorCount", "area",
             "state", "parkingCount", "outdoorParking",
+            "facadesCount",
             "usageType", "bedrooms", "nbSuites", "livingRooms", "bathrooms", "wc", "bathroomType",
             "kitchenType", "kitchenState",
             "heatingType", "acType",
@@ -1253,6 +1448,7 @@ export default function DepositPage() {
         isValid = await trigger([
             "typology", "floorCount", "area",
             "state", "parkingCount", "outdoorParking",
+            "facadesCount",
             "usageType", "bedrooms", "nbSuites", "livingRooms", "bathrooms", "wc", "bathroomType",
             "kitchenType", "kitchenState",
             "heatingType", "acType",
@@ -1260,35 +1456,45 @@ export default function DepositPage() {
             "typologyCustom"
         ], { shouldFocus: true });
     } else if (propertyType === "IMMEUBLE_RESIDENTIEL") {
-        isValid = await trigger([
-            "buildingTypologyMode",
-            "buildingApartmentTypologyCustom",
-            "buildingTotalApartments",
-            "buildingSurfaceMode",
-            "buildingApartmentTypologies",
-            "buildingApartmentTypologyOther",
-            "buildingApartmentStyle",
-            "floorCount",
-            "area",
-            "state",
-            "parkingCount",
-            "outdoorParking",
-            "bedrooms",
-            "nbSuites",
-            "livingRooms",
-            "bathrooms",
-            "wc",
-            "bathroomType",
-            "kitchenType",
-            "kitchenState",
-            "heatingType",
-            "acType",
-            "waterCounter",
-            "elecCounter",
-            "gasCounter",
-            "typologyCustom",
-            "typology",
-        ], { shouldFocus: true });
+        if (isBuildingDemolition) {
+            isValid = await trigger([
+                "state",
+                "landArea",
+                "waterCounter",
+                "elecCounter",
+                "gasCounter",
+            ], { shouldFocus: true })
+        } else {
+            isValid = await trigger([
+                "buildingTypologyMode",
+                "buildingApartmentTypologyCustom",
+                "buildingTotalApartments",
+                "buildingSurfaceMode",
+                "buildingApartmentTypologies",
+                "buildingApartmentTypologyOther",
+                "buildingApartmentStyle",
+                "floorCount",
+                "area",
+                "state",
+                "parkingCount",
+                "outdoorParking",
+                "bedrooms",
+                "nbSuites",
+                "livingRooms",
+                "bathrooms",
+                "wc",
+                "bathroomType",
+                "kitchenType",
+                "kitchenState",
+                "heatingType",
+                "acType",
+                "waterCounter",
+                "elecCounter",
+                "gasCounter",
+                "typologyCustom",
+                "typology",
+            ], { shouldFocus: true })
+        }
     } else {
         // Autres types de biens
         isValid = await trigger([
@@ -1314,6 +1520,9 @@ export default function DepositPage() {
         if (availabilityMode === 'DATE') {
              fieldsToValidate.push("availableDate")
         }
+    }
+    if (transactionType === "SALE") {
+        fieldsToValidate.push("acceptsBankCredit")
     }
 
     const isValid = await trigger(fieldsToValidate, { shouldFocus: true })
@@ -1365,11 +1574,11 @@ export default function DepositPage() {
     // Le prix stocké doit toujours être en DA
     // Si l'utilisateur a choisi MILLION, il a rentré "10" pour "10 Millions". 
     // Or 1 Million de centimes = 10 000 DA. Donc 10 * 10 000 = 100 000 DA.
-    if (data.priceUnit === 'MILLION') {
+    if (data.priceUnit === 'MILLION' || data.priceUnit === 'MILLION_M2') {
         finalPrice *= 10000;
     } else if (data.priceUnit === 'MILLIARD') {
         finalPrice *= 10000000;
-    } else if (data.priceUnit === 'DA') {
+    } else if (data.priceUnit === 'DA' || data.priceUnit === 'DA_M2') {
         // Si c'est en DA, pas de conversion, c'est la valeur brute
         // Mais attention si le backend attend des centimes ? 
         // Non, standard = DA. 
@@ -1385,6 +1594,14 @@ export default function DepositPage() {
         if (!data.rooms && data.bedrooms) formData.append('rooms', data.bedrooms)
         else if (data.rooms) formData.append('rooms', data.rooms)
         else formData.append('rooms', '0')
+    }
+
+    if (data.transactionType === "SALE" && data.propertyType === 'IMMEUBLE_RESIDENTIEL' && data.state === "A_DEMOLIR") {
+        if (!data.area && data.landArea) formData.append('area', data.landArea)
+        else if (data.area) formData.append('area', data.area)
+        else formData.append('area', '0')
+
+        if (!data.rooms) formData.append('rooms', '0')
     }
 
     // Ajouter toutes les autres données du formulaire
@@ -1563,7 +1780,9 @@ export default function DepositPage() {
   const isEligibleProperty =
       (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "NIVEAU_VILLA") ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL"));
+      (userType === "PARTICULIER" && transactionType === "SALE" && propertyType === "NIVEAU_VILLA") ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
+      (userType === "PARTICULIER" && transactionType === "SALE" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL"));
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
@@ -1776,8 +1995,9 @@ export default function DepositPage() {
                     {currentStep === 4 && (
                         (
                             (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
-                            (propertyType === "NIVEAU_VILLA" && transactionType === "RENTAL" && userType === "PARTICULIER") ||
-                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER")
+                            (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
+                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER")
                         )
                     ) && (
                         <div className="w-full max-w-5xl animate-fade-in space-y-10">
@@ -1791,6 +2011,39 @@ export default function DepositPage() {
                                 <div className="flex flex-col gap-5">
                                     {propertyType === "IMMEUBLE_RESIDENTIEL" ? (
                                         <div className="flex flex-col gap-5">
+                                            {isSaleBuilding && (
+                                                <div className={cn(
+                                                    "grid grid-cols-1 gap-5 items-end",
+                                                    isBuildingDemolition ? "md:grid-cols-2" : "md:grid-cols-1"
+                                                )}>
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
+                                                        <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
+                                                            <option value="">Sélectionner</option>
+                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                                        </select>
+                                                        {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
+                                                    </div>
+
+                                                    {isBuildingDemolition && (
+                                                        <div className="min-w-0">
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²) <span className="text-red-500">*</span></label>
+                                                            <input
+                                                                {...register("landArea")}
+                                                                type="number"
+                                                                min="0"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                                placeholder="Ex: 400"
+                                                            />
+                                                            {errors.landArea && <p className="text-red-500 text-xs mt-1">{errors.landArea.message as any}</p>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {!isBuildingDemolition && (
+                                            <>
                                             <div className="min-w-0">
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
                                                 <div className="grid grid-cols-2 gap-4">
@@ -1962,47 +2215,78 @@ export default function DepositPage() {
                                                 </div>
                                             )}
 
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
-                                                    <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
-                                                        <option value="">Sélectionner</option>
-                                                        {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                                                    </select>
-                                                    {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
+                                            {isSaleBuilding ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                                        <input
+                                                            {...register("parkingCount")}
+                                                            type="number"
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                            placeholder="Ex: 1"
+                                                        />
+                                                        {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                                        <input
+                                                            {...register("outdoorParking")}
+                                                            type="number"
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                            placeholder="Ex: 2"
+                                                        />
+                                                        {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
-                                                    <input
-                                                        {...register("parkingCount")}
-                                                        type="number"
-                                                        min="0"
-                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                        placeholder="Ex: 1"
-                                                    />
-                                                    {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
+                                            ) : (
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
+                                                        <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
+                                                            <option value="">Sélectionner</option>
+                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                                        </select>
+                                                        {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                                        <input
+                                                            {...register("parkingCount")}
+                                                            type="number"
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                            placeholder="Ex: 1"
+                                                        />
+                                                        {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                                        <input
+                                                            {...register("outdoorParking")}
+                                                            type="number"
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                            placeholder="Ex: 2"
+                                                        />
+                                                        {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
-                                                    <input
-                                                        {...register("outdoorParking")}
-                                                        type="number"
-                                                        min="0"
-                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                        placeholder="Ex: 2"
-                                                    />
-                                                    {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
-                                                </div>
-                                            </div>
+                                            )}
+                                            </>
+                                            )}
                                         </div>
                                     ) : (
                                         <>
                                             {/* Row 1 */}
                                             <div className={cn(
                                                 "grid grid-cols-1 gap-5 items-end",
-                                                propertyType === "VILLA" ? "md:grid-cols-4" : "md:grid-cols-3"
+                                                (propertyType === "VILLA" || isSaleParticulierApartment || isSaleParticulierNiveauVilla) ? "md:grid-cols-4" : "md:grid-cols-3"
                                             )}>
                                                 <div className="min-w-0">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
@@ -2030,14 +2314,25 @@ export default function DepositPage() {
                                                         {propertyType === "VILLA" && (
                                                             <span className="font-bold text-gray-700 text-lg whitespace-nowrap">R +</span>
                                                         )}
-                                                        <input 
-                                                            {...register("floorCount")} 
-                                                            type="number" 
-                                                            min="0" max="10"
-                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                            placeholder="Ex: 2"
-                                                        />
+                                                        {propertyType === "NIVEAU_VILLA" ? (
+                                                            <select
+                                                                {...register("floorCount")}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                            >
+                                                                <option value="">Sélectionner</option>
+                                                                <option value="0">Rez-de-chaussée</option>
+                                                                <option value="1">Autre étage</option>
+                                                            </select>
+                                                        ) : (
+                                                            <input 
+                                                                {...register("floorCount")} 
+                                                                type="number" 
+                                                                min="0" max="10"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                                placeholder="Ex: 2"
+                                                            />
+                                                        )}
                                                     </div>
                                                     {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                                 </div>
@@ -2070,31 +2365,64 @@ export default function DepositPage() {
                                                         </div>
                                                     </>
                                                 ) : (
-                                                    <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
-                                                        <input 
-                                                            {...register("area")} 
-                                                            type="number" 
-                                                            min="0"
-                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                            placeholder="Ex: 120" 
-                                                        />
-                                                        {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area.message as any}</p>}
-                                                    </div>
+                                                    <>
+                                                        <div className="min-w-0">
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
+                                                            <input 
+                                                                {...register("area")} 
+                                                                type="number" 
+                                                                min="0"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                                placeholder="Ex: 120" 
+                                                            />
+                                                            {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area.message as any}</p>}
+                                                        </div>
+                                                        {(isSaleParticulierApartment || isSaleParticulierNiveauVilla) && (
+                                                            <div className="min-w-0">
+                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                                                <input
+                                                                    {...register("facadesCount")}
+                                                                    type="number"
+                                                                    min="0"
+                                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                    className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                                    placeholder="Ex: 2"
+                                                                />
+                                                                {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
 
                                             {/* Row 2: État Général, Garage, Stationnement */}
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                            <div className={cn(
+                                                "grid grid-cols-1 gap-5 items-end",
+                                                propertyType === "VILLA" ? "md:grid-cols-4" : "md:grid-cols-3"
+                                            )}>
                                                 <div className="min-w-0">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
                                                     <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                         <option value="">Sélectionner</option>
-                                                        {PROPERTY_STATES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                                        {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                                                     </select>
                                                     {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                 </div>
+                                                {propertyType === "VILLA" && (
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                                        <input
+                                                            {...register("facadesCount")}
+                                                            type="number"
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                            placeholder="Ex: 2"
+                                                        />
+                                                        {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
+                                                    </div>
+                                                )}
                                                 <div className="min-w-0">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
                                                     <input 
@@ -2126,7 +2454,7 @@ export default function DepositPage() {
                             </section>
 
                             {/* 2. Mode de vie */}
-                            {propertyType !== "IMMEUBLE_RESIDENTIEL" && (
+                            {!isVillaDemolition && !isBuildingDemolition && propertyType !== "IMMEUBLE_RESIDENTIEL" && (
                                 <section className="space-y-6">
                                     <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                         <Users className="text-[#00BFA6]" /> Mode de vie
@@ -2160,6 +2488,7 @@ export default function DepositPage() {
                             )}
 
                             {/* 3. Espaces de Vie */}
+                            {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <BedDouble className="text-[#00BFA6]" /> Espaces de Vie
@@ -2247,8 +2576,10 @@ export default function DepositPage() {
                                     </div>
                                 </div>
                             </section>
+                            )}
 
                             {/* 4. Cuisine et équipements */}
+                            {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Utensils className="text-[#00BFA6]" /> Cuisine et équipements
@@ -2319,8 +2650,10 @@ export default function DepositPage() {
                                     </div>
                                 </div>
                             </section>
+                            )}
 
                             {/* 5. Extérieurs & Commodités */}
+                            {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Trees className="text-[#00BFA6]" /> Extérieurs & Commodités
@@ -2449,6 +2782,7 @@ export default function DepositPage() {
                                     </div>
                                 </div>
                             </section>
+                            )}
 
                             {/* 6. Énergie, Eau & Technique */}
                             <section className="space-y-6">
@@ -2493,8 +2827,9 @@ export default function DepositPage() {
                     {/* Step 4: Fiche descriptive - Autres (Ancien formulaire) */}
                     {currentStep === 4 && !(
                         (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
-                        (propertyType === "NIVEAU_VILLA" && transactionType === "RENTAL" && userType === "PARTICULIER") ||
-                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER")
+                        (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
+                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER")
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             <div className="space-y-8">
@@ -2709,6 +3044,7 @@ export default function DepositPage() {
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">Équipements & Commodités</h3>
                                     
                                     {/* Cuisine */}
+                                    {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Cuisine</label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -2749,8 +3085,10 @@ export default function DepositPage() {
                                             })}
                                         </div>
                                     </div>
+                                    )}
 
                                     {/* Extérieur */}
+                                    {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Extérieur</label>
                                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -2788,6 +3126,7 @@ export default function DepositPage() {
                                             })}
                                         </div>
                                     </div>
+                                    )}
 
                                     {/* Eau/Énergie */}
                                     <div className="mb-6">
@@ -2865,7 +3204,7 @@ export default function DepositPage() {
                                     <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                {transactionType === 'RENTAL' ? (propertyType === "IMMEUBLE_RESIDENTIEL" ? "Location de l'immeuble" : "Loyer mensuel") : "Montant"}
+                                                {transactionType === 'RENTAL' ? (propertyType === "IMMEUBLE_RESIDENTIEL" ? "Location de l'immeuble" : "Loyer mensuel") : "Prix de vente"}
                                             </label>
                                             <div className="flex flex-col md:flex-row gap-4">
                                                 <div className="relative flex-1">
@@ -2887,7 +3226,9 @@ export default function DepositPage() {
                                                             className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none"
                                                         >
                                                             <option value="DA">DA</option>
+                                                            <option value="DA_M2">DA / m²</option>
                                                             <option value="MILLION">Millions</option>
+                                                            <option value="MILLION_M2">Millions / m²</option>
                                                             <option value="MILLIARD">Milliards</option>
                                                         </select>
                                                     </div>
@@ -3041,6 +3382,63 @@ export default function DepositPage() {
                                                 {errors.rentalUsage && <p className="text-red-500 text-sm mt-1">{errors.rentalUsage.message}</p>}
                                             </div>
                                         </div>
+                                    </section>
+                                )}
+
+                                {transactionType === "SALE" && (
+                                    <section className="space-y-6 pt-6 border-t">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <FileText className="text-[#00BFA6]" /> Conditions de Vente
+                                        </h2>
+                                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-3">Accepte crédit Bancaire</label>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                    <label className="cursor-pointer">
+                                                        <input type="radio" value="YES" {...register("acceptsBankCredit")} className="peer sr-only" />
+                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">
+                                                            Oui
+                                                        </div>
+                                                    </label>
+                                                    <label className="cursor-pointer">
+                                                        <input type="radio" value="NO" {...register("acceptsBankCredit")} className="peer sr-only" />
+                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">
+                                                            Non
+                                                        </div>
+                                                    </label>
+                                                    <label className="cursor-pointer">
+                                                        <input type="radio" value="NO_PREFERENCE" {...register("acceptsBankCredit")} className="peer sr-only" />
+                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">
+                                                            Pas de préférence
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                {errors.acceptsBankCredit && <p className="text-red-500 text-sm mt-1">{errors.acceptsBankCredit.message as any}</p>}
+                                            </div>
+                                        </div>
+                                    </section>
+                                )}
+
+                                {transactionType === "SALE" && (
+                                    <section className="space-y-6 pt-2">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <FileText className="text-[#00BFA6]" /> Documents Juridiques
+                                        </h2>
+                                        <div className="flex flex-wrap gap-3">
+                                            {[
+                                                { id: "ACTE_PROPRIETE", label: "Acte de propriété" },
+                                                { id: "LIVRET_FONCIER", label: "Livret foncier" },
+                                                { id: "CERTIFICAT_CONFORMITE", label: "Certificat de conformité" },
+                                            ].map((d) => (
+                                                <label key={d.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={d.id} {...register("legalDocuments")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">
+                                                        {d.label}
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.legalDocuments && <p className="text-red-500 text-sm mt-1">{errors.legalDocuments.message as any}</p>}
                                     </section>
                                 )}
                             </div>
@@ -3402,7 +3800,7 @@ export default function DepositPage() {
                                             disabled={selectedFiles.length < 3}
                                             className="w-full bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Continuer vers l'organisation
+                                            Organiser les photos
                                         </Button>
                                     </div>
                                 </div>
@@ -3541,11 +3939,6 @@ export default function DepositPage() {
                     {currentStep === 6 && (
                         <Button onClick={handleLocationAndContactsSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             Continuer
-                        </Button>
-                    )}
-                    {currentStep === 7 && photoOrganizationStep === "upload" && selectedFiles.length >= 3 && (
-                        <Button onClick={proceedToPhotoOrganization} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
-                            Organiser les photos
                         </Button>
                     )}
                     </div>
