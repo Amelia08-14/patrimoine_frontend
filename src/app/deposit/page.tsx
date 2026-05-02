@@ -499,7 +499,8 @@ const formSchema = z.object({
         data.propertyType === "TRIPLEX" ||
         data.propertyType === "STUDIO"
     ) {
-        if (!data.typology) {
+        const shouldRequireTypology = !(data.propertyType === "VILLA" && data.state === "A_DEMOLIR")
+        if (shouldRequireTypology && !data.typology) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie requise", path: ["typology"] })
         }
     }
@@ -922,6 +923,7 @@ export default function DepositPage() {
   const isVillaDemolition =
     propertyType === "VILLA" &&
     (currentState === "A_DEMOLIR" || String(currentState || "").toUpperCase().includes("DEMOLIR"))
+  const isSaleVillaDemolition = propertyType === "VILLA" && transactionType === "SALE" && userType === "PARTICULIER" && isVillaDemolition
   
   // Re-hook the useEffect for price calculation since watch comes from useForm
   // We need to move the useEffect logic AFTER useForm
@@ -1407,18 +1409,14 @@ export default function DepositPage() {
     if (propertyType === "VILLA") {
         if (isVillaDemolition) {
             isValid = await trigger([
-                "typology",
                 "floorCount",
                 "landArea",
                 "builtArea",
                 "facadesCount",
                 "state",
-                "parkingCount",
-                "outdoorParking",
                 "waterCounter",
                 "elecCounter",
                 "gasCounter",
-                "typologyCustom",
             ], { shouldFocus: true })
         } else {
             isValid = await trigger([
@@ -2288,25 +2286,27 @@ export default function DepositPage() {
                                                 "grid grid-cols-1 gap-5 items-end",
                                                 (propertyType === "VILLA" || isSaleParticulierApartment || isSaleParticulierNiveauVilla) ? "md:grid-cols-4" : "md:grid-cols-3"
                                             )}>
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-bold text-gray-700 text-lg">F</span>
-                                                        <input 
-                                                            type="number" 
-                                                            min="1" max="10"
-                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                            onChange={(e) => {
-                                                                const val = e.target.value;
-                                                                setValue("typology", `F${val}`);
-                                                                setValue("typologyCustom", val);
-                                                            }}
-                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                            placeholder="Ex: 4"
-                                                        />
+                                                {!(propertyType === "VILLA" && isSaleVillaDemolition) && (
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-gray-700 text-lg">F</span>
+                                                            <input 
+                                                                type="number" 
+                                                                min="1" max="10"
+                                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    setValue("typology", `F${val}`);
+                                                                    setValue("typologyCustom", val);
+                                                                }}
+                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                                placeholder="Ex: 4"
+                                                            />
+                                                        </div>
+                                                        {errors.typology && <p className="text-red-500 text-xs mt-1">{errors.typology.message}</p>}
                                                     </div>
-                                                    {errors.typology && <p className="text-red-500 text-xs mt-1">{errors.typology.message}</p>}
-                                                </div>
+                                                )}
 
                                                 <div className="min-w-0">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">{propertyType === "VILLA" ? "Nombre d'étages" : "Étage"} <span className="text-red-500">*</span></label>
@@ -2363,6 +2363,20 @@ export default function DepositPage() {
                                                             />
                                                             {errors.builtArea && <p className="text-red-500 text-xs mt-1">{errors.builtArea.message}</p>}
                                                         </div>
+                                                        {isSaleVillaDemolition && (
+                                                            <div className="min-w-0">
+                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                                                <input
+                                                                    {...register("facadesCount")}
+                                                                    type="number"
+                                                                    min="0"
+                                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                    className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                                    placeholder="Ex: 2"
+                                                                />
+                                                                {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
+                                                            </div>
+                                                        )}
                                                     </>
                                                 ) : (
                                                     <>
@@ -2399,7 +2413,7 @@ export default function DepositPage() {
                                             {/* Row 2: État Général, Garage, Stationnement */}
                                             <div className={cn(
                                                 "grid grid-cols-1 gap-5 items-end",
-                                                propertyType === "VILLA" ? "md:grid-cols-4" : "md:grid-cols-3"
+                                                propertyType === "VILLA" ? (isSaleVillaDemolition ? "md:grid-cols-1" : "md:grid-cols-4") : "md:grid-cols-3"
                                             )}>
                                                 <div className="min-w-0">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
@@ -2409,7 +2423,7 @@ export default function DepositPage() {
                                                     </select>
                                                     {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                 </div>
-                                                {propertyType === "VILLA" && (
+                                                {propertyType === "VILLA" && !isSaleVillaDemolition && (
                                                     <div className="min-w-0">
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
                                                         <input
@@ -2423,30 +2437,34 @@ export default function DepositPage() {
                                                         {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
                                                     </div>
                                                 )}
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
-                                                    <input 
-                                                        {...register("parkingCount")} 
-                                                        type="number" 
-                                                        min="0"
-                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                        placeholder="Ex: 1" 
-                                                    />
-                                                    {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
-                                                    <input 
-                                                        {...register("outdoorParking")} 
-                                                        type="number" 
-                                                        min="0"
-                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                        placeholder="Ex: 2" 
-                                                    />
-                                                    {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
-                                                </div>
+                                                {(propertyType !== "VILLA" || !isSaleVillaDemolition) && (
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                                        <input 
+                                                            {...register("parkingCount")} 
+                                                            type="number" 
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                            placeholder="Ex: 1" 
+                                                        />
+                                                        {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
+                                                    </div>
+                                                )}
+                                                {(propertyType !== "VILLA" || !isSaleVillaDemolition) && (
+                                                    <div className="min-w-0">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                                        <input 
+                                                            {...register("outdoorParking")} 
+                                                            type="number" 
+                                                            min="0"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
+                                                            placeholder="Ex: 2" 
+                                                        />
+                                                        {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
+                                                    </div>
+                                                )}
                                             </div>
                                         </>
                                     )}
