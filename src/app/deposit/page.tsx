@@ -417,7 +417,7 @@ const formSchema = z.object({
   area: z.string().optional(),
   rooms: z.string().optional(),
 
-  floorCount: z.string().min(1, "Requis").refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 50, "Nombre d'étages invalide (0-50)"),
+  floorCount: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 50), "Nombre d'étages invalide (0-50)"),
   extraFloor: z.enum(["basement", "entresol", "attic", "none"]),
   typology: z.string().optional(),
   buildingTypologyMode: z.enum(["SIMILAIRES", "DIFFERENTES"]).optional(),
@@ -490,6 +490,22 @@ const formSchema = z.object({
     if (!data.state) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "État du bien requis", path: ["state"] })
     }
+
+    const shouldRequireFloorCount =
+        data.propertyType === "VILLA" ||
+        data.propertyType === "NIVEAU_VILLA" ||
+        data.propertyType === "APPARTEMENT" ||
+        data.propertyType === "DUPLEX" ||
+        data.propertyType === "TRIPLEX" ||
+        data.propertyType === "STUDIO" ||
+        (data.propertyType === "IMMEUBLE_RESIDENTIEL" && !isBuildingDemolition)
+    if (shouldRequireFloorCount && !data.floorCount) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: data.propertyType === "IMMEUBLE_RESIDENTIEL" ? "Nombre d'étages requis" : "Requis",
+            path: ["floorCount"],
+        })
+    }
     
     if (
         data.propertyType === "VILLA" ||
@@ -554,9 +570,6 @@ const formSchema = z.object({
         } else {
             if (!data.buildingTypologyMode) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Typologie requise", path: ["buildingTypologyMode"] })
-            }
-            if (!data.floorCount) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nombre d'étages requis", path: ["floorCount"] })
             }
             
             if (data.buildingTypologyMode === "SIMILAIRES") {
@@ -1602,10 +1615,14 @@ export default function DepositPage() {
         if (!data.rooms) formData.append('rooms', '0')
     }
 
+    const isBuildingDemolitionPayload = data.transactionType === "SALE" && data.propertyType === 'IMMEUBLE_RESIDENTIEL' && data.state === "A_DEMOLIR"
+    const shouldSkipAreaRooms = data.propertyType === "VILLA" || isBuildingDemolitionPayload
+
     // Ajouter toutes les autres données du formulaire
     Object.entries(data).forEach(([key, value]) => {
       // On traite le prix manuellement, et description est déjà traité ou présent
       if (key === 'price') return;
+      if (shouldSkipAreaRooms && (key === "area" || key === "rooms")) return;
       
       // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
       // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend

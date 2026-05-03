@@ -5,7 +5,7 @@
   --foreground: #171717;
   --primary: #00BFA6;
   --secondary: #003B4A;
-  --font-sans: var(--font-montserrat);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-serif);
 }

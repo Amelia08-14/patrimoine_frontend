@@ -329,13 +329,24 @@ export default function AnnounceDetailsPage() {
 
   // Helper to determine if we should show Villa-specific layout
   const isVilla = announce?.property?.propertyType === 'VILLA' || announce?.property?.propertyType === 'Villa' || announce?.property?.propertyType === 'villa';
-  const isRental = announce?.type === 'RENTAL';
+  const normalizedTransactionType = (() => {
+      const t = typeof announce?.type === "string" ? announce.type.toUpperCase() : ""
+      if (t === "VENTE") return "SALE"
+      if (t === "LOCATION") return "RENTAL"
+      return t
+  })()
+  const isRental = normalizedTransactionType === 'RENTAL';
   const isVillaRental = isVilla && isRental;
-  const isSale = announce?.type === 'SALE';
+  const isSale = normalizedTransactionType === 'SALE';
   const normalizedState = typeof property?.state === "string" ? property.state.toUpperCase() : ""
   const isSaleVillaDemolition = isSale && isVilla && (normalizedState === "A_DEMOLIR" || normalizedState.includes("DEMOLIR"))
   
   const normalizedPropertyType = typeof property.propertyType === "string" ? property.propertyType.toUpperCase() : "";
+  const isSaleBuildingDemolition =
+      isSale &&
+      normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" &&
+      (normalizedState === "A_DEMOLIR" || normalizedState.includes("DEMOLIR"))
+  const isSaleDemolition = isSaleVillaDemolition || isSaleBuildingDemolition
   const propertyTypeLabel = PROPERTY_TYPES.find((t) => t.id === normalizedPropertyType)?.label || property.propertyType;
   const hasElevator = exteriorFeatures.includes("elevator");
   const displayArea = property.area ?? property.habitableArea ?? property.builtArea ?? property.landArea;
@@ -652,7 +663,7 @@ export default function AnnounceDetailsPage() {
                 <div className="text-right">
                   <div className="text-3xl font-bold text-[#00BFA6]">{announce.price?.toLocaleString()} DZD</div>
                   <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
-                      <span className="uppercase">{announce.type === 'RENTAL' ? 'Location' : announce.type === 'SALE' ? 'Vente' : announce.type}</span>
+                      <span className="uppercase">{isRental ? 'Location' : isSale ? 'Vente' : announce.type}</span>
                       {announce.priceType && (
                           <>
                               <span className="text-gray-300">|</span>
@@ -664,6 +675,16 @@ export default function AnnounceDetailsPage() {
               </div>
 
               <div className="flex flex-wrap justify-between items-center gap-6 py-5 border-t border-b border-gray-100 mt-5">
+                {isSaleBuildingDemolition ? (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                            <div className="font-bold text-xl">{(property.builtArea ?? property.area) ?? 0} m²</div>
+                            <div className="text-sm text-gray-500">Surf. bâtie</div>
+                        </div>
+                    </div>
+                ) : (
+                <>
                 {normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && property.typology && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
@@ -798,6 +819,8 @@ export default function AnnounceDetailsPage() {
                             </div>
                         </div>
                     </div>
+                )}
+                </>
                 )}
               </div>
 
@@ -1028,9 +1051,9 @@ export default function AnnounceDetailsPage() {
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
 
-              <div className={isSaleVillaDemolition ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"}>
+              <div className={isSaleDemolition ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"}>
                   {/* Colonne 01: Espace de Vie */}
-                  {!isSaleVillaDemolition && (
+                  {!isSaleDemolition && (
                   <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <BedDouble className="h-5 w-5 text-[#00BFA6] mt-0.5" />
@@ -1085,7 +1108,7 @@ export default function AnnounceDetailsPage() {
                   )}
 
                   {/* Colonne 02: Cuisine et équipements */}
-                  {!isSaleVillaDemolition && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
+                  {!isSaleDemolition && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
                   <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <Wind className="h-5 w-5 text-[#00BFA6] mt-0.5" />
@@ -1128,7 +1151,7 @@ export default function AnnounceDetailsPage() {
                   )}
 
                   {/* Colonne 02 (Immeuble): Composition de l'immeuble */}
-                  {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && buildingTypology && (
+                  {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && !isSaleBuildingDemolition && buildingTypology && (
                       <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Building2 className="h-5 w-5 text-[#00BFA6] mt-0.5" />
@@ -1310,7 +1333,7 @@ export default function AnnounceDetailsPage() {
                       </div>
                   </div>
 
-                  {isSaleVillaDemolition && (
+                  {isSaleDemolition && (
                       <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <FileText className="h-5 w-5 text-[#00BFA6] mt-0.5" />
@@ -1332,7 +1355,7 @@ export default function AnnounceDetailsPage() {
                       </div>
                   )}
 
-                  {isSaleVillaDemolition && (
+                  {isSaleDemolition && (
                       <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5" />
@@ -1347,7 +1370,7 @@ export default function AnnounceDetailsPage() {
                       </div>
                   )}
 
-                  {announce.type === 'SALE' && !isSaleVillaDemolition && (
+                  {isSale && !isSaleDemolition && (
                       <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5" />
@@ -1379,7 +1402,7 @@ export default function AnnounceDetailsPage() {
                       </div>
                   )}
 
-                  {announce.type === 'RENTAL' && (
+                  {isRental && (
                       <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Search className="h-5 w-5 text-[#00BFA6] mt-0.5" />
