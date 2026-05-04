@@ -1096,7 +1096,6 @@ export default function DepositPage() {
   const isUsineRentalParticulier =
     transactionType === "RENTAL" &&
     userType === "PARTICULIER" &&
-    realEstateType === "INDUSTRIEL" &&
     propertyType === "USINE"
   const isSaleParticulierApartment =
     transactionType === "SALE" &&
@@ -2086,7 +2085,7 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "SALE" && propertyType === "NIVEAU_VILLA") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
       (userType === "PARTICULIER" && transactionType === "SALE" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && realEstateType === "INDUSTRIEL" && propertyType === "USINE");
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "USINE");
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
