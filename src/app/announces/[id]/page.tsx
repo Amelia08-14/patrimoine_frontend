@@ -342,6 +342,7 @@ export default function AnnounceDetailsPage() {
   const isSaleVillaDemolition = isSale && isVilla && (normalizedState === "A_DEMOLIR" || normalizedState.includes("DEMOLIR"))
   
   const normalizedPropertyType = typeof property.propertyType === "string" ? property.propertyType.toUpperCase() : "";
+  const isFactoryRental = isRental && normalizedPropertyType === "USINE"
   const isSaleBuildingDemolition =
       isSale &&
       normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" &&
@@ -462,7 +463,7 @@ export default function AnnounceDetailsPage() {
                 )}
             </div>
 
-            <div className="h-[400px] md:h-[500px] rounded-2xl overflow-hidden relative bg-gray-50">
+            <div className="h-[360px] md:h-[440px] lg:h-[500px] rounded-2xl overflow-hidden relative bg-gray-50">
                 {activeTab === 'VIDEO' && videosList.length > 0 ? (
                     <div className="w-full h-full flex items-center justify-center bg-black">
                         <video 
@@ -661,10 +662,16 @@ export default function AnnounceDetailsPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-[#00BFA6]">{announce.price?.toLocaleString()} DZD</div>
+                  <div className="text-3xl font-bold text-[#00BFA6]">
+                      {isFactoryRental
+                          ? "Prix sur demande"
+                          : (announce.price !== undefined && announce.price !== null
+                              ? `${announce.price.toLocaleString()} DZD`
+                              : "Non spécifié")}
+                  </div>
                   <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
                       <span className="uppercase">{isRental ? 'Location' : isSale ? 'Vente' : announce.type}</span>
-                      {announce.priceType && (
+                      {!isFactoryRental && announce.priceType && (
                           <>
                               <span className="text-gray-300">|</span>
                               <span className="text-gray-600">{announce.priceType === 'FIXED' ? 'Prix Fixe' : announce.priceType === 'NEGOTIABLE' ? 'Prix Négociable' : 'Offert'}</span>
@@ -679,8 +686,12 @@ export default function AnnounceDetailsPage() {
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{(property.builtArea ?? property.area) ?? 0} m²</div>
-                            <div className="text-sm text-gray-500">Surf. bâtie</div>
+                            {property.landArea !== undefined && property.landArea !== null && Number(property.landArea) > 0 ? (
+                                <div className="font-bold text-xl">{property.landArea} m²</div>
+                            ) : (
+                                <div className="font-bold text-xl text-gray-400">Non spécifié</div>
+                            )}
+                            <div className="text-sm text-gray-500">Surf. terrain</div>
                         </div>
                     </div>
                 ) : (
@@ -978,7 +989,7 @@ export default function AnnounceDetailsPage() {
       <div className="w-full mb-8">
           
           {/* Nouvelle section : Description et informations spécifiques */}
-          {(announce.shortDescription || property.usageType) && (
+          {!isSaleDemolition && (announce.shortDescription || property.usageType) && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
@@ -1458,6 +1469,72 @@ export default function AnnounceDetailsPage() {
                   )}
               </div>
           </div>
+
+          {isSaleDemolition && (announce.shortDescription || property.usageType) && (
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mt-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {announce.shortDescription && (
+                          <div>
+                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <Layers className="h-5 w-5 text-[#00BFA6]" />
+                                  Description
+                              </h2>
+                              <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                                  {announce.shortDescription}
+                              </p>
+                          </div>
+                      )}
+
+                      {property.usageType && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
+                          <div>
+                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <Users className="h-5 w-5 text-[#00BFA6]" />
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Accès" : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") ? "Environnement" : "Mode de vie"}
+                              </h2>
+                              <div className="flex gap-4">
+                                  {(normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'UNIQUE' || property.usageType === 'Unique') ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Usage unique (Communicante)</span>
+                                          <span className="text-gray-500 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
+                                      </div>
+                                  ) : (normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'SEPARE' || property.usageType === 'Séparé') ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
+                                          <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
+                                      </div>
+                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_INDEPENDANTE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Entrée indépendante</span>
+                                          <span className="text-gray-500 text-sm">(accès indépendant au niveau de villa)</span>
+                                      </div>
+                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_COMMUNE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Entrée commune</span>
+                                          <span className="text-gray-500 text-sm">(accès partagé / entrée commune)</span>
+                                      </div>
+                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'QUARTIER_OUVERT' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Quartier ouvert</span>
+                                      </div>
+                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'RESIDENCE_CLOTUREE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Résidence clôturée</span>
+                                      </div>
+                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'PROMOTION_IMMOBILIERE' ? (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">Promotion immobilière</span>
+                                      </div>
+                                  ) : (
+                                      <div className="flex flex-col gap-1 w-full py-2">
+                                          <span className="font-bold text-gray-900 text-lg">{property.usageType}</span>
+                                      </div>
+                                  )}
+                              </div>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          )}
       </div>
       </div>
       

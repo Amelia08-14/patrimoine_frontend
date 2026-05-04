@@ -207,6 +207,104 @@ const PROPERTY_STATES = [
     { id: "A_DEMOLIR", label: "À démolir" }
 ]
 
+const INDUSTRIAL_SECTORS = [
+    { id: "AGROALIMENTAIRE", label: "Agroalimentaire", info: "Transformation, boissons, froid" },
+    { id: "PHARMACEUTIQUE_COSMETIQUE", label: "Pharmaceutique / Cosmétique", info: "Médicaments, soins" },
+    { id: "CHIMIQUE", label: "Chimique", info: "Détergents, peintures, engrais" },
+    { id: "MATERIAUX_CONSTRUCTION", label: "Matériaux de construction", info: "Briqueterie, menuiserie, PVC" },
+    { id: "PLASTURGIE_EMBALLAGE", label: "Plasturgie & Emballage", info: "Injection, soufflage, carton" },
+    { id: "SIDERURGIE_METALLURGIE", label: "Sidérurgie & Métallurgie", info: "Fer, acier, fonderie" },
+    { id: "TEXTILE_CUIR", label: "Textile & Cuir", info: "Confection, chaussures" },
+    { id: "ELECTROMENAGER_ELECTRONIQUE", label: "Électroménager & Électronique", info: "Assemblage, composants" },
+    { id: "MECANIQUE_AUTOMOBILE", label: "Mécanique & Automobile", info: "Pièces de rechange, maintenance" },
+    { id: "RECYCLAGE_ENVIRONNEMENT", label: "Recyclage & Environnement", info: "Plastique, papier, métaux" },
+    { id: "PAPIER_EDITION", label: "Papier & Édition", info: "Imprimerie, papeterie" },
+    { id: "AUTRE_ACTIVITE", label: "Autre activité", info: "" },
+]
+
+const INDUSTRIAL_RENTAL_TYPES = [
+    { id: "MURS_NUS", label: "Murs nus (Vide)" },
+    { id: "EQUIPEE", label: "Équipée (Clé en main avec lignes)" },
+]
+
+const INDUSTRIAL_GLOBAL_STATES = [
+    { id: "NEUF", label: "Neuf (Jamais servi)" },
+    { id: "BON_ETAT_MARCHE", label: "Bon état de marche" },
+    { id: "ANCIEN", label: "Ancien (À réviser)" },
+]
+
+const INDUSTRIAL_CONFIGURATIONS = [
+    { id: "PLAIN_PIED", label: "Plain-pied (RDC)" },
+    { id: "ETAGES", label: "À étages" },
+]
+
+const INDUSTRIAL_OSSATURE = [
+    { id: "CHARPENTE_METALLIQUE", label: "Charpente métallique" },
+    { id: "BETON_ARME", label: "Béton armé" },
+    { id: "MIXTE", label: "Mixte" },
+]
+
+const INDUSTRIAL_TOITURE = [
+    { id: "PANNEAUX_SANDWICH", label: "Panneaux Sandwich" },
+    { id: "TOLE_TN40", label: "Tôle TN40" },
+    { id: "DALLE_BETON", label: "Dalle béton" },
+]
+
+const INDUSTRIAL_MURS = [
+    { id: "MACONNERIE_BRIQUE", label: "Maçonnerie (Brique)" },
+    { id: "PANNEAUX_SANDWICH", label: "Panneaux Sandwich" },
+    { id: "MIXTE", label: "Mixte" },
+]
+
+const INDUSTRIAL_SITUATIONS = [
+    { id: "ZONE_INDUSTRIELLE", label: "Zone industrielle (ZI/ZAC)" },
+    { id: "ZONE_URBAINE", label: "Zone urbaine (Ville)" },
+]
+
+const INDUSTRIAL_ACCESS_TRANSPORT = [
+    { id: "SEMI_REMORQUE", label: "Semi-remorque (40')" },
+    { id: "PETIT_PORTEUR", label: "Petit porteur (10T)" },
+]
+
+const INDUSTRIAL_ACCESS_PRODUCTION = [
+    { id: "QUAI_DECHARGEMENT", label: "Quai de déchargement" },
+    { id: "ENTREE_PLAIN_PIED", label: "Entrée de plain-pied (Portail large)" },
+]
+
+const INDUSTRIAL_SOCIAL_LOCALES = [
+    { id: "VESTIAIRES", label: "Vestiaires" },
+    { id: "REFECTOIRE", label: "Réfectoire" },
+    { id: "SANITAIRES_HF", label: "Sanitaires H/F" },
+]
+
+const INDUSTRIAL_HEBERGEMENT = [
+    { id: "LOGEMENT_FONCTION", label: "Logement de fonction" },
+    { id: "DORTOIRS", label: "Dortoirs" },
+]
+
+const INDUSTRIAL_SECURITY = [
+    { id: "POSTE_GARDE", label: "Poste de garde" },
+    { id: "CLOTURE_MACONNEE", label: "Clôture maçonnée" },
+    { id: "CAMERAS", label: "Caméras" },
+]
+
+const INDUSTRIAL_WATER_SOURCES = [
+    { id: "RESEAU_ADE", label: "Réseau ADE" },
+    { id: "FORAGE", label: "Forage" },
+    { id: "BACHE_EAU", label: "Bâche à eau" },
+]
+
+const INDUSTRIAL_FIRE_NETWORK = [
+    { id: "RIA", label: "R.I.A (Robinets d'Incendie Armés)" },
+    { id: "SPRINKLERS", label: "Système Sprinklers" },
+    { id: "COLONNES_SECHES", label: "Colonnes sèches" },
+]
+
+const INDUSTRIAL_FIRE_EQUIPMENT = [
+    { id: "BACHE_EAU", label: "Bâche à eau anti-incendie (réserve dédiée)" },
+    { id: "MOTOPOMPE", label: "Motopompe / Groupe de surpression" },
+]
+
 const USAGE_TYPES = [
     { 
         id: "UNIQUE", 
@@ -385,6 +483,13 @@ const normalizeDzPhoneToIntlDigits = (raw: string) => {
     return digits
 }
 
+const normalizeToStringArray = (v: unknown) => {
+  if (!v) return [] as string[]
+  if (Array.isArray(v)) return v.filter(Boolean).map(String)
+  if (typeof v === "string") return v ? [v] : []
+  return []
+}
+
 // Schéma de validation
 const stringArrayOptional = z.preprocess((v) => {
   if (v === "" || v === null || v === undefined) return undefined
@@ -405,10 +510,7 @@ const formSchema = z.object({
   commune: z.string().min(2, "Commune requise"),
   address: z.string().min(5, "Adresse du bien requise"),
   mapsLink: z.string().url("Le lien doit être une URL valide").optional().or(z.literal("")),
-  price: z.string().min(1, "Prix requis").refine((val) => {
-      const num = Number(val.replace(/\s/g, ''));
-      return !isNaN(num) && num > 0;
-  }, "Prix invalide"),
+  price: z.string().optional().or(z.literal("")),
   priceUnit: z.enum(["DA", "DA_M2", "MILLION", "MILLION_M2", "MILLIARD"]),
   priceType: z.enum(["FIXED", "NEGOTIABLE"]),
   paymentModality: z.enum(["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL"]).optional(),
@@ -440,7 +542,7 @@ const formSchema = z.object({
   builtArea: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface bâtie invalide"),
   habitableArea: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface invalide"),
   facadesCount: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
-  state: z.enum(["NEUF", "RENOVE", "BON_ETAT", "A_DEMOLIR"]),
+  state: z.enum(["NEUF", "RENOVE", "BON_ETAT", "A_DEMOLIR"]).optional(),
   parkingCount: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   outdoorParking: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Nombre invalide"),
   usageType: z.enum([
@@ -468,6 +570,47 @@ const formSchema = z.object({
   }, z.boolean().optional()),
   availableDate: z.string().optional(),
 
+  industrialSector: stringArrayOptional,
+  industrialSectorOther: z.string().optional().or(z.literal("")),
+  industrialProductDetail: z.string().optional().or(z.literal("")),
+  industrialRentalType: z.enum(["MURS_NUS", "EQUIPEE"]).optional(),
+  industrialGlobalState: z.enum(["NEUF", "BON_ETAT_MARCHE", "ANCIEN"]).optional(),
+  industrialServiceYear: z.string().optional().or(z.literal("")),
+  industrialConfiguration: z.enum(["PLAIN_PIED", "ETAGES"]).optional(),
+  industrialFloorsCount: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
+  industrialSurfaceFree: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface invalide"),
+  industrialStructureOssature: stringArrayOptional,
+  industrialStructureToiture: stringArrayOptional,
+  industrialStructureMurs: stringArrayOptional,
+  industrialHsp: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Hauteur invalide"),
+  industrialSituation: stringArrayOptional,
+  industrialAccessTransport: stringArrayOptional,
+  industrialHighwayDistanceKm: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), "Distance invalide"),
+  industrialAccessProduction: stringArrayOptional,
+  industrialOffices: z.preprocess((v) => {
+    if (v === "true") return true
+    if (v === "false") return false
+    return v
+  }, z.boolean().optional()),
+  industrialOfficesArea: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface invalide"),
+  industrialSocialLocales: stringArrayOptional,
+  industrialHebergement: stringArrayOptional,
+  industrialDormitoryCapacity: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Capacité invalide"),
+  industrialSecurity: stringArrayOptional,
+  industrialElectricityTransformerKva: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "KVA invalide"),
+  industrialElectricityForceMotrice: z.preprocess((v) => {
+    if (v === "true") return true
+    if (v === "false") return false
+    return v
+  }, z.boolean().optional()),
+  industrialGas: z.enum(["INDUSTRIEL", "VILLE", "AUCUN"]).optional(),
+  industrialWaterSources: stringArrayOptional,
+  industrialWaterTankCapacityLiters: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Capacité invalide"),
+  industrialSanitation: z.enum(["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).optional(),
+  industrialFireNetwork: stringArrayOptional,
+  industrialFireEquipment: stringArrayOptional,
+  industrialFireWaterReserveLiters: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Volume invalide"),
+
   acceptsBankCredit: z.enum(["YES", "NO", "NO_PREFERENCE"]).optional(),
   legalDocuments: stringArrayOptional,
   
@@ -487,9 +630,26 @@ const formSchema = z.object({
 }).superRefine((data, ctx) => {
     const isVillaDemolition = data.propertyType === "VILLA" && data.state === "A_DEMOLIR"
     const isBuildingDemolition = data.transactionType === "SALE" && data.propertyType === "IMMEUBLE_RESIDENTIEL" && data.state === "A_DEMOLIR"
-    if (!data.state) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "État du bien requis", path: ["state"] })
-    }
+    const isFactoryRental =
+        data.transactionType === "RENTAL" &&
+        data.realEstateType === "INDUSTRIEL" &&
+        data.propertyType === "USINE"
+
+    if (isFactoryRental) {
+        return
+    } else {
+        if (!data.price || data.price.trim().length === 0) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Prix requis", path: ["price"] })
+        } else {
+            const num = Number(String(data.price).replace(/\s/g, ""))
+            if (isNaN(num) || num <= 0) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Prix invalide", path: ["price"] })
+            }
+        }
+
+        if (!data.state) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "État du bien requis", path: ["state"] })
+        }
 
     const shouldRequireFloorCount =
         data.propertyType === "VILLA" ||
@@ -660,6 +820,7 @@ const formSchema = z.object({
         if (!data.acceptsBankCredit) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Requis", path: ["acceptsBankCredit"] })
         }
+    }
     }
 })
 
@@ -921,7 +1082,22 @@ export default function DepositPage() {
   const buildingApartmentTypologies = watch("buildingApartmentTypologies")
   const buildingApartmentTypologyOther = watch("buildingApartmentTypologyOther")
   const buildingSurfaceMode = watch("buildingSurfaceMode")
+  const industrialConfiguration = watch("industrialConfiguration")
+  const industrialSector = watch("industrialSector")
+  const industrialOffices = watch("industrialOffices")
+  const industrialHebergement = watch("industrialHebergement")
+  const industrialWaterSources = watch("industrialWaterSources")
+  const industrialFireEquipment = watch("industrialFireEquipment")
+  const industrialSectorList = normalizeToStringArray(industrialSector)
+  const industrialHebergementList = normalizeToStringArray(industrialHebergement)
+  const industrialWaterSourcesList = normalizeToStringArray(industrialWaterSources)
+  const industrialFireEquipmentList = normalizeToStringArray(industrialFireEquipment)
   const currentState = useWatch({ control, name: "state" })
+  const isUsineRentalParticulier =
+    transactionType === "RENTAL" &&
+    userType === "PARTICULIER" &&
+    realEstateType === "INDUSTRIEL" &&
+    propertyType === "USINE"
   const isSaleParticulierApartment =
     transactionType === "SALE" &&
     userType === "PARTICULIER" &&
@@ -983,6 +1159,16 @@ export default function DepositPage() {
       clearErrors(["buildingApartmentTypologyCustom", "buildingSurfaceMode", "area"] as any)
     }
   }, [propertyType, buildingTypologyMode, setValue, clearErrors])
+
+  useEffect(() => {
+    if (!industrialSectorList.includes("AUTRE_ACTIVITE")) {
+      const v = getValues("industrialSectorOther")
+      if (v) {
+        setValue("industrialSectorOther", "", { shouldValidate: false })
+        clearErrors(["industrialSectorOther"])
+      }
+    }
+  }, [industrialSectorList.join("|"), getValues, setValue, clearErrors])
 
   useEffect(() => {
     if (!currentPrice) {
@@ -1083,6 +1269,8 @@ export default function DepositPage() {
   useEffect(() => {
     if (!isBuildingDemolition) return
 
+    setValue("landArea", "", { shouldValidate: false })
+    setValue("builtArea", "", { shouldValidate: false })
     setValue("buildingTypologyMode", undefined as any, { shouldValidate: false })
     setValue("buildingApartmentTypologyCustom", "", { shouldValidate: false })
     setValue("buildingTotalApartments", "", { shouldValidate: false })
@@ -1121,6 +1309,8 @@ export default function DepositPage() {
     setValue("acType", undefined as any, { shouldValidate: false })
 
     clearErrors([
+      "landArea",
+      "builtArea",
       "buildingTypologyMode",
       "buildingApartmentTypologyCustom",
       "buildingTotalApartments",
@@ -1419,7 +1609,34 @@ export default function DepositPage() {
     let isValid = false;
     
     // Validation selon le type de bien
-    if (propertyType === "VILLA") {
+    if (isUsineRentalParticulier) {
+        isValid = await trigger([
+            "industrialSector",
+            "industrialSectorOther",
+            "industrialProductDetail",
+            "industrialRentalType",
+            "industrialGlobalState",
+            "industrialServiceYear",
+            "industrialConfiguration",
+            "industrialFloorsCount",
+            "landArea",
+            "builtArea",
+            "industrialSituation",
+            "industrialAccessTransport",
+            "industrialHighwayDistanceKm",
+            "industrialAccessProduction",
+            "industrialOffices",
+            "industrialOfficesArea",
+            "industrialHebergement",
+            "industrialDormitoryCapacity",
+            "industrialGas",
+            "industrialWaterSources",
+            "industrialWaterTankCapacityLiters",
+            "industrialSanitation",
+            "industrialFireEquipment",
+            "industrialFireWaterReserveLiters",
+        ], { shouldFocus: true })
+    } else if (propertyType === "VILLA") {
         if (isVillaDemolition) {
             isValid = await trigger([
                 "floorCount",
@@ -1520,20 +1737,26 @@ export default function DepositPage() {
   }
 
   const handlePriceSubmit = async () => {
-    // Basic price fields - paymentModality removed as it is hidden
-    const fieldsToValidate: any[] = ["price", "priceUnit", "priceType"]
+    const fieldsToValidate: any[] = isUsineRentalParticulier ? [] : ["price", "priceUnit", "priceType"]
     
     // Add rental specific fields if needed
     if (transactionType === "RENTAL") {
-        fieldsToValidate.push("depositMonths")
-        fieldsToValidate.push("rentalUsage")
-        fieldsToValidate.push("chargesIncluded")
+        if (!isUsineRentalParticulier) {
+            fieldsToValidate.push("depositMonths")
+            fieldsToValidate.push("rentalUsage")
+            fieldsToValidate.push("chargesIncluded")
+        }
         if (availabilityMode === 'DATE') {
              fieldsToValidate.push("availableDate")
         }
     }
     if (transactionType === "SALE") {
         fieldsToValidate.push("acceptsBankCredit")
+    }
+
+    if (!isUsineRentalParticulier && transactionType === "RENTAL" && availabilityMode === "DATE" && (!availableDate || String(availableDate).trim().length === 0)) {
+        setError("availableDate", { type: "custom", message: "Date requise" } as any)
+        return
     }
 
     const isValid = await trigger(fieldsToValidate, { shouldFocus: true })
@@ -1617,12 +1840,76 @@ export default function DepositPage() {
 
     const isBuildingDemolitionPayload = data.transactionType === "SALE" && data.propertyType === 'IMMEUBLE_RESIDENTIEL' && data.state === "A_DEMOLIR"
     const shouldSkipAreaRooms = data.propertyType === "VILLA" || isBuildingDemolitionPayload
+    const isFactoryRentalPayload =
+        data.transactionType === "RENTAL" &&
+        data.realEstateType === "INDUSTRIEL" &&
+        data.propertyType === "USINE"
+
+    if (isFactoryRentalPayload) {
+        const toNum = (v?: string) => {
+            const n = v ? Number(v) : NaN
+            return isNaN(n) ? undefined : n
+        }
+        const amenitiesPayload: any = {
+            industrialFactory: {
+                sector: data.industrialSector?.length ? data.industrialSector : undefined,
+                sectorOther: data.industrialSectorOther?.trim() || undefined,
+                productDetail: data.industrialProductDetail?.trim() || undefined,
+                rentalType: data.industrialRentalType,
+                globalState: data.industrialGlobalState,
+                serviceYear: data.industrialServiceYear?.trim() || undefined,
+                configuration: data.industrialConfiguration,
+                floorsCount: data.industrialConfiguration === "ETAGES" ? toNum(data.industrialFloorsCount) : undefined,
+                surfaces: {
+                    landArea: toNum(data.landArea),
+                    builtArea: toNum(data.builtArea),
+                    freeArea: toNum(data.industrialSurfaceFree),
+                },
+                structure: {
+                    ossature: data.industrialStructureOssature?.length ? data.industrialStructureOssature : undefined,
+                    toiture: data.industrialStructureToiture?.length ? data.industrialStructureToiture : undefined,
+                    murs: data.industrialStructureMurs?.length ? data.industrialStructureMurs : undefined,
+                    hspMeters: toNum(data.industrialHsp),
+                },
+                logistics: {
+                    situation: data.industrialSituation?.length ? data.industrialSituation : undefined,
+                    accessTransport: data.industrialAccessTransport?.length ? data.industrialAccessTransport : undefined,
+                    highwayDistanceKm: toNum(data.industrialHighwayDistanceKm),
+                    accessProduction: data.industrialAccessProduction?.length ? data.industrialAccessProduction : undefined,
+                },
+                annexes: {
+                    offices: (data.industrialOffices as any) === true,
+                    officesArea: toNum(data.industrialOfficesArea),
+                    socialLocales: data.industrialSocialLocales?.length ? data.industrialSocialLocales : undefined,
+                    hebergement: data.industrialHebergement?.length ? data.industrialHebergement : undefined,
+                    dormitoryCapacity: toNum(data.industrialDormitoryCapacity),
+                    security: data.industrialSecurity?.length ? data.industrialSecurity : undefined,
+                },
+                energy: {
+                    transformerKva: toNum(data.industrialElectricityTransformerKva),
+                    forceMotrice380: (data.industrialElectricityForceMotrice as any) === true,
+                    gas: data.industrialGas,
+                    waterSources: data.industrialWaterSources?.length ? data.industrialWaterSources : undefined,
+                    waterTankCapacityLiters: toNum(data.industrialWaterTankCapacityLiters),
+                    sanitation: data.industrialSanitation,
+                },
+                fireSafety: {
+                    network: data.industrialFireNetwork?.length ? data.industrialFireNetwork : undefined,
+                    equipment: data.industrialFireEquipment?.length ? data.industrialFireEquipment : undefined,
+                    waterReserveLiters: toNum(data.industrialFireWaterReserveLiters),
+                },
+            },
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+    }
+    const shouldSkipIndustrialFields = isFactoryRentalPayload
 
     // Ajouter toutes les autres données du formulaire
     Object.entries(data).forEach(([key, value]) => {
       // On traite le prix manuellement, et description est déjà traité ou présent
       if (key === 'price') return;
       if (shouldSkipAreaRooms && (key === "area" || key === "rooms")) return;
+      if (shouldSkipIndustrialFields && key.startsWith("industrial")) return;
       
       // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
       // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend
@@ -1764,8 +2051,9 @@ export default function DepositPage() {
           if (propertyType === "TRIPLEX") return "Fiche descriptive - Triplex"
           if (propertyType === "STUDIO") return "Fiche descriptive - Studio"
           if (propertyType === "IMMEUBLE_RESIDENTIEL") return "Fiche descriptive - Immeuble"
+          if (propertyType === "USINE") return "Fiche descriptive - Usine"
           return "Fiche descriptive"
-      case 5: return "Prix & Modalités"
+      case 5: return isUsineRentalParticulier ? "Disponibilité" : "Prix & Modalités"
       case 6: return "Informations et Contact"
       case 7: return "Médias du bien"
       default: return ""
@@ -1797,7 +2085,8 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "NIVEAU_VILLA") ||
       (userType === "PARTICULIER" && transactionType === "SALE" && propertyType === "NIVEAU_VILLA") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
-      (userType === "PARTICULIER" && transactionType === "SALE" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL"));
+      (userType === "PARTICULIER" && transactionType === "SALE" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && realEstateType === "INDUSTRIEL" && propertyType === "USINE");
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
@@ -2003,6 +2292,520 @@ export default function DepositPage() {
                                     )
                                 })}
                             </div>
+                        </div>
+                    )}
+
+                    {currentStep === 4 && isUsineRentalParticulier && (
+                        <div className="w-full max-w-5xl animate-fade-in space-y-10">
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Nature de l'activité &amp; Spécialisation</h2>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Secteur d&apos;activité</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                            {INDUSTRIAL_SECTORS.map((s) => (
+                                                <label key={s.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={s.id} {...register("industrialSector")} className="peer sr-only" />
+                                                    <div className="w-full min-h-[52px] flex items-center justify-between gap-3 px-4 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white shadow-sm">
+                                                        <span className="text-sm leading-snug truncate" title={s.label}>{s.label}</span>
+                                                        {s.info ? (
+                                                            <span title={s.info} className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 text-gray-600 text-xs font-bold">i</span>
+                                                        ) : null}
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialSector && <p className="text-red-500 text-sm mt-1">{errors.industrialSector.message as any}</p>}
+                                    </div>
+
+                                    {industrialSectorList.includes("AUTRE_ACTIVITE") && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Autre activité</label>
+                                            <input
+                                                {...register("industrialSectorOther")}
+                                                type="text"
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                placeholder="Détail"
+                                            />
+                                            {errors.industrialSectorOther && <p className="text-red-500 text-sm mt-1">{errors.industrialSectorOther.message as any}</p>}
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Précision du produit fabriqué</label>
+                                        <input
+                                            {...register("industrialProductDetail")}
+                                            type="text"
+                                            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                            placeholder="Détail"
+                                        />
+                                        {errors.industrialProductDetail && <p className="text-red-500 text-sm mt-1">{errors.industrialProductDetail.message as any}</p>}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">État &amp; Type de location</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Type de location</label>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_RENTAL_TYPES.map((t) => (
+                                                <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                    <input type="radio" value={t.id} {...register("industrialRentalType")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <span className="font-bold text-gray-900 text-sm">{t.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialRentalType && <p className="text-red-500 text-sm mt-1">{errors.industrialRentalType.message as any}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">État global</label>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_GLOBAL_STATES.map((t) => (
+                                                <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                    <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <span className="font-bold text-gray-900 text-sm">{t.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialGlobalState && <p className="text-red-500 text-sm mt-1">{errors.industrialGlobalState.message as any}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Année de mise en service</label>
+                                        <input
+                                            {...register("industrialServiceYear")}
+                                            type="number"
+                                            min="1900"
+                                            max={new Date().getFullYear() + 1}
+                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                            placeholder="Ex: 2018"
+                                        />
+                                        {errors.industrialServiceYear && <p className="text-red-500 text-sm mt-1">{errors.industrialServiceYear.message as any}</p>}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Infrastructure &amp; Surfaces</h2>
+
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Configuration</label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {INDUSTRIAL_CONFIGURATIONS.map((t) => (
+                                                    <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                        <input type="radio" value={t.id} {...register("industrialConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        <span className="font-bold text-gray-900 text-sm">{t.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {errors.industrialConfiguration && <p className="text-red-500 text-sm mt-1">{errors.industrialConfiguration.message as any}</p>}
+                                        </div>
+
+                                        {industrialConfiguration === "ETAGES" && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre</label>
+                                                <input
+                                                    {...register("industrialFloorsCount")}
+                                                    type="number"
+                                                    min="1"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                    placeholder="Ex: 2"
+                                                />
+                                                {errors.industrialFloorsCount && <p className="text-red-500 text-sm mt-1">{errors.industrialFloorsCount.message as any}</p>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Répartition des surfaces</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale terrain (m²)</label>
+                                                <input
+                                                    {...register("landArea")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                    placeholder="Ex: 1200"
+                                                />
+                                                {errors.landArea && <p className="text-red-500 text-sm mt-1">{errors.landArea.message as any}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (Production) (m²)</label>
+                                                <input
+                                                    {...register("builtArea")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                    placeholder="Ex: 400"
+                                                />
+                                                {errors.builtArea && <p className="text-red-500 text-sm mt-1">{errors.builtArea.message as any}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface libre (Cour/Parking) (m²)</label>
+                                                <input
+                                                    {...register("industrialSurfaceFree")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                    placeholder="Ex: 200"
+                                                />
+                                                {errors.industrialSurfaceFree && <p className="text-red-500 text-sm mt-1">{errors.industrialSurfaceFree.message as any}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <label className="block text-sm font-bold text-gray-900">Structure &amp; Matériaux</label>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                            <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                                <div className="font-bold text-gray-900 mb-3">Ossature</div>
+                                                <div className="space-y-2">
+                                                    {INDUSTRIAL_OSSATURE.map((x) => (
+                                                        <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="checkbox" value={x.id} {...register("industrialStructureOssature")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            {x.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                                <div className="font-bold text-gray-900 mb-3">Toiture</div>
+                                                <div className="space-y-2">
+                                                    {INDUSTRIAL_TOITURE.map((x) => (
+                                                        <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="checkbox" value={x.id} {...register("industrialStructureToiture")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            {x.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                                <div className="font-bold text-gray-900 mb-3">Murs (Bardage)</div>
+                                                <div className="space-y-2">
+                                                    {INDUSTRIAL_MURS.map((x) => (
+                                                        <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="checkbox" value={x.id} {...register("industrialStructureMurs")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            {x.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (HSP) (mètres)</label>
+                                                <input
+                                                    {...register("industrialHsp")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                    placeholder="Ex: 6"
+                                                />
+                                                {errors.industrialHsp && <p className="text-red-500 text-sm mt-1">{errors.industrialHsp.message as any}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Emplacement &amp; Logistique</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Situation</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_SITUATIONS.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSituation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialSituation && <p className="text-red-500 text-sm mt-1">{errors.industrialSituation.message as any}</p>}
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Accès transport</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_ACCESS_TRANSPORT.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialAccessTransport")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialAccessTransport && <p className="text-red-500 text-sm mt-1">{errors.industrialAccessTransport.message as any}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Proximité autoroute (km)</label>
+                                        <input
+                                            {...register("industrialHighwayDistanceKm")}
+                                            type="number"
+                                            min="0"
+                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                            placeholder="Ex: 5"
+                                        />
+                                        {errors.industrialHighwayDistanceKm && <p className="text-red-500 text-sm mt-1">{errors.industrialHighwayDistanceKm.message as any}</p>}
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Accès production</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_ACCESS_PRODUCTION.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialAccessProduction")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialAccessProduction && <p className="text-red-500 text-sm mt-1">{errors.industrialAccessProduction.message as any}</p>}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Annexes &amp; Commodités</h2>
+
+                                <div className="space-y-6">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Bureaux</div>
+                                        <div className="flex gap-4 flex-wrap items-end">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === true} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                Oui
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === false} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                Non
+                                            </label>
+                                            {industrialOffices === true && (
+                                                <div className="flex-1 min-w-[220px]">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
+                                                    <input
+                                                        {...register("industrialOfficesArea")}
+                                                        type="number"
+                                                        min="0"
+                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                        className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                        placeholder="Ex: 80"
+                                                    />
+                                                    {errors.industrialOfficesArea && <p className="text-red-500 text-sm mt-1">{errors.industrialOfficesArea.message as any}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
+                                            <div className="space-y-2">
+                                                {INDUSTRIAL_SOCIAL_LOCALES.map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-3">Hébergement</div>
+                                            <div className="space-y-2">
+                                                {INDUSTRIAL_HEBERGEMENT.map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+
+                                            {industrialHebergementList.includes("DORTOIRS") && (
+                                                <div className="mt-4">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (personnes) <span className="text-red-500">*</span></label>
+                                                    <input
+                                                        {...register("industrialDormitoryCapacity")}
+                                                        type="number"
+                                                        min="0"
+                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                        className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                        placeholder="Ex: 10"
+                                                    />
+                                                    {errors.industrialDormitoryCapacity && <p className="text-red-500 text-sm mt-1">{errors.industrialDormitoryCapacity.message as any}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Sécurité</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            {INDUSTRIAL_SECURITY.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSecurity")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Énergie &amp; Fluides</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Électricité</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Poste transfo (KVA)</label>
+                                                <input
+                                                    {...register("industrialElectricityTransformerKva")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    placeholder="Ex: 250"
+                                                />
+                                                {errors.industrialElectricityTransformerKva && <p className="text-red-500 text-sm mt-1">{errors.industrialElectricityTransformerKva.message as any}</p>}
+                                            </div>
+                                            <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                <input type="checkbox" {...register("industrialElectricityForceMotrice")} className="accent-[#00BFA6] w-5 h-5" />
+                                                <span className="font-bold text-gray-900 text-sm">Force motrice (380V)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Gaz</div>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Industriel
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                De ville
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Aucun
+                                            </label>
+                                        </div>
+                                        {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Eau</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_WATER_SOURCES.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialWaterSources")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialWaterSources && <p className="text-red-500 text-sm mt-1">{errors.industrialWaterSources.message as any}</p>}
+
+                                        {industrialWaterSourcesList.includes("BACHE_EAU") && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (L) <span className="text-red-500">*</span></label>
+                                                <input
+                                                    {...register("industrialWaterTankCapacityLiters")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    placeholder="Ex: 5000"
+                                                />
+                                                {errors.industrialWaterTankCapacityLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialWaterTankCapacityLiters.message as any}</p>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Assainissement</div>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Réseau public
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Fosse septique industrielle (avec déshuileur/dégraisseur)
+                                            </label>
+                                        </div>
+                                        {errors.industrialSanitation && <p className="text-red-500 text-sm mt-1">{errors.industrialSanitation.message as any}</p>}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Sécurité incendie &amp; Protection</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Réseau anti-incendie</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_FIRE_NETWORK.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialFireNetwork")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Équipements complémentaires</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_FIRE_EQUIPMENT.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialFireEquipment")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+
+                                        {industrialFireEquipmentList.includes("BACHE_EAU") && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres) <span className="text-red-500">*</span></label>
+                                                <input
+                                                    {...register("industrialFireWaterReserveLiters")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    placeholder="Ex: 10000"
+                                                />
+                                                {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     )}
 
@@ -2864,7 +3667,8 @@ export default function DepositPage() {
                         (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
                         (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
                         ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
-                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER")
+                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER") ||
+                        isUsineRentalParticulier
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             <div className="space-y-8">
@@ -3231,6 +4035,54 @@ export default function DepositPage() {
 
                     {/* Step 5: Prix & Modalités */}
                     {currentStep === 5 && (
+                        isUsineRentalParticulier ? (
+                        <div className="w-full max-w-2xl animate-fade-in">
+                            <div className="space-y-8">
+                                <section className="space-y-6">
+                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Disponibilité</h2>
+                                    <div className="relative">
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Disponibilité</label>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
+                                                <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => { setAvailabilityMode('IMMEDIATE'); setIsCalendarOpen(false); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Immédiate</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]" onClick={() => { if (availabilityMode === 'DATE') setIsCalendarOpen(!isCalendarOpen); }}>
+                                                <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => { setAvailabilityMode('DATE'); setIsCalendarOpen(true); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">
+                                                    {availabilityMode === 'DATE' && availableDate ? format(new Date(availableDate), "dd MMM yyyy", { locale: fr }) : "Date précise"}
+                                                </span>
+                                            </label>
+                                        </div>
+                                        {errors.availableDate && <p className="text-red-500 text-sm mt-1">{errors.availableDate.message}</p>}
+
+                                        {availabilityMode === 'DATE' && isCalendarOpen && (
+                                            <div className="absolute right-0 top-full mt-2 z-[100] animate-fade-in">
+                                                <div className="bg-white shadow-2xl rounded-xl p-4 border border-gray-200 relative">
+                                                    <button type="button" onClick={() => setIsCalendarOpen(false)} className="absolute top-2 right-2 p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors">
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                    <div className="pt-2">
+                                                        <InlineCalendar 
+                                                            value={availableDate ? new Date(availableDate) : undefined}
+                                                            onChange={(date) => {
+                                                                setValue("availableDate", format(date, "yyyy-MM-dd"), { shouldValidate: true });
+                                                                setIsCalendarOpen(false);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-700 font-medium">
+                                        Pour les détails de prix et des finances seront communiqué quand le client prendra contact avec vous.
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                        ) : (
                         <div className="w-full max-w-2xl animate-fade-in">
                             <div className="space-y-8">
                                 {/* Prix & Unité */}
@@ -3478,6 +4330,7 @@ export default function DepositPage() {
                                 )}
                             </div>
                         </div>
+                        )
                     )}
 
                     {/* Step 6: Informations et Contact */}
