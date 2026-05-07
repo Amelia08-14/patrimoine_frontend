@@ -2318,9 +2318,12 @@ export default function DepositPage() {
                     )}
 
                     {currentStep === 4 && isUsineRentalParticulier && (
-                        <div className="w-full max-w-6xl animate-fade-in space-y-10">
+                        <div className="w-full max-w-7xl animate-fade-in space-y-10">
                             <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Nature de l'activité &amp; Spécialisation</h2>
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Factory className="h-5 w-5 text-[#00BFA6]" />
+                                    Nature de l'activité &amp; Spécialisation
+                                </h2>
 
                                 <div className="space-y-4">
                                     <div>
@@ -2374,107 +2377,112 @@ export default function DepositPage() {
                             </section>
 
                             <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">État &amp; Type de location</h2>
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Key className="h-5 w-5 text-[#00BFA6]" />
+                                    État &amp; Type de location
+                                </h2>
 
-                                <div className="space-y-5">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                                <div className="space-y-6">
+                                    <div className="space-y-5">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Type de location</label>
-                                            <div className="space-y-2">
+                                            <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">Type de location</label>
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
                                                 {INDUSTRIAL_RENTAL_TYPES.map((t) => (
-                                                    <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                    <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white min-w-0">
                                                         <input type="radio" value={t.id} {...register("industrialRentalType")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        <span className="font-bold text-gray-900 text-sm">{t.label}</span>
+                                                        <span className="font-bold text-gray-900 text-sm truncate whitespace-nowrap min-w-0" title={t.label}>{t.label}</span>
                                                     </label>
                                                 ))}
+
+                                                {industrialRentalType === "EQUIPEE" && (
+                                                    <div className="lg:col-start-3">
+                                                        <input
+                                                            {...register("industrialServiceYear")}
+                                                            type="number"
+                                                            min="1900"
+                                                            max={new Date().getFullYear() + 1}
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-full h-[52px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all bg-white font-bold text-sm text-gray-900"
+                                                            placeholder="Année de mise en service (Ex: 2018)"
+                                                        />
+                                                        {errors.industrialServiceYear && <p className="text-red-500 text-sm mt-1">{errors.industrialServiceYear.message as any}</p>}
+                                                    </div>
+                                                )}
                                             </div>
                                             {errors.industrialRentalType && <p className="text-red-500 text-sm mt-1">{errors.industrialRentalType.message as any}</p>}
-
-                                            {industrialRentalType === "EQUIPEE" && (
-                                                <div className="mt-5">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Année de mise en service</label>
-                                                    <input
-                                                        {...register("industrialServiceYear")}
-                                                        type="number"
-                                                        min="1900"
-                                                        max={new Date().getFullYear() + 1}
-                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                        placeholder="Ex: 2018"
-                                                    />
-                                                    {errors.industrialServiceYear && <p className="text-red-500 text-sm mt-1">{errors.industrialServiceYear.message as any}</p>}
-                                                </div>
-                                            )}
                                         </div>
+                                    </div>
 
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">État global</label>
-                                            <div className="space-y-2">
-                                                {INDUSTRIAL_GLOBAL_STATES.map((t) => (
-                                                    <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
-                                                        <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        <span className="font-bold text-gray-900 text-sm">{t.label}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                            {errors.industrialGlobalState && <p className="text-red-500 text-sm mt-1">{errors.industrialGlobalState.message as any}</p>}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">État global</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            {INDUSTRIAL_GLOBAL_STATES.map((t) => (
+                                                <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white min-w-0">
+                                                    <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <span className="font-bold text-gray-900 text-sm truncate whitespace-nowrap min-w-0" title={t.label}>{t.label}</span>
+                                                </label>
+                                            ))}
                                         </div>
+                                        {errors.industrialGlobalState && <p className="text-red-500 text-sm mt-1">{errors.industrialGlobalState.message as any}</p>}
                                     </div>
                                 </div>
                             </section>
 
                             <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Infrastructure &amp; Surfaces</h2>
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Infrastructure &amp; Surfaces
+                                </h2>
 
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Répartition des surfaces</label>
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-end">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale terrain (m²)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale terrain</label>
                                                 <input
                                                     {...register("landArea")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 1200"
+                                                    placeholder="Ex: 1200 m²"
                                                 />
                                                 {errors.landArea && <p className="text-red-500 text-sm mt-1">{errors.landArea.message as any}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (Production) (m²)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (Production)</label>
                                                 <input
                                                     {...register("builtArea")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 400"
+                                                    placeholder="Ex: 400 m²"
                                                 />
                                                 {errors.builtArea && <p className="text-red-500 text-sm mt-1">{errors.builtArea.message as any}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface libre (Cour/Parking) (m²)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface libre (Cour/Parking)</label>
                                                 <input
                                                     {...register("industrialSurfaceFree")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 200"
+                                                    placeholder="Ex: 200 m²"
                                                 />
                                                 {errors.industrialSurfaceFree && <p className="text-red-500 text-sm mt-1">{errors.industrialSurfaceFree.message as any}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (HSP) (mètres)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (HSP)</label>
                                                 <input
                                                     {...register("industrialHsp")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 6"
+                                                    placeholder="Ex: 6 m"
                                                 />
                                                 {errors.industrialHsp && <p className="text-red-500 text-sm mt-1">{errors.industrialHsp.message as any}</p>}
                                             </div>
@@ -2484,7 +2492,10 @@ export default function DepositPage() {
                             </section>
 
                             <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Emplacement &amp; Logistique</h2>
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                                    Emplacement &amp; Logistique
+                                </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
@@ -2516,7 +2527,10 @@ export default function DepositPage() {
                             </section>
 
                             <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Annexes &amp; Commodités</h2>
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
+                                    Annexes &amp; Commodités
+                                </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
@@ -2601,10 +2615,13 @@ export default function DepositPage() {
                             </section>
 
                             <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Énergie &amp; Fluides</h2>
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
+                                    Énergie &amp; Fluides
+                                </h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">Électricité</div>
                                         <div className="space-y-4">
                                             <div>
@@ -2626,7 +2643,7 @@ export default function DepositPage() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">Gaz</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -2645,7 +2662,7 @@ export default function DepositPage() {
                                         {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">Eau</div>
                                         <div className="space-y-2">
                                             {INDUSTRIAL_WATER_SOURCES.map((x) => (
@@ -2673,7 +2690,7 @@ export default function DepositPage() {
                                         )}
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">Assainissement</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -2691,7 +2708,10 @@ export default function DepositPage() {
                             </section>
 
                             <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Sécurité incendie &amp; Protection</h2>
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
+                                    Sécurité incendie &amp; Protection
+                                </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
