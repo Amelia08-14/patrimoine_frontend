@@ -927,6 +927,7 @@ export default function DepositPage() {
   const [userCompanyActivity, setUserCompanyActivity] = useState<string | null>(null)
   const [availabilityMode, setAvailabilityMode] = useState<'IMMEDIATE' | 'DATE'>('IMMEDIATE')
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [usineShowPrice, setUsineShowPrice] = useState(false)
   
   // Contacts
   const [contacts, setContacts] = useState<Contact[]>([{ phone: "", hasWhatsapp: false, hasViber: false, hasTelegram: false }])
@@ -1084,6 +1085,7 @@ export default function DepositPage() {
   const buildingSurfaceMode = watch("buildingSurfaceMode")
   const industrialConfiguration = watch("industrialConfiguration")
   const industrialSector = watch("industrialSector")
+  const industrialRentalType = watch("industrialRentalType")
   const industrialOffices = watch("industrialOffices")
   const industrialHebergement = watch("industrialHebergement")
   const industrialWaterSources = watch("industrialWaterSources")
@@ -1168,6 +1170,17 @@ export default function DepositPage() {
       }
     }
   }, [industrialSectorList.join("|"), getValues, setValue, clearErrors])
+
+  useEffect(() => {
+    if (!isUsineRentalParticulier) {
+      if (usineShowPrice) setUsineShowPrice(false)
+      return
+    }
+    if (!usineShowPrice) {
+      const v = getValues("price")
+      if (v) setValue("price", "", { shouldValidate: false })
+    }
+  }, [isUsineRentalParticulier, usineShowPrice, getValues, setValue])
 
   useEffect(() => {
     if (!currentPrice) {
@@ -1786,6 +1799,17 @@ export default function DepositPage() {
 
   const prevStep = () => setCurrentStep((prev) => prev - 1)
 
+  const handleIndustrialSectorChange = (sectorId: string, checked: boolean) => {
+    const current = industrialSectorList
+    if (sectorId === "AUTRE_ACTIVITE") {
+      setValue("industrialSector", checked ? ["AUTRE_ACTIVITE"] : [], { shouldValidate: true })
+      return
+    }
+    const base = current.filter((x) => x !== "AUTRE_ACTIVITE")
+    const next = upsertArrayValue(base, sectorId, checked)
+    setValue("industrialSector", next as any, { shouldValidate: true })
+  }
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     // Récupérer toutes les photos organisées
     // Récupérer toutes les photos organisées
@@ -1841,7 +1865,6 @@ export default function DepositPage() {
     const shouldSkipAreaRooms = data.propertyType === "VILLA" || isBuildingDemolitionPayload
     const isFactoryRentalPayload =
         data.transactionType === "RENTAL" &&
-        data.realEstateType === "INDUSTRIEL" &&
         data.propertyType === "USINE"
 
     if (isFactoryRentalPayload) {
@@ -2295,19 +2318,25 @@ export default function DepositPage() {
                     )}
 
                     {currentStep === 4 && isUsineRentalParticulier && (
-                        <div className="w-full max-w-5xl animate-fade-in space-y-10">
+                        <div className="w-full max-w-6xl animate-fade-in space-y-10">
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Nature de l'activité &amp; Spécialisation</h2>
 
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Secteur d&apos;activité</label>
+                                        <input type="hidden" {...register("industrialSector")} />
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                             {INDUSTRIAL_SECTORS.map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
-                                                    <input type="checkbox" value={s.id} {...register("industrialSector")} className="peer sr-only" />
-                                                    <div className="w-full min-h-[52px] flex items-center justify-between gap-3 px-4 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white shadow-sm">
-                                                        <span className="text-sm leading-snug truncate" title={s.label}>{s.label}</span>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="peer sr-only"
+                                                        checked={industrialSectorList.includes(s.id)}
+                                                        onChange={(e) => handleIndustrialSectorChange(s.id, e.target.checked)}
+                                                    />
+                                                    <div className="w-full min-h-[52px] flex items-center justify-between gap-3 px-4 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white shadow-sm min-w-0">
+                                                        <span className="text-sm leading-snug truncate min-w-0" title={s.label}>{s.label}</span>
                                                         {s.info ? (
                                                             <span title={s.info} className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full border border-gray-300 text-gray-600 text-xs font-bold">i</span>
                                                         ) : null}
@@ -2347,45 +2376,49 @@ export default function DepositPage() {
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2">État &amp; Type de location</h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Type de location</label>
-                                        <div className="space-y-2">
-                                            {INDUSTRIAL_RENTAL_TYPES.map((t) => (
-                                                <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
-                                                    <input type="radio" value={t.id} {...register("industrialRentalType")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    <span className="font-bold text-gray-900 text-sm">{t.label}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                        {errors.industrialRentalType && <p className="text-red-500 text-sm mt-1">{errors.industrialRentalType.message as any}</p>}
-                                    </div>
+                                <div className="space-y-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Type de location</label>
+                                            <div className="space-y-2">
+                                                {INDUSTRIAL_RENTAL_TYPES.map((t) => (
+                                                    <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                        <input type="radio" value={t.id} {...register("industrialRentalType")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        <span className="font-bold text-gray-900 text-sm">{t.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {errors.industrialRentalType && <p className="text-red-500 text-sm mt-1">{errors.industrialRentalType.message as any}</p>}
 
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">État global</label>
-                                        <div className="space-y-2">
-                                            {INDUSTRIAL_GLOBAL_STATES.map((t) => (
-                                                <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
-                                                    <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    <span className="font-bold text-gray-900 text-sm">{t.label}</span>
-                                                </label>
-                                            ))}
+                                            {industrialRentalType === "EQUIPEE" && (
+                                                <div className="mt-5">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Année de mise en service</label>
+                                                    <input
+                                                        {...register("industrialServiceYear")}
+                                                        type="number"
+                                                        min="1900"
+                                                        max={new Date().getFullYear() + 1}
+                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                        className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                        placeholder="Ex: 2018"
+                                                    />
+                                                    {errors.industrialServiceYear && <p className="text-red-500 text-sm mt-1">{errors.industrialServiceYear.message as any}</p>}
+                                                </div>
+                                            )}
                                         </div>
-                                        {errors.industrialGlobalState && <p className="text-red-500 text-sm mt-1">{errors.industrialGlobalState.message as any}</p>}
-                                    </div>
 
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Année de mise en service</label>
-                                        <input
-                                            {...register("industrialServiceYear")}
-                                            type="number"
-                                            min="1900"
-                                            max={new Date().getFullYear() + 1}
-                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                            placeholder="Ex: 2018"
-                                        />
-                                        {errors.industrialServiceYear && <p className="text-red-500 text-sm mt-1">{errors.industrialServiceYear.message as any}</p>}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">État global</label>
+                                            <div className="space-y-2">
+                                                {INDUSTRIAL_GLOBAL_STATES.map((t) => (
+                                                    <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                        <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        <span className="font-bold text-gray-900 text-sm">{t.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {errors.industrialGlobalState && <p className="text-red-500 text-sm mt-1">{errors.industrialGlobalState.message as any}</p>}
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -2394,39 +2427,9 @@ export default function DepositPage() {
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Infrastructure &amp; Surfaces</h2>
 
                                 <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
-                                        <div className="md:col-span-2">
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Configuration</label>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                {INDUSTRIAL_CONFIGURATIONS.map((t) => (
-                                                    <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
-                                                        <input type="radio" value={t.id} {...register("industrialConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        <span className="font-bold text-gray-900 text-sm">{t.label}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                            {errors.industrialConfiguration && <p className="text-red-500 text-sm mt-1">{errors.industrialConfiguration.message as any}</p>}
-                                        </div>
-
-                                        {industrialConfiguration === "ETAGES" && (
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre</label>
-                                                <input
-                                                    {...register("industrialFloorsCount")}
-                                                    type="number"
-                                                    min="1"
-                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 2"
-                                                />
-                                                {errors.industrialFloorsCount && <p className="text-red-500 text-sm mt-1">{errors.industrialFloorsCount.message as any}</p>}
-                                            </div>
-                                        )}
-                                    </div>
-
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Répartition des surfaces</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-end">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale terrain (m²)</label>
                                                 <input
@@ -2463,49 +2466,6 @@ export default function DepositPage() {
                                                 />
                                                 {errors.industrialSurfaceFree && <p className="text-red-500 text-sm mt-1">{errors.industrialSurfaceFree.message as any}</p>}
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <label className="block text-sm font-bold text-gray-900">Structure &amp; Matériaux</label>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                            <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                                <div className="font-bold text-gray-900 mb-3">Ossature</div>
-                                                <div className="space-y-2">
-                                                    {INDUSTRIAL_OSSATURE.map((x) => (
-                                                        <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                            <input type="checkbox" value={x.id} {...register("industrialStructureOssature")} className="accent-[#00BFA6] w-4 h-4" />
-                                                            {x.label}
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                                <div className="font-bold text-gray-900 mb-3">Toiture</div>
-                                                <div className="space-y-2">
-                                                    {INDUSTRIAL_TOITURE.map((x) => (
-                                                        <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                            <input type="checkbox" value={x.id} {...register("industrialStructureToiture")} className="accent-[#00BFA6] w-4 h-4" />
-                                                            {x.label}
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                                <div className="font-bold text-gray-900 mb-3">Murs (Bardage)</div>
-                                                <div className="space-y-2">
-                                                    {INDUSTRIAL_MURS.map((x) => (
-                                                        <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                            <input type="checkbox" value={x.id} {...register("industrialStructureMurs")} className="accent-[#00BFA6] w-4 h-4" />
-                                                            {x.label}
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (HSP) (mètres)</label>
                                                 <input
@@ -2553,40 +2513,13 @@ export default function DepositPage() {
                                         {errors.industrialAccessTransport && <p className="text-red-500 text-sm mt-1">{errors.industrialAccessTransport.message as any}</p>}
                                     </div>
                                 </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Proximité autoroute (km)</label>
-                                        <input
-                                            {...register("industrialHighwayDistanceKm")}
-                                            type="number"
-                                            min="0"
-                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                            placeholder="Ex: 5"
-                                        />
-                                        {errors.industrialHighwayDistanceKm && <p className="text-red-500 text-sm mt-1">{errors.industrialHighwayDistanceKm.message as any}</p>}
-                                    </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Accès production</div>
-                                        <div className="space-y-2">
-                                            {INDUSTRIAL_ACCESS_PRODUCTION.map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="checkbox" value={x.id} {...register("industrialAccessProduction")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                        {errors.industrialAccessProduction && <p className="text-red-500 text-sm mt-1">{errors.industrialAccessProduction.message as any}</p>}
-                                    </div>
-                                </div>
                             </section>
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Annexes &amp; Commodités</h2>
 
-                                <div className="space-y-6">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">Bureaux</div>
                                         <div className="flex gap-4 flex-wrap items-end">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -2598,8 +2531,8 @@ export default function DepositPage() {
                                                 Non
                                             </label>
                                             {industrialOffices === true && (
-                                                <div className="flex-1 min-w-[220px]">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
+                                                <div className="w-full">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
                                                     <input
                                                         {...register("industrialOfficesArea")}
                                                         type="number"
@@ -2614,50 +2547,48 @@ export default function DepositPage() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
-                                            <div className="space-y-2">
-                                                {INDUSTRIAL_SOCIAL_LOCALES.map((x) => (
-                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                        <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        {x.label}
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-3">Hébergement</div>
-                                            <div className="space-y-2">
-                                                {INDUSTRIAL_HEBERGEMENT.map((x) => (
-                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                        <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        {x.label}
-                                                    </label>
-                                                ))}
-                                            </div>
-
-                                            {industrialHebergementList.includes("DORTOIRS") && (
-                                                <div className="mt-4">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (personnes) <span className="text-red-500">*</span></label>
-                                                    <input
-                                                        {...register("industrialDormitoryCapacity")}
-                                                        type="number"
-                                                        min="0"
-                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                        placeholder="Ex: 10"
-                                                    />
-                                                    {errors.industrialDormitoryCapacity && <p className="text-red-500 text-sm mt-1">{errors.industrialDormitoryCapacity.message as any}</p>}
-                                                </div>
-                                            )}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                        <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_SOCIAL_LOCALES.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                        <div className="font-bold text-gray-900 mb-3">Hébergement</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_HEBERGEMENT.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+
+                                        {industrialHebergementList.includes("DORTOIRS") && (
+                                            <div className="mt-4">
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (personnes)</label>
+                                                <input
+                                                    {...register("industrialDormitoryCapacity")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    placeholder="Ex: 10"
+                                                />
+                                                {errors.industrialDormitoryCapacity && <p className="text-red-500 text-sm mt-1">{errors.industrialDormitoryCapacity.message as any}</p>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">Sécurité</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div className="space-y-2">
                                             {INDUSTRIAL_SECURITY.map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSecurity")} className="accent-[#00BFA6] w-4 h-4" />
@@ -2672,10 +2603,10 @@ export default function DepositPage() {
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Énergie &amp; Fluides</h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">Électricité</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                        <div className="space-y-4">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Poste transfo (KVA)</label>
                                                 <input
@@ -2713,9 +2644,7 @@ export default function DepositPage() {
                                         </div>
                                         {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">Eau</div>
                                         <div className="space-y-2">
@@ -2730,7 +2659,7 @@ export default function DepositPage() {
 
                                         {industrialWaterSourcesList.includes("BACHE_EAU") && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (L) <span className="text-red-500">*</span></label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (L)</label>
                                                 <input
                                                     {...register("industrialWaterTankCapacityLiters")}
                                                     type="number"
@@ -2753,7 +2682,7 @@ export default function DepositPage() {
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="radio" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Fosse septique industrielle (avec déshuileur/dégraisseur)
+                                                Fosse septique
                                             </label>
                                         </div>
                                         {errors.industrialSanitation && <p className="text-red-500 text-sm mt-1">{errors.industrialSanitation.message as any}</p>}
@@ -4075,8 +4004,90 @@ export default function DepositPage() {
                                         )}
                                     </div>
 
-                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-700 font-medium">
-                                        Pour les détails de prix et des finances seront communiqué quand le client prendra contact avec vous.
+                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-4">
+                                        <div className="font-bold text-gray-900">Voulez-vous afficher le prix de location ?</div>
+                                        <div className="flex gap-4 flex-wrap">
+                                            <label className="cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="usine_show_price"
+                                                    className="peer sr-only"
+                                                    checked={usineShowPrice === true}
+                                                    onChange={() => setUsineShowPrice(true)}
+                                                />
+                                                <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white">
+                                                    Oui
+                                                </div>
+                                            </label>
+                                            <label className="cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="usine_show_price"
+                                                    className="peer sr-only"
+                                                    checked={usineShowPrice === false}
+                                                    onChange={() => setUsineShowPrice(false)}
+                                                />
+                                                <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white">
+                                                    Non
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        {usineShowPrice && (
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Prix de location</label>
+                                                    <div className="flex flex-col md:flex-row gap-4">
+                                                        <div className="relative flex-1">
+                                                            <input 
+                                                                {...register("price")} 
+                                                                type="text"
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                    const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+                                                                    setValue("price", formatted, { shouldValidate: true });
+                                                                }}
+                                                                className="w-full p-4 pr-32 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
+                                                                placeholder="0"
+                                                            />
+                                                            <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
+                                                                <select 
+                                                                    value={currentPriceUnit}
+                                                                    onChange={(e) => handlePriceUnitChange(e.target.value as any)}
+                                                                    className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none"
+                                                                >
+                                                                    <option value="DA">DA</option>
+                                                                    <option value="DA_M2">DA / m²</option>
+                                                                    <option value="MILLION">Millions</option>
+                                                                    <option value="MILLION_M2">Millions / m²</option>
+                                                                    <option value="MILLIARD">Milliards</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex gap-2">
+                                                            <label className="cursor-pointer">
+                                                                <input type="radio" value="FIXED" {...register("priceType")} className="peer sr-only" />
+                                                                <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[100px]">
+                                                                    Fixe
+                                                                </div>
+                                                            </label>
+                                                            <label className="cursor-pointer">
+                                                                <input type="radio" value="NEGOTIABLE" {...register("priceType")} className="peer sr-only" />
+                                                                <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[120px]">
+                                                                    Négociable
+                                                                </div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    {priceCentimes && (
+                                                        <p className="text-[#00BFA6] text-sm mt-2 font-medium flex items-center gap-1">
+                                                            <Info className="h-4 w-4" /> {priceCentimes}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </section>
                             </div>

@@ -664,14 +664,16 @@ export default function AnnounceDetailsPage() {
                 <div className="text-right">
                   <div className="text-3xl font-bold text-[#00BFA6]">
                       {isFactoryRental
-                          ? "Prix sur demande"
+                          ? (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0
+                              ? `${Number(announce.price).toLocaleString()} DZD`
+                              : "Prix sur demande")
                           : (announce.price !== undefined && announce.price !== null
                               ? `${announce.price.toLocaleString()} DZD`
                               : "Non spécifié")}
                   </div>
                   <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
                       <span className="uppercase">{isRental ? 'Location' : isSale ? 'Vente' : announce.type}</span>
-                      {!isFactoryRental && announce.priceType && (
+                      {(!isFactoryRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
                           <>
                               <span className="text-gray-300">|</span>
                               <span className="text-gray-600">{announce.priceType === 'FIXED' ? 'Prix Fixe' : announce.priceType === 'NEGOTIABLE' ? 'Prix Négociable' : 'Offert'}</span>
