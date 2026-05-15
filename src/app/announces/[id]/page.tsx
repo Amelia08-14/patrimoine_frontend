@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { 
-  ArrowLeft, MapPin, BedDouble, Bath, Square, Heart, Share2, 
-  Phone, Mail, User, Check, Building2, Car, Wind, Sun, 
-  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users, FileText, Handshake
+import {
+  ArrowLeft, MapPin, BedDouble, Bath, Square, Heart, Share2,
+  Phone, Mail, User, Check, Building2, Car, Wind, Sun,
+  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users, FileText, Handshake,
+  Factory, Key, Zap, Truck, Shield, Ruler
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
@@ -68,7 +69,7 @@ const LABELS: any = {
     INDIVIDUAL: "Individuel",
     COLLECTIVE: "Collectif",
     
-    // Categories (Images)
+    // Categories (Images) - Résidentiel
     bedrooms: "Chambres",
     bathrooms: "Salles de bain & WC",
     kitchen: "Cuisine",
@@ -76,6 +77,92 @@ const LABELS: any = {
     common: "Espaces communs",
     other: "Autres",
     general: "Général",
+    // Categories (Images) - Industriel
+    equipements: "Équipements",
+    bureaux: "Bureaux et Annexes",
+    hebergement: "Hébergement",
+    espaces_communs: "Espaces Communs",
+    autres: "Autres",
+    non_classees: "Autres",
+    // Industrial labels
+    MURS_NUS: "Murs nus (Vide)",
+    EQUIPEE: "Équipée (Clé en main)",
+    NEUF: "Neuf (Jamais servi)",
+    BON_ETAT_MARCHE: "Bon état de marche",
+    ANCIEN: "Ancien (À réviser)",
+    PLAIN_PIED: "Plain-pied (RDC)",
+    ETAGES: "À étages",
+    ZONE_INDUSTRIELLE: "Zone industrielle (ZI/ZAC)",
+    ZONE_URBAINE: "Zone urbaine (Ville)",
+    SEMI_REMORQUE: "Semi-remorque (40 T)",
+    CAMIONNETTE: "Camionnette (3.5 T)",
+    PETIT_PORTEUR: "Petit porteur (10T)",
+    QUAI_DECHARGEMENT: "Quai de déchargement",
+    ENTREE_PLAIN_PIED: "Entrée de plain-pied",
+    VESTIAIRES: "Vestiaires",
+    REFECTOIRE: "Réfectoire",
+    SANITAIRES_HF: "Sanitaires H/F",
+    LOGEMENT_FONCTION: "Logement",
+    DORTOIRS: "Dortoirs",
+    POSTE_GARDE: "Poste de garde",
+    CLOTURE_MACONNEE: "Clôture maçonnée",
+    CAMERAS: "Caméras",
+    INDUSTRIEL: "Industriel",
+    VILLE: "De ville",
+    AUCUN: "Aucun",
+    RESEAU_ADE: "Réseau ADE",
+    FORAGE: "Forage",
+    BACHE_EAU: "Bâche à eau",
+    RESEAU_PUBLIC: "Réseau public",
+    FOSSE_INDUSTRIELLE: "Fosse septique",
+    RIA: "R.I.A",
+    SPRINKLERS: "Sprinklers",
+    COLONNES_SECHES: "Colonnes sèches",
+    MOTOPOMPE: "Motopompe",
+    AGROALIMENTAIRE: "Agroalimentaire",
+    PHARMACEUTIQUE_COSMETIQUE: "Pharmaceutique / Cosmétique",
+    CHIMIQUE: "Chimique",
+    MATERIAUX_CONSTRUCTION: "Matériaux de construction",
+    PLASTURGIE_EMBALLAGE: "Plasturgie & Emballage",
+    SIDERURGIE_METALLURGIE: "Sidérurgie & Métallurgie",
+    TEXTILE_CUIR: "Textile & Cuir",
+    ELECTROMENAGER_ELECTRONIQUE: "Électroménager & Électronique",
+    MECANIQUE_AUTOMOBILE: "Mécanique & Automobile",
+    RECYCLAGE_ENVIRONNEMENT: "Recyclage & Environnement",
+    PAPIER_EDITION: "Papier & Édition",
+    AUTRE_ACTIVITE: "Autre activité",
+
+    // Chambre froide - Secteurs
+    AGROALIMENTAIRE_CF: "Agroalimentaire",
+    GLACES_SURGELES: "Glaces & Surgelés",
+    PHARMACEUTIQUE_CF: "Pharmaceutique",
+    AUTRE_CF: "Autre activité",
+    // Chambre froide - Structure
+    CELLULE_UNIQUE: "Cellule unique (Mono-bloc)",
+    COMPLEXE_FRIGORIFIQUE: "Complexe frigorifique",
+    // Chambre froide - Zone déchargement
+    QUAI_NIVELEUR_SAS: "Quai niveleur SAS étanche",
+    QUAI_SIMPLE: "Quai simple",
+    PLAIN_PIED_DECHARGT: "Plain-pied",
+    // Chambre froide - Traçabilité
+    ENREGISTREUR_T24: "Enregistreur T° H24",
+    SYSTEME_ALERTE_SMS: "Système d'alerte SMS",
+    // Chambre froide - Technique froid
+    SOL_CHAUFFANT: "Sol chauffant (Anti-gel dalle)",
+    DEGIVRAGE_AUTO: "Dégivrage automatique",
+    // Chambre froide - Mode de gestion
+    SANS_GESTION: "Sans gestion (Murs seuls)",
+    AVEC_GESTION: "Avec gestion (Service complet)",
+    // Chambre froide - Flexibilité
+    SURFACE_DEDIEE: "Surface dédiée",
+    CO_STOCKAGE: "Co-stockage",
+    // Chambre froide - Durée engagement
+    ANNUELLE: "Annuelle (Bail long terme)",
+    MENSUELLE_HEBDO: "Mensuelle / Hebdomadaire",
+    JOURNEE_SPOT: "À la journée (Stockage Spot)",
+    // Logistique verticale
+    RAMPE: "Rampe d'accès",
+    MONTE_CHARGE: "Monte-charge",
 
     // Heating & AC Types
     CENTRAL: "Central",
@@ -222,6 +309,8 @@ export default function AnnounceDetailsPage() {
   let connectivityFeatures: string[] = [];
   let exteriorFeatures: string[] = [];
   let buildingTypology: any = null;
+  let industrialFactory: any = null;
+  let coldRoom: any = null;
   
   if (property.amenities) {
       try {
@@ -276,6 +365,14 @@ export default function AnnounceDetailsPage() {
               
               if (parsedAmenities.buildingTypology && typeof parsedAmenities.buildingTypology === 'object') {
                   buildingTypology = parsedAmenities.buildingTypology;
+              }
+
+              if (parsedAmenities.industrialFactory && typeof parsedAmenities.industrialFactory === 'object') {
+                  industrialFactory = parsedAmenities.industrialFactory;
+              }
+
+              if (parsedAmenities.coldRoom && typeof parsedAmenities.coldRoom === 'object') {
+                  coldRoom = parsedAmenities.coldRoom;
               }
           }
       } catch (e) {
@@ -343,6 +440,8 @@ export default function AnnounceDetailsPage() {
   
   const normalizedPropertyType = typeof property.propertyType === "string" ? property.propertyType.toUpperCase() : "";
   const isFactoryRental = isRental && normalizedPropertyType === "USINE"
+  const isColdRoomRental = isRental && normalizedPropertyType === "CHAMBRE_FROIDE"
+  const isIndustrialRental = isFactoryRental || isColdRoomRental
   const isSaleBuildingDemolition =
       isSale &&
       normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" &&
@@ -663,17 +762,17 @@ export default function AnnounceDetailsPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-[#00BFA6]">
-                      {isFactoryRental
+                      {isIndustrialRental
                           ? (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0
                               ? `${Number(announce.price).toLocaleString()} DZD`
-                              : "Prix sur demande")
+                              : "Prix après visite")
                           : (announce.price !== undefined && announce.price !== null
                               ? `${announce.price.toLocaleString()} DZD`
                               : "Non spécifié")}
                   </div>
                   <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
                       <span className="uppercase">{isRental ? 'Location' : isSale ? 'Vente' : announce.type}</span>
-                      {(!isFactoryRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
+                      {(!isIndustrialRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
                           <>
                               <span className="text-gray-300">|</span>
                               <span className="text-gray-600">{announce.priceType === 'FIXED' ? 'Prix Fixe' : announce.priceType === 'NEGOTIABLE' ? 'Prix Négociable' : 'Offert'}</span>
@@ -684,7 +783,99 @@ export default function AnnounceDetailsPage() {
               </div>
 
               <div className="flex flex-wrap justify-between items-center gap-6 py-5 border-t border-b border-gray-100 mt-5">
-                {isSaleBuildingDemolition ? (
+                {isFactoryRental ? (
+                  <div className="w-full flex items-center justify-between gap-3">
+                    {/* Secteur d'activité */}
+                    {industrialFactory?.sector?.[0] && (
+                      <div className="flex items-center gap-2 text-gray-700 min-w-0">
+                        <Factory className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-bold text-base truncate">{LABELS[industrialFactory.sector[0]] || (industrialFactory.sectorOther || industrialFactory.sector[0])}</div>
+                          <div className="text-xs text-gray-500">Activité compatible</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Surface Terrain */}
+                    {industrialFactory?.surfaces?.landArea != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{industrialFactory.surfaces.landArea} m²</div>
+                          <div className="text-xs text-gray-500">Surf. Terrain</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Surface Bâtie */}
+                    {industrialFactory?.surfaces?.builtArea != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Warehouse className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{industrialFactory.surfaces.builtArea} m²</div>
+                          <div className="text-xs text-gray-500">Surf. Bâtie</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Surface Libre */}
+                    {industrialFactory?.surfaces?.freeArea != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{industrialFactory.surfaces.freeArea} m²</div>
+                          <div className="text-xs text-gray-500">Surf. Libre</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : isColdRoomRental ? (
+                  <div className="w-full flex items-center justify-between gap-3">
+                    {/* Secteur d'activité */}
+                    {coldRoom?.sector?.[0] && (
+                      <div className="flex items-center gap-2 text-gray-700 min-w-0">
+                        <Factory className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-bold text-base truncate">{LABELS[coldRoom.sector[0]] || (coldRoom.sectorOther || coldRoom.sector[0])}</div>
+                          <div className="text-xs text-gray-500">Activité compatible</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Surface froide */}
+                    {property.area != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Warehouse className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{property.area} m²</div>
+                          <div className="text-xs text-gray-500">Surf. Froide</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Structure */}
+                    {coldRoom?.structureType && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{LABELS[coldRoom.structureType] || coldRoom.structureType}</div>
+                          <div className="text-xs text-gray-500">Structure</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Mode de gestion */}
+                    {coldRoom?.modeGestion && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Key className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{LABELS[coldRoom.modeGestion] || coldRoom.modeGestion}</div>
+                          <div className="text-xs text-gray-500">Mode de gestion</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : isSaleBuildingDemolition ? (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
@@ -989,9 +1180,408 @@ export default function AnnounceDetailsPage() {
 
       {/* Details & Amenities Full Width */}
       <div className="w-full mb-8">
-          
+
+          {/* ===== SECTION USINE ===== */}
+          {isFactoryRental && (
+            <>
+              {/* 4 colonnes Informations Générales */}
+              {industrialFactory && (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                    {/* Colonne 1: État & Type de location */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Key className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">État &amp; Type</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {industrialFactory.rentalType && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Type de location</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.rentalType] || industrialFactory.rentalType}</span>
+                          </div>
+                        )}
+                        {industrialFactory.globalState && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">État global</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.globalState] || industrialFactory.globalState}</span>
+                          </div>
+                        )}
+                        {industrialFactory.configuration && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Configuration</span>
+                            <span className="font-bold text-gray-900 text-sm">
+                              {LABELS[industrialFactory.configuration] || industrialFactory.configuration}
+                              {industrialFactory.configuration === "ETAGES" && industrialFactory.floorsCount ? ` — ${industrialFactory.floorsCount} étage(s)` : ""}
+                            </span>
+                          </div>
+                        )}
+                        {industrialFactory.rentalType === "EQUIPEE" && industrialFactory.serviceYear && (
+                          <div className="flex flex-col gap-1 py-1.5">
+                            <span className="text-gray-500 text-xs">Mise en service</span>
+                            <span className="font-bold text-gray-900 text-sm">{industrialFactory.serviceYear}</span>
+                          </div>
+                        )}
+                        {industrialFactory.productDetail && (
+                          <div className="flex flex-col gap-1 py-1.5">
+                            <span className="text-gray-500 text-xs">Produit fabriqué</span>
+                            <span className="font-bold text-gray-900 text-sm">{industrialFactory.productDetail}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Colonne 2: Emplacement & Logistique */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Emplacement</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {industrialFactory.logistics?.situation?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Situation</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.logistics.situation.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {industrialFactory.logistics?.accessTransport?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Accès transport</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.logistics.accessTransport.map((a: string) => (
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {industrialFactory.logistics?.highwayDistanceKm != null && (
+                          <div className="flex flex-col gap-1 py-1.5">
+                            <span className="text-gray-500 text-xs">Distance autoroute</span>
+                            <span className="font-bold text-gray-900 text-sm">{industrialFactory.logistics.highwayDistanceKm} km</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Colonne 3: Annexes & Commodités */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Annexes</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {industrialFactory.annexes?.offices != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Bureaux</span>
+                            <span className="font-bold text-gray-900 text-sm">
+                              {industrialFactory.annexes.offices ? `Oui${industrialFactory.annexes.officesArea ? ` — ${industrialFactory.annexes.officesArea} m²` : ""}` : "Non"}
+                            </span>
+                          </div>
+                        )}
+                        {industrialFactory.annexes?.socialLocales?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Locaux sociaux</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.annexes.socialLocales.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {industrialFactory.annexes?.hebergement?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Hébergement</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.annexes.hebergement.map((h: string) => (
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {industrialFactory.annexes?.security?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Sécurité</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.annexes.security.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Colonne 4: Énergie & Fluides + Sécurité incendie */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Énergie &amp; Fluides</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {(industrialFactory.energy?.transformerKva != null || industrialFactory.energy?.forceMotrice380) && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Électricité</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.energy.transformerKva != null && (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Transfo {industrialFactory.energy.transformerKva} KVA</span>
+                              )}
+                              {industrialFactory.energy.forceMotrice380 && (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Force motrice 380V</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {industrialFactory.energy?.gas && industrialFactory.energy.gas !== "AUCUN" && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Gaz</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.gas] || industrialFactory.energy.gas}</span>
+                          </div>
+                        )}
+                        {industrialFactory.energy?.waterSources?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Eau</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.energy.waterSources.map((w: string) => (
+                                <span key={w} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {industrialFactory.energy?.sanitation && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Assainissement</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.sanitation] || industrialFactory.energy.sanitation}</span>
+                          </div>
+                        )}
+                        {industrialFactory.fireSafety?.network?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.fireSafety.network.map((n: string) => (
+                                <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[n] || n}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {industrialFactory.fireSafety?.equipment?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Équipements complémentaires</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {industrialFactory.fireSafety.equipment.map((e: string) => (
+                                <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[e] || e}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {announce.shortDescription && (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-[#00BFA6]" />
+                    Description
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
+                </div>
+              )}
+            </>
+          )}
+          {/* ===== FIN SECTION USINE ===== */}
+
+          {/* ===== SECTION CHAMBRE FROIDE ===== */}
+          {isColdRoomRental && (
+            <>
+              {coldRoom && (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                    {/* Col 1 — Configuration & Structure */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                        <Key className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Configuration</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {coldRoom.structureType && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Structure</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[coldRoom.structureType] || coldRoom.structureType}</span>
+                          </div>
+                        )}
+                        {coldRoom.configuration && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Configuration</span>
+                            <span className="font-bold text-gray-900 text-sm">
+                              {LABELS[coldRoom.configuration] || coldRoom.configuration}
+                              {coldRoom.configuration === "ETAGES" && coldRoom.floorsCount ? ` — ${coldRoom.floorsCount} étage(s)` : ""}
+                            </span>
+                          </div>
+                        )}
+                        {coldRoom.logistiqueVerticale && coldRoom.logistiqueVerticale !== "AUCUN" && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Logistique verticale</span>
+                            <span className="font-bold text-gray-900 text-sm">
+                              {LABELS[coldRoom.logistiqueVerticale] || coldRoom.logistiqueVerticale}
+                              {coldRoom.logistiqueVerticale === "MONTE_CHARGE" && coldRoom.monteChargeCapacity ? ` — ${coldRoom.monteChargeCapacity} T` : ""}
+                            </span>
+                          </div>
+                        )}
+                        {coldRoom.zoneDechargement?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Zone de déchargement</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.zoneDechargement.map((z: string) => (
+                                <span key={z} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[z] || z}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 2 — Localisation & Accès */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                        <MapPin className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Localisation & Accès</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {coldRoom.localisation?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Situation</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.localisation.map((l: string) => (
+                                <span key={l} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[l] || l}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {coldRoom.accessibilite?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Accès camions</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.accessibilite.map((a: string) => (
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 3 — Équipements techniques */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                        <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Équipements</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {coldRoom.techniqueFroid?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Technique froid négatif</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.techniqueFroid.map((t: string) => (
+                                <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {coldRoom.tracabilite?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Traçabilité</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.tracabilite.map((t: string) => (
+                                <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {coldRoom.generateur && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Générateur de secours</span>
+                            <span className="font-bold text-gray-900 text-sm">
+                              Oui{coldRoom.generateurKva ? ` — ${coldRoom.generateurKva} KVA` : ""}
+                            </span>
+                          </div>
+                        )}
+                        {coldRoom.securiteHumaine && (
+                          <div className="flex flex-col gap-1 py-1.5">
+                            <span className="text-gray-500 text-xs">Sécurité humaine</span>
+                            <span className="font-bold text-gray-900 text-sm">Dispositif anti-enfermement</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 4 — Modalités */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                        <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Modalités</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {coldRoom.modeGestion && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Mode de gestion</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[coldRoom.modeGestion] || coldRoom.modeGestion}</span>
+                          </div>
+                        )}
+                        {coldRoom.flexibilite?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Flexibilité d'espace</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.flexibilite.map((f: string) => (
+                                <span key={f} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[f] || f}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {coldRoom.dureeEngagement?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Durée d'engagement</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.dureeEngagement.map((d: string) => (
+                                <span key={d} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {announce.shortDescription && (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-[#00BFA6]" />
+                    Description
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
+                </div>
+              )}
+            </>
+          )}
+          {/* ===== FIN SECTION CHAMBRE FROIDE ===== */}
+
           {/* Nouvelle section : Description et informations spécifiques */}
-          {!isSaleDemolition && (announce.shortDescription || property.usageType) && (
+          {!isIndustrialRental && !isSaleDemolition && (announce.shortDescription || property.usageType) && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
@@ -1060,8 +1650,8 @@ export default function AnnounceDetailsPage() {
               </div>
           )}
 
-          {/* Informations Générales (Detailed) */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+          {/* Informations Générales (Detailed) - Résidentiel uniquement */}
+          {!isIndustrialRental && <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
 
               <div className={isSaleDemolition ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"}>
@@ -1470,7 +2060,7 @@ export default function AnnounceDetailsPage() {
                       </div>
                   )}
               </div>
-          </div>
+          </div>}
 
           {isSaleDemolition && (announce.shortDescription || property.usageType) && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mt-8">
