@@ -311,12 +311,13 @@ const CF_SECTORS = [
     { id: "AGROALIMENTAIRE_CF", label: "Agroalimentaire", info: "Viandes, fruits, légumes, laitages" },
     { id: "GLACES_SURGELES", label: "Glaces & Surgelés", info: 'Spécial "Ice Cream"' },
     { id: "PHARMACEUTIQUE_CF", label: "Pharmaceutique", info: "Normes de traçabilité et hygiène" },
-    { id: "TRANSIT", label: "Transit", info: "" },
+    { id: "CHIMIQUE_CF", label: "Chimique", info: "" },
+    { id: "HORTICOLE_AGRICOLE", label: "Horticole & Agricole", info: "" },
     { id: "AUTRE_CF", label: "Autre activité", info: "" },
 ]
 const CF_STRUCTURE_TYPES = [
     { id: "CELLULE_UNIQUE", label: "Cellule unique (Mono-bloc)" },
-    { id: "COMPLEXE_FRIGORIFIQUE", label: "Complexe frigorifique (Plusieurs cellules)" },
+    { id: "COMPLEXE_FRIGORIFIQUE", label: "Plusieurs cellules (Complexe)" },
 ]
 const CF_ZONE_DECHARGEMENT = [
     { id: "QUAI_NIVELEUR_SAS", label: "Quai niveleur SAS étanche" },
@@ -343,6 +344,33 @@ const CF_DUREE_ENGAGEMENT = [
     { id: "ANNUELLE", label: "Annuelle (Bail long terme)" },
     { id: "MENSUELLE_HEBDO", label: "Mensuelle / Hebdomadaire" },
     { id: "JOURNEE_SPOT", label: 'À la journée (Stockage "Spot")' },
+]
+// ===========================
+
+// ===== TERRAIN =====
+const TERRAIN_TOPOGRAPHIE = [
+    { id: "PLAT", label: "Plat" },
+    { id: "EN_PENTE", label: "En pente" },
+    { id: "ACCIDENTE", label: "Accidenté (escarpé)" },
+]
+const TERRAIN_STATUT_ZONE = [
+    { id: "LOTISSEMENT_CLASSIQUE", label: "Lotissement classique" },
+    { id: "COOPERATIVE_IMMOBILIERE", label: "Coopérative immobilière" },
+    { id: "RESIDENCE_FERMEE", label: "Résidence fermée" },
+]
+const TERRAIN_DOCUMENTS = [
+    { id: "ACTE_PROPRIETE", label: "Acte de propriété (Notarié)" },
+    { id: "LIVRET_FONCIER", label: "Livret foncier" },
+    { id: "CERTIFICAT_URBANISME", label: "Certificat d'urbanisme" },
+    { id: "PERMIS_CONSTRUIRE", label: "Permis de construire (Existant)" },
+    { id: "PLAN_MASSE", label: "Plan de masse" },
+]
+const TERRAIN_RACCORDEMENTS = [
+    { id: "EAU", label: "Eau (ADE)" },
+    { id: "ELECTRICITE", label: "Électricité (Sonelgaz)" },
+    { id: "GAZ", label: "Gaz" },
+    { id: "ASSAINISSEMENT", label: "Assainissement" },
+    { id: "INTERNET", label: "Internet / Fibre" },
 ]
 // ===========================
 
@@ -668,9 +696,24 @@ const formSchema = z.object({
   cfTracabilite: stringArrayOptional,
   cfTechniqueFroid: stringArrayOptional,
   cfSecuriteHumaine: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  cfSurfaceAuSol: z.string().optional(),
+  cfHauteurEvaporateur: z.string().optional(),
+  cfVolumeStockage: z.string().optional(),
+  cfEtatGlobal: z.enum(["NEUF", "BON_ETAT_MARCHE", "ANCIEN"]).optional(),
+  cfTypeFroid: z.string().optional(),
+  cfModeDiffusion: z.string().optional(),
   cfModeGestion: z.string().optional(),
   cfFlexibilite: stringArrayOptional,
   cfDureeEngagement: stringArrayOptional,
+
+  // Terrain
+  terrainFacadeLength: z.string().optional(),
+  terrainDepth: z.string().optional(),
+  terrainTopographie: z.string().optional(),
+  terrainStatutZone: stringArrayOptional,
+  terrainDocuments: stringArrayOptional,
+  terrainViabilise: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  terrainRaccordements: stringArrayOptional,
 
   acceptsBankCredit: z.enum(["YES", "NO", "NO_PREFERENCE"]).optional(),
   legalDocuments: stringArrayOptional,
@@ -699,8 +742,11 @@ const formSchema = z.object({
         data.transactionType === "RENTAL" &&
         data.realEstateType === "INDUSTRIEL" &&
         data.propertyType === "CHAMBRE_FROIDE"
+    const isTerrainRental =
+        data.transactionType === "RENTAL" &&
+        (data.propertyType === "TERRAIN_RESIDENTIEL" || data.propertyType === "TERRAIN_INDUSTRIEL")
 
-    if (isFactoryRental || isColdRoomRental) {
+    if (isFactoryRental || isColdRoomRental || isTerrainRental) {
         return
     } else {
         if (!data.price || data.price.trim().length === 0) {
@@ -1169,12 +1215,17 @@ export default function DepositPage() {
     userType === "PARTICULIER" &&
     propertyType === "CHAMBRE_FROIDE"
   const isIndustrialRentalParticulier = isUsineRentalParticulier || isChambreFroideRentalParticulier
+  const isTerrainRentalParticulier =
+    transactionType === "RENTAL" &&
+    userType === "PARTICULIER" &&
+    (propertyType === "TERRAIN_RESIDENTIEL" || propertyType === "TERRAIN_INDUSTRIEL")
 
   const cfSector = watch("cfSector")
   const cfConfiguration = watch("cfConfiguration")
   const cfLogistiqueVerticale = watch("cfLogistiqueVerticale")
   const cfGenerateur = watch("cfGenerateur")
   const cfSectorList = normalizeToStringArray(cfSector)
+  const terrainViabilise = watch("terrainViabilise")
   const isSaleParticulierApartment =
     transactionType === "SALE" &&
     userType === "PARTICULIER" &&
@@ -1271,6 +1322,14 @@ export default function DepositPage() {
           { id: "autres", label: "Autres", icon: ImageIcon, photos: [] },
         ]
       }
+      if (isTerrainRentalParticulier) {
+        return [
+          { id: "non_classees", label: "Photos uploadées", icon: ImageIcon, photos: allPhotos },
+          { id: "vue_generale", label: "Vue générale", icon: ImageIcon, photos: [] },
+          { id: "environnement", label: "Environnement / Voisinage", icon: Home, photos: [] },
+          { id: "autres", label: "Autres", icon: ImageIcon, photos: [] },
+        ]
+      }
       return [
         { id: "other", label: "Autres photos", icon: ImageIcon, photos: allPhotos },
         { id: "bedrooms", label: "Chambres", icon: BedIcon, photos: [] },
@@ -1280,7 +1339,7 @@ export default function DepositPage() {
         { id: "common", label: "Espaces communs", icon: Home, photos: [] },
       ]
     })
-  }, [isIndustrialRentalParticulier])
+  }, [isIndustrialRentalParticulier, isTerrainRentalParticulier])
 
   useEffect(() => {
     if (!currentPrice) {
@@ -1736,6 +1795,11 @@ export default function DepositPage() {
             "cfZoneDechargement",
             "cfModeGestion",
         ], { shouldFocus: true })
+    } else if (isTerrainRentalParticulier) {
+        isValid = await trigger([
+            "landArea",
+            "terrainTopographie",
+        ], { shouldFocus: true })
     } else if (isUsineRentalParticulier) {
         isValid = await trigger([
             "industrialSector",
@@ -1864,11 +1928,12 @@ export default function DepositPage() {
   }
 
   const handlePriceSubmit = async () => {
-    const fieldsToValidate: any[] = isIndustrialRentalParticulier ? [] : ["price", "priceUnit", "priceType"]
-    
+    const skipPrice = isIndustrialRentalParticulier || isTerrainRentalParticulier
+    const fieldsToValidate: any[] = skipPrice ? [] : ["price", "priceUnit", "priceType"]
+
     // Add rental specific fields if needed
     if (transactionType === "RENTAL") {
-        if (!isIndustrialRentalParticulier) {
+        if (!skipPrice) {
             fieldsToValidate.push("depositMonths")
             fieldsToValidate.push("rentalUsage")
             fieldsToValidate.push("chargesIncluded")
@@ -1881,7 +1946,7 @@ export default function DepositPage() {
         fieldsToValidate.push("acceptsBankCredit")
     }
 
-    if (!isIndustrialRentalParticulier && transactionType === "RENTAL" && availabilityMode === "DATE" && (!availableDate || String(availableDate).trim().length === 0)) {
+    if (!skipPrice && transactionType === "RENTAL" && availabilityMode === "DATE" && (!availableDate || String(availableDate).trim().length === 0)) {
         setError("availableDate", { type: "custom", message: "Date requise" } as any)
         return
     }
@@ -2046,6 +2111,10 @@ export default function DepositPage() {
             coldRoom: {
                 sector: data.cfSector?.length ? data.cfSector : undefined,
                 sectorOther: data.cfSectorOther?.trim() || undefined,
+                surfaceAuSol: toNum(data.cfSurfaceAuSol),
+                hauteurEvaporateur: toNum(data.cfHauteurEvaporateur),
+                volumeStockage: toNum(data.cfVolumeStockage),
+                etatGlobal: data.cfEtatGlobal,
                 localisation: data.cfLocalisation?.length ? data.cfLocalisation : undefined,
                 structureType: data.cfStructureType,
                 configuration: data.cfConfiguration,
@@ -2056,12 +2125,32 @@ export default function DepositPage() {
                 zoneDechargement: data.cfZoneDechargement?.length ? data.cfZoneDechargement : undefined,
                 generateur: (data.cfGenerateur as any) === true,
                 generateurKva: (data.cfGenerateur as any) === true ? toNum(data.cfGenerateurKva) : undefined,
-                tracabilite: data.cfTracabilite?.length ? data.cfTracabilite : undefined,
                 techniqueFroid: data.cfTechniqueFroid?.length ? data.cfTechniqueFroid : undefined,
-                securiteHumaine: (data.cfSecuriteHumaine as any) === true,
+                typeFroid: data.cfTypeFroid,
+                modeDiffusion: data.cfModeDiffusion,
                 modeGestion: data.cfModeGestion,
                 flexibilite: data.cfFlexibilite?.length ? data.cfFlexibilite : undefined,
                 dureeEngagement: data.cfDureeEngagement?.length ? data.cfDureeEngagement : undefined,
+            }
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+    }
+
+    const isTerrainRentalPayload =
+        data.transactionType === "RENTAL" &&
+        (data.propertyType === "TERRAIN_RESIDENTIEL" || data.propertyType === "TERRAIN_INDUSTRIEL")
+
+    if (isTerrainRentalPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const amenitiesPayload: any = {
+            terrain: {
+                facadeLength: toNum(data.terrainFacadeLength),
+                depth: toNum(data.terrainDepth),
+                topographie: data.terrainTopographie,
+                statutZone: data.terrainStatutZone?.length ? data.terrainStatutZone : undefined,
+                documents: data.terrainDocuments?.length ? data.terrainDocuments : undefined,
+                viabilise: (data.terrainViabilise as any) === true,
+                raccordements: (data.terrainViabilise as any) === true ? undefined : (data.terrainRaccordements?.length ? data.terrainRaccordements : undefined),
             }
         }
         formData.append("amenities", JSON.stringify(amenitiesPayload))
@@ -2075,6 +2164,7 @@ export default function DepositPage() {
       if (key === 'price') return;
       if (shouldSkipAreaRooms && (key === "area" || key === "rooms")) return;
       if (shouldSkipIndustrialFields && (key.startsWith("industrial") || key.startsWith("cf"))) return;
+      if (isTerrainRentalPayload && key.startsWith("terrain")) return;
       
       // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
       // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend
@@ -2218,8 +2308,10 @@ export default function DepositPage() {
           if (propertyType === "IMMEUBLE_RESIDENTIEL") return "Fiche descriptive - Immeuble"
           if (propertyType === "USINE") return "Fiche descriptive - Usine"
           if (propertyType === "CHAMBRE_FROIDE") return "Fiche descriptive - Chambre froide"
+          if (propertyType === "TERRAIN_RESIDENTIEL") return "Fiche descriptive - Terrain résidentiel"
+          if (propertyType === "TERRAIN_INDUSTRIEL") return "Fiche descriptive - Terrain industriel"
           return "Fiche descriptive"
-      case 5: return isIndustrialRentalParticulier ? "Disponibilité" : "Prix & Modalités"
+      case 5: return (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? "Disponibilité" : "Prix & Modalités"
       case 6: return "Informations et Contact"
       case 7: return "Médias du bien"
       default: return ""
@@ -2253,7 +2345,8 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
       (userType === "PARTICULIER" && transactionType === "SALE" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "USINE") ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "CHAMBRE_FROIDE");
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "CHAMBRE_FROIDE") ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "TERRAIN_RESIDENTIEL" || propertyType === "TERRAIN_INDUSTRIEL"));
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
@@ -2904,6 +2997,37 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
+                            {/* Section 1b : Infrastructure & Surfaces */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Infrastructure &amp; Surfaces
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface au sol</label>
+                                        <input {...register("cfSurfaceAuSol")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500 m²" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous évaporateur</label>
+                                        <input {...register("cfHauteurEvaporateur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5 m" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Volume de stockage</label>
+                                        <input {...register("cfVolumeStockage")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2000 m³" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">État global</label>
+                                        <select {...register("cfEtatGlobal")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
+                                            <option value="">Sélectionner</option>
+                                            {INDUSTRIAL_GLOBAL_STATES.map((s) => (
+                                                <option key={s.id} value={s.id}>{s.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </section>
+
                             {/* Section 2 : Configuration & Emplacement du site */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
@@ -2938,7 +3062,7 @@ export default function DepositPage() {
                                     {/* Configuration */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Configuration</div>
-                                        <div className="flex gap-4 flex-wrap items-end">
+                                        <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="radio" value="PLAIN_PIED" {...register("cfConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Plain-pied (RDC)
@@ -2947,10 +3071,12 @@ export default function DepositPage() {
                                                 <input type="radio" value="ETAGES" {...register("cfConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
                                                 À étages
                                             </label>
-                                            {cfConfiguration === "ETAGES" && (
-                                                <input {...register("cfFloorsCount")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-28 p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Nombre" />
-                                            )}
                                         </div>
+                                        {cfConfiguration === "ETAGES" && (
+                                            <div className="w-full mt-3">
+                                                <input {...register("cfFloorsCount")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Nombre d'étages" />
+                                            </div>
+                                        )}
                                     </div>
                                     {/* Logistique verticale */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
@@ -3004,51 +3130,68 @@ export default function DepositPage() {
                                     <Shield className="h-5 w-5 text-[#00BFA6]" />
                                     Équipements de sécurité &amp; Performance
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {/* Énergie de secours */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Énergie de secours</div>
-                                        <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
-                                            <input type="checkbox" {...register("cfGenerateur")} className="accent-[#00BFA6] w-5 h-5" />
-                                            <span className="font-bold text-gray-900 text-sm">Groupe Électrogène Auto</span>
-                                        </label>
-                                        {cfGenerateur && (
-                                            <div className="mt-3">
-                                                <input {...register("cfGenerateurKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Puissance (KVA)" />
+                                <div className="space-y-5">
+                                    {/* Ligne 1 : Énergie de secours + Technique Froid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {/* Énergie de secours */}
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-3">Énergie de secours</div>
+                                            <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                <input type="checkbox" {...register("cfGenerateur")} className="accent-[#00BFA6] w-5 h-5" />
+                                                <span className="font-bold text-gray-900 text-sm">Groupe Électrogène Auto</span>
+                                            </label>
+                                            {cfGenerateur && (
+                                                <div className="mt-3">
+                                                    <input {...register("cfGenerateurKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Puissance (KVA)" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        {/* Technique Froid */}
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-3">Technique froid</div>
+                                            <div className="space-y-2">
+                                                {CF_TECHNIQUE_FROID.map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="checkbox" value={x.id} {...register("cfTechniqueFroid")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
                                             </div>
-                                        )}
-                                    </div>
-                                    {/* Traçabilité */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Traçabilité</div>
-                                        <div className="space-y-2">
-                                            {CF_TRACABILITE.map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="checkbox" value={x.id} {...register("cfTracabilite")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
                                         </div>
                                     </div>
-                                    {/* Technique Froid Négatif */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Technique &quot;Froid Négatif&quot;</div>
-                                        <div className="space-y-2">
-                                            {CF_TECHNIQUE_FROID.map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="checkbox" value={x.id} {...register("cfTechniqueFroid")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
+                                    {/* Ligne 2 : Type de froid + Mode de diffusion */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {/* Type de froid */}
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-3">Type de froid</div>
+                                            <div className="space-y-2">
+                                                {[
+                                                    { id: "POSITIF", label: "Positif" },
+                                                    { id: "NEGATIF", label: "Négatif" },
+                                                    { id: "ULTRA_FROID", label: "Ultra Froid (Tunnel de congélation)" },
+                                                ].map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="radio" value={x.id} {...register("cfTypeFroid")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                    {/* Sécurité humaine */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Sécurité humaine</div>
-                                        <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
-                                            <input type="checkbox" {...register("cfSecuriteHumaine")} className="accent-[#00BFA6] w-5 h-5" />
-                                            <span className="font-bold text-gray-900 text-sm">Alarme &quot;Personne enfermée&quot;</span>
-                                        </label>
+                                        {/* Mode de diffusion */}
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-3">Mode de diffusion</div>
+                                            <div className="space-y-2">
+                                                {[
+                                                    { id: "FROID_VENTILE", label: "Froid Ventilé" },
+                                                    { id: "FROID_STATIQUE", label: "Froid Statique" },
+                                                ].map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="radio" value={x.id} {...register("cfModeDiffusion")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -3101,6 +3244,123 @@ export default function DepositPage() {
                                                 </label>
                                             ))}
                                         </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive - Terrain */}
+                    {currentStep === 4 && isTerrainRentalParticulier && (
+                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+
+                            {/* Section B : Caractéristiques Physiques */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Caractéristiques Physiques
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* Surface terrain */}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain</label>
+                                        <input {...register("landArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 300 m²" />
+                                    </div>
+                                    {/* Nombre de façades */}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Nombre de façades</label>
+                                        <div className="flex gap-3">
+                                            {[1, 2, 3, 4].map((n) => (
+                                                <label key={n} className="cursor-pointer">
+                                                    <input type="radio" value={String(n)} {...register("facadesCount")} className="peer sr-only" />
+                                                    <div className="w-12 h-12 border-2 rounded-xl flex items-center justify-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">{n}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Longueur façade principale */}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur façade principale</label>
+                                        <input {...register("terrainFacadeLength")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12 ml" />
+                                    </div>
+                                    {/* Profondeur terrain */}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Profondeur terrain</label>
+                                        <input {...register("terrainDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 25 m" />
+                                    </div>
+                                    {/* Topographie */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Topographie (Relief)</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_TOPOGRAPHIE.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={x.id} {...register("terrainTopographie")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Statut de la zone */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Statut de la zone</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_STATUT_ZONE.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("terrainStatutZone")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Section C : État Juridique & Urbanisme */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <FileText className="h-5 w-5 text-[#00BFA6]" />
+                                    État Juridique &amp; Urbanisme
+                                </h2>
+                                <div className="space-y-5">
+                                    {/* Documents disponibles — tous sur une seule ligne */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Documents disponibles</div>
+                                        <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                            {TERRAIN_DOCUMENTS.map((doc) => (
+                                                <label key={doc.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded-lg px-1 py-0.5">
+                                                    <input type="checkbox" value={doc.id} {...register("terrainDocuments")} className="accent-[#00BFA6] w-4 h-4 shrink-0" />
+                                                    <span className="font-medium text-gray-700 text-sm whitespace-nowrap">{doc.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Viabilisation & Raccordements — ligne suivante */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Viabilisation</div>
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />
+                                                Terrain viabilisé
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />
+                                                Non viabilisé
+                                            </label>
+                                        </div>
+                                        {terrainViabilise === false && (
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-700 mb-2">Raccordements à proximité</div>
+                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                                    {TERRAIN_RACCORDEMENTS.map((r) => (
+                                                        <label key={r.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="checkbox" value={r.id} {...register("terrainRaccordements")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            <span className="whitespace-nowrap">{r.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </section>
@@ -3968,7 +4228,8 @@ export default function DepositPage() {
                         ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
                         ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER") ||
                         isUsineRentalParticulier ||
-                        isChambreFroideRentalParticulier
+                        isChambreFroideRentalParticulier ||
+                        isTerrainRentalParticulier
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             <div className="space-y-8">
@@ -4335,7 +4596,7 @@ export default function DepositPage() {
 
                     {/* Step 5: Prix & Modalités */}
                     {currentStep === 5 && (
-                        isIndustrialRentalParticulier ? (
+                        (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? (
                         <div className="w-full max-w-2xl animate-fade-in">
                             <div className="space-y-8">
                                 <section className="space-y-6">

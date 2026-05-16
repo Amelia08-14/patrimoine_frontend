@@ -136,6 +136,8 @@ const LABELS: any = {
     AGROALIMENTAIRE_CF: "Agroalimentaire",
     GLACES_SURGELES: "Glaces & Surgelés",
     PHARMACEUTIQUE_CF: "Pharmaceutique",
+    CHIMIQUE_CF: "Chimique",
+    HORTICOLE_AGRICOLE: "Horticole & Agricole",
     AUTRE_CF: "Autre activité",
     // Chambre froide - Structure
     CELLULE_UNIQUE: "Cellule unique (Mono-bloc)",
@@ -163,6 +165,26 @@ const LABELS: any = {
     // Logistique verticale
     RAMPE: "Rampe d'accès",
     MONTE_CHARGE: "Monte-charge",
+
+    // Terrain
+    PLAT: "Plat",
+    EN_PENTE: "En pente",
+    ACCIDENTE: "Accidenté (escarpé)",
+    LOTISSEMENT_CLASSIQUE: "Lotissement classique",
+    COOPERATIVE_IMMOBILIERE: "Coopérative immobilière",
+    RESIDENCE_FERMEE: "Résidence fermée",
+    ACTE_PROPRIETE: "Acte de propriété (Notarié)",
+    LIVRET_FONCIER: "Livret foncier",
+    CERTIFICAT_URBANISME: "Certificat d'urbanisme",
+    PERMIS_CONSTRUIRE: "Permis de construire",
+    PLAN_MASSE: "Plan de masse",
+    EAU: "Eau (ADE)",
+    ELECTRICITE: "Électricité (Sonelgaz)",
+    ASSAINISSEMENT: "Assainissement",
+    INTERNET: "Internet / Fibre",
+    // Terrain photo categories
+    vue_generale: "Vue générale",
+    environnement: "Environnement",
 
     // Heating & AC Types
     CENTRAL: "Central",
@@ -311,6 +333,7 @@ export default function AnnounceDetailsPage() {
   let buildingTypology: any = null;
   let industrialFactory: any = null;
   let coldRoom: any = null;
+  let terrain: any = null;
   
   if (property.amenities) {
       try {
@@ -373,6 +396,10 @@ export default function AnnounceDetailsPage() {
 
               if (parsedAmenities.coldRoom && typeof parsedAmenities.coldRoom === 'object') {
                   coldRoom = parsedAmenities.coldRoom;
+              }
+
+              if (parsedAmenities.terrain && typeof parsedAmenities.terrain === 'object') {
+                  terrain = parsedAmenities.terrain;
               }
           }
       } catch (e) {
@@ -441,7 +468,9 @@ export default function AnnounceDetailsPage() {
   const normalizedPropertyType = typeof property.propertyType === "string" ? property.propertyType.toUpperCase() : "";
   const isFactoryRental = isRental && normalizedPropertyType === "USINE"
   const isColdRoomRental = isRental && normalizedPropertyType === "CHAMBRE_FROIDE"
+  const isTerrainRental = isRental && (normalizedPropertyType === "TERRAIN_RESIDENTIEL" || normalizedPropertyType === "TERRAIN_INDUSTRIEL")
   const isIndustrialRental = isFactoryRental || isColdRoomRental
+  const isSpecialRental = isIndustrialRental || isTerrainRental
   const isSaleBuildingDemolition =
       isSale &&
       normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" &&
@@ -762,7 +791,7 @@ export default function AnnounceDetailsPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-[#00BFA6]">
-                      {isIndustrialRental
+                      {isSpecialRental
                           ? (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0
                               ? `${Number(announce.price).toLocaleString()} DZD`
                               : "Prix après visite")
@@ -772,7 +801,7 @@ export default function AnnounceDetailsPage() {
                   </div>
                   <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
                       <span className="uppercase">{isRental ? 'Location' : isSale ? 'Vente' : announce.type}</span>
-                      {(!isIndustrialRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
+                      {(!isSpecialRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
                           <>
                               <span className="text-gray-300">|</span>
                               <span className="text-gray-600">{announce.priceType === 'FIXED' ? 'Prix Fixe' : announce.priceType === 'NEGOTIABLE' ? 'Prix Négociable' : 'Offert'}</span>
@@ -874,6 +903,50 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                ) : isTerrainRental ? (
+                  <div className="w-full flex items-center justify-between gap-3">
+                    {/* Surface terrain */}
+                    {property.landArea != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{property.landArea} m²</div>
+                          <div className="text-xs text-gray-500">Surf. Terrain</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Façades */}
+                    {property.facadesCount != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</div>
+                          <div className="text-xs text-gray-500">Façades</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Topographie */}
+                    {terrain?.topographie && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{LABELS[terrain.topographie] || terrain.topographie}</div>
+                          <div className="text-xs text-gray-500">Relief</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Viabilisé */}
+                    <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                      <Key className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div>
+                        <div className="font-bold text-base">{terrain?.viabilise ? "Viabilisé" : "Non viabilisé"}</div>
+                        <div className="text-xs text-gray-500">Viabilisation</div>
+                      </div>
+                    </div>
                   </div>
                 ) : isSaleBuildingDemolition ? (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
@@ -1580,8 +1653,128 @@ export default function AnnounceDetailsPage() {
           )}
           {/* ===== FIN SECTION CHAMBRE FROIDE ===== */}
 
+          {/* ===== SECTION TERRAIN ===== */}
+          {isTerrainRental && (
+            <>
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                  {/* Col 1 — Caractéristiques physiques */}
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                    <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                      <Ruler className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                      <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Caractéristiques</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {property.landArea != null && (
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                          <span className="text-gray-500 text-xs">Surface terrain</span>
+                          <span className="font-bold text-gray-900 text-sm">{property.landArea} m²</span>
+                        </div>
+                      )}
+                      {property.facadesCount != null && (
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                          <span className="text-gray-500 text-xs">Nombre de façades</span>
+                          <span className="font-bold text-gray-900 text-sm">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</span>
+                        </div>
+                      )}
+                      {terrain?.facadeLength != null && (
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                          <span className="text-gray-500 text-xs">Longueur façade principale</span>
+                          <span className="font-bold text-gray-900 text-sm">{terrain.facadeLength} ml</span>
+                        </div>
+                      )}
+                      {terrain?.depth != null && (
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                          <span className="text-gray-500 text-xs">Profondeur</span>
+                          <span className="font-bold text-gray-900 text-sm">{terrain.depth} m</span>
+                        </div>
+                      )}
+                      {terrain?.topographie && (
+                        <div className="flex flex-col gap-1 py-1.5">
+                          <span className="text-gray-500 text-xs">Topographie (Relief)</span>
+                          <span className="font-bold text-gray-900 text-sm">{LABELS[terrain.topographie] || terrain.topographie}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Col 2 — Statut & Documents */}
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                    <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                      <FileText className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                      <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Statut & Documents</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {terrain?.statutZone?.length > 0 && (
+                        <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                          <span className="text-gray-500 text-xs">Statut de la zone</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {terrain.statutZone.map((s: string) => (
+                              <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {terrain?.documents?.length > 0 && (
+                        <div className="flex flex-col gap-2 py-1.5">
+                          <span className="text-gray-500 text-xs">Documents disponibles</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {terrain.documents.map((d: string) => (
+                              <span key={d} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Col 3 — Viabilisation */}
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                    <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                      <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                      <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Viabilisation</h3>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                        <span className="text-gray-500 text-xs">État de viabilisation</span>
+                        <span className={`font-bold text-sm ${terrain?.viabilise ? "text-[#00BFA6]" : "text-orange-600"}`}>
+                          {terrain?.viabilise ? "Terrain viabilisé" : "Non viabilisé"}
+                        </span>
+                      </div>
+                      {!terrain?.viabilise && terrain?.raccordements?.length > 0 && (
+                        <div className="flex flex-col gap-2 py-1.5">
+                          <span className="text-gray-500 text-xs">Raccordements à proximité</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {terrain.raccordements.map((r: string) => (
+                              <span key={r} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[r] || r}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Description */}
+              {announce.shortDescription && (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-[#00BFA6]" />
+                    Description
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
+                </div>
+              )}
+            </>
+          )}
+          {/* ===== FIN SECTION TERRAIN ===== */}
+
           {/* Nouvelle section : Description et informations spécifiques */}
-          {!isIndustrialRental && !isSaleDemolition && (announce.shortDescription || property.usageType) && (
+          {!isSpecialRental && !isSaleDemolition && (announce.shortDescription || property.usageType) && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
@@ -1651,7 +1844,7 @@ export default function AnnounceDetailsPage() {
           )}
 
           {/* Informations Générales (Detailed) - Résidentiel uniquement */}
-          {!isIndustrialRental && <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+          {!isSpecialRental && <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
 
               <div className={isSaleDemolition ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"}>
