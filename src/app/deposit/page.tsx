@@ -680,6 +680,36 @@ const formSchema = z.object({
   industrialFireEquipment: stringArrayOptional,
   industrialFireWaterReserveLiters: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Volume invalide"),
 
+  // Hangar
+  hangarUsage: stringArrayOptional,
+  hangarZone: stringArrayOptional,
+  hangarConfiguration: stringArrayOptional,
+  hangarSurfaceCovered: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface invalide"),
+  hangarSurfaceTerrain: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Surface invalide"),
+  hangarLength: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Valeur invalide"),
+  hangarWidth: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Valeur invalide"),
+  hangarHeight: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Valeur invalide"),
+  hangarAccessSemiRemorque: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarAccessQuai: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarStructureBeton: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarStructureMetallique: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarStructureToleTH40: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarStructurePanneauxSandwich: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarSolBetonQuartz: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarSolResineEpoxy: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarPosteTransfo: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarPosteTransfoKva: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "KVA invalide"),
+  hangarForceMotrice: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarGazIndustriel: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarEauReseau: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarEauPuits: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarFireRia: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarFireBacheEau: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarFireBacheEauFeu: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarFireBacheEauProduction: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarJuridiqueActe: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarJuridiqueCertificat: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+
   // Chambre froide
   cfSector: stringArrayOptional,
   cfSectorOther: z.string().optional().or(z.literal("")),
@@ -742,11 +772,15 @@ const formSchema = z.object({
         data.transactionType === "RENTAL" &&
         data.realEstateType === "INDUSTRIEL" &&
         data.propertyType === "CHAMBRE_FROIDE"
+    const isHangarRental =
+        data.transactionType === "RENTAL" &&
+        data.realEstateType === "INDUSTRIEL" &&
+        data.propertyType === "HANGAR"
     const isTerrainRental =
         data.transactionType === "RENTAL" &&
         (data.propertyType === "TERRAIN_RESIDENTIEL" || data.propertyType === "TERRAIN_INDUSTRIEL")
 
-    if (isFactoryRental || isColdRoomRental || isTerrainRental) {
+    if (isFactoryRental || isColdRoomRental || isHangarRental || isTerrainRental) {
         return
     } else {
         if (!data.price || data.price.trim().length === 0) {
@@ -1214,7 +1248,11 @@ export default function DepositPage() {
     transactionType === "RENTAL" &&
     userType === "PARTICULIER" &&
     propertyType === "CHAMBRE_FROIDE"
-  const isIndustrialRentalParticulier = isUsineRentalParticulier || isChambreFroideRentalParticulier
+  const isHangarRentalParticulier =
+    transactionType === "RENTAL" &&
+    userType === "PARTICULIER" &&
+    propertyType === "HANGAR"
+  const isIndustrialRentalParticulier = isUsineRentalParticulier || isChambreFroideRentalParticulier || isHangarRentalParticulier
   const isTerrainRentalParticulier =
     transactionType === "RENTAL" &&
     userType === "PARTICULIER" &&
@@ -2136,6 +2174,63 @@ export default function DepositPage() {
         formData.append("amenities", JSON.stringify(amenitiesPayload))
     }
 
+    const isHangarRentalPayload =
+        data.transactionType === "RENTAL" &&
+        data.propertyType === "HANGAR"
+
+    if (isHangarRentalPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const amenitiesPayload: any = {
+            hangar: {
+                usage: data.hangarUsage?.length ? data.hangarUsage : undefined,
+                zone: data.hangarZone?.length ? data.hangarZone : undefined,
+                configuration: data.hangarConfiguration?.length ? data.hangarConfiguration : undefined,
+                surfaces: {
+                    covered: toNum(data.hangarSurfaceCovered),
+                    terrain: toNum(data.hangarSurfaceTerrain),
+                },
+                dimensions: {
+                    length: toNum(data.hangarLength),
+                    width: toNum(data.hangarWidth),
+                    height: toNum(data.hangarHeight),
+                },
+                accessibility: {
+                    semiRemorque: (data.hangarAccessSemiRemorque as any) === true,
+                    quaiDechargement: (data.hangarAccessQuai as any) === true,
+                },
+                structure: {
+                    beton: (data.hangarStructureBeton as any) === true,
+                    metallique: (data.hangarStructureMetallique as any) === true,
+                    toleTH40: (data.hangarStructureToleTH40 as any) === true,
+                    panneauxSandwich: (data.hangarStructurePanneauxSandwich as any) === true,
+                },
+                sol: {
+                    betonQuartz: (data.hangarSolBetonQuartz as any) === true,
+                    resineEpoxy: (data.hangarSolResineEpoxy as any) === true,
+                },
+                energy: {
+                    posteTransfo: (data.hangarPosteTransfo as any) === true,
+                    posteTransfoKva: (data.hangarPosteTransfo as any) === true ? toNum(data.hangarPosteTransfoKva) : undefined,
+                    forceMotrice380: (data.hangarForceMotrice as any) === true,
+                    gazIndustriel: (data.hangarGazIndustriel as any) === true,
+                    eauReseau: (data.hangarEauReseau as any) === true,
+                    eauPuits: (data.hangarEauPuits as any) === true,
+                },
+                fireSafety: {
+                    riaSpinklers: (data.hangarFireRia as any) === true,
+                    bacheEau: (data.hangarFireBacheEau as any) === true,
+                    bacheEauFeu: (data.hangarFireBacheEau as any) === true ? (data.hangarFireBacheEauFeu as any) === true : undefined,
+                    bacheEauProduction: (data.hangarFireBacheEau as any) === true ? (data.hangarFireBacheEauProduction as any) === true : undefined,
+                },
+                juridique: {
+                    acteLivretFoncier: (data.hangarJuridiqueActe as any) === true,
+                    certificatConformite: (data.hangarJuridiqueCertificat as any) === true,
+                },
+            },
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+    }
+
     const isTerrainRentalPayload =
         data.transactionType === "RENTAL" &&
         (data.propertyType === "TERRAIN_RESIDENTIEL" || data.propertyType === "TERRAIN_INDUSTRIEL")
@@ -2308,6 +2403,7 @@ export default function DepositPage() {
           if (propertyType === "IMMEUBLE_RESIDENTIEL") return "Fiche descriptive - Immeuble"
           if (propertyType === "USINE") return "Fiche descriptive - Usine"
           if (propertyType === "CHAMBRE_FROIDE") return "Fiche descriptive - Chambre froide"
+          if (propertyType === "HANGAR") return "Fiche descriptive - Hangar"
           if (propertyType === "TERRAIN_RESIDENTIEL") return "Fiche descriptive - Terrain résidentiel"
           if (propertyType === "TERRAIN_INDUSTRIEL") return "Fiche descriptive - Terrain industriel"
           return "Fiche descriptive"
@@ -2346,6 +2442,7 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "SALE" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "USINE") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "CHAMBRE_FROIDE") ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HANGAR") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "TERRAIN_RESIDENTIEL" || propertyType === "TERRAIN_INDUSTRIEL"));
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
@@ -2953,6 +3050,307 @@ export default function DepositPage() {
                                     </div>
                                 </div>
                             </section>
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive - Hangar */}
+                    {currentStep === 4 && isHangarRentalParticulier && (
+                        <div className="w-full max-w-7xl animate-fade-in space-y-10">
+
+                            {/* Usage et Emplacement */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                                    Usage &amp; Emplacement
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Usage</div>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: "STOCKAGE_LOGISTIQUE", label: "Stockage / Logistique" },
+                                                { id: "PRODUCTION_INDUSTRIEL", label: "Production / Industriel" },
+                                            ].map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Zone</div>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: "ZONE_INDUSTRIELLE", label: "Zone Industrielle (Z.I)" },
+                                                { id: "ZONE_URBAINE", label: "Zone Urbaine" },
+                                                { id: "ZONE_ACTIVITE", label: "Zone d'Activité (Z.A.C)" },
+                                            ].map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("hangarZone")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Configuration, Surfaces & Dimensions */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Configuration, Surfaces &amp; Dimensions
+                                </h2>
+
+                                <div className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Configuration</label>
+                                        <div className="flex gap-4 flex-wrap">
+                                            {[
+                                                { id: "PLAIN_PIED", label: "Plein-pied" },
+                                                { id: "ETAGES", label: "À étage(s)" },
+                                            ].map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("hangarConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface couverte (m²) <span className="text-red-500">*</span></label>
+                                            <input
+                                                {...register("hangarSurfaceCovered")}
+                                                type="number"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                placeholder="Ex: 800 m²"
+                                            />
+                                            {errors.hangarSurfaceCovered && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceCovered.message as any}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Terrain / Cour (m²)</label>
+                                            <input
+                                                {...register("hangarSurfaceTerrain")}
+                                                type="number"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                placeholder="Ex: 400 m²"
+                                            />
+                                            {errors.hangarSurfaceTerrain && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceTerrain.message as any}</p>}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m) <span className="text-red-500">*</span></label>
+                                            <input
+                                                {...register("hangarLength")}
+                                                type="number"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                placeholder="Ex: 50 m"
+                                            />
+                                            {errors.hangarLength && <p className="text-red-500 text-sm mt-1">{errors.hangarLength.message as any}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
+                                            <input
+                                                {...register("hangarWidth")}
+                                                type="number"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                placeholder="Ex: 20 m"
+                                            />
+                                            {errors.hangarWidth && <p className="text-red-500 text-sm mt-1">{errors.hangarWidth.message as any}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous crochet (m)</label>
+                                            <input
+                                                {...register("hangarHeight")}
+                                                type="number"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                placeholder="Ex: 8 m"
+                                            />
+                                            {errors.hangarHeight && <p className="text-red-500 text-sm mt-1">{errors.hangarHeight.message as any}</p>}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Accessibilité</label>
+                                        <div className="flex gap-6 flex-wrap">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarAccessSemiRemorque")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Accès Semi-remorque (40 pieds)
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarAccessQuai")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Quai de déchargement
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Structure */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Structure</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarStructureBeton")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Béton
+                                        </label>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarStructureMetallique")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Métallique
+                                            </label>
+                                            {watch("hangarStructureMetallique") && (
+                                                <div className="ml-6 space-y-2 border-l-2 border-gray-200 pl-3">
+                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
+                                                        <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        Tôle TH40
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
+                                                        <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        Panneaux Sandwich
+                                                    </label>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Technique & Énergie */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
+                                    Technique &amp; Énergie
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* Sol */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Sol</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Béton/Quartz
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarSolResineEpoxy")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Résine Epoxy
+                                        </label>
+                                    </div>
+
+                                    {/* Énergie */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Énergie</div>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarPosteTransfo")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Poste Transfo
+                                            </label>
+                                            {watch("hangarPosteTransfo") && (
+                                                <div className="ml-6">
+                                                    <input
+                                                        {...register("hangarPosteTransfoKva")}
+                                                        type="number"
+                                                        min="0"
+                                                        onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                        className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                        placeholder="Puissance en kVA (ex: 250)"
+                                                    />
+                                                    {errors.hangarPosteTransfoKva && <p className="text-red-500 text-sm mt-1">{errors.hangarPosteTransfoKva.message as any}</p>}
+                                                </div>
+                                            )}
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarForceMotrice")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Force motrice (380V)
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Utilités */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Utilités</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarGazIndustriel")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Gaz Industriel
+                                        </label>
+                                        <div className="space-y-2">
+                                            <div className="font-medium text-gray-700">Eau</div>
+                                            <div className="ml-4 space-y-2">
+                                                <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
+                                                    <input type="checkbox" {...register("hangarEauReseau")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    Réseau
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
+                                                    <input type="checkbox" {...register("hangarEauPuits")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    Puits / Forage
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Sécurité & Documents */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
+                                    Sécurité &amp; Documents
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* Incendie */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Incendie</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarFireRia")} className="accent-[#00BFA6] w-4 h-4" />
+                                            RIA / Sprinklers
+                                        </label>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarFireBacheEau")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Bâche à eau
+                                            </label>
+                                            {watch("hangarFireBacheEau") && (
+                                                <div className="ml-6 space-y-2 border-l-2 border-gray-200 pl-3">
+                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
+                                                        <input type="checkbox" {...register("hangarFireBacheEauFeu")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        Feu
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
+                                                        <input type="checkbox" {...register("hangarFireBacheEauProduction")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        Production
+                                                    </label>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Juridique */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Juridique</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarJuridiqueActe")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Acte / Livret foncier
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarJuridiqueCertificat")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Certificat de conformité
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+
                         </div>
                     )}
 
@@ -4229,6 +4627,7 @@ export default function DepositPage() {
                         ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER") ||
                         isUsineRentalParticulier ||
                         isChambreFroideRentalParticulier ||
+                        isHangarRentalParticulier ||
                         isTerrainRentalParticulier
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
