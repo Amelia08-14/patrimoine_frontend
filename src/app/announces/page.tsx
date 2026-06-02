@@ -112,18 +112,15 @@ function AnnouncesContent() {
           }
           
           if (filters.realEstateCategory) {
-            // Find all property types that belong to this category
             const validTypes = PROPERTY_TYPES
                 .filter(t => t.categoryId === filters.realEstateCategory)
                 .map(t => t.id);
-            
-            // Filter announces where propertyType matches one of the valid types
+
             if (validTypes.length > 0) {
                 data = data.filter((a: any) => {
-                    // Try to match by ID first (case-insensitive)
                     if (validTypes.includes(a.property?.propertyType?.toUpperCase())) return true;
-                    
-                    // Fallback: Try to match by Label
+                    // Cross-category: annonce résidentielle/commerciale publiée dans les deux catégories
+                    if (a.property?.acceptsCrossUsage && a.property?.crossRealEstateType === filters.realEstateCategory) return true;
                     const typeObj = PROPERTY_TYPES.find(t => t.label === a.property?.propertyType);
                     return typeObj && typeObj.categoryId === filters.realEstateCategory;
                 });

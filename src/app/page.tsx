@@ -361,21 +361,25 @@ export default function HomePage() {
   });
 
   const groupedAnnounces = filteredAnnounces.reduce((acc, announce) => {
-    // Attempt to find property type by ID (case-insensitive) or Label
     let pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType?.toUpperCase());
-    
-    // Fallback: try matching by label if ID match fails
-    if (!pType) {
-        pType = PROPERTY_TYPES.find(t => t.label === announce.property?.propertyType);
-    }
+    if (!pType) pType = PROPERTY_TYPES.find(t => t.label === announce.property?.propertyType);
 
     if (pType) {
-      const cat = REAL_ESTATE_CATEGORIES.find(c => c.id === pType.categoryId);
+      // Catégorie principale
+      const cat = REAL_ESTATE_CATEGORIES.find(c => c.id === pType!.categoryId);
       if (cat) {
-        if (!acc[cat.id]) {
-          acc[cat.id] = { label: cat.label, items: [] };
-        }
+        if (!acc[cat.id]) acc[cat.id] = { label: cat.label, items: [] };
         acc[cat.id].items.push(announce);
+      }
+
+      // Catégorie miroir si cross-usage activé
+      const crossCatId = announce.property?.crossRealEstateType;
+      if (announce.property?.acceptsCrossUsage && crossCatId) {
+        const crossCat = REAL_ESTATE_CATEGORIES.find(c => c.id === crossCatId);
+        if (crossCat && crossCatId !== pType!.categoryId) {
+          if (!acc[crossCatId]) acc[crossCatId] = { label: crossCat.label, items: [] };
+          acc[crossCatId].items.push(announce);
+        }
       }
     }
     return acc;
@@ -385,6 +389,7 @@ export default function HomePage() {
   const orderedCategoryIds = [
     "RESIDENTIEL",
     "INDUSTRIEL",
+    "TERRAIN_FONCIER",
     "BUREAUX_COMMERCES",
     "HOTELIER",
     "EVENEMENTIEL",

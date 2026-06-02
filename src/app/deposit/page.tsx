@@ -74,6 +74,9 @@ const IconMap: Record<string, React.ElementType> = {
   HebergementSansEtoile: Hotel,
   ComplexeEtoile: Sparkles,
   ComplexeSansEtoile: Trees,
+  TerrainFoncier: Trees,
+  TerrainAgricole: Leaf,
+  TerrainTouristique: Palmtree,
   Arbre: Trees,
   Palmier: Palmtree,
   Montagne: Mountain,
@@ -141,22 +144,25 @@ const BASE_REAL_ESTATE_CATEGORIES = [
   { id: "HOTELIER", label: "Immobilier Hôtelier", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Briefcase" },
   { id: "HEBERGEMENT", label: "Hébergement et Séjours", iconName: "BedDouble" },
+  { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "TerrainFoncier" },
 ]
 
 // Types de biens par catégorie
 const BASE_PROPERTY_TYPES = [
+  { id: "APPARTEMENT", label: "Appartement", categoryId: "RESIDENTIEL", iconName: "Apartment" },
   { id: "VILLA", label: "Villa", categoryId: "RESIDENTIEL", iconName: "Villa" },
   { id: "NIVEAU_VILLA", label: "Niveau de villa", categoryId: "RESIDENTIEL", iconName: "VillaLevel" },
-  { id: "APPARTEMENT", label: "Appartement", categoryId: "RESIDENTIEL", iconName: "Apartment" },
+  { id: "IMMEUBLE_RESIDENTIEL", label: "Immeuble d'appartements", categoryId: "RESIDENTIEL", iconName: "ApartmentBuilding" },
   { id: "DUPLEX", label: "Duplex", categoryId: "RESIDENTIEL", iconName: "Duplex" },
   { id: "TRIPLEX", label: "Triplex", categoryId: "RESIDENTIEL", iconName: "Triplex" },
-  { id: "IMMEUBLE_RESIDENTIEL", label: "Immeuble d'appartements", categoryId: "RESIDENTIEL", iconName: "ApartmentBuilding" },
   { id: "STUDIO", label: "Studio", categoryId: "RESIDENTIEL", iconName: "Studio" },
-  { id: "TERRAIN_RESIDENTIEL", label: "Terrain résidentiel", categoryId: "RESIDENTIEL", iconName: "ResidentialLand" },
   { id: "HANGAR", label: "Hangar", categoryId: "INDUSTRIEL", iconName: "Hangar" },
   { id: "USINE", label: "Usine", categoryId: "INDUSTRIEL", iconName: "Usine" },
   { id: "CHAMBRE_FROIDE", label: "Chambre froide", categoryId: "INDUSTRIEL", iconName: "ChambreFroide" },
-  { id: "TERRAIN_INDUSTRIEL", label: "Terrain industriel", categoryId: "INDUSTRIEL", iconName: "TerrainIndustriel" },
+  { id: "TERRAIN_RESIDENTIEL", label: "Terrain résidentiel", categoryId: "TERRAIN_FONCIER", iconName: "ResidentialLand" },
+  { id: "TERRAIN_INDUSTRIEL", label: "Terrain industriel", categoryId: "TERRAIN_FONCIER", iconName: "TerrainIndustriel" },
+  { id: "TERRAIN_AGRICOLE", label: "Terrain agricole", categoryId: "TERRAIN_FONCIER", iconName: "TerrainAgricole" },
+  { id: "TERRAIN_TOURISTIQUE", label: "Terrain touristique", categoryId: "TERRAIN_FONCIER", iconName: "TerrainTouristique" },
   { id: "CO_STOCKAGE", label: "Co-stockage et entreposage", categoryId: "INDUSTRIEL", iconName: "CoStockage" },
   { id: "SALLE_FORMATION", label: "Salle de formation", categoryId: "EVENEMENTIEL", iconName: "SalleFormation" },
   { id: "SALLE_CONFERENCE", label: "Salle de conférence", categoryId: "EVENEMENTIEL", iconName: "SalleConference" },
@@ -165,15 +171,15 @@ const BASE_PROPERTY_TYPES = [
   { id: "TERRAIN_HOTELIER", label: "Terrain hôtelier", categoryId: "HOTELIER", iconName: "TerrainHotel" },
   { id: "HOTEL", label: "Hôtel", categoryId: "HOTELIER", iconName: "HotelEtoile" },
   { id: "AUTRE_HOTEL", label: "Autre structure hôtelière", categoryId: "HOTELIER", iconName: "StructureHoteliere" },
+  { id: "APPARTEMENT_COMMERCIAL", label: "Appartement commercial", categoryId: "BUREAUX_COMMERCES", iconName: "AppartementBureau" },
+  { id: "VILLA_COMMERCIALE", label: "Villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "VillaBureau" },
+  { id: "NIVEAU_VILLA_COMMERCIAL", label: "Niveau de villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "NiveauVillaBureau" },
+  { id: "IMMEUBLE_BUREAU", label: "Immeuble de bureaux", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
+  { id: "LOCAL_COMMERCIAL", label: "Local commercial", categoryId: "BUREAUX_COMMERCES", iconName: "LocalCommercial" },
+  { id: "SHOWROOM", label: "Showroom", categoryId: "BUREAUX_COMMERCES", iconName: "Showroom" },
   { id: "CENTRE_AFFAIRES", label: "Centre d'affaires", categoryId: "BUREAUX_COMMERCES", iconName: "CentreAffaires" },
   { id: "COWORKING", label: "Espace co-working", categoryId: "BUREAUX_COMMERCES", iconName: "Coworking" },
   { id: "BUREAU_FLEXIBLE", label: "Bureau flexible", categoryId: "BUREAUX_COMMERCES", iconName: "BureauFlexible" },
-  { id: "IMMEUBLE_BUREAU", label: "Immeuble de bureaux", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
-  { id: "SHOWROOM", label: "Showroom", categoryId: "BUREAUX_COMMERCES", iconName: "Showroom" },
-  { id: "VILLA_COMMERCIALE", label: "Villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "VillaBureau" },
-  { id: "NIVEAU_VILLA_COMMERCIAL", label: "Niveau de villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "NiveauVillaBureau" },
-  { id: "APPARTEMENT_COMMERCIAL", label: "Appartement commercial", categoryId: "BUREAUX_COMMERCES", iconName: "AppartementBureau" },
-  { id: "LOCAL_COMMERCIAL", label: "Local commercial", categoryId: "BUREAUX_COMMERCES", iconName: "LocalCommercial" },
   { id: "HEBERGEMENT_HOTELIER", label: "Hébergement hôtelier étoilé", categoryId: "HEBERGEMENT", iconName: "HebergementEtoile" },
   { id: "AUTRE_HEBERGEMENT", label: "Hébergement hôtelier sans étoile", categoryId: "HEBERGEMENT", iconName: "HebergementSansEtoile" },
   { id: "COMPLEXE_TOURISTIQUE_HEBERGEMENT", label: "Complexe touristique étoilé", categoryId: "HEBERGEMENT", iconName: "ComplexeEtoile" },
@@ -745,6 +751,7 @@ const formSchema = z.object({
   terrainViabilise: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   terrainRaccordements: stringArrayOptional,
 
+  acceptsCrossUsage: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   acceptsBankCredit: z.enum(["YES", "NO", "NO_PREFERENCE"]).optional(),
   legalDocuments: stringArrayOptional,
   
@@ -778,7 +785,7 @@ const formSchema = z.object({
         data.propertyType === "HANGAR"
     const isTerrainRental =
         data.transactionType === "RENTAL" &&
-        (data.propertyType === "TERRAIN_RESIDENTIEL" || data.propertyType === "TERRAIN_INDUSTRIEL")
+        ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(data.propertyType)
 
     if (isFactoryRental || isColdRoomRental || isHangarRental || isTerrainRental) {
         return
@@ -826,7 +833,7 @@ const formSchema = z.object({
         }
     }
 
-    if (data.propertyType === "VILLA") {
+    if (data.propertyType === "VILLA" || data.propertyType === "VILLA_COMMERCIALE") {
         if (!data.landArea) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface terrain requise", path: ["landArea"] })
         }
@@ -840,7 +847,7 @@ const formSchema = z.object({
         }
     }
 
-    if (data.propertyType === "NIVEAU_VILLA") {
+    if (data.propertyType === "NIVEAU_VILLA" || data.propertyType === "NIVEAU_VILLA_COMMERCIAL") {
         if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
         }
@@ -849,7 +856,7 @@ const formSchema = z.object({
         }
     }
 
-    if (data.propertyType === "APPARTEMENT") {
+    if (data.propertyType === "APPARTEMENT" || data.propertyType === "APPARTEMENT_COMMERCIAL") {
         if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
         }
@@ -857,7 +864,7 @@ const formSchema = z.object({
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mode de vie requis", path: ["usageType"] })
         }
     }
-    
+
     if (data.propertyType === "DUPLEX" || data.propertyType === "TRIPLEX" || data.propertyType === "STUDIO") {
         if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
@@ -951,13 +958,6 @@ const formSchema = z.object({
                 code: z.ZodIssueCode.custom,
                 message: "Caution requise",
                 path: ["depositMonths"]
-            })
-        }
-        if (!data.rentalUsage || data.rentalUsage.length === 0) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Usage requis",
-                path: ["rentalUsage"]
             })
         }
     }
@@ -1253,10 +1253,11 @@ export default function DepositPage() {
     userType === "PARTICULIER" &&
     propertyType === "HANGAR"
   const isIndustrialRentalParticulier = isUsineRentalParticulier || isChambreFroideRentalParticulier || isHangarRentalParticulier
+  const isCommercialPropertyType = ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)
   const isTerrainRentalParticulier =
     transactionType === "RENTAL" &&
     userType === "PARTICULIER" &&
-    (propertyType === "TERRAIN_RESIDENTIEL" || propertyType === "TERRAIN_INDUSTRIEL")
+    ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType)
 
   const cfSector = watch("cfSector")
   const cfConfiguration = watch("cfConfiguration")
@@ -2233,7 +2234,7 @@ export default function DepositPage() {
 
     const isTerrainRentalPayload =
         data.transactionType === "RENTAL" &&
-        (data.propertyType === "TERRAIN_RESIDENTIEL" || data.propertyType === "TERRAIN_INDUSTRIEL")
+        ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(data.propertyType)
 
     if (isTerrainRentalPayload) {
         const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
@@ -2401,11 +2402,17 @@ export default function DepositPage() {
           if (propertyType === "TRIPLEX") return "Fiche descriptive - Triplex"
           if (propertyType === "STUDIO") return "Fiche descriptive - Studio"
           if (propertyType === "IMMEUBLE_RESIDENTIEL") return "Fiche descriptive - Immeuble"
+          if (propertyType === "VILLA_COMMERCIALE") return "Fiche descriptive - Villa commerciale"
+          if (propertyType === "NIVEAU_VILLA_COMMERCIAL") return "Fiche descriptive - Niveau de villa commerciale"
+          if (propertyType === "APPARTEMENT_COMMERCIAL") return "Fiche descriptive - Appartement commercial"
+          if (propertyType === "IMMEUBLE_BUREAU") return "Fiche descriptive - Immeuble de bureaux"
           if (propertyType === "USINE") return "Fiche descriptive - Usine"
           if (propertyType === "CHAMBRE_FROIDE") return "Fiche descriptive - Chambre froide"
           if (propertyType === "HANGAR") return "Fiche descriptive - Hangar"
           if (propertyType === "TERRAIN_RESIDENTIEL") return "Fiche descriptive - Terrain résidentiel"
           if (propertyType === "TERRAIN_INDUSTRIEL") return "Fiche descriptive - Terrain industriel"
+          if (propertyType === "TERRAIN_AGRICOLE") return "Fiche descriptive - Terrain agricole"
+          if (propertyType === "TERRAIN_TOURISTIQUE") return "Fiche descriptive - Terrain touristique"
           return "Fiche descriptive"
       case 5: return (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? "Disponibilité" : "Prix & Modalités"
       case 6: return "Informations et Contact"
@@ -2443,7 +2450,9 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "USINE") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "CHAMBRE_FROIDE") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HANGAR") ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "TERRAIN_RESIDENTIEL" || propertyType === "TERRAIN_INDUSTRIEL"));
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
+      (userType === "PARTICULIER" && transactionType === "SALE" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType));
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
@@ -2576,8 +2585,8 @@ export default function DepositPage() {
 
                     {/* Step 2: Real Estate Type */}
                     {currentStep === 2 && (
-                        <div className="w-full max-w-5xl animate-fade-in py-8">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-8 justify-items-center">
+                        <div className="w-full max-w-7xl animate-fade-in py-8">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6 justify-items-center">
                                 {filteredCategories.map((cat) => {
                                     const Icon = IconMap[cat.iconName] || Home
                                     const isSelected = realEstateType === cat.id
@@ -3766,13 +3775,16 @@ export default function DepositPage() {
                         </div>
                     )}
 
-                    {/* Step 4: Fiche descriptive - Villa / Niveau de villa / Appartement */}
+                    {/* Step 4: Fiche descriptive - Villa / Niveau de villa / Appartement / Commerciaux */}
                     {currentStep === 4 && (
                         (
                             (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
                             (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
                             ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
-                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER")
+                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER") ||
+                            (propertyType === "VILLA_COMMERCIALE" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                            (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                            ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER")
                         )
                     ) && (
                         <div className="w-full max-w-5xl animate-fade-in space-y-10">
@@ -4293,7 +4305,7 @@ export default function DepositPage() {
                                     {/* Ligne 1: Chambres, Suites, Salons, Toilettes */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">Chambres <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux" : "Chambres"} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("bedrooms")} 
                                                 type="number" 
@@ -4304,7 +4316,7 @@ export default function DepositPage() {
                                             {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">Suites parentales</label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux spacieux" : "Suites parentales"}</label>
                                             <input 
                                                 {...register("nbSuites")} 
                                                 type="number" 
@@ -4314,7 +4326,7 @@ export default function DepositPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">Salons <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Salles de réunion" : "Salons"} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("livingRooms")} 
                                                 type="number" 
@@ -4625,6 +4637,9 @@ export default function DepositPage() {
                         (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
                         ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
                         ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER") ||
+                        (propertyType === "VILLA_COMMERCIALE" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                        (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                        ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
                         isUsineRentalParticulier ||
                         isChambreFroideRentalParticulier ||
                         isHangarRentalParticulier ||
@@ -4708,7 +4723,7 @@ export default function DepositPage() {
                                 {/* Pièces */}
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de chambres</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? "Nombre de bureaux" : "Nombre de chambres"}</label>
                                         <input 
                                             {...register("bedrooms")} 
                                             type="number" 
@@ -4720,7 +4735,7 @@ export default function DepositPage() {
                                         {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de salons</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? "Nombre de salles de réunion" : "Nombre de salons"}</label>
                                         <input 
                                             {...register("livingRooms")} 
                                             type="number" 
@@ -5265,50 +5280,51 @@ export default function DepositPage() {
                                                 {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
                                             </div>
 
-                                            {/* Usage Autorisé - Card Style */}
+                                            {/* Usage cross-catégorie */}
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-3">Usage Autorisé</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-3">
+                                                    {["VILLA_COMMERCIALE","NIVEAU_VILLA_COMMERCIAL","APPARTEMENT_COMMERCIAL","IMMEUBLE_BUREAU"].includes(propertyType)
+                                                        ? "Votre bien accepte-t-il un usage d'habitation ?"
+                                                        : "Votre bien accepte-t-il un usage commercial ?"
+                                                    }
+                                                </label>
                                                 <div className="flex gap-4 flex-wrap">
                                                     <label className="cursor-pointer">
-                                                        <input 
-                                                            type="radio" 
-                                                            name="usage_selection"
+                                                        <input
+                                                            type="radio"
+                                                            name="acceptsCrossUsage_radio"
                                                             className="peer sr-only"
-                                                            checked={watch("rentalUsage")?.length === 1 && watch("rentalUsage")?.includes("HABITATION")}
-                                                            onChange={() => setValue("rentalUsage", ["HABITATION"])}
+                                                            checked={watch("acceptsCrossUsage") === false}
+                                                            onChange={() => setValue("acceptsCrossUsage", false as any, { shouldValidate: true })}
                                                         />
                                                         <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            Habitation uniquement
+                                                            Non
                                                         </div>
                                                     </label>
-
                                                     <label className="cursor-pointer">
-                                                        <input 
-                                                            type="radio" 
-                                                            name="usage_selection"
+                                                        <input
+                                                            type="radio"
+                                                            name="acceptsCrossUsage_radio"
                                                             className="peer sr-only"
-                                                            checked={watch("rentalUsage")?.length === 1 && watch("rentalUsage")?.includes("PROFESSIONNEL")}
-                                                            onChange={() => setValue("rentalUsage", ["PROFESSIONNEL"])}
+                                                            checked={watch("acceptsCrossUsage") === true}
+                                                            onChange={() => setValue("acceptsCrossUsage", true as any, { shouldValidate: true })}
                                                         />
                                                         <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            Bureau / Professionnel
-                                                        </div>
-                                                    </label>
-
-                                                    <label className="cursor-pointer">
-                                                        <input 
-                                                            type="radio" 
-                                                            name="usage_selection"
-                                                            className="peer sr-only"
-                                                            checked={watch("rentalUsage")?.length === 2}
-                                                            onChange={() => setValue("rentalUsage", ["HABITATION", "PROFESSIONNEL"])}
-                                                        />
-                                                        <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            Les deux
+                                                            Oui
                                                         </div>
                                                     </label>
                                                 </div>
-                                                {errors.rentalUsage && <p className="text-red-500 text-sm mt-1">{errors.rentalUsage.message}</p>}
+                                                {watch("acceptsCrossUsage") === true && (
+                                                    <div className="mt-3 flex items-start gap-3 p-4 bg-teal-50 border border-[#00BFA6]/30 rounded-xl text-sm text-[#007A75]">
+                                                        <Info className="h-4 w-4 mt-0.5 shrink-0 text-[#00BFA6]" />
+                                                        <span>
+                                                            {["VILLA_COMMERCIALE","NIVEAU_VILLA_COMMERCIAL","APPARTEMENT_COMMERCIAL","IMMEUBLE_BUREAU"].includes(propertyType)
+                                                                ? "Vous n'aurez pas besoin de republier votre annonce dans la catégorie Immobilier Résidentiel, car elle sera automatiquement publiée dans les deux catégories."
+                                                                : "Vous n'aurez pas besoin de republier votre annonce dans la catégorie Bureaux et Commerces, car elle sera automatiquement publiée dans les deux catégories."
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </section>
