@@ -715,6 +715,8 @@ const formSchema = z.object({
   hangarFireBacheEauProduction: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   hangarJuridiqueActe: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   hangarJuridiqueCertificat: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarToitureAutre: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hangarSolAutre: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
 
   // Chambre froide
   cfSector: stringArrayOptional,
@@ -2184,8 +2186,6 @@ export default function DepositPage() {
         const amenitiesPayload: any = {
             hangar: {
                 usage: data.hangarUsage?.length ? data.hangarUsage : undefined,
-                zone: data.hangarZone?.length ? data.hangarZone : undefined,
-                configuration: data.hangarConfiguration?.length ? data.hangarConfiguration : undefined,
                 surfaces: {
                     covered: toNum(data.hangarSurfaceCovered),
                     terrain: toNum(data.hangarSurfaceTerrain),
@@ -2195,37 +2195,38 @@ export default function DepositPage() {
                     width: toNum(data.hangarWidth),
                     height: toNum(data.hangarHeight),
                 },
-                accessibility: {
-                    semiRemorque: (data.hangarAccessSemiRemorque as any) === true,
-                    quaiDechargement: (data.hangarAccessQuai as any) === true,
-                },
-                structure: {
-                    beton: (data.hangarStructureBeton as any) === true,
-                    metallique: (data.hangarStructureMetallique as any) === true,
+                toiture: {
                     toleTH40: (data.hangarStructureToleTH40 as any) === true,
                     panneauxSandwich: (data.hangarStructurePanneauxSandwich as any) === true,
+                    autre: (data.hangarToitureAutre as any) === true,
                 },
                 sol: {
-                    betonQuartz: (data.hangarSolBetonQuartz as any) === true,
+                    beton: (data.hangarSolBetonQuartz as any) === true,
                     resineEpoxy: (data.hangarSolResineEpoxy as any) === true,
+                    autre: (data.hangarSolAutre as any) === true,
+                },
+                logistics: {
+                    situation: data.industrialSituation?.length ? data.industrialSituation : undefined,
+                    accessTransport: data.industrialAccessTransport?.length ? data.industrialAccessTransport : undefined,
+                },
+                annexes: {
+                    offices: (data.industrialOffices as any) === true,
+                    officesArea: toNum(data.industrialOfficesArea),
+                    socialLocales: data.industrialSocialLocales?.length ? data.industrialSocialLocales : undefined,
+                    hebergement: data.industrialHebergement?.length ? data.industrialHebergement : undefined,
+                    security: data.industrialSecurity?.length ? data.industrialSecurity : undefined,
                 },
                 energy: {
-                    posteTransfo: (data.hangarPosteTransfo as any) === true,
-                    posteTransfoKva: (data.hangarPosteTransfo as any) === true ? toNum(data.hangarPosteTransfoKva) : undefined,
-                    forceMotrice380: (data.hangarForceMotrice as any) === true,
-                    gazIndustriel: (data.hangarGazIndustriel as any) === true,
-                    eauReseau: (data.hangarEauReseau as any) === true,
-                    eauPuits: (data.hangarEauPuits as any) === true,
+                    transformerKva: toNum(data.industrialElectricityTransformerKva),
+                    forceMotrice380: (data.industrialElectricityForceMotrice as any) === true,
+                    gas: data.industrialGas,
+                    waterSources: data.industrialWaterSources?.length ? data.industrialWaterSources : undefined,
+                    sanitation: data.industrialSanitation,
                 },
                 fireSafety: {
-                    riaSpinklers: (data.hangarFireRia as any) === true,
-                    bacheEau: (data.hangarFireBacheEau as any) === true,
-                    bacheEauFeu: (data.hangarFireBacheEau as any) === true ? (data.hangarFireBacheEauFeu as any) === true : undefined,
-                    bacheEauProduction: (data.hangarFireBacheEau as any) === true ? (data.hangarFireBacheEauProduction as any) === true : undefined,
-                },
-                juridique: {
-                    acteLivretFoncier: (data.hangarJuridiqueActe as any) === true,
-                    certificatConformite: (data.hangarJuridiqueCertificat as any) === true,
+                    network: data.industrialFireNetwork?.length ? data.industrialFireNetwork : undefined,
+                    equipment: data.industrialFireEquipment?.length ? data.industrialFireEquipment : undefined,
+                    waterReserveLiters: toNum(data.industrialFireWaterReserveLiters),
                 },
             },
         }
@@ -2252,7 +2253,7 @@ export default function DepositPage() {
         formData.append("amenities", JSON.stringify(amenitiesPayload))
     }
 
-    const shouldSkipIndustrialFields = isFactoryRentalPayload || isColdRoomRentalPayload
+    const shouldSkipIndustrialFields = isFactoryRentalPayload || isColdRoomRentalPayload || isHangarRentalPayload
 
     // Ajouter toutes les autres données du formulaire
     Object.entries(data).forEach(([key, value]) => {
@@ -3066,83 +3067,17 @@ export default function DepositPage() {
                     {currentStep === 4 && isHangarRentalParticulier && (
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
 
-                            {/* Usage et Emplacement */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Usage &amp; Emplacement
-                                </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Usage</div>
-                                        <div className="space-y-2">
-                                            {[
-                                                { id: "STOCKAGE_LOGISTIQUE", label: "Stockage / Logistique" },
-                                                { id: "PRODUCTION_INDUSTRIEL", label: "Production / Industriel" },
-                                            ].map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="checkbox" value={x.id} {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Zone</div>
-                                        <div className="space-y-2">
-                                            {[
-                                                { id: "ZONE_INDUSTRIELLE", label: "Zone Industrielle (Z.I)" },
-                                                { id: "ZONE_URBAINE", label: "Zone Urbaine" },
-                                                { id: "ZONE_ACTIVITE", label: "Zone d'Activité (Z.A.C)" },
-                                            ].map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="checkbox" value={x.id} {...register("hangarZone")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            {/* Configuration, Surfaces & Dimensions */}
+                            {/* Infrastructure configuration & Surface */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Configuration, Surfaces &amp; Dimensions
+                                    Infrastructure configuration &amp; Surface
                                 </h2>
 
                                 <div className="space-y-5">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Configuration</label>
-                                        <div className="flex gap-4 flex-wrap">
-                                            {[
-                                                { id: "PLAIN_PIED", label: "Plein-pied" },
-                                                { id: "ETAGES", label: "À étage(s)" },
-                                            ].map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="checkbox" value={x.id} {...register("hangarConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface couverte (m²) <span className="text-red-500">*</span></label>
-                                            <input
-                                                {...register("hangarSurfaceCovered")}
-                                                type="number"
-                                                min="0"
-                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 800 m²"
-                                            />
-                                            {errors.hangarSurfaceCovered && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceCovered.message as any}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Terrain / Cour (m²)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
                                             <input
                                                 {...register("hangarSurfaceTerrain")}
                                                 type="number"
@@ -3153,209 +3088,337 @@ export default function DepositPage() {
                                             />
                                             {errors.hangarSurfaceTerrain && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceTerrain.message as any}</p>}
                                         </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface couvert (m²)</label>
+                                            <input
+                                                {...register("hangarSurfaceCovered")}
+                                                type="number"
+                                                min="0"
+                                                onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
+                                                placeholder="Ex: 800 m²"
+                                            />
+                                            {errors.hangarSurfaceCovered && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceCovered.message as any}</p>}
+                                        </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m) <span className="text-red-500">*</span></label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (ml)</label>
                                             <input
                                                 {...register("hangarLength")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 50 m"
+                                                placeholder="Ex: 50 ml"
                                             />
                                             {errors.hangarLength && <p className="text-red-500 text-sm mt-1">{errors.hangarLength.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (ml)</label>
                                             <input
                                                 {...register("hangarWidth")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 20 m"
+                                                placeholder="Ex: 20 ml"
                                             />
                                             {errors.hangarWidth && <p className="text-red-500 text-sm mt-1">{errors.hangarWidth.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous crochet (m)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous crochet (ml)</label>
                                             <input
                                                 {...register("hangarHeight")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 8 m"
+                                                placeholder="Ex: 8 ml"
                                             />
                                             {errors.hangarHeight && <p className="text-red-500 text-sm mt-1">{errors.hangarHeight.message as any}</p>}
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Accessibilité</label>
-                                        <div className="flex gap-6 flex-wrap">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                            <div className="font-bold text-gray-900">Toiture</div>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarAccessSemiRemorque")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Accès Semi-remorque (40 pieds)
+                                                <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Tôle TH40
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarAccessQuai")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Quai de déchargement
+                                                <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Panneaux Sandwich
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarToitureAutre")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Autre
                                             </label>
                                         </div>
-                                    </div>
 
-                                    {/* Structure */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Structure</div>
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarStructureBeton")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Béton
-                                        </label>
-                                        <div className="space-y-2">
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                            <div className="font-bold text-gray-900">Sol</div>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarStructureMetallique")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Métallique
+                                                <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Béton
                                             </label>
-                                            {watch("hangarStructureMetallique") && (
-                                                <div className="ml-6 space-y-2 border-l-2 border-gray-200 pl-3">
-                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
-                                                        <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        Tôle TH40
-                                                    </label>
-                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
-                                                        <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        Panneaux Sandwich
-                                                    </label>
-                                                </div>
-                                            )}
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarSolResineEpoxy")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Résine Époxy
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" {...register("hangarSolAutre")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Autre
+                                            </label>
+                                        </div>
+
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                            <div className="font-bold text-gray-900">Type d&apos;utilisation</div>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" value="STOCKAGE_LOGISTIQUE" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Stockage / Logistique
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" value="PRODUCTION_INDUSTRIEL" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Production / Industriel
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
                             </section>
 
-                            {/* Technique & Énergie */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
-                                    Technique &amp; Énergie
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                                    Emplacement &amp; Logistique
                                 </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {/* Sol */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Sol</div>
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Béton/Quartz
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarSolResineEpoxy")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Résine Epoxy
-                                        </label>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Situation</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_SITUATIONS.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSituation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialSituation && <p className="text-red-500 text-sm mt-1">{errors.industrialSituation.message as any}</p>}
                                     </div>
 
-                                    {/* Énergie */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Énergie</div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Accès transport</div>
                                         <div className="space-y-2">
+                                            {INDUSTRIAL_ACCESS_TRANSPORT.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialAccessTransport")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialAccessTransport && <p className="text-red-500 text-sm mt-1">{errors.industrialAccessTransport.message as any}</p>}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
+                                    Annexes &amp; Commodités
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                        <div className="font-bold text-gray-900 mb-3">Bureaux</div>
+                                        <div className="flex gap-4 flex-wrap items-end">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarPosteTransfo")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Poste Transfo
+                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === true} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                Oui
                                             </label>
-                                            {watch("hangarPosteTransfo") && (
-                                                <div className="ml-6">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === false} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                Non
+                                            </label>
+                                            {industrialOffices === true && (
+                                                <div className="w-full">
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
                                                     <input
-                                                        {...register("hangarPosteTransfoKva")}
+                                                        {...register("industrialOfficesArea")}
                                                         type="number"
                                                         min="0"
                                                         onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                         className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                        placeholder="Puissance en kVA (ex: 250)"
+                                                        placeholder="Ex: 80"
                                                     />
-                                                    {errors.hangarPosteTransfoKva && <p className="text-red-500 text-sm mt-1">{errors.hangarPosteTransfoKva.message as any}</p>}
+                                                    {errors.industrialOfficesArea && <p className="text-red-500 text-sm mt-1">{errors.industrialOfficesArea.message as any}</p>}
                                                 </div>
                                             )}
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarForceMotrice")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Force motrice (380V)
-                                            </label>
                                         </div>
                                     </div>
 
-                                    {/* Utilités */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Utilités</div>
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarGazIndustriel")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Gaz Industriel
-                                        </label>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                        <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
                                         <div className="space-y-2">
-                                            <div className="font-medium text-gray-700">Eau</div>
-                                            <div className="ml-4 space-y-2">
-                                                <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
-                                                    <input type="checkbox" {...register("hangarEauReseau")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    Réseau
+                                            {INDUSTRIAL_SOCIAL_LOCALES.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
                                                 </label>
-                                                <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
-                                                    <input type="checkbox" {...register("hangarEauPuits")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    Puits / Forage
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                        <div className="font-bold text-gray-900 mb-3">Hébergement</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_HEBERGEMENT.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
                                                 </label>
-                                            </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                        <div className="font-bold text-gray-900 mb-3">Sécurité</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_SECURITY.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSecurity")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
                             </section>
 
-                            {/* Sécurité & Documents */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
-                                    Sécurité &amp; Documents
+                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
+                                    Énergie &amp; Fluides
                                 </h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {/* Incendie */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Incendie</div>
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarFireRia")} className="accent-[#00BFA6] w-4 h-4" />
-                                            RIA / Sprinklers
-                                        </label>
-                                        <div className="space-y-2">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarFireBacheEau")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Bâche à eau
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                        <div className="font-bold text-gray-900">Électricité</div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Poste transfo (KVA)</label>
+                                                <input
+                                                    {...register("industrialElectricityTransformerKva")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    placeholder="Ex: 250"
+                                                />
+                                                {errors.industrialElectricityTransformerKva && <p className="text-red-500 text-sm mt-1">{errors.industrialElectricityTransformerKva.message as any}</p>}
+                                            </div>
+                                            <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                <input type="checkbox" {...register("industrialElectricityForceMotrice")} className="accent-[#00BFA6] w-5 h-5" />
+                                                <span className="font-bold text-gray-900 text-sm">Force motrice (380V)</span>
                                             </label>
-                                            {watch("hangarFireBacheEau") && (
-                                                <div className="ml-6 space-y-2 border-l-2 border-gray-200 pl-3">
-                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
-                                                        <input type="checkbox" {...register("hangarFireBacheEauFeu")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        Feu
-                                                    </label>
-                                                    <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-600 hover:text-gray-900">
-                                                        <input type="checkbox" {...register("hangarFireBacheEauProduction")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        Production
-                                                    </label>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
 
-                                    {/* Juridique */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Juridique</div>
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarJuridiqueActe")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Acte / Livret foncier
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarJuridiqueCertificat")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Certificat de conformité
-                                        </label>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                        <div className="font-bold text-gray-900">Gaz</div>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Industriel
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                De ville
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Aucun
+                                            </label>
+                                        </div>
+                                        {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                        <div className="font-bold text-gray-900">Eau</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_WATER_SOURCES.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialWaterSources")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.industrialWaterSources && <p className="text-red-500 text-sm mt-1">{errors.industrialWaterSources.message as any}</p>}
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                        <div className="font-bold text-gray-900">Assainissement</div>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Réseau public
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Fosse septique
+                                            </label>
+                                        </div>
+                                        {errors.industrialSanitation && <p className="text-red-500 text-sm mt-1">{errors.industrialSanitation.message as any}</p>}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
+                                    Sécurité incendie &amp; Protection
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Réseau anti-incendie</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_FIRE_NETWORK.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialFireNetwork")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Équipements complémentaires</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_FIRE_EQUIPMENT.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialFireEquipment")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+
+                                        {industrialFireEquipmentList.includes("BACHE_EAU") && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres) <span className="text-red-500">*</span></label>
+                                                <input
+                                                    {...register("industrialFireWaterReserveLiters")}
+                                                    type="number"
+                                                    min="0"
+                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    placeholder="Ex: 10000"
+                                                />
+                                                {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </section>
