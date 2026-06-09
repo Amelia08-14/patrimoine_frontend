@@ -186,6 +186,44 @@ const LABELS: any = {
     vue_generale: "Vue générale",
     environnement: "Environnement",
 
+    // Hangar - Usage
+    STOCKAGE_LOGISTIQUE: "Stockage / Logistique",
+    PRODUCTION_INDUSTRIEL: "Production / Industriel",
+
+    // Terrain Agricole
+    M2: "m²", HA: "Hectare (ha)", DOUNEM: "Dounem",
+    MARAICHAGE: "Maraîchage", ARBORICULTURE: "Arboriculture fruitière", VITICULTURE: "Viticulture",
+    CEREALES: "Céréales", ELEVAGE: "Élevage", APICULTURE: "Apiculture", SERRES: "Serres / hors-sol",
+    PUITS: "Puits", CANAL_IRRIGATION: "Canal d'irrigation", BARRAGE_RETENUE: "Barrage / retenue d'eau",
+    BASSIN_COLLECTE: "Bassin de collecte",
+    NORD: "Nord", SUD: "Sud", EST: "Est", OUEST: "Ouest",
+    NORD_EST: "Nord-Est", NORD_OUEST: "Nord-Ouest", SUD_EST: "Sud-Est", SUD_OUEST: "Sud-Ouest",
+    ELEVE: "Élevé", MOYEN: "Moyen", FAIBLE: "Faible",
+
+    // Showroom
+    MODERNE: "Moderne / Contemporain", CLASSIQUE: "Classique / Traditionnel",
+    INDUSTRIEL_STYLE: "Industriel (Loft)", HAUSSMANNIEN: "Haussmannien / Prestige",
+    BETON_ARME: "Béton armé", STRUCTURE_METALLIQUE: "Structure métallique",
+
+    // Local Commercial
+    GALERIE_MARCHANDE: "Galerie marchande / Centre commercial",
+    RUE_COMMERCANTE: "Rue commerçante",
+    ZONE_ACTIVITE: "Zone d'activité commerciale",
+    MARCHE: "Marché / souk",
+    COMMERCIALE: "Zone commerciale", RESIDENTIELLE: "Zone résidentielle",
+    MAGASIN_VENTE: "Magasin de vente / Boutique",
+    SHOWROOM_USAGE: "Showroom / Exposition", DEPOT_VENTE: "Dépôt-vente / Stockage",
+    PHARMACIE: "Pharmacie", ALIMENTATION: "Alimentation générale",
+    CAFE_RESTAURANT: "Café / Restaurant", BUREAU: "Bureau / Cabinet",
+
+    // Bloc Administratif
+    OPEN_SPACE: "Open-space (bureaux paysagers)", CLOISONNE: "Bureaux cloisonnés",
+    AMOVIBLE: "Amovible (modulable)", FIXE: "Fixe", VITRE: "Vitré",
+    FIBRE_OPTIQUE: "Fibre optique", ADSL_VDSL: "ADSL / VDSL", PAS_RESEAU: "Pas de réseau",
+    CABLEE: "Câblée (RJ45)", WIFI: "Wi-Fi",
+    ARMOIRE_SERVEUR: "Armoire serveur", DATA_ROOM: "Data room / Salle serveurs",
+    GROUPE_ELECTROGENE: "Groupe électrogène", ONDULEUR_UPS: "Onduleur (UPS)",
+
     // Heating & AC Types
     CENTRAL: "Central",
     SOL: "Au Sol",
@@ -333,7 +371,11 @@ export default function AnnounceDetailsPage() {
   let buildingTypology: any = null;
   let industrialFactory: any = null;
   let coldRoom: any = null;
+  let hangar: any = null;
   let terrain: any = null;
+  let showroom: any = null;
+  let local: any = null;
+  let bloc: any = null;
   
   if (property.amenities) {
       try {
@@ -398,8 +440,24 @@ export default function AnnounceDetailsPage() {
                   coldRoom = parsedAmenities.coldRoom;
               }
 
+              if (parsedAmenities.hangar && typeof parsedAmenities.hangar === 'object') {
+                  hangar = parsedAmenities.hangar;
+              }
+
               if (parsedAmenities.terrain && typeof parsedAmenities.terrain === 'object') {
                   terrain = parsedAmenities.terrain;
+              }
+
+              if (parsedAmenities.showroom && typeof parsedAmenities.showroom === 'object') {
+                  showroom = parsedAmenities.showroom;
+              }
+
+              if (parsedAmenities.local && typeof parsedAmenities.local === 'object') {
+                  local = parsedAmenities.local;
+              }
+
+              if (parsedAmenities.bloc && typeof parsedAmenities.bloc === 'object') {
+                  bloc = parsedAmenities.bloc;
               }
           }
       } catch (e) {
@@ -468,9 +526,14 @@ export default function AnnounceDetailsPage() {
   const normalizedPropertyType = typeof property.propertyType === "string" ? property.propertyType.toUpperCase() : "";
   const isFactoryRental = isRental && normalizedPropertyType === "USINE"
   const isColdRoomRental = isRental && normalizedPropertyType === "CHAMBRE_FROIDE"
+  const isHangarRental = isRental && normalizedPropertyType === "HANGAR"
   const isTerrainRental = isRental && (normalizedPropertyType === "TERRAIN_RESIDENTIEL" || normalizedPropertyType === "TERRAIN_INDUSTRIEL")
-  const isIndustrialRental = isFactoryRental || isColdRoomRental
+  const isIndustrialRental = isFactoryRental || isColdRoomRental || isHangarRental
   const isSpecialRental = isIndustrialRental || isTerrainRental
+  const isShowroomProperty = normalizedPropertyType === "SHOWROOM"
+  const isLocalCommercialProperty = normalizedPropertyType === "LOCAL_COMMERCIAL"
+  const isBlocAdministratifProperty = normalizedPropertyType === "BLOC_ADMINISTRATIF"
+  const isTerrainAgricoleProperty = normalizedPropertyType === "TERRAIN_AGRICOLE"
   const isSaleBuildingDemolition =
       isSale &&
       normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" &&
@@ -900,6 +963,54 @@ export default function AnnounceDetailsPage() {
                         <div>
                           <div className="font-bold text-base">{LABELS[coldRoom.modeGestion] || coldRoom.modeGestion}</div>
                           <div className="text-xs text-gray-500">Mode de gestion</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : isHangarRental ? (
+                  <div className="w-full flex items-center justify-between gap-3">
+                    {/* Type d'utilisation */}
+                    {hangar?.usage?.[0] && (
+                      <div className="flex items-center gap-2 text-gray-700 min-w-0">
+                        <Warehouse className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-bold text-base truncate">{LABELS[hangar.usage[0]] || hangar.usage[0]}</div>
+                          <div className="text-xs text-gray-500">Usage</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Surface couverte */}
+                    {hangar?.surfaces?.covered != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{hangar.surfaces.covered} m²</div>
+                          <div className="text-xs text-gray-500">Surf. Couverte</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Longueur x Largeur */}
+                    {(hangar?.dimensions?.length != null || hangar?.dimensions?.width != null) && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">
+                            {hangar.dimensions.length != null ? `${hangar.dimensions.length}` : "—"} × {hangar.dimensions.width != null ? `${hangar.dimensions.width} ml` : "—"}
+                          </div>
+                          <div className="text-xs text-gray-500">L × l</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Hauteur sous crochet */}
+                    {hangar?.dimensions?.height != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{hangar.dimensions.height} ml</div>
+                          <div className="text-xs text-gray-500">Ht. sous crochet</div>
                         </div>
                       </div>
                     )}
@@ -1772,6 +1883,437 @@ export default function AnnounceDetailsPage() {
             </>
           )}
           {/* ===== FIN SECTION TERRAIN ===== */}
+
+          {/* ===== SECTION HANGAR ===== */}
+          {isHangarRental && (
+            <>
+              {hangar && (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                    {/* Col 1 — Infrastructure configuration & Surface */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Infrastructure</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {hangar.surfaces?.terrain != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Surface terrain</span>
+                            <span className="font-bold text-gray-900 text-sm">{hangar.surfaces.terrain} m²</span>
+                          </div>
+                        )}
+                        {hangar.surfaces?.covered != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Surface couverte</span>
+                            <span className="font-bold text-gray-900 text-sm">{hangar.surfaces.covered} m²</span>
+                          </div>
+                        )}
+                        {hangar.dimensions?.length != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Longueur</span>
+                            <span className="font-bold text-gray-900 text-sm">{hangar.dimensions.length} ml</span>
+                          </div>
+                        )}
+                        {hangar.dimensions?.width != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Largeur</span>
+                            <span className="font-bold text-gray-900 text-sm">{hangar.dimensions.width} ml</span>
+                          </div>
+                        )}
+                        {hangar.dimensions?.height != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Hauteur sous crochet</span>
+                            <span className="font-bold text-gray-900 text-sm">{hangar.dimensions.height} ml</span>
+                          </div>
+                        )}
+                        {(hangar.toiture?.toleTH40 || hangar.toiture?.panneauxSandwich || hangar.toiture?.autre) && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Toiture</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Tôle TH40</span>}
+                              {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Panneaux Sandwich</span>}
+                              {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
+                            </div>
+                          </div>
+                        )}
+                        {(hangar.sol?.beton || hangar.sol?.resineEpoxy || hangar.sol?.autre) && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Sol</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.sol.beton && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Béton</span>}
+                              {hangar.sol.resineEpoxy && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Résine Époxy</span>}
+                              {hangar.sol.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
+                            </div>
+                          </div>
+                        )}
+                        {hangar.usage?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Type d&apos;utilisation</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.usage.map((u: string) => (
+                                <span key={u} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[u] || u}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 2 — Emplacement & Logistique */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Emplacement</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {hangar.logistics?.situation?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Situation</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.logistics.situation.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hangar.logistics?.accessTransport?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Accès transport</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.logistics.accessTransport.map((a: string) => (
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 3 — Annexes & Commodités */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Annexes</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {hangar.annexes?.offices != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Bureaux</span>
+                            <span className="font-bold text-gray-900 text-sm">
+                              {hangar.annexes.offices ? `Oui${hangar.annexes.officesArea ? ` — ${hangar.annexes.officesArea} m²` : ""}` : "Non"}
+                            </span>
+                          </div>
+                        )}
+                        {hangar.annexes?.socialLocales?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Locaux sociaux</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.annexes.socialLocales.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hangar.annexes?.hebergement?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Hébergement</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.annexes.hebergement.map((h: string) => (
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hangar.annexes?.security?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Sécurité</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.annexes.security.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 4 — Énergie & Fluides + Sécurité incendie */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Énergie &amp; Fluides</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {(hangar.energy?.transformerKva != null || hangar.energy?.forceMotrice380) && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Électricité</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.energy.transformerKva != null && (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Transfo {hangar.energy.transformerKva} KVA</span>
+                              )}
+                              {hangar.energy.forceMotrice380 && (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Force motrice 380V</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {hangar.energy?.gas && hangar.energy.gas !== "AUCUN" && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Gaz</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[hangar.energy.gas] || hangar.energy.gas}</span>
+                          </div>
+                        )}
+                        {hangar.energy?.waterSources?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Eau</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.energy.waterSources.map((w: string) => (
+                                <span key={w} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hangar.energy?.sanitation && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Assainissement</span>
+                            <span className="font-bold text-gray-900 text-sm">{LABELS[hangar.energy.sanitation] || hangar.energy.sanitation}</span>
+                          </div>
+                        )}
+                        {hangar.fireSafety?.network?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.fireSafety.network.map((n: string) => (
+                                <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[n] || n}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hangar.fireSafety?.equipment?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Équipements incendie</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {hangar.fireSafety.equipment.map((e: string) => (
+                                <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[e] || e}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {announce.shortDescription && (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-[#00BFA6]" />
+                    Description
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
+                </div>
+              )}
+            </>
+          )}
+          {/* ===== FIN SECTION HANGAR ===== */}
+
+          {/* ===== SECTION SHOWROOM ===== */}
+          {isShowroomProperty && showroom && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Fiche Showroom</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Superficies & Dimensions */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
+                  <div className="space-y-2">
+                    {showroom.surfaces?.terrain != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Surface terrain</span><span className="font-bold">{showroom.surfaces.terrain} m²</span></div>}
+                    {showroom.surfaces?.batie != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Surface bâtie / expo</span><span className="font-bold">{showroom.surfaces.batie} m²</span></div>}
+                    {showroom.dimensions?.niveaux != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Niveaux</span><span className="font-bold">{showroom.dimensions.niveaux}</span></div>}
+                    {showroom.dimensions?.hauteurPlafond != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Hauteur plafond</span><span className="font-bold">{showroom.dimensions.hauteurPlafond} m</span></div>}
+                    {showroom.dimensions?.facadeWidth != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Longueur façade</span><span className="font-bold">{showroom.dimensions.facadeWidth} m</span></div>}
+                    {showroom.dimensions?.facadeDepth != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Profondeur</span><span className="font-bold">{showroom.dimensions.facadeDepth} m</span></div>}
+                  </div>
+                </div>
+                {/* Style & Visibilité */}
+                <div className="space-y-6">
+                  {(showroom.style || showroom.structure) && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Style Architectural</h3>
+                      <div className="space-y-2">
+                        {showroom.style && <div className="flex justify-between text-sm"><span className="text-gray-500">Style</span><span className="font-bold">{LABELS[showroom.style] || showroom.style}</span></div>}
+                        {showroom.structure && <div className="flex justify-between text-sm"><span className="text-gray-500">Structure</span><span className="font-bold">{LABELS[showroom.structure] || showroom.structure}</span></div>}
+                      </div>
+                    </div>
+                  )}
+                  {showroom.visibilite && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Visibilité</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Visible depuis autoroute</span><span className="font-bold">{showroom.visibilite.autoroute ? "Oui" : "Non"}</span></div>
+                        {showroom.visibilite.axeRoutier && <div className="flex justify-between text-sm"><span className="text-gray-500">Axe routier</span><span className="font-bold">{showroom.visibilite.axeRoutier}</span></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ===== FIN SECTION SHOWROOM ===== */}
+
+          {/* ===== SECTION LOCAL COMMERCIAL ===== */}
+          {isLocalCommercialProperty && local && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Fiche Local Commercial</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Environnement & Usage */}
+                <div className="space-y-6">
+                  {local.environnement && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Environnement</h3>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="font-bold">{LABELS[local.environnement] || local.environnement}</span></div>
+                        {local.environnementAutre && <div className="flex justify-between"><span className="text-gray-500">Précision</span><span className="font-bold">{local.environnementAutre}</span></div>}
+                      </div>
+                    </div>
+                  )}
+                  {local.emplacement && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-[#00BFA6]" />Emplacement &amp; Flux</h3>
+                      <div className="space-y-1 text-sm">
+                        {local.emplacement.zoneType && <div className="flex justify-between"><span className="text-gray-500">Zone</span><span className="font-bold">{LABELS[local.emplacement.zoneType] || local.emplacement.zoneType}</span></div>}
+                        {local.emplacement.fluxPieton && <div className="flex justify-between"><span className="text-gray-500">Flux piéton</span><span className="font-bold">{LABELS[local.emplacement.fluxPieton] || local.emplacement.fluxPieton}</span></div>}
+                        {local.emplacement.fluxVehicules && <div className="flex justify-between"><span className="text-gray-500">Flux véhicules</span><span className="font-bold">{LABELS[local.emplacement.fluxVehicules] || local.emplacement.fluxVehicules}</span></div>}
+                      </div>
+                    </div>
+                  )}
+                  {local.usage && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2"><Key className="h-5 w-5 text-[#00BFA6]" />Usage</h3>
+                      <span className="inline-block bg-[#00BFA6]/10 text-[#00BFA6] px-3 py-1 rounded-full text-sm font-bold">{LABELS[local.usage] || local.usage}</span>
+                    </div>
+                  )}
+                </div>
+                {/* Dimensions */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
+                  <div className="space-y-2 text-sm">
+                    {local.surfaces?.total != null && <div className="flex justify-between"><span className="text-gray-500">Surface totale</span><span className="font-bold">{local.surfaces.total} m²</span></div>}
+                    {local.surfaces?.vitrineLongueur != null && <div className="flex justify-between"><span className="text-gray-500">Longueur vitrine</span><span className="font-bold">{local.surfaces.vitrineLongueur} ml</span></div>}
+                    {local.surfaces?.largeur != null && <div className="flex justify-between"><span className="text-gray-500">Largeur</span><span className="font-bold">{local.surfaces.largeur} m</span></div>}
+                    {local.surfaces?.profondeur != null && <div className="flex justify-between"><span className="text-gray-500">Profondeur</span><span className="font-bold">{local.surfaces.profondeur} m</span></div>}
+                    {local.surfaces?.hauteurPlafond != null && <div className="flex justify-between"><span className="text-gray-500">Hauteur plafond</span><span className="font-bold">{local.surfaces.hauteurPlafond} m</span></div>}
+                    {local.mezzanine?.present === true && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <div className="flex justify-between"><span className="text-gray-500">Mezzanine</span><span className="font-bold text-[#00BFA6]">Oui</span></div>
+                        {local.mezzanine.surface != null && <div className="flex justify-between"><span className="text-gray-500">Surface mezzanine</span><span className="font-bold">{local.mezzanine.surface} m²</span></div>}
+                      </div>
+                    )}
+                    {local.style && <div className="flex justify-between mt-2"><span className="text-gray-500">Style</span><span className="font-bold">{LABELS[local.style] || local.style}</span></div>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ===== FIN SECTION LOCAL COMMERCIAL ===== */}
+
+          {/* ===== SECTION BLOC ADMINISTRATIF ===== */}
+          {isBlocAdministratifProperty && bloc && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Fiche Bloc Administratif</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Structure */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Structure</h3>
+                  <div className="space-y-2 text-sm">
+                    {bloc.surfaces?.terrain != null && <div className="flex justify-between"><span className="text-gray-500">Surface terrain</span><span className="font-bold">{bloc.surfaces.terrain} m²</span></div>}
+                    {bloc.surfaces?.batie != null && <div className="flex justify-between"><span className="text-gray-500">Surface bâtie</span><span className="font-bold">{bloc.surfaces.batie} m²</span></div>}
+                    {bloc.structure?.etages != null && <div className="flex justify-between"><span className="text-gray-500">Étages (R+)</span><span className="font-bold">{bloc.structure.etages}</span></div>}
+                    {bloc.structure?.facades != null && <div className="flex justify-between"><span className="text-gray-500">Façades</span><span className="font-bold">{bloc.structure.facades}</span></div>}
+                    <div className="flex justify-between"><span className="text-gray-500">Sous-sol</span><span className="font-bold">{bloc.structure?.sousSol ? "Oui" : "Non"}</span></div>
+                  </div>
+                </div>
+                {/* Espace */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-[#00BFA6]" />Type d&apos;Espace</h3>
+                  <div className="space-y-2 text-sm">
+                    {bloc.espace?.typeEspace && <div className="flex justify-between"><span className="text-gray-500">Espace</span><span className="font-bold">{LABELS[bloc.espace.typeEspace] || bloc.espace.typeEspace}</span></div>}
+                    {bloc.espace?.typeCloisonnement?.length > 0 && (
+                      <div>
+                        <span className="text-gray-500 block mb-1">Cloisonnement</span>
+                        <div className="flex flex-wrap gap-1">{bloc.espace.typeCloisonnement.map((c: string) => <span key={c} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Connectivité */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Zap className="h-5 w-5 text-[#00BFA6]" />Connectivité</h3>
+                  <div className="space-y-2 text-sm">
+                    {bloc.connectivite?.type && <div className="flex justify-between"><span className="text-gray-500">Connexion</span><span className="font-bold">{LABELS[bloc.connectivite.type] || bloc.connectivite.type}</span></div>}
+                    {bloc.connectivite?.typeConnexion?.length > 0 && (
+                      <div>
+                        <span className="text-gray-500 block mb-1">Mode</span>
+                        <div className="flex flex-wrap gap-1">{bloc.connectivite.typeConnexion.map((c: string) => <span key={c} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
+                      </div>
+                    )}
+                    {bloc.connectivite?.equipementServeur?.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-gray-500 block mb-1">Équipements serveur</span>
+                        <div className="flex flex-wrap gap-1">{bloc.connectivite.equipementServeur.map((e: string) => <span key={e} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{LABELS[e] || e}</span>)}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ===== FIN SECTION BLOC ADMINISTRATIF ===== */}
+
+          {/* ===== SECTION TERRAIN AGRICOLE ===== */}
+          {isTerrainAgricoleProperty && terrain?.agricole && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Caractéristiques Agricoles</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  {(terrain.agricole.unite) && (
+                    <div className="flex justify-between text-sm"><span className="text-gray-500">Unité de mesure</span><span className="font-bold">{LABELS[terrain.agricole.unite] || terrain.agricole.unite}</span></div>
+                  )}
+                  {terrain.agricole.vocation?.length > 0 && (
+                    <div>
+                      <span className="text-sm text-gray-500 block mb-2">Vocation / Culture</span>
+                      <div className="flex flex-wrap gap-2">{terrain.agricole.vocation.map((v: string) => <span key={v} className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[v] || v}</span>)}</div>
+                      {terrain.agricole.vocationAutre && <p className="text-sm text-gray-600 mt-2">{terrain.agricole.vocationAutre}</p>}
+                    </div>
+                  )}
+                  {terrain.agricole.ensoleillement && (
+                    <div className="flex justify-between text-sm"><span className="text-gray-500">Ensoleillement</span><span className="font-bold">{LABELS[terrain.agricole.ensoleillement] || terrain.agricole.ensoleillement}</span></div>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  {terrain.agricole.ressourcesEau?.length > 0 && (
+                    <div>
+                      <span className="text-sm text-gray-500 block mb-2">Ressources en eau</span>
+                      <div className="flex flex-wrap gap-2">{terrain.agricole.ressourcesEau.map((r: string) => <span key={r} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[r] || r}</span>)}</div>
+                      {terrain.agricole.debitForage && <p className="text-sm text-gray-600 mt-1">Débit forage : {terrain.agricole.debitForage} m³/h</p>}
+                    </div>
+                  )}
+                  {terrain.agricole.exposition?.length > 0 && (
+                    <div>
+                      <span className="text-sm text-gray-500 block mb-2">Exposition</span>
+                      <div className="flex flex-wrap gap-2">{terrain.agricole.exposition.map((e: string) => <span key={e} className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[e] || e}</span>)}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ===== FIN SECTION TERRAIN AGRICOLE ===== */}
 
           {/* Nouvelle section : Description et informations spécifiques */}
           {!isSpecialRental && !isSaleDemolition && (announce.shortDescription || property.usageType) && (

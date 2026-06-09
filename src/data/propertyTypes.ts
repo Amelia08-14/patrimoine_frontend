@@ -35,6 +35,7 @@ export const PROPERTY_TYPES = [
   { id: "CENTRE_AFFAIRES", label: "Centre d'affaires", categoryId: "BUREAUX_COMMERCES", iconName: "Building2" },
   { id: "COWORKING", label: "Espace Co-Travail", categoryId: "BUREAUX_COMMERCES", iconName: "Users" },
   { id: "BUREAU_FLEXIBLE", label: "Bureau flexible", categoryId: "BUREAUX_COMMERCES", iconName: "Briefcase" },
+  { id: "BLOC_ADMINISTRATIF", label: "Bloc Administratif", categoryId: "BUREAUX_COMMERCES", iconName: "Building2" },
 
   // Hôteliers
   { id: "HOTEL", label: "Hôtel", categoryId: "HOTELIER", iconName: "Hotel" },

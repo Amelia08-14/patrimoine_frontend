@@ -24,7 +24,8 @@ import {
   Moon, Stars, Sunset, Sunrise, Wind as WindIcon, Umbrella, ArrowLeft,
   GripVertical, Image as ImageIcon,
   Bath as BathIcon, Bed as BedIcon, Utensils as UtensilsIcon, Flower2 as GardenIcon, Zap, FileText, Phone, RotateCw, Crop, Info,
-  Thermometer, Network, Bell, Ban, Siren, Calendar as CalendarIcon, Video as VideoIcon, LifeBuoy
+  Thermometer, Network, Bell, Ban, Siren, Calendar as CalendarIcon, Video as VideoIcon, LifeBuoy,
+  Paintbrush
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -180,6 +181,7 @@ const BASE_PROPERTY_TYPES = [
   { id: "CENTRE_AFFAIRES", label: "Centre d'affaires", categoryId: "BUREAUX_COMMERCES", iconName: "CentreAffaires" },
   { id: "COWORKING", label: "Espace co-working", categoryId: "BUREAUX_COMMERCES", iconName: "Coworking" },
   { id: "BUREAU_FLEXIBLE", label: "Bureau flexible", categoryId: "BUREAUX_COMMERCES", iconName: "BureauFlexible" },
+  { id: "BLOC_ADMINISTRATIF", label: "Bloc administratif", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "HEBERGEMENT_HOTELIER", label: "Hébergement hôtelier étoilé", categoryId: "HEBERGEMENT", iconName: "HebergementEtoile" },
   { id: "AUTRE_HEBERGEMENT", label: "Hébergement hôtelier sans étoile", categoryId: "HEBERGEMENT", iconName: "HebergementSansEtoile" },
   { id: "COMPLEXE_TOURISTIQUE_HEBERGEMENT", label: "Complexe touristique étoilé", categoryId: "HEBERGEMENT", iconName: "ComplexeEtoile" },
@@ -377,6 +379,122 @@ const TERRAIN_RACCORDEMENTS = [
     { id: "GAZ", label: "Gaz" },
     { id: "ASSAINISSEMENT", label: "Assainissement" },
     { id: "INTERNET", label: "Internet / Fibre" },
+]
+// ===== TERRAIN AGRICOLE =====
+const TERRAIN_AGRICOLE_UNITE = [
+    { id: "M2", label: "m²" },
+    { id: "HA", label: "Hectare (ha)" },
+    { id: "DOUNEM", label: "Dounem" },
+]
+const TERRAIN_AGRICOLE_VOCATION = [
+    { id: "MARAICHAGE", label: "Maraîchage" },
+    { id: "ARBORICULTURE", label: "Arboriculture fruitière" },
+    { id: "VITICULTURE", label: "Viticulture" },
+    { id: "CEREALES", label: "Céréales (blé, orge…)" },
+    { id: "ELEVAGE", label: "Élevage" },
+    { id: "APICULTURE", label: "Apiculture" },
+    { id: "SERRES", label: "Serres / hors-sol" },
+    { id: "MIXTE", label: "Mixte / polyculture" },
+]
+const TERRAIN_AGRICOLE_RESSOURCES_EAU = [
+    { id: "PUITS", label: "Puits" },
+    { id: "FORAGE", label: "Forage" },
+    { id: "CANAL_IRRIGATION", label: "Canal d'irrigation" },
+    { id: "BARRAGE_RETENUE", label: "Barrage / retenue d'eau" },
+    { id: "BASSIN_COLLECTE", label: "Bassin de collecte" },
+    { id: "RESEAU_ADE", label: "Réseau ADE" },
+]
+const TERRAIN_AGRICOLE_EXPOSITION = [
+    { id: "NORD", label: "Nord" },
+    { id: "SUD", label: "Sud" },
+    { id: "EST", label: "Est" },
+    { id: "OUEST", label: "Ouest" },
+    { id: "NORD_EST", label: "Nord-Est" },
+    { id: "NORD_OUEST", label: "Nord-Ouest" },
+    { id: "SUD_EST", label: "Sud-Est" },
+    { id: "SUD_OUEST", label: "Sud-Ouest" },
+]
+const TERRAIN_AGRICOLE_ENSOLEILLEMENT = [
+    { id: "ELEVE", label: "Élevé (> 8h/jour)" },
+    { id: "MOYEN", label: "Moyen (5 à 8h/jour)" },
+    { id: "FAIBLE", label: "Faible (< 5h/jour)" },
+]
+// ===== SHOWROOM =====
+const SHOWROOM_STYLE = [
+    { id: "MODERNE", label: "Moderne / Contemporain" },
+    { id: "CLASSIQUE", label: "Classique / Traditionnel" },
+    { id: "INDUSTRIEL", label: "Industriel (Loft)" },
+    { id: "HAUSSMANNIEN", label: "Haussmannien / Prestige" },
+]
+const SHOWROOM_STRUCTURE = [
+    { id: "BETON_ARME", label: "Béton armé" },
+    { id: "STRUCTURE_METALLIQUE", label: "Structure métallique" },
+    { id: "MIXTE", label: "Mixte (béton + métal)" },
+]
+// ===== LOCAL COMMERCIAL =====
+const LOCAL_ENVIRONNEMENT = [
+    { id: "GALERIE_MARCHANDE", label: "Galerie marchande / Centre commercial" },
+    { id: "RUE_COMMERCANTE", label: "Rue commerçante" },
+    { id: "ZONE_ACTIVITE", label: "Zone d'activité commerciale" },
+    { id: "MARCHE", label: "Marché / souk" },
+    { id: "ZONE_INDUSTRIELLE", label: "Zone industrielle" },
+    { id: "AUTRE", label: "Autre" },
+]
+const LOCAL_STYLE = [
+    { id: "MODERNE", label: "Moderne" },
+    { id: "CLASSIQUE", label: "Classique" },
+    { id: "BRUT", label: "Brut / Industriel" },
+]
+const LOCAL_ZONE_TYPE = [
+    { id: "COMMERCIALE", label: "Zone commerciale" },
+    { id: "RESIDENTIELLE", label: "Zone résidentielle" },
+    { id: "MIXTE", label: "Zone mixte" },
+    { id: "INDUSTRIELLE", label: "Zone industrielle" },
+]
+const LOCAL_FLUX = [
+    { id: "ELEVE", label: "Élevé" },
+    { id: "MOYEN", label: "Moyen" },
+    { id: "FAIBLE", label: "Faible" },
+]
+const LOCAL_USAGE = [
+    { id: "MAGASIN_VENTE", label: "Magasin de vente / Boutique" },
+    { id: "SHOWROOM", label: "Showroom / Exposition" },
+    { id: "DEPOT_VENTE", label: "Dépôt-vente / Stockage" },
+    { id: "PHARMACIE", label: "Pharmacie / Parapharmacie" },
+    { id: "ALIMENTATION", label: "Alimentation générale" },
+    { id: "CAFE_RESTAURANT", label: "Café / Restaurant" },
+    { id: "BUREAU", label: "Bureau / Cabinet" },
+    { id: "AUTRE", label: "Autre" },
+]
+// ===== BLOC ADMINISTRATIF =====
+const BLOC_TYPE_ESPACE = [
+    { id: "OPEN_SPACE", label: "Open-space (bureaux paysagers)" },
+    { id: "CLOISONNE", label: "Bureaux cloisonnés" },
+    { id: "MIXTE", label: "Mixte (open-space + cloisonné)" },
+    { id: "SALLES_REUNION", label: "Salles de réunion dédiées" },
+]
+const BLOC_CLOISONNEMENT = [
+    { id: "AMOVIBLE", label: "Amovible (modulable)" },
+    { id: "FIXE", label: "Fixe (maçonnerie / cloisons lourdes)" },
+    { id: "VITRE", label: "Vitré (cloisons vitrées)" },
+    { id: "MIXTE", label: "Mixte" },
+]
+const BLOC_CONNECTIVITE = [
+    { id: "FIBRE_OPTIQUE", label: "Fibre optique" },
+    { id: "ADSL_VDSL", label: "ADSL / VDSL" },
+    { id: "4G_5G", label: "4G / 5G" },
+    { id: "PAS_RESEAU", label: "Pas de réseau" },
+]
+const BLOC_CONNEXION = [
+    { id: "CABLEE", label: "Câblée (RJ45)" },
+    { id: "WIFI", label: "Wi-Fi" },
+    { id: "MIXTE", label: "Mixte (câblée + Wi-Fi)" },
+]
+const BLOC_EQUIPEMENT_SERVEUR = [
+    { id: "ARMOIRE_SERVEUR", label: "Armoire serveur" },
+    { id: "DATA_ROOM", label: "Data room / Salle serveurs" },
+    { id: "GROUPE_ELECTROGENE", label: "Groupe électrogène" },
+    { id: "ONDULEUR_UPS", label: "Onduleur (UPS)" },
 ]
 // ===========================
 
@@ -752,6 +870,55 @@ const formSchema = z.object({
   terrainDocuments: stringArrayOptional,
   terrainViabilise: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   terrainRaccordements: stringArrayOptional,
+
+  // Terrain Agricole (champs spécifiques)
+  terrainAgricoleUnite: z.string().optional(),
+  terrainAgricoleVocation: stringArrayOptional,
+  terrainAgricoleVocationAutre: z.string().optional(),
+  terrainAgricoleRessourcesEau: stringArrayOptional,
+  terrainAgricoleDebitForage: z.string().optional(),
+  terrainAgricoleExposition: stringArrayOptional,
+  terrainAgricoleEnsoleillement: z.string().optional(),
+
+  // Showroom
+  showroomSurfaceTerrain: z.string().optional(),
+  showroomSurfaceBatie: z.string().optional(),
+  showroomNiveaux: z.string().optional(),
+  showroomFacadeWidth: z.string().optional(),
+  showroomFacadeDepth: z.string().optional(),
+  showroomHauteurPlafond: z.string().optional(),
+  showroomStyle: z.string().optional(),
+  showroomStructure: z.string().optional(),
+  showroomVisibiliteAutoroute: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  showroomAxeRoutier: z.string().optional(),
+
+  // Local Commercial
+  localEnvironnement: z.string().optional(),
+  localEnvironnementAutre: z.string().optional(),
+  localSurfaceTotal: z.string().optional(),
+  localVitrineLongueur: z.string().optional(),
+  localLargeur: z.string().optional(),
+  localProfondeur: z.string().optional(),
+  localHauteurPlafond: z.string().optional(),
+  localMezzanine: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  localMezzanineSurface: z.string().optional(),
+  localStyle: z.string().optional(),
+  localZoneType: z.string().optional(),
+  localFluxPieton: z.string().optional(),
+  localFluxVehicules: z.string().optional(),
+  localUsage: z.string().optional(),
+
+  // Bloc Administratif
+  blocSurfaceTerrain: z.string().optional(),
+  blocSurfaceBatie: z.string().optional(),
+  blocEtages: z.string().optional(),
+  blocSousSol: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  blocFacades: z.string().optional(),
+  blocTypeEspace: z.string().optional(),
+  blocTypeCloisonnement: stringArrayOptional,
+  blocConnectivite: z.string().optional(),
+  blocTypeConnexion: stringArrayOptional,
+  blocEquipementServeur: stringArrayOptional,
 
   acceptsCrossUsage: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   acceptsBankCredit: z.enum(["YES", "NO", "NO_PREFERENCE"]).optional(),
@@ -1260,6 +1427,20 @@ export default function DepositPage() {
     transactionType === "RENTAL" &&
     userType === "PARTICULIER" &&
     ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType)
+  const isShowroomParticulier =
+    ["RENTAL", "SALE"].includes(transactionType) &&
+    userType === "PARTICULIER" &&
+    propertyType === "SHOWROOM"
+  const isLocalCommercialParticulier =
+    ["RENTAL", "SALE"].includes(transactionType) &&
+    userType === "PARTICULIER" &&
+    propertyType === "LOCAL_COMMERCIAL"
+  const isBlocAdministratifParticulier =
+    ["RENTAL", "SALE"].includes(transactionType) &&
+    userType === "PARTICULIER" &&
+    propertyType === "BLOC_ADMINISTRATIF"
+  const isBureauCommerceSpecialParticulier = isShowroomParticulier || isLocalCommercialParticulier || isBlocAdministratifParticulier
+  const isTerrainAgricole = propertyType === "TERRAIN_AGRICOLE"
 
   const cfSector = watch("cfSector")
   const cfConfiguration = watch("cfConfiguration")
@@ -1267,6 +1448,13 @@ export default function DepositPage() {
   const cfGenerateur = watch("cfGenerateur")
   const cfSectorList = normalizeToStringArray(cfSector)
   const terrainViabilise = watch("terrainViabilise")
+  const terrainAgricoleVocation = watch("terrainAgricoleVocation")
+  const terrainAgricoleRessourcesEau = watch("terrainAgricoleRessourcesEau")
+  const terrainAgricoleVocationList = normalizeToStringArray(terrainAgricoleVocation)
+  const terrainAgricoleRessourcesEauList = normalizeToStringArray(terrainAgricoleRessourcesEau)
+  const localMezzanine = watch("localMezzanine")
+  const localEnvironnement = watch("localEnvironnement")
+  const showroomVisibiliteAutoroute = watch("showroomVisibiliteAutoroute")
   const isSaleParticulierApartment =
     transactionType === "SALE" &&
     userType === "PARTICULIER" &&
@@ -1841,6 +2029,8 @@ export default function DepositPage() {
             "landArea",
             "terrainTopographie",
         ], { shouldFocus: true })
+    } else if (isShowroomParticulier || isLocalCommercialParticulier || isBlocAdministratifParticulier) {
+        isValid = true
     } else if (isUsineRentalParticulier) {
         isValid = await trigger([
             "industrialSector",
@@ -2239,6 +2429,15 @@ export default function DepositPage() {
 
     if (isTerrainRentalPayload) {
         const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const agricolePayload = data.propertyType === "TERRAIN_AGRICOLE" ? {
+            unite: data.terrainAgricoleUnite,
+            vocation: data.terrainAgricoleVocation?.length ? data.terrainAgricoleVocation : undefined,
+            vocationAutre: data.terrainAgricoleVocationAutre || undefined,
+            ressourcesEau: data.terrainAgricoleRessourcesEau?.length ? data.terrainAgricoleRessourcesEau : undefined,
+            debitForage: data.terrainAgricoleDebitForage || undefined,
+            exposition: data.terrainAgricoleExposition?.length ? data.terrainAgricoleExposition : undefined,
+            ensoleillement: data.terrainAgricoleEnsoleillement || undefined,
+        } : undefined
         const amenitiesPayload: any = {
             terrain: {
                 facadeLength: toNum(data.terrainFacadeLength),
@@ -2248,6 +2447,94 @@ export default function DepositPage() {
                 documents: data.terrainDocuments?.length ? data.terrainDocuments : undefined,
                 viabilise: (data.terrainViabilise as any) === true,
                 raccordements: (data.terrainViabilise as any) === true ? undefined : (data.terrainRaccordements?.length ? data.terrainRaccordements : undefined),
+                agricole: agricolePayload,
+            }
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+    }
+
+    const isShowroomPayload =
+        data.propertyType === "SHOWROOM" && ["RENTAL", "SALE"].includes(data.transactionType)
+    if (isShowroomPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const amenitiesPayload: any = {
+            showroom: {
+                surfaces: {
+                    terrain: toNum(data.showroomSurfaceTerrain),
+                    batie: toNum(data.showroomSurfaceBatie),
+                },
+                dimensions: {
+                    niveaux: toNum(data.showroomNiveaux),
+                    facadeWidth: toNum(data.showroomFacadeWidth),
+                    facadeDepth: toNum(data.showroomFacadeDepth),
+                    hauteurPlafond: toNum(data.showroomHauteurPlafond),
+                },
+                style: data.showroomStyle || undefined,
+                structure: data.showroomStructure || undefined,
+                visibilite: {
+                    autoroute: (data.showroomVisibiliteAutoroute as any) === true,
+                    axeRoutier: data.showroomAxeRoutier || undefined,
+                },
+            }
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+    }
+
+    const isLocalCommercialPayload =
+        data.propertyType === "LOCAL_COMMERCIAL" && ["RENTAL", "SALE"].includes(data.transactionType)
+    if (isLocalCommercialPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const amenitiesPayload: any = {
+            local: {
+                environnement: data.localEnvironnement || undefined,
+                environnementAutre: data.localEnvironnementAutre || undefined,
+                surfaces: {
+                    total: toNum(data.localSurfaceTotal),
+                    vitrineLongueur: toNum(data.localVitrineLongueur),
+                    largeur: toNum(data.localLargeur),
+                    profondeur: toNum(data.localProfondeur),
+                    hauteurPlafond: toNum(data.localHauteurPlafond),
+                },
+                mezzanine: {
+                    present: (data.localMezzanine as any) === true,
+                    surface: toNum(data.localMezzanineSurface),
+                },
+                style: data.localStyle || undefined,
+                emplacement: {
+                    zoneType: data.localZoneType || undefined,
+                    fluxPieton: data.localFluxPieton || undefined,
+                    fluxVehicules: data.localFluxVehicules || undefined,
+                },
+                usage: data.localUsage || undefined,
+            }
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+    }
+
+    const isBlocAdministratifPayload =
+        data.propertyType === "BLOC_ADMINISTRATIF" && ["RENTAL", "SALE"].includes(data.transactionType)
+    if (isBlocAdministratifPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const amenitiesPayload: any = {
+            bloc: {
+                surfaces: {
+                    terrain: toNum(data.blocSurfaceTerrain),
+                    batie: toNum(data.blocSurfaceBatie),
+                },
+                structure: {
+                    etages: toNum(data.blocEtages),
+                    sousSol: (data.blocSousSol as any) === true,
+                    facades: toNum(data.blocFacades),
+                },
+                espace: {
+                    typeEspace: data.blocTypeEspace || undefined,
+                    typeCloisonnement: data.blocTypeCloisonnement?.length ? data.blocTypeCloisonnement : undefined,
+                },
+                connectivite: {
+                    type: data.blocConnectivite || undefined,
+                    typeConnexion: data.blocTypeConnexion?.length ? data.blocTypeConnexion : undefined,
+                    equipementServeur: data.blocEquipementServeur?.length ? data.blocEquipementServeur : undefined,
+                },
             }
         }
         formData.append("amenities", JSON.stringify(amenitiesPayload))
@@ -2261,7 +2548,10 @@ export default function DepositPage() {
       if (key === 'price') return;
       if (shouldSkipAreaRooms && (key === "area" || key === "rooms")) return;
       if (shouldSkipIndustrialFields && (key.startsWith("industrial") || key.startsWith("cf"))) return;
-      if (isTerrainRentalPayload && key.startsWith("terrain")) return;
+      if (isTerrainRentalPayload && (key.startsWith("terrain"))) return;
+      if (isShowroomPayload && key.startsWith("showroom")) return;
+      if (isLocalCommercialPayload && key.startsWith("local")) return;
+      if (isBlocAdministratifPayload && key.startsWith("bloc")) return;
       
       // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
       // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend
@@ -2414,6 +2704,9 @@ export default function DepositPage() {
           if (propertyType === "TERRAIN_INDUSTRIEL") return "Fiche descriptive - Terrain industriel"
           if (propertyType === "TERRAIN_AGRICOLE") return "Fiche descriptive - Terrain agricole"
           if (propertyType === "TERRAIN_TOURISTIQUE") return "Fiche descriptive - Terrain touristique"
+          if (propertyType === "SHOWROOM") return "Fiche descriptive - Showroom"
+          if (propertyType === "LOCAL_COMMERCIAL") return "Fiche descriptive - Local commercial"
+          if (propertyType === "BLOC_ADMINISTRATIF") return "Fiche descriptive - Bloc administratif"
           return "Fiche descriptive"
       case 5: return (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? "Disponibilité" : "Prix & Modalités"
       case 6: return "Informations et Contact"
@@ -2453,6 +2746,7 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HANGAR") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "SALE" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
+      (userType === "PARTICULIER" && ["RENTAL", "SALE"].includes(transactionType) && ["SHOWROOM", "LOCAL_COMMERCIAL", "BLOC_ADMINISTRATIF"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType));
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
@@ -3835,6 +4129,487 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
+                            {/* Section Agricole — uniquement pour Terrain Agricole */}
+                            {isTerrainAgricole && (
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Leaf className="h-5 w-5 text-[#00BFA6]" />
+                                    Caractéristiques Agricoles
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* Superficie + Unité */}
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Superficie</label>
+                                        <div className="flex gap-3">
+                                            <input
+                                                {...register("landArea")}
+                                                type="number" min="0" step="0.01"
+                                                onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()}
+                                                className="flex-1 p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium"
+                                                placeholder="ex: 5"
+                                            />
+                                            <select {...register("terrainAgricoleUnite")} className="p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium min-w-[140px]">
+                                                <option value="">Unité</option>
+                                                {TERRAIN_AGRICOLE_UNITE.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    {/* Vocation agricole */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Vocation / Type de culture</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_VOCATION.map((v) => (
+                                                <label key={v.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={v.id} {...register("terrainAgricoleVocation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {v.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {terrainAgricoleVocationList.includes("MIXTE") && (
+                                            <div className="mt-3">
+                                                <input {...register("terrainAgricoleVocationAutre")} className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="Préciser les cultures…" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Ressources en eau */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Ressources en eau</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_RESSOURCES_EAU.map((r) => (
+                                                <label key={r.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={r.id} {...register("terrainAgricoleRessourcesEau")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {r.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {terrainAgricoleRessourcesEauList.includes("FORAGE") && (
+                                            <div className="mt-3">
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Débit forage (m³/h)</label>
+                                                <input {...register("terrainAgricoleDebitForage")} type="number" min="0" step="0.1" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="ex: 12" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Exposition */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Exposition</div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {TERRAIN_AGRICOLE_EXPOSITION.map((e) => (
+                                                <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={e.id} {...register("terrainAgricoleExposition")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {e.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Ensoleillement */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Ensoleillement</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_ENSOLEILLEMENT.map((e) => (
+                                                <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={e.id} {...register("terrainAgricoleEnsoleillement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {e.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            )}
+
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive - Showroom */}
+                    {currentStep === 4 && isShowroomParticulier && (
+                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+
+                            {/* Superficies & Dimensions */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Superficies &amp; Dimensions
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
+                                        <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie / expo (m²)</label>
+                                        <input {...register("showroomSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 350" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de niveaux</label>
+                                        <input {...register("showroomNiveaux")} type="number" min="1" max="10" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
+                                        <input {...register("showroomHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur façade (m)</label>
+                                        <input {...register("showroomFacadeWidth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Profondeur (m)</label>
+                                        <input {...register("showroomFacadeDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* État & Style Architectural */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Paintbrush className="h-5 w-5 text-[#00BFA6]" />
+                                    État &amp; Style Architectural
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Style architectural</div>
+                                        <div className="space-y-2">
+                                            {SHOWROOM_STYLE.map((s) => (
+                                                <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={s.id} {...register("showroomStyle")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {s.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Structure principale</div>
+                                        <div className="space-y-2">
+                                            {SHOWROOM_STRUCTURE.map((s) => (
+                                                <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={s.id} {...register("showroomStructure")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {s.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Visibilité & Accessibilité */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Eye className="h-5 w-5 text-[#00BFA6]" />
+                                    Visibilité &amp; Accessibilité
+                                </h2>
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-5">
+                                    <div>
+                                        <div className="font-bold text-gray-900 mb-3">Visibilité depuis autoroute / voie rapide</div>
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value={"true" as any} {...register("showroomVisibiliteAutoroute")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("showroomVisibiliteAutoroute", true as any)} checked={showroomVisibiliteAutoroute === true} />
+                                                Oui
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value={"false" as any} {...register("showroomVisibiliteAutoroute")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("showroomVisibiliteAutoroute", false as any)} checked={showroomVisibiliteAutoroute === false} />
+                                                Non
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Axe routier / adresse commerciale</label>
+                                        <input {...register("showroomAxeRoutier")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: RN5, Boulevard Didouche Mourad…" />
+                                    </div>
+                                </div>
+                            </section>
+
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive - Local Commercial */}
+                    {currentStep === 4 && isLocalCommercialParticulier && (
+                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+
+                            {/* Environnement du local */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                                    Environnement du local
+                                </h2>
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
+                                    <div>
+                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;environnement commercial</div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {LOCAL_ENVIRONNEMENT.map((e) => (
+                                                <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={e.id} {...register("localEnvironnement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {e.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {localEnvironnement === "AUTRE" && (
+                                        <div>
+                                            <input {...register("localEnvironnementAutre")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Préciser l'environnement…" />
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* Superficies & Dimensions */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Superficies &amp; Dimensions
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale (m²)</label>
+                                        <input {...register("localSurfaceTotal")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 120" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur vitrine (ml)</label>
+                                        <input {...register("localVitrineLongueur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 8" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
+                                        <input {...register("localLargeur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 10" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Profondeur (m)</label>
+                                        <input {...register("localProfondeur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
+                                        <input {...register("localHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3.5" />
+                                    </div>
+                                    {/* Mezzanine */}
+                                    <div className="md:col-span-2 bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Mezzanine</div>
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value={"true" as any} {...register("localMezzanine")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("localMezzanine", true as any)} checked={localMezzanine === true} />
+                                                Oui
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value={"false" as any} {...register("localMezzanine")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("localMezzanine", false as any)} checked={localMezzanine === false} />
+                                                Non
+                                            </label>
+                                        </div>
+                                        {localMezzanine === true && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Surface mezzanine (m²)</label>
+                                                <input {...register("localMezzanineSurface")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 30" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* État & Style */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Paintbrush className="h-5 w-5 text-[#00BFA6]" />
+                                    État &amp; Style
+                                </h2>
+                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="font-bold text-gray-900 mb-3">Style du local</div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        {LOCAL_STYLE.map((s) => (
+                                            <label key={s.id} className="cursor-pointer">
+                                                <input type="radio" value={s.id} {...register("localStyle")} className="peer sr-only" />
+                                                <div className="w-full p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-gray-50">
+                                                    {s.label}
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Emplacement & Environnement */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                                    Emplacement &amp; Environnement
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Type de zone</div>
+                                        <div className="space-y-2">
+                                            {LOCAL_ZONE_TYPE.map((z) => (
+                                                <label key={z.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={z.id} {...register("localZoneType")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {z.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Flux piéton</div>
+                                        <div className="space-y-2">
+                                            {LOCAL_FLUX.map((f) => (
+                                                <label key={f.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={f.id} {...register("localFluxPieton")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {f.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Flux véhicules</div>
+                                        <div className="space-y-2">
+                                            {LOCAL_FLUX.map((f) => (
+                                                <label key={f.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={f.id} {...register("localFluxVehicules")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {f.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Usage */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Store className="h-5 w-5 text-[#00BFA6]" />
+                                    Usage du local
+                                </h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {LOCAL_USAGE.map((u) => (
+                                        <label key={u.id} className="cursor-pointer">
+                                            <input type="radio" value={u.id} {...register("localUsage")} className="peer sr-only" />
+                                            <div className="w-full p-3 border-2 border-gray-200 rounded-xl font-medium text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-gray-50 text-sm">
+                                                {u.label}
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            </section>
+
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive - Bloc Administratif */}
+                    {currentStep === 4 && isBlocAdministratifParticulier && (
+                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+
+                            {/* Caractéristiques Extérieures */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Building2 className="h-5 w-5 text-[#00BFA6]" />
+                                    Caractéristiques Extérieures
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
+                                        <input {...register("blocSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 1200" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²)</label>
+                                        <input {...register("blocSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 800" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages (R+)</label>
+                                        <input {...register("blocEtages")} type="number" min="0" max="20" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                        <div className="flex gap-3">
+                                            {[1,2,3,4].map((n) => (
+                                                <label key={n} className="cursor-pointer">
+                                                    <input type="radio" value={String(n)} {...register("blocFacades")} className="peer sr-only" />
+                                                    <div className="w-12 h-12 border-2 rounded-xl flex items-center justify-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">{n}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="md:col-span-2 bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Sous-sol</div>
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value={"true" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", true as any)} />
+                                                Oui (avec sous-sol)
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value={"false" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", false as any)} />
+                                                Non
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Type d'Espace */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
+                                    Type d&apos;Espace
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;espace bureautique</div>
+                                        <div className="space-y-2">
+                                            {BLOC_TYPE_ESPACE.map((e) => (
+                                                <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={e.id} {...register("blocTypeEspace")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {e.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Type de cloisonnement</div>
+                                        <div className="space-y-2">
+                                            {BLOC_CLOISONNEMENT.map((c) => (
+                                                <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={c.id} {...register("blocTypeCloisonnement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {c.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Connectivité & Réseau */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Wifi className="h-5 w-5 text-[#00BFA6]" />
+                                    Connectivité &amp; Réseau
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Type de connectivité</div>
+                                        <div className="space-y-2">
+                                            {BLOC_CONNECTIVITE.map((c) => (
+                                                <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={c.id} {...register("blocConnectivite")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {c.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Mode de connexion</div>
+                                        <div className="space-y-2">
+                                            {BLOC_CONNEXION.map((c) => (
+                                                <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={c.id} {...register("blocTypeConnexion")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {c.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Équipements serveur</div>
+                                        <div className="space-y-2">
+                                            {BLOC_EQUIPEMENT_SERVEUR.map((e) => (
+                                                <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={e.id} {...register("blocEquipementServeur")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {e.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
                         </div>
                     )}
 
@@ -4706,7 +5481,8 @@ export default function DepositPage() {
                         isUsineRentalParticulier ||
                         isChambreFroideRentalParticulier ||
                         isHangarRentalParticulier ||
-                        isTerrainRentalParticulier
+                        isTerrainRentalParticulier ||
+                        isBureauCommerceSpecialParticulier
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             <div className="space-y-8">
