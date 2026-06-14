@@ -498,6 +498,169 @@ const BLOC_EQUIPEMENT_SERVEUR = [
 ]
 // ===========================
 
+// ===== HÉBERGEMENT CHEZ L'HABITANT =====
+const HAB_CLIENT_PROFILES = [
+  { id: "FAMILIAL", label: "Exclusivement Familial", desc: "Idéal pour le repos des familles, non adapté aux célibataires ou affaires" },
+  { id: "PROFESSIONNEL", label: "Professionnel / Affaires", desc: "Adapté aux séjours professionnels, séminaires, cadres et travailleurs" },
+  { id: "GROUPES", label: "Groupes d'amis / Groupements", desc: "Adapté aux groupes voyageant ensemble, randonneurs, etc." },
+  { id: "TOUS", label: "Tout type de clientèle légalement admissible", desc: "Ouvert à tous les profils respectant la réglementation en vigueur" },
+]
+const HAB_FORMULES = [
+  { id: "LOGEMENT_ENTIER", label: "Logement entier", desc: "Accès exclusif à la totalité du logement / de l'unité" },
+  { id: "CHAMBRE_PRIVEE", label: "Chambre privée", desc: "Chambre seule, espaces communs partagés" },
+  { id: "LIT_SEUL", label: "Lit / Place seule", desc: "Dortoir, espace partagé, type auberge/traditionnel saharien" },
+]
+const HAB_UNIT_TYPES = [
+  { id: "APPARTEMENT", label: "Appartement" },
+  { id: "STUDIO", label: "Studio" },
+  { id: "VILLA", label: "Villa / Niveau de Villa" },
+  { id: "DUPLEX", label: "Duplex / Triplex" },
+  { id: "BUNGALOW", label: "Bungalow / Chalet / Structure légère" },
+  { id: "CAMPING", label: "Emplacement de camping vide" },
+  { id: "INSOLITE", label: "Hébergement insolite" },
+]
+const HAB_BED_TYPES = [
+  { id: "KING_PREMIUM", label: "Lit King Size Premium (200×200 cm)" },
+  { id: "KING", label: "Lit King Size (180×200 cm)" },
+  { id: "QUEEN", label: "Lit Queen Size (160×200 cm)" },
+  { id: "DOUBLE_STANDARD", label: "Lit Double Standard (140×190 cm)" },
+  { id: "SIMPLE_ADULTE", label: "Lit Simple / Canapé-lit (90×190 cm)" },
+  { id: "SIMPLE_ENFANT", label: "Lit Simple Enfant (80×190 cm)" },
+  { id: "SUPERPOSE", label: "Lit Superposé 2 places (90×190×2 cm)" },
+  { id: "MATELAS_SOL", label: "Matelas au sol / Literie traditionnelle" },
+  { id: "BEBE", label: "Lit Bébé / Berceau" },
+]
+const HAB_AMBIANCES = [
+  { id: "BALNEAIRE", label: "Balnéaire (Mer et plage)" },
+  { id: "URBAIN", label: "Urbain (Centre-ville et commodités)" },
+  { id: "SAHARIEN", label: "Saharien (Désert, Oasis, Grand Sud)" },
+  { id: "THERMAL", label: "Thermal (Proche d'un Hammam / station thermale)" },
+  { id: "CLIMATIQUE", label: "Climatique (Montagne, Ski, Nature, Forêt)" },
+]
+const HAB_PLAGE_ACCES = [
+  { id: "PRIVEE", label: "Plage privée (Réservée exclusivement aux clients)" },
+  { id: "PUBLIQUE", label: "Plage publique (Accès libre à tout le monde)" },
+  { id: "LES_DEUX", label: "Les deux (Plage privée + Plage publique à côté)" },
+]
+const HAB_URBAIN_COMMODITES = [
+  { id: "COMMERCES", label: "Commerces de proximité (Supérette, épicerie, boulangerie)" },
+  { id: "RESTAURANTS", label: "Restaurants et Cafés (Fast-food, salons de thé)" },
+  { id: "SHOPPING", label: "Shopping et Boutiques (Centres commerciaux, souks)" },
+]
+const HAB_SAHARIEN_ACTIVITES = [
+  { id: "VISITES_GUIDEES", label: "Visites guidées / Excursions culturelles (Ksour, musées, gravures)" },
+  { id: "QUAD_4X4", label: "Randonnées et circuits en Quad / 4x4 (dunes de sable)" },
+  { id: "CHAMEAU", label: "Balades à dos de chameau (Méharée)" },
+  { id: "OASIS", label: "Découverte et visite d'Oasis (Palmerais, Foggara)" },
+  { id: "SANDBOARD", label: "Ski sur sable / Sandboarding (glisse sur les dunes)" },
+  { id: "BIVOUAC", label: "Bivouac / Nuit étoilée dans le désert" },
+]
+const HAB_VUES = [
+  { id: "MER", label: "Vue sur mer / Front de mer" },
+  { id: "DUNES", label: "Vue sur les Dunes / Désert / Oasis" },
+  { id: "MONTAGNE", label: "Vue sur montagne" },
+  { id: "VILLE", label: "Vue sur la ville / Panoramique" },
+  { id: "NATURE", label: "Vue sur la nature / Forêt / Campagne" },
+  { id: "JARDIN", label: "Vue sur jardin / Cour intérieure / Piscine" },
+  { id: "SANS_VUE", label: "Sans vue spécifique / Vis-à-vis" },
+]
+const HAB_ATTRACTIONS = [
+  { id: "PLAGE", label: "Plage / Mer" },
+  { id: "SITES_HISTORIQUES", label: "Sites historiques / Musées" },
+  { id: "FORET", label: "Forêt / Sentier de randonnée" },
+  { id: "RESTAURANTS", label: "Restaurants / Cafés / Salons de thé" },
+  { id: "HAMMAM", label: "Station thermale (Hammam)" },
+  { id: "CENTRE_COMMERCIAL", label: "Centre commercial / Souk" },
+  { id: "COMMODITES", label: "Commodités (Supérette, Pharmacie, DAB)" },
+]
+const HAB_REPAS = [
+  { id: "AUCUN", label: "Aucun repas" },
+  { id: "PETIT_DEJ", label: "Petit-déjeuner inclus" },
+  { id: "DEJEUNER", label: "Déjeuner" },
+  { id: "DINER", label: "Dîner" },
+]
+const HAB_LINGE = [
+  { id: "DRAPS", label: "Draps fournis" },
+  { id: "SERVIETTES", label: "Serviettes fournies" },
+  { id: "AUCUN", label: "Aucun linge fourni" },
+]
+const HAB_EQUIPEMENTS_CUISINE = [
+  { id: "USTENSILES", label: "Ustensiles de base (Casseroles, couverts)" },
+  { id: "RECHAUD", label: "Réchaud / Cuisinière" },
+  { id: "FRIGO", label: "Réfrigérateur" },
+  { id: "MICROONDES", label: "Micro-ondes" },
+  { id: "CAFETIERE", label: "Machine à café" },
+]
+const HAB_CONFORT = [
+  { id: "CLIM", label: "Climatisation" },
+  { id: "CHAUFFAGE", label: "Chauffage" },
+  { id: "TV", label: "Télévision (TV)" },
+  { id: "WIFI", label: "Connexion Wi-Fi / Internet" },
+  { id: "BUREAU", label: "Espace de travail dédié (Bureau)" },
+  { id: "SECHE_CHEVEUX", label: "Sèche-cheveux" },
+  { id: "MACHINE_LAVER", label: "Machine à laver" },
+  { id: "FER_REPASSER", label: "Fer à repasser" },
+]
+const HAB_LOISIRS = [
+  { id: "PISCINE", label: "Piscine privée / Réservée aux résidents" },
+  { id: "AQUAPARK", label: "Parc aquatique / Toboggans (Aqua-park)" },
+  { id: "SALLE_SPORT", label: "Salle de sport / Fitness" },
+  { id: "SPA", label: "Spa / Centre de bien-être (Sauna, Hammam, Massages)" },
+  { id: "TENNIS", label: "Terrain de Tennis" },
+  { id: "PADEL", label: "Terrain de Padel" },
+  { id: "MULTISPORTS", label: "Terrain Basket-ball / Multisports" },
+  { id: "JEUX_ENFANTS", label: "Aire de jeux extérieure pour enfants" },
+  { id: "JEUX_INTERIEUR", label: "Espace de jeux intérieur / Salle de jeux" },
+  { id: "ESPACE_FAMILLE", label: "Espace loisirs famille (pique-nique, barbecue, jardin)" },
+]
+const HAB_SECOURS = [
+  { id: "CITERNE", label: "Citerne d'eau / Réservoir avec pompe (Eau H24)" },
+  { id: "CHAUFFE_EAU", label: "Chauffe-eau fonctionnel (Eau chaude en permanence)" },
+  { id: "GROUPE_ELECTROGENE", label: "Groupe électrogène (Électricité de secours)" },
+]
+const HAB_PARKING = [
+  { id: "PRIVE_GRATUIT", label: "Parking privé et sécurisé gratuit (Garage, cour fermée)" },
+  { id: "PRIVE_PAYANT", label: "Parking privé payant" },
+  { id: "RUE_GRATUIT", label: "Stationnement gratuit dans la rue" },
+  { id: "GARDIEN_NUIT", label: "Gardien de nuit présent dans la rue" },
+]
+const HAB_ACCESSIBILITE = [
+  { id: "PLAIN_PIED", label: "Plain-pied (Rez-de-chaussée, sans marches)" },
+  { id: "ETAGE_ASCENSEUR", label: "À l'étage AVEC ascenseur" },
+  { id: "ETAGE_SANS_ASCENSEUR", label: "À l'étage SANS ascenseur" },
+]
+const HAB_CONDITION_PAIEMENT = [
+  { id: "100_AVANCE", label: "Paiement total à l'avance (100%) pour bloquer la réservation" },
+  { id: "ACOMPTE", label: "Paiement d'un acompte, le reste à l'arrivée" },
+  { id: "SUR_PLACE", label: "Paiement total sur place le jour de l'arrivée" },
+]
+const HAB_ACOMPTE_OPTIONS = [
+  { id: "30", label: "30%" },
+  { id: "50", label: "50%" },
+]
+const HAB_DELAI_ANNULATION = [
+  { id: "24H", label: "24h à l'avance" },
+  { id: "48H", label: "48h à l'avance" },
+  { id: "7J", label: "7 jours" },
+  { id: "14J", label: "14 jours" },
+]
+const HAB_NON_RESPECT = [
+  { id: "AVANCE_CONSERVEE", label: "L'avance est conservée" },
+  { id: "TOTALITE_DUE", label: "La totalité du séjour est due" },
+]
+const HAB_PAIEMENTS_LOCAUX = [
+  { id: "ESPECES", label: "Espèces (Paiement sur place)" },
+  { id: "VIREMENT_BANCAIRE", label: "Virement bancaire (Compte bancaire national)" },
+  { id: "CCP", label: "Virement CCP (Compte Courant Postal)" },
+  { id: "EDAHABIA", label: "Carte Edahabia (paiement en ligne ou TPE)" },
+  { id: "BARIDIMOB", label: "BaridiMob (Transfert d'argent instantané)" },
+]
+const HAB_PAIEMENTS_INTL = [
+  { id: "VISA", label: "Carte VISA" },
+  { id: "MASTERCARD", label: "MasterCard" },
+]
+// ===========================
+
 const USAGE_TYPES = [
     {
         id: "UNIQUE",
@@ -919,6 +1082,80 @@ const formSchema = z.object({
   blocConnectivite: z.string().optional(),
   blocTypeConnexion: stringArrayOptional,
   blocEquipementServeur: stringArrayOptional,
+
+  // Hébergement chez l'habitant
+  habClientProfile: z.string().optional(),
+  habFormule: z.string().optional(),
+  habUnitType: z.string().optional(),
+  habUnitTypeInsolite: z.string().optional(),
+  habArea: z.string().optional(),
+  habFloor: z.string().optional(),
+  habNbNiveaux: z.string().optional(),
+  habNbSalons: z.string().optional(),
+  habNbSdb: z.string().optional(),
+  habSuiteParentale: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habNbChambres: z.string().optional(),
+  habBedKingPremium: z.string().optional(),
+  habBedKing: z.string().optional(),
+  habBedQueen: z.string().optional(),
+  habBedDoubleStd: z.string().optional(),
+  habBedSimpleAdulte: z.string().optional(),
+  habBedSimpleEnfant: z.string().optional(),
+  habBedSuperpose: z.string().optional(),
+  habBedMatelasSol: z.string().optional(),
+  habBedBebe: z.string().optional(),
+  habAmbiances: stringArrayOptional,
+  habPlageAcces: z.string().optional(),
+  habUrbainCommodites: stringArrayOptional,
+  habSaharienActivites: stringArrayOptional,
+  habThermalLocalisation: z.string().optional(),
+  habThermalDistance: z.string().optional(),
+  habThermalAcces: z.string().optional(),
+  habClimatAcces: z.string().optional(),
+  habClimatTempsVoiture: z.string().optional(),
+  habClimatVisitesGuidees: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habClimatPisteSki: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habVues: stringArrayOptional,
+  habAirport: z.string().optional(),
+  habAirportKm: z.string().optional(),
+  habTransportCommuns: z.string().optional(),
+  habAttractions: stringArrayOptional,
+  habRepas: stringArrayOptional,
+  habLinge: stringArrayOptional,
+  habHygiene: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habLivraison: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habCuisineEquipements: stringArrayOptional,
+  habConfort: stringArrayOptional,
+  habLoisirs: stringArrayOptional,
+  habSecours: stringArrayOptional,
+  habParking: stringArrayOptional,
+  habAccessibilite: z.string().optional(),
+  habAgeMin: z.string().optional(),
+  habFumeurs: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habAnimaux: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habFetes: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habCheckIn: z.string().optional(),
+  habCheckOut: z.string().optional(),
+  habReceptionMode: z.string().optional(),
+  habReceptionStart: z.string().optional(),
+  habReceptionEnd: z.string().optional(),
+  habRemiseCles: z.string().optional(),
+  habControleIdentite: z.string().optional(),
+  habConditionPaiement: z.string().optional(),
+  habAcompte: z.string().optional(),
+  habAnnulation: z.string().optional(),
+  habDelaiAnnulation: z.string().optional(),
+  habNonRespect: z.string().optional(),
+  habCaution: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  habCautionMontant: z.string().optional(),
+  habFraisMenage: z.string().optional(),
+  habFraisMenageMontant: z.string().optional(),
+  habPaiements: stringArrayOptional,
+  habDureeMin: z.string().optional(),
+  habPeriodeOuverture: z.string().optional(),
+  habDebutSaison: z.string().optional(),
+  habFinSaison: z.string().optional(),
+  habDelaiPreparation: z.string().optional(),
 
   acceptsCrossUsage: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   acceptsBankCredit: z.enum(["YES", "NO", "NO_PREFERENCE"]).optional(),
@@ -1441,6 +1678,10 @@ export default function DepositPage() {
     propertyType === "BLOC_ADMINISTRATIF"
   const isBureauCommerceSpecialParticulier = isShowroomParticulier || isLocalCommercialParticulier || isBlocAdministratifParticulier
   const isTerrainAgricole = propertyType === "TERRAIN_AGRICOLE"
+  const isHebergementHabitant =
+    transactionType === "RENTAL" &&
+    userType === "PARTICULIER" &&
+    propertyType === "HEBERGEMENT_HABITANT"
 
   const cfSector = watch("cfSector")
   const cfConfiguration = watch("cfConfiguration")
@@ -1455,6 +1696,16 @@ export default function DepositPage() {
   const localMezzanine = watch("localMezzanine")
   const localEnvironnement = watch("localEnvironnement")
   const showroomVisibiliteAutoroute = watch("showroomVisibiliteAutoroute")
+  const habAmbiancesList = normalizeToStringArray(watch("habAmbiances"))
+  const habConditionPaiement = watch("habConditionPaiement")
+  const habAnnulation = watch("habAnnulation")
+  const habCaution = watch("habCaution")
+  const habFraisMenage = watch("habFraisMenage")
+  const habPeriodeOuverture = watch("habPeriodeOuverture")
+  const habFormule = watch("habFormule")
+  const habUnitType = watch("habUnitType")
+  const habReceptionMode = watch("habReceptionMode")
+  const habClimatAcces = watch("habClimatAcces")
   const isSaleParticulierApartment =
     transactionType === "SALE" &&
     userType === "PARTICULIER" &&
@@ -2145,6 +2396,12 @@ export default function DepositPage() {
                 "typology",
             ], { shouldFocus: true })
         }
+    } else if (isHebergementHabitant) {
+        isValid = await trigger([
+            "habClientProfile",
+            "habFormule",
+            "habUnitType",
+        ], { shouldFocus: true })
     } else {
         // Autres types de biens
         isValid = await trigger([
@@ -2152,14 +2409,14 @@ export default function DepositPage() {
             "bathrooms", "bathroomType", "wc", "landArea", "builtArea"
         ], { shouldFocus: true });
     }
-    
+
     if (isValid) {
       setCurrentStep(5)
     }
   }
 
   const handlePriceSubmit = async () => {
-    const skipPrice = isIndustrialRentalParticulier || isTerrainRentalParticulier
+    const skipPrice = isIndustrialRentalParticulier || isTerrainRentalParticulier || isHebergementHabitant
     const fieldsToValidate: any[] = skipPrice ? [] : ["price", "priceUnit", "priceType"]
 
     // Add rental specific fields if needed
@@ -2747,7 +3004,8 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "RENTAL" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "SALE" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
       (userType === "PARTICULIER" && ["RENTAL", "SALE"].includes(transactionType) && ["SHOWROOM", "LOCAL_COMMERCIAL", "BLOC_ADMINISTRATIF"].includes(propertyType)) ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType));
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType)) ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_HABITANT");
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
@@ -5844,6 +6102,833 @@ export default function DepositPage() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive – Hébergement chez l'habitant */}
+                    {currentStep === 4 && isHebergementHabitant && (
+                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+
+                            {/* Étape 1.1 – Cible clientèle */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Users className="h-5 w-5 text-[#00BFA6]" />
+                                    Cible et profil de clientèle
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {HAB_CLIENT_PROFILES.map((p) => (
+                                        <label key={p.id} className="cursor-pointer">
+                                            <input type="radio" value={p.id} {...register("habClientProfile")} className="peer sr-only" />
+                                            <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400">
+                                                <div className="font-bold text-gray-900 text-sm">{p.label}</div>
+                                                <div className="text-xs text-gray-500 mt-1">{p.desc}</div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                                {errors.habClientProfile && <p className="text-red-500 text-sm">{errors.habClientProfile.message as any}</p>}
+                            </section>
+
+                            {/* Étape 1.2 – Formule de location */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <BedDouble className="h-5 w-5 text-[#00BFA6]" />
+                                    Formule de location
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {HAB_FORMULES.map((f) => (
+                                        <label key={f.id} className="cursor-pointer">
+                                            <input type="radio" value={f.id} {...register("habFormule")} className="peer sr-only" />
+                                            <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center">
+                                                <div className="font-bold text-gray-900 text-sm">{f.label}</div>
+                                                <div className="text-xs text-gray-500 mt-1">{f.desc}</div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                                {errors.habFormule && <p className="text-red-500 text-sm">{errors.habFormule.message as any}</p>}
+
+                                {/* Détails logement entier */}
+                                {habFormule === "LOGEMENT_ENTIER" && (
+                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
+                                        <div className="font-bold text-gray-800 text-sm">Détails du logement entier</div>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Nb. chambres</label>
+                                                <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 3" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Nb. salons</label>
+                                                <input {...register("habNbSalons")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 1" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Nb. WC / Salles de bain</label>
+                                                <input {...register("habNbSdb")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 2" />
+                                            </div>
+                                            <div className="flex flex-col justify-end">
+                                                <label className="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl bg-white hover:border-[#00BFA6] transition-all h-[46px]">
+                                                    <input type="checkbox" {...register("habSuiteParentale")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <span className="text-xs font-bold text-gray-700">Suite parentale</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
+
+                            {/* Étape 1.3 – Type de propriété */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Home className="h-5 w-5 text-[#00BFA6]" />
+                                    Type de propriété / Unité
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    {HAB_UNIT_TYPES.map((u) => (
+                                        <label key={u.id} className="cursor-pointer">
+                                            <input type="radio" value={u.id} {...register("habUnitType")} className="peer sr-only" />
+                                            <div className="p-3 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center">
+                                                <div className="font-bold text-gray-900 text-sm">{u.label}</div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                                {habUnitType === "INSOLITE" && (
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Précisez le type d'hébergement insolite</label>
+                                        <input {...register("habUnitTypeInsolite")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Roulotte, Yourte, Cabane dans les arbres..." />
+                                    </div>
+                                )}
+                                {errors.habUnitType && <p className="text-red-500 text-sm">{errors.habUnitType.message as any}</p>}
+                            </section>
+
+                            {/* Étape 1.4 – Caractéristiques physiques */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Caractéristiques physiques
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Surface habitable (m²)</label>
+                                        <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 80" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Étage (0 = RDC)</label>
+                                        <input {...register("habFloor")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="0" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de niveaux</label>
+                                        <input {...register("habNbNiveaux")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 1" />
+                                    </div>
+                                </div>
+
+                                {/* Configuration des lits */}
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Bed className="h-4 w-4 text-[#00BFA6]" /> Configuration des lits
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {[
+                                            { field: "habBedKingPremium", label: "Lit King Size Premium (200×200 cm)" },
+                                            { field: "habBedKing", label: "Lit King Size (180×200 cm)" },
+                                            { field: "habBedQueen", label: "Lit Queen Size (160×200 cm)" },
+                                            { field: "habBedDoubleStd", label: "Lit Double Standard (140×190 cm)" },
+                                            { field: "habBedSimpleAdulte", label: "Lit Simple / Canapé-lit (90×190 cm)" },
+                                            { field: "habBedSimpleEnfant", label: "Lit Simple Enfant (80×190 cm)" },
+                                            { field: "habBedSuperpose", label: "Lit Superposé 2 places" },
+                                            { field: "habBedMatelasSol", label: "Matelas au sol / Literie traditionnelle" },
+                                            { field: "habBedBebe", label: "Lit Bébé / Berceau" },
+                                        ].map((bed) => (
+                                            <div key={bed.field} className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-3">
+                                                <span className="text-sm font-medium text-gray-700 flex-1">{bed.label}</span>
+                                                <input
+                                                    {...register(bed.field as any)}
+                                                    type="number"
+                                                    min="0"
+                                                    max="20"
+                                                    onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-20 p-2 border-2 border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-[#00BFA6] font-bold text-center text-sm"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Étape 2.1 – Ambiance / Vocation */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                                    Cadre &amp; Environnement
+                                </h2>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">Ambiance / Vocation du lieu (plusieurs choix possibles)</label>
+                                    <div className="flex flex-wrap gap-3">
+                                        {HAB_AMBIANCES.map((a) => (
+                                            <label key={a.id} className="cursor-pointer">
+                                                <input type="checkbox" value={a.id} {...register("habAmbiances")} className="peer sr-only" />
+                                                <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{a.label}</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Balnéaire */}
+                                {habAmbiancesList.includes("BALNEAIRE") && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 space-y-3">
+                                        <div className="font-bold text-blue-900 text-sm flex items-center gap-2"><Waves className="h-4 w-4" /> Accès à la plage</div>
+                                        <div className="flex flex-wrap gap-3">
+                                            {HAB_PLAGE_ACCES.map((p) => (
+                                                <label key={p.id} className="cursor-pointer">
+                                                    <input type="radio" value={p.id} {...register("habPlageAcces")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-blue-200 rounded-full text-sm font-bold text-blue-700 peer-checked:border-blue-500 peer-checked:bg-blue-100 transition-all bg-white">{p.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Urbain */}
+                                {habAmbiancesList.includes("URBAIN") && (
+                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
+                                        <div className="font-bold text-gray-800 text-sm flex items-center gap-2"><Building className="h-4 w-4 text-[#00BFA6]" /> Commodités immédiates à proximité</div>
+                                        <div className="space-y-2">
+                                            {HAB_URBAIN_COMMODITES.map((c) => (
+                                                <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={c.id} {...register("habUrbainCommodites")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {c.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Saharien */}
+                                {habAmbiancesList.includes("SAHARIEN") && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3">
+                                        <div className="font-bold text-amber-900 text-sm flex items-center gap-2"><Palmtree className="h-4 w-4" /> Sorties et activités proposées</div>
+                                        <div className="space-y-2">
+                                            {HAB_SAHARIEN_ACTIVITES.map((a) => (
+                                                <label key={a.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={a.id} {...register("habSaharienActivites")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {a.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Thermal */}
+                                {habAmbiancesList.includes("THERMAL") && (
+                                    <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 space-y-4">
+                                        <div className="font-bold text-teal-900 text-sm flex items-center gap-2"><Droplet className="h-4 w-4" /> Spécificités thermales</div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 mb-2">Localisation du Hammam / Bain thermal</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                <label className="cursor-pointer">
+                                                    <input type="radio" value="INTEGRE" {...register("habThermalLocalisation")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">Intégré à l'établissement</div>
+                                                </label>
+                                                <label className="cursor-pointer">
+                                                    <input type="radio" value="PROXIMITE" {...register("habThermalLocalisation")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">À proximité (déplacement requis)</div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 mb-2">Distance (si à proximité)</label>
+                                            <input {...register("habThermalDistance")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 500 mètres / 2 km" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 mb-2">Conditions d'accès pour les clients</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                <label className="cursor-pointer">
+                                                    <input type="radio" value="GRATUIT" {...register("habThermalAcces")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">Accès gratuit / Inclus</div>
+                                                </label>
+                                                <label className="cursor-pointer">
+                                                    <input type="radio" value="PAYANT" {...register("habThermalAcces")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">Accès payant (tarif préférentiel)</div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Climatique */}
+                                {habAmbiancesList.includes("CLIMATIQUE") && (
+                                    <div className="bg-green-50 border border-green-200 rounded-xl p-5 space-y-4">
+                                        <div className="font-bold text-green-900 text-sm flex items-center gap-2"><Trees className="h-4 w-4" /> Infrastructures nature &amp; montagne</div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 mb-2">Accès à l'espace nature / forêt</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                {[
+                                                    { id: "INTEGRE", label: "Intégré (domaine arboré / forêt privée)" },
+                                                    { id: "A_PIED", label: "À pied (directement depuis l'établissement)" },
+                                                    { id: "EN_VOITURE", label: "En voiture (déplacement nécessaire)" },
+                                                ].map((opt) => (
+                                                    <label key={opt.id} className="cursor-pointer">
+                                                        <input type="radio" value={opt.id} {...register("habClimatAcces")} className="peer sr-only" />
+                                                        <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{opt.label}</div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {habClimatAcces === "EN_VOITURE" && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-2">Temps de trajet estimé (min)</label>
+                                                <input {...register("habClimatTempsVoiture")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 15" />
+                                            </div>
+                                        )}
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="checkbox" {...register("habClimatVisitesGuidees")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Service de visites guidées / Excursions organisées (randonnées, trekking)
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="checkbox" {...register("habClimatPisteSki")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Station / Piste de ski à proximité immédiate
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Étape 2.2 – Vue */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">Vue depuis le logement (plusieurs choix possibles)</label>
+                                    <div className="flex flex-wrap gap-3">
+                                        {HAB_VUES.map((v) => (
+                                            <label key={v.id} className="cursor-pointer">
+                                                <input type="checkbox" value={v.id} {...register("habVues")} className="peer sr-only" />
+                                                <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{v.label}</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Étape 3 – Transports & Attractions */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Navigation className="h-5 w-5 text-[#00BFA6]" />
+                                    Transports &amp; Attractions de Proximité
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Aéroport le plus proche</label>
+                                        <input {...register("habAirport")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Aéroport d'Oran Es Sénia" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Distance de l'aéroport (km)</label>
+                                        <input {...register("habAirportKm")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Transports en commun proches (Bus, Tram, Métro)</label>
+                                    <input {...register("habTransportCommuns")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Bus ligne 12, Tramway arrêt Centre-ville..." />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">À moins de 20 minutes du logement</label>
+                                    <div className="flex flex-wrap gap-3">
+                                        {HAB_ATTRACTIONS.map((a) => (
+                                            <label key={a.id} className="cursor-pointer">
+                                                <input type="checkbox" value={a.id} {...register("habAttractions")} className="peer sr-only" />
+                                                <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{a.label}</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Étape 4 – Équipements & Services */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Utensils className="h-5 w-5 text-[#00BFA6]" />
+                                    Équipements &amp; Services
+                                </h2>
+
+                                {/* Services et Repas */}
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
+                                    <div className="font-bold text-gray-900">Restauration incluse</div>
+                                    <div className="flex flex-wrap gap-3">
+                                        {HAB_REPAS.map((r) => (
+                                            <label key={r.id} className="cursor-pointer">
+                                                <input type="checkbox" value={r.id} {...register("habRepas")} className="peer sr-only" />
+                                                <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{r.label}</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Linge & Hygiène */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Linge de maison</div>
+                                        <div className="space-y-2">
+                                            {HAB_LINGE.map((l) => (
+                                                <label key={l.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={l.id} {...register("habLinge")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {l.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-2">
+                                        <div className="font-bold text-gray-900 mb-3">Produits &amp; Services</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("habHygiene")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Produits d'hygiène fournis (Shampoing, Savon, Papier toilette)
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("habLivraison")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Service de livraison de courses disponible
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Cuisine */}
+                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="font-bold text-gray-900 mb-3">Équipements Cuisine</div>
+                                    <div className="flex flex-wrap gap-3">
+                                        {HAB_EQUIPEMENTS_CUISINE.map((e) => (
+                                            <label key={e.id} className="cursor-pointer">
+                                                <input type="checkbox" value={e.id} {...register("habCuisineEquipements")} className="peer sr-only" />
+                                                <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{e.label}</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Confort & Multimédia */}
+                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="font-bold text-gray-900 mb-3">Confort &amp; Multimédia</div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {HAB_CONFORT.map((c) => (
+                                            <label key={c.id} className="cursor-pointer">
+                                                <input type="checkbox" value={c.id} {...register("habConfort")} className="peer sr-only" />
+                                                <div className="p-3 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-gray-50 hover:border-gray-400">{c.label}</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Loisirs & Bien-être */}
+                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="font-bold text-gray-900 mb-3">Infrastructures Loisirs &amp; Bien-être</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {HAB_LOISIRS.map((l) => (
+                                            <label key={l.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" value={l.id} {...register("habLoisirs")} className="accent-[#00BFA6] w-4 h-4" />
+                                                {l.label}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Équipements de Secours */}
+                                <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-xl">
+                                    <div className="font-bold text-orange-900 mb-3 flex items-center gap-2">
+                                        <Zap className="h-4 w-4" /> Équipements de Secours (Essentiels en Algérie)
+                                    </div>
+                                    <div className="space-y-2">
+                                        {HAB_SECOURS.map((s) => (
+                                            <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" value={s.id} {...register("habSecours")} className="accent-orange-500 w-4 h-4" />
+                                                {s.label}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Étape 5 – Stationnement & Accessibilité */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <ParkingCircle className="h-5 w-5 text-[#00BFA6]" />
+                                    Stationnement &amp; Accessibilité
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Parking (plusieurs choix possibles)</div>
+                                        <div className="space-y-2">
+                                            {HAB_PARKING.map((p) => (
+                                                <label key={p.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={p.id} {...register("habParking")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {p.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Accessibilité</div>
+                                        <div className="space-y-2">
+                                            {HAB_ACCESSIBILITE.map((a) => (
+                                                <label key={a.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={a.id} {...register("habAccessibilite")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {a.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Étape 6 – Règlement intérieur & Logistique */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <FileText className="h-5 w-5 text-[#00BFA6]" />
+                                    Règlement Intérieur &amp; Logistique
+                                </h2>
+
+                                {/* Âge minimal */}
+                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="font-bold text-gray-900 mb-3">Critère d'âge minimal pour réserver (Responsable de groupe)</div>
+                                    <div className="flex gap-4">
+                                        {[{ id: "18", label: "18 ans révolus" }, { id: "21", label: "21 ans révolus" }].map((opt) => (
+                                            <label key={opt.id} className="cursor-pointer">
+                                                <input type="radio" value={opt.id} {...register("habAgeMin")} className="peer sr-only" />
+                                                <div className="px-6 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{opt.label}</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Autorisations */}
+                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="font-bold text-gray-900 mb-3">Autorisations générales</div>
+                                    <div className="flex flex-wrap gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                            <input type="checkbox" {...register("habFumeurs")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Fumeurs acceptés
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                            <input type="checkbox" {...register("habAnimaux")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Animaux acceptés
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                            <input type="checkbox" {...register("habFetes")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Fêtes / Soirées autorisées
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Check-in / Check-out */}
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
+                                    <div className="font-bold text-gray-900">Réception, Arrivée et Départ</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Check-in à partir de</label>
+                                            <input {...register("habCheckIn")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Check-out avant</label>
+                                            <input {...register("habCheckOut")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Service de Réception</label>
+                                        <div className="flex gap-4">
+                                            {[
+                                                { id: "24H", label: "Réception ouverte 24h/24" },
+                                                { id: "HORAIRES", label: "Réception à horaires limités" },
+                                            ].map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer flex-1">
+                                                    <input type="radio" value={opt.id} {...register("habReceptionMode")} className="peer sr-only" />
+                                                    <div className="p-3 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{opt.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {habReceptionMode === "HORAIRES" && (
+                                        <div className="grid grid-cols-2 gap-4 ml-0">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Ouverte de</label>
+                                                <input {...register("habReceptionStart")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Jusqu'à</label>
+                                                <input {...register("habReceptionEnd")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Remise des clés</label>
+                                            <div className="flex flex-col gap-2">
+                                                {[
+                                                    { id: "EN_MAIN_PROPRE", label: "En main propre à l'accueil / par l'hôte" },
+                                                    { id: "AUTONOMIE", label: "Autonomie (Boîte à clés sécurisée)" },
+                                                ].map((opt) => (
+                                                    <label key={opt.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="radio" value={opt.id} {...register("habRemiseCles")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {opt.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Contrôle d'identité</label>
+                                            <div className="flex flex-col gap-2">
+                                                {[
+                                                    { id: "RETENTION", label: "Rétention de la pièce d'identité originale durant le séjour" },
+                                                    { id: "COPIE", label: "Une simple copie / numérisation suffit" },
+                                                ].map((opt) => (
+                                                    <label key={opt.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="radio" value={opt.id} {...register("habControleIdentite")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {opt.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {/* Step 5: Tarifs & Disponibilités – Hébergement chez l'habitant */}
+                    {currentStep === 5 && isHebergementHabitant && (
+                        <div className="w-full max-w-3xl animate-fade-in space-y-10">
+
+                            {/* Prix par nuitée */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Star className="h-5 w-5 text-[#00BFA6]" />
+                                    Prix &amp; Tarification
+                                </h2>
+                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
+                                    <div className="font-bold text-gray-900">Prix par nuitée</div>
+                                    <div className="flex gap-4 items-center">
+                                        <div className="relative flex-1">
+                                            <input
+                                                {...register("price")}
+                                                type="text"
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9]/g, "")
+                                                    const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+                                                    setValue("price", formatted, { shouldValidate: true })
+                                                }}
+                                                className="w-full p-4 pr-24 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg"
+                                                placeholder="0"
+                                            />
+                                            <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-3 font-bold text-gray-700 text-sm">DA / nuit</div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold text-gray-700 mb-2">Type de prix</div>
+                                        <div className="flex gap-3">
+                                            {[{ id: "FIXED", label: "Fixe" }, { id: "NEGOTIABLE", label: "Négociable" }].map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer">
+                                                    <input type="radio" value={opt.id} {...register("priceType")} className="peer sr-only" />
+                                                    <div className="px-5 py-2 border-2 border-gray-200 rounded-full font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-sm">{opt.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Condition de paiement */}
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-3">
+                                    <div className="font-bold text-gray-900">Condition de Paiement</div>
+                                    <div className="space-y-2">
+                                        {HAB_CONDITION_PAIEMENT.map((c) => (
+                                            <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value={c.id} {...register("habConditionPaiement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                {c.label}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {habConditionPaiement === "ACOMPTE" && (
+                                        <div className="ml-6 mt-3 space-y-2">
+                                            <div className="text-sm font-bold text-gray-700">Pourcentage de l'acompte</div>
+                                            <div className="flex gap-3">
+                                                {HAB_ACOMPTE_OPTIONS.map((a) => (
+                                                    <label key={a.id} className="cursor-pointer">
+                                                        <input type="radio" value={a.id} {...register("habAcompte")} className="peer sr-only" />
+                                                        <div className="px-5 py-2 border-2 border-gray-200 rounded-full font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-sm">{a.label}</div>
+                                                    </label>
+                                                ))}
+                                                <div className="flex items-center gap-2">
+                                                    <input {...register("habAcompte")} type="text" placeholder="Autre %" className="p-2 border-2 border-gray-200 rounded-xl w-24 font-medium text-sm focus:ring-2 focus:ring-[#00BFA6]" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Politique d'annulation */}
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
+                                    <div className="font-bold text-gray-900">Politique d'Annulation</div>
+                                    <div className="flex gap-4">
+                                        <label className="cursor-pointer flex-1">
+                                            <input type="radio" value="NON_ACCEPTEE" {...register("habAnnulation")} className="peer sr-only" />
+                                            <div className="p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-red-400 peer-checked:bg-red-50 peer-checked:text-red-600 transition-all bg-white text-sm">Non remboursable</div>
+                                        </label>
+                                        <label className="cursor-pointer flex-1">
+                                            <input type="radio" value="FLEXIBLE" {...register("habAnnulation")} className="peer sr-only" />
+                                            <div className="p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white text-sm">Annulation Flexible</div>
+                                        </label>
+                                    </div>
+                                    {habAnnulation === "FLEXIBLE" && (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-700 mb-2">Délai requis avant l'arrivée</div>
+                                                <div className="flex flex-wrap gap-3">
+                                                    {HAB_DELAI_ANNULATION.map((d) => (
+                                                        <label key={d.id} className="cursor-pointer">
+                                                            <input type="radio" value={d.id} {...register("habDelaiAnnulation")} className="peer sr-only" />
+                                                            <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{d.label}</div>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-700 mb-2">Si le délai n'est pas respecté</div>
+                                                <div className="flex flex-wrap gap-3">
+                                                    {HAB_NON_RESPECT.map((n) => (
+                                                        <label key={n.id} className="cursor-pointer">
+                                                            <input type="radio" value={n.id} {...register("habNonRespect")} className="peer sr-only" />
+                                                            <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-orange-400 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all bg-white">{n.label}</div>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Frais annexes */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Caution (Dépôt de garantie)</div>
+                                        <div className="flex gap-3">
+                                            <label className="cursor-pointer flex-1">
+                                                <input type="radio" value="false" {...register("habCaution")} className="peer sr-only" />
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-gray-500 peer-checked:bg-gray-100 transition-all bg-white">Non</div>
+                                            </label>
+                                            <label className="cursor-pointer flex-1">
+                                                <input type="radio" value="true" {...register("habCaution")} className="peer sr-only" />
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white">Oui</div>
+                                            </label>
+                                        </div>
+                                        {habCaution && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Montant (DZD)</label>
+                                                <input {...register("habCautionMontant")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 10 000" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Frais de ménage</div>
+                                        <div className="flex gap-3">
+                                            <label className="cursor-pointer flex-1">
+                                                <input type="radio" value="INCLUS" {...register("habFraisMenage")} className="peer sr-only" />
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white">Inclus</div>
+                                            </label>
+                                            <label className="cursor-pointer flex-1">
+                                                <input type="radio" value="SUPPLEMENT" {...register("habFraisMenage")} className="peer sr-only" />
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-orange-400 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all bg-white">En supplément</div>
+                                            </label>
+                                        </div>
+                                        {habFraisMenage === "SUPPLEMENT" && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">Montant (DZD)</label>
+                                                <input {...register("habFraisMenageMontant")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 2 000" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Modes de paiement */}
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
+                                    <div className="font-bold text-gray-900">Solutions de paiement acceptées</div>
+                                    <div>
+                                        <div className="text-sm font-bold text-gray-600 mb-2">Paiements locaux (Algérie)</div>
+                                        <div className="flex flex-wrap gap-3">
+                                            {HAB_PAIEMENTS_LOCAUX.map((p) => (
+                                                <label key={p.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={p.id} {...register("habPaiements")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{p.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold text-gray-600 mb-2">Paiements internationaux</div>
+                                        <div className="flex flex-wrap gap-3">
+                                            {HAB_PAIEMENTS_INTL.map((p) => (
+                                                <label key={p.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={p.id} {...register("habPaiements")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{p.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Disponibilités */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <CalendarIcon className="h-5 w-5 text-[#00BFA6]" />
+                                    Disponibilités
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Durée minimale de séjour (nuits)</label>
+                                        <input {...register("habDureeMin")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Délai de préparation entre réservations</label>
+                                        <div className="flex gap-2">
+                                            {[{ id: "AUCUN", label: "Aucun" }, { id: "1_NUIT", label: "1 nuit de battement" }].map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer flex-1">
+                                                    <input type="radio" value={opt.id} {...register("habDelaiPreparation")} className="peer sr-only" />
+                                                    <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{opt.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Période d'ouverture</label>
+                                        <div className="flex gap-2">
+                                            {[{ id: "TOUTE_ANNEE", label: "Toute l'année" }, { id: "SAISONNIER", label: "Saisonnier" }].map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer flex-1">
+                                                    <input type="radio" value={opt.id} {...register("habPeriodeOuverture")} className="peer sr-only" />
+                                                    <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{opt.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {habPeriodeOuverture === "SAISONNIER" && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Début de saison</label>
+                                            <input {...register("habDebutSaison")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Juin" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Fin de saison</label>
+                                            <input {...register("habFinSaison")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Septembre" />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                    <div className="font-bold text-blue-900 mb-1 text-sm">Documents obligatoires à l'arrivée (Conformes à la loi algérienne)</div>
+                                    <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+                                        <li>Citoyens locaux / Résidents : CNI ou Permis de conduire original</li>
+                                        <li>Voyageurs internationaux : Passeport original avec visa valide</li>
+                                        <li>Couples et familles : Livret de famille original</li>
+                                    </ul>
+                                    <p className="text-xs text-blue-700 mt-2 font-medium">Aucune remise de clé ne sera effectuée sans présentation de ces documents.</p>
+                                </div>
+                            </section>
                         </div>
                     )}
 
