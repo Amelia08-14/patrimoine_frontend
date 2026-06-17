@@ -2633,6 +2633,7 @@ export default function DepositPage() {
         const amenitiesPayload: any = {
             hangar: {
                 usage: data.hangarUsage?.length ? data.hangarUsage : undefined,
+                globalState: data.industrialGlobalState,
                 surfaces: {
                     covered: toNum(data.hangarSurfaceCovered),
                     terrain: toNum(data.hangarSurfaceTerrain),
@@ -3619,15 +3620,16 @@ export default function DepositPage() {
                     {currentStep === 4 && isHangarRentalParticulier && (
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
 
-                            {/* Infrastructure configuration & Surface */}
+                            {/* Section 1 : Dimensions & Surface */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Infrastructure configuration &amp; Surface
+                                    Dimensions &amp; Surface
                                 </h2>
 
                                 <div className="space-y-5">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* Ligne 1 : Surface terrain | Surface couverte | État global */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
                                             <input
@@ -3641,7 +3643,7 @@ export default function DepositPage() {
                                             {errors.hangarSurfaceTerrain && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceTerrain.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface couvert (m²)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface couverte (m²)</label>
                                             <input
                                                 {...register("hangarSurfaceCovered")}
                                                 type="number"
@@ -3652,8 +3654,21 @@ export default function DepositPage() {
                                             />
                                             {errors.hangarSurfaceCovered && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceCovered.message as any}</p>}
                                         </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">État global</label>
+                                            <select
+                                                {...register("industrialGlobalState")}
+                                                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-900"
+                                            >
+                                                <option value="">Sélectionner</option>
+                                                {INDUSTRIAL_GLOBAL_STATES.map((s) => (
+                                                    <option key={s.id} value={s.id}>{s.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
+                                    {/* Ligne 2 : Longueur | Largeur | Hauteur sous crochet */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (ml)</label>
@@ -3692,59 +3707,68 @@ export default function DepositPage() {
                                             {errors.hangarHeight && <p className="text-red-500 text-sm mt-1">{errors.hangarHeight.message as any}</p>}
                                         </div>
                                     </div>
+                                </div>
+                            </section>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                            <div className="font-bold text-gray-900">Toiture</div>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Tôle TH40
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Panneaux Sandwich
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarToitureAutre")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Autre
-                                            </label>
-                                        </div>
+                            {/* Section 2 : Infrastructure */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Warehouse className="h-5 w-5 text-[#00BFA6]" />
+                                    Infrastructure
+                                </h2>
 
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                            <div className="font-bold text-gray-900">Sol</div>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Béton
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarSolResineEpoxy")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Résine Époxy
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" {...register("hangarSolAutre")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Autre
-                                            </label>
-                                        </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Type d&apos;utilisation</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" value="STOCKAGE_LOGISTIQUE" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Stockage
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" value="PRODUCTION_INDUSTRIEL" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Production
+                                        </label>
+                                    </div>
 
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                            <div className="font-bold text-gray-900">Type d&apos;utilisation</div>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="STOCKAGE_LOGISTIQUE" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Stockage / Logistique
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="PRODUCTION_INDUSTRIEL" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Production / Industriel
-                                            </label>
-                                        </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Toiture</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Tôle TH40
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Panneaux Sandwich
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarToitureAutre")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Autre
+                                        </label>
+                                    </div>
+
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Sol</div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Béton
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarSolResineEpoxy")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Résine Époxy
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                            <input type="checkbox" {...register("hangarSolAutre")} className="accent-[#00BFA6] w-4 h-4" />
+                                            Autre
+                                        </label>
                                     </div>
                                 </div>
                             </section>
 
+                            {/* Section 3 : Emplacement */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Emplacement &amp; Logistique
+                                    Emplacement
                                 </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -3762,7 +3786,8 @@ export default function DepositPage() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Accès transport</div>
+                                        <div className="font-bold text-gray-900 mb-3">Logistique</div>
+                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Accès transport</div>
                                         <div className="space-y-2">
                                             {INDUSTRIAL_ACCESS_TRANSPORT.map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">

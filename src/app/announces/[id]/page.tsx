@@ -187,8 +187,8 @@ const LABELS: any = {
     environnement: "Environnement",
 
     // Hangar - Usage
-    STOCKAGE_LOGISTIQUE: "Stockage / Logistique",
-    PRODUCTION_INDUSTRIEL: "Production / Industriel",
+    STOCKAGE_LOGISTIQUE: "Stockage",
+    PRODUCTION_INDUSTRIEL: "Production",
 
     // Terrain Agricole
     M2: "m²", HA: "Hectare (ha)", DOUNEM: "Dounem",
@@ -841,6 +841,11 @@ export default function AnnounceDetailsPage() {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-3">
                       <h1 className="text-3xl font-bold text-gray-900">{propertyTypeLabel}</h1>
+                      {isHangarRental && hangar?.globalState && (
+                          <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
+                              {LABELS[hangar.globalState] || hangar.globalState}
+                          </span>
+                      )}
                       {property.state && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
                               {LABELS[property.state] || property.state}
@@ -969,18 +974,16 @@ export default function AnnounceDetailsPage() {
                   </div>
                 ) : isHangarRental ? (
                   <div className="w-full flex items-center justify-between gap-3">
-                    {/* Type d'utilisation */}
-                    {hangar?.usage?.[0] && (
-                      <div className="flex items-center gap-2 text-gray-700 min-w-0">
-                        <Warehouse className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-bold text-base truncate">{LABELS[hangar.usage[0]] || hangar.usage[0]}</div>
-                          <div className="text-xs text-gray-500">Usage</div>
+                    {hangar?.surfaces?.terrain != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{hangar.surfaces.terrain} m²</div>
+                          <div className="text-xs text-gray-500">Surf. Terrain</div>
                         </div>
                       </div>
                     )}
                     <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {/* Surface couverte */}
                     {hangar?.surfaces?.covered != null && (
                       <div className="flex items-center gap-2 text-gray-700 shrink-0">
                         <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
@@ -991,20 +994,26 @@ export default function AnnounceDetailsPage() {
                       </div>
                     )}
                     <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {/* Longueur x Largeur */}
-                    {(hangar?.dimensions?.length != null || hangar?.dimensions?.width != null) && (
+                    {hangar?.dimensions?.length != null && (
                       <div className="flex items-center gap-2 text-gray-700 shrink-0">
                         <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
                         <div>
-                          <div className="font-bold text-base">
-                            {hangar.dimensions.length != null ? `${hangar.dimensions.length}` : "—"} × {hangar.dimensions.width != null ? `${hangar.dimensions.width} ml` : "—"}
-                          </div>
-                          <div className="text-xs text-gray-500">L × l</div>
+                          <div className="font-bold text-base">{hangar.dimensions.length} ml</div>
+                          <div className="text-xs text-gray-500">Longueur</div>
                         </div>
                       </div>
                     )}
                     <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {/* Hauteur sous crochet */}
+                    {hangar?.dimensions?.width != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{hangar.dimensions.width} ml</div>
+                          <div className="text-xs text-gray-500">Largeur</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
                     {hangar?.dimensions?.height != null && (
                       <div className="flex items-center gap-2 text-gray-700 shrink-0">
                         <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
@@ -1890,79 +1899,64 @@ export default function AnnounceDetailsPage() {
               {hangar && (
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                    {/* Col 1 — Infrastructure configuration & Surface */}
+                    {/* Col 1 — Infrastructure */}
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
-                      <div className="flex items-center gap-2">
-                        <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Infrastructure</h3>
+                      {/* En-tête : Titre + État global */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                          <h3 className="text-[17px] font-bold text-gray-900">Infrastructure</h3>
+                        </div>
+                        {hangar.globalState && (
+                          <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full whitespace-nowrap">
+                            {LABELS[hangar.globalState] || hangar.globalState}
+                          </span>
+                        )}
                       </div>
+
                       <div className="space-y-3">
-                        {hangar.surfaces?.terrain != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Surface terrain</span>
-                            <span className="font-bold text-gray-900 text-sm">{hangar.surfaces.terrain} m²</span>
-                          </div>
-                        )}
-                        {hangar.surfaces?.covered != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Surface couverte</span>
-                            <span className="font-bold text-gray-900 text-sm">{hangar.surfaces.covered} m²</span>
-                          </div>
-                        )}
-                        {hangar.dimensions?.length != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Longueur</span>
-                            <span className="font-bold text-gray-900 text-sm">{hangar.dimensions.length} ml</span>
-                          </div>
-                        )}
-                        {hangar.dimensions?.width != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Largeur</span>
-                            <span className="font-bold text-gray-900 text-sm">{hangar.dimensions.width} ml</span>
-                          </div>
-                        )}
-                        {hangar.dimensions?.height != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Hauteur sous crochet</span>
-                            <span className="font-bold text-gray-900 text-sm">{hangar.dimensions.height} ml</span>
-                          </div>
-                        )}
-                        {(hangar.toiture?.toleTH40 || hangar.toiture?.panneauxSandwich || hangar.toiture?.autre) && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Toiture</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Tôle TH40</span>}
-                              {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Panneaux Sandwich</span>}
-                              {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
-                            </div>
-                          </div>
-                        )}
-                        {(hangar.sol?.beton || hangar.sol?.resineEpoxy || hangar.sol?.autre) && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Sol</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {hangar.sol.beton && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Béton</span>}
-                              {hangar.sol.resineEpoxy && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Résine Époxy</span>}
-                              {hangar.sol.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
-                            </div>
-                          </div>
-                        )}
-                        {hangar.usage?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Type d&apos;utilisation</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {hangar.usage.map((u: string) => (
-                                <span key={u} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[u] || u}</span>
-                              ))}
-                            </div>
+                        {/* Matériaux Infrastructure */}
+                        {(hangar.usage?.length > 0 || hangar.toiture?.toleTH40 || hangar.toiture?.panneauxSandwich || hangar.toiture?.autre || hangar.sol?.beton || hangar.sol?.resineEpoxy || hangar.sol?.autre) && (
+                          <div className="space-y-3">
+                            {hangar.usage?.length > 0 && (
+                              <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                                <span className="text-gray-500 text-xs">Type d&apos;utilisation</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {hangar.usage.map((u: string) => (
+                                    <span key={u} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[u] || u}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {(hangar.toiture?.toleTH40 || hangar.toiture?.panneauxSandwich || hangar.toiture?.autre) && (
+                              <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                                <span className="text-gray-500 text-xs">Toiture</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Tôle TH40</span>}
+                                  {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Panneaux Sandwich</span>}
+                                  {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
+                                </div>
+                              </div>
+                            )}
+                            {(hangar.sol?.beton || hangar.sol?.resineEpoxy || hangar.sol?.autre) && (
+                              <div className="flex flex-col gap-2 py-1.5">
+                                <span className="text-gray-500 text-xs">Sol</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {hangar.sol.beton && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Béton</span>}
+                                  {hangar.sol.resineEpoxy && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Résine Époxy</span>}
+                                  {hangar.sol.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Col 2 — Emplacement & Logistique */}
+                    {/* Col 2 — Emplacement */}
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-[#00BFA6]" />
@@ -1981,6 +1975,7 @@ export default function AnnounceDetailsPage() {
                         )}
                         {hangar.logistics?.accessTransport?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
+                            <span className="font-bold text-gray-900 text-sm mb-1">Logistique</span>
                             <span className="text-gray-500 text-xs">Accès transport</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.logistics.accessTransport.map((a: string) => (
