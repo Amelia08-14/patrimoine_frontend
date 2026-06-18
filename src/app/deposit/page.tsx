@@ -237,7 +237,7 @@ const INDUSTRIAL_RENTAL_TYPES = [
 
 const INDUSTRIAL_GLOBAL_STATES = [
     { id: "NEUF", label: "Neuf (Jamais servi)" },
-    { id: "BON_ETAT_MARCHE", label: "Bon état de marche" },
+    { id: "BON_ETAT_MARCHE", label: "Bon état" },
     { id: "ANCIEN", label: "Ancien (À réviser)" },
 ]
 
@@ -324,8 +324,8 @@ const CF_SECTORS = [
     { id: "AUTRE_CF", label: "Autre activité", info: "" },
 ]
 const CF_STRUCTURE_TYPES = [
-    { id: "CELLULE_UNIQUE", label: "Cellule unique (Mono-bloc)" },
-    { id: "COMPLEXE_FRIGORIFIQUE", label: "Plusieurs cellules (Complexe)" },
+    { id: "CELLULE_UNIQUE", label: "Cellule unique (Une seule chambre)" },
+    { id: "COMPLEXE_FRIGORIFIQUE", label: "Plusieurs cellules (Complexe frigorifique)" },
 ]
 const CF_ZONE_DECHARGEMENT = [
     { id: "QUAI_NIVELEUR_SAS", label: "Quai niveleur SAS étanche" },
@@ -690,8 +690,8 @@ const ENTRY_ACCESS_TYPES = [
 const APARTMENT_LIFESTYLE_TYPES = [
     {
         id: "QUARTIER_OUVERT",
-        label: "Quartier ouvert",
-        description: "Quartier ouvert"
+        label: "Quartier classique",
+        description: "Quartier classique"
     },
     {
         id: "RESIDENCE_CLOTUREE",
@@ -1015,12 +1015,12 @@ const formSchema = z.object({
   cfTracabilite: stringArrayOptional,
   cfTechniqueFroid: stringArrayOptional,
   cfSecuriteHumaine: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
-  cfSurfaceAuSol: z.string().optional(),
-  cfHauteurEvaporateur: z.string().optional(),
-  cfVolumeStockage: z.string().optional(),
+  cfLength: z.string().optional(),
+  cfWidth: z.string().optional(),
+  cfHeight: z.string().optional(),
   cfEtatGlobal: z.enum(["NEUF", "BON_ETAT_MARCHE", "ANCIEN"]).optional(),
-  cfTypeFroid: z.string().optional(),
-  cfModeDiffusion: z.string().optional(),
+  cfTypeFroid: stringArrayOptional,
+  cfModeDiffusion: stringArrayOptional,
   cfModeGestion: z.string().optional(),
   cfFlexibilite: stringArrayOptional,
   cfDureeEngagement: stringArrayOptional,
@@ -2599,9 +2599,11 @@ export default function DepositPage() {
             coldRoom: {
                 sector: data.cfSector?.length ? data.cfSector : undefined,
                 sectorOther: data.cfSectorOther?.trim() || undefined,
-                surfaceAuSol: toNum(data.cfSurfaceAuSol),
-                hauteurEvaporateur: toNum(data.cfHauteurEvaporateur),
-                volumeStockage: toNum(data.cfVolumeStockage),
+                dimensions: {
+                    length: toNum(data.cfLength),
+                    width: toNum(data.cfWidth),
+                    height: toNum(data.cfHeight),
+                },
                 etatGlobal: data.cfEtatGlobal,
                 localisation: data.cfLocalisation?.length ? data.cfLocalisation : undefined,
                 structureType: data.cfStructureType,
@@ -2614,11 +2616,17 @@ export default function DepositPage() {
                 generateur: (data.cfGenerateur as any) === true,
                 generateurKva: (data.cfGenerateur as any) === true ? toNum(data.cfGenerateurKva) : undefined,
                 techniqueFroid: data.cfTechniqueFroid?.length ? data.cfTechniqueFroid : undefined,
-                typeFroid: data.cfTypeFroid,
-                modeDiffusion: data.cfModeDiffusion,
+                typeFroid: data.cfTypeFroid?.length ? data.cfTypeFroid : undefined,
+                modeDiffusion: data.cfModeDiffusion?.length ? data.cfModeDiffusion : undefined,
                 modeGestion: data.cfModeGestion,
                 flexibilite: data.cfFlexibilite?.length ? data.cfFlexibilite : undefined,
                 dureeEngagement: data.cfDureeEngagement?.length ? data.cfDureeEngagement : undefined,
+                annexes: {
+                    offices: (data.industrialOffices as any) === true || (data.industrialOffices as any) === "true",
+                    socialLocales: data.industrialSocialLocales?.length ? data.industrialSocialLocales : undefined,
+                    hebergement: data.industrialHebergement?.length ? data.industrialHebergement : undefined,
+                    security: data.industrialSecurity?.length ? data.industrialSecurity : undefined,
+                },
             }
         }
         formData.append("amenities", JSON.stringify(amenitiesPayload))
@@ -4052,16 +4060,16 @@ export default function DepositPage() {
                                 </h2>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface au sol</label>
-                                        <input {...register("cfSurfaceAuSol")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500 m²" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (ml)</label>
+                                        <input {...register("cfLength")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous évaporateur</label>
-                                        <input {...register("cfHauteurEvaporateur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5 m" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (ml)</label>
+                                        <input {...register("cfWidth")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 10" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Volume de stockage</label>
-                                        <input {...register("cfVolumeStockage")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2000 m³" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur (ml)</label>
+                                        <input {...register("cfHeight")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">État global</label>
@@ -4071,6 +4079,77 @@ export default function DepositPage() {
                                                 <option key={s.id} value={s.id}>{s.label}</option>
                                             ))}
                                         </select>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Annexes & Commodités */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
+                                    Annexes &amp; Commodités
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                                    {/* Bureaux */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Bureaux</div>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value="true" {...register("industrialOffices")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Oui
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                                <input type="radio" value="false" {...register("industrialOffices")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Non
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {/* Locaux sociaux */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: "VESTIAIRES", label: "Vestiaires" },
+                                                { id: "REFECTOIRE", label: "Réfectoire" },
+                                                { id: "SANITAIRES_HF", label: "Sanitaires H/F" },
+                                            ].map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Hébergement */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Hébergement</div>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: "LOGEMENT", label: "Logement" },
+                                                { id: "DORTOIRS", label: "Dortoirs" },
+                                            ].map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Sécurité */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Sécurité</div>
+                                        <div className="space-y-2">
+                                            {[
+                                                { id: "POSTE_GARDE", label: "Poste de garde" },
+                                                { id: "CLOTURE_MACONNEE", label: "Clôture maçonnée" },
+                                                { id: "CAMERAS", label: "Caméras" },
+                                            ].map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialSecurity")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -4218,7 +4297,7 @@ export default function DepositPage() {
                                                     { id: "ULTRA_FROID", label: "Ultra Froid (Tunnel de congélation)" },
                                                 ].map((x) => (
                                                     <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                        <input type="radio" value={x.id} {...register("cfTypeFroid")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        <input type="checkbox" value={x.id} {...register("cfTypeFroid")} className="accent-[#00BFA6] w-4 h-4" />
                                                         {x.label}
                                                     </label>
                                                 ))}
@@ -4233,7 +4312,7 @@ export default function DepositPage() {
                                                     { id: "FROID_STATIQUE", label: "Froid Statique" },
                                                 ].map((x) => (
                                                     <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                        <input type="radio" value={x.id} {...register("cfModeDiffusion")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        <input type="checkbox" value={x.id} {...register("cfModeDiffusion")} className="accent-[#00BFA6] w-4 h-4" />
                                                         {x.label}
                                                     </label>
                                                 ))}
@@ -5419,14 +5498,14 @@ export default function DepositPage() {
                             {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <BedDouble className="text-[#00BFA6]" /> Espaces de Vie
+                                    <BedDouble className="text-[#00BFA6]" /> {isCommercialPropertyType ? "Type d'emplacement" : "Espaces de Vie"}
                                 </h2>
                                 
                                 <div className="flex flex-col gap-5">
                                     {/* Ligne 1: Chambres, Suites, Salons, Toilettes */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux" : "Chambres"} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux (chambres)" : "Chambres"} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("bedrooms")} 
                                                 type="number" 
@@ -5437,7 +5516,7 @@ export default function DepositPage() {
                                             {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux spacieux" : "Suites parentales"}</label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux suites (avec sanitaires)" : "Suites parentales"}</label>
                                             <input 
                                                 {...register("nbSuites")} 
                                                 type="number" 
@@ -5447,7 +5526,7 @@ export default function DepositPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Salles de réunion" : "Salons"} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Grande salle (Salons)" : "Salons"} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("livingRooms")} 
                                                 type="number" 

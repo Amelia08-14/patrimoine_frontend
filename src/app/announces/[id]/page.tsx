@@ -7,7 +7,7 @@ import {
   ArrowLeft, MapPin, BedDouble, Bath, Square, Heart, Share2,
   Phone, Mail, User, Check, Building2, Car, Wind, Sun,
   Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users, FileText, Handshake,
-  Factory, Key, Zap, Truck, Shield, Ruler
+  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
@@ -88,7 +88,7 @@ const LABELS: any = {
     MURS_NUS: "Murs nus (Vide)",
     EQUIPEE: "Équipée (Clé en main)",
     NEUF: "Neuf (Jamais servi)",
-    BON_ETAT_MARCHE: "Bon état de marche",
+    BON_ETAT_MARCHE: "Bon état",
     ANCIEN: "Ancien (À réviser)",
     PLAIN_PIED: "Plain-pied (RDC)",
     ETAGES: "À étages",
@@ -140,8 +140,8 @@ const LABELS: any = {
     HORTICOLE_AGRICOLE: "Horticole & Agricole",
     AUTRE_CF: "Autre activité",
     // Chambre froide - Structure
-    CELLULE_UNIQUE: "Cellule unique (Mono-bloc)",
-    COMPLEXE_FRIGORIFIQUE: "Complexe frigorifique",
+    CELLULE_UNIQUE: "Cellule unique (Une seule chambre)",
+    COMPLEXE_FRIGORIFIQUE: "Plusieurs cellules (Complexe frigorifique)",
     // Chambre froide - Zone déchargement
     QUAI_NIVELEUR_SAS: "Quai niveleur SAS étanche",
     QUAI_SIMPLE: "Quai simple",
@@ -158,6 +158,13 @@ const LABELS: any = {
     // Chambre froide - Flexibilité
     SURFACE_DEDIEE: "Surface dédiée",
     CO_STOCKAGE: "Co-stockage",
+    // Chambre froide - Type de froid
+    POSITIF: "Positif",
+    NEGATIF: "Négatif",
+    ULTRA_FROID: "Ultra Froid",
+    // Chambre froide - Mode de diffusion
+    FROID_VENTILE: "Froid Ventilé",
+    FROID_STATIQUE: "Froid Statique",
     // Chambre froide - Durée engagement
     ANNUELLE: "Annuelle (Bail long terme)",
     MENSUELLE_HEBDO: "Mensuelle / Hebdomadaire",
@@ -846,6 +853,16 @@ export default function AnnounceDetailsPage() {
                               {LABELS[hangar.globalState] || hangar.globalState}
                           </span>
                       )}
+                      {isFactoryRental && industrialFactory?.globalState && (
+                          <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
+                              {LABELS[industrialFactory.globalState] || industrialFactory.globalState}
+                          </span>
+                      )}
+                      {isColdRoomRental && coldRoom?.etatGlobal && (
+                          <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
+                              {LABELS[coldRoom.etatGlobal] || coldRoom.etatGlobal}
+                          </span>
+                      )}
                       {property.state && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
                               {LABELS[property.state] || property.state}
@@ -928,46 +945,42 @@ export default function AnnounceDetailsPage() {
                   </div>
                 ) : isColdRoomRental ? (
                   <div className="w-full flex items-center justify-between gap-3">
-                    {/* Secteur d'activité */}
-                    {coldRoom?.sector?.[0] && (
-                      <div className="flex items-center gap-2 text-gray-700 min-w-0">
-                        <Factory className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-bold text-base truncate">{LABELS[coldRoom.sector[0]] || (coldRoom.sectorOther || coldRoom.sector[0])}</div>
-                          <div className="text-xs text-gray-500">Activité compatible</div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {/* Surface froide */}
-                    {property.area != null && (
+                    {coldRoom?.dimensions?.length != null && (
                       <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Warehouse className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
                         <div>
-                          <div className="font-bold text-base">{property.area} m²</div>
-                          <div className="text-xs text-gray-500">Surf. Froide</div>
+                          <div className="font-bold text-base">{coldRoom.dimensions.length} ml</div>
+                          <div className="text-xs text-gray-500">Longueur</div>
                         </div>
                       </div>
                     )}
                     <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {/* Structure */}
+                    {coldRoom?.dimensions?.width != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{coldRoom.dimensions.width} ml</div>
+                          <div className="text-xs text-gray-500">Largeur</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {coldRoom?.dimensions?.height != null && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{coldRoom.dimensions.height} ml</div>
+                          <div className="text-xs text-gray-500">Hauteur</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
                     {coldRoom?.structureType && (
                       <div className="flex items-center gap-2 text-gray-700 shrink-0">
                         <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{LABELS[coldRoom.structureType] || coldRoom.structureType}</div>
                           <div className="text-xs text-gray-500">Structure</div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {/* Mode de gestion */}
-                    {coldRoom?.modeGestion && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Key className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{LABELS[coldRoom.modeGestion] || coldRoom.modeGestion}</div>
-                          <div className="text-xs text-gray-500">Mode de gestion</div>
                         </div>
                       </div>
                     )}
@@ -1387,7 +1400,7 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Key className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">État &amp; Type</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900">État &amp; Types d&apos;offre</h3>
                       </div>
                       <div className="space-y-3">
                         {industrialFactory.rentalType && (
@@ -1602,9 +1615,10 @@ export default function AnnounceDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     {/* Col 1 — Configuration & Structure */}
+                    {/* Col 1 — Configuration */}
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
-                        <Key className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <Layers className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
                         <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Configuration</h3>
                       </div>
                       <div className="space-y-3">
@@ -1628,12 +1642,12 @@ export default function AnnounceDetailsPage() {
                             <span className="text-gray-500 text-xs">Logistique verticale</span>
                             <span className="font-bold text-gray-900 text-sm">
                               {LABELS[coldRoom.logistiqueVerticale] || coldRoom.logistiqueVerticale}
-                              {coldRoom.logistiqueVerticale === "MONTE_CHARGE" && coldRoom.monteChargeCapacity ? ` — ${coldRoom.monteChargeCapacity} T` : ""}
+                              {coldRoom.logistiqueVerticale === "MONTE_CHARGE" && coldRoom.monteChargeCapacity ? ` — ${coldRoom.monteChargeCapacity} Tonnes` : ""}
                             </span>
                           </div>
                         )}
                         {coldRoom.zoneDechargement?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5">
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Zone de déchargement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.zoneDechargement.map((z: string) => (
@@ -1642,32 +1656,22 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Col 2 — Localisation & Accès */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
-                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
-                        <MapPin className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Localisation & Accès</h3>
-                      </div>
-                      <div className="space-y-3">
-                        {coldRoom.localisation?.length > 0 && (
+                        {coldRoom.typeFroid?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Situation</span>
+                            <span className="text-gray-500 text-xs">Type de froid</span>
                             <div className="flex flex-wrap gap-1.5">
-                              {coldRoom.localisation.map((l: string) => (
-                                <span key={l} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[l] || l}</span>
+                              {coldRoom.typeFroid.map((t: string) => (
+                                <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
                               ))}
                             </div>
                           </div>
                         )}
-                        {coldRoom.accessibilite?.length > 0 && (
+                        {coldRoom.modeDiffusion?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Accès camions</span>
+                            <span className="text-gray-500 text-xs">Mode de diffusion</span>
                             <div className="flex flex-wrap gap-1.5">
-                              {coldRoom.accessibilite.map((a: string) => (
-                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                              {coldRoom.modeDiffusion.map((m: string) => (
+                                <span key={m} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[m] || m}</span>
                               ))}
                             </div>
                           </div>
@@ -1675,7 +1679,7 @@ export default function AnnounceDetailsPage() {
                       </div>
                     </div>
 
-                    {/* Col 3 — Équipements techniques */}
+                    {/* Col 2 — Équipements */}
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
@@ -1684,7 +1688,7 @@ export default function AnnounceDetailsPage() {
                       <div className="space-y-3">
                         {coldRoom.techniqueFroid?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Technique froid négatif</span>
+                            <span className="text-gray-500 text-xs">Technique froid</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.techniqueFroid.map((t: string) => (
                                 <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
@@ -1719,13 +1723,34 @@ export default function AnnounceDetailsPage() {
                       </div>
                     </div>
 
-                    {/* Col 4 — Modalités */}
+                    {/* Col 3 — Localisation et modalités */}
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
-                        <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Modalités</h3>
+                        <MapPin className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Localisation et modalités</h3>
                       </div>
                       <div className="space-y-3">
+                        {coldRoom.localisation?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Situation</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.localisation.map((l: string) => (
+                                <span key={l} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[l] || l}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {coldRoom.accessibilite?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Accès camions</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.accessibilite.map((a: string) => (
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="border-b border-gray-100" />
                         {coldRoom.modeGestion && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Mode de gestion</span>
@@ -1734,7 +1759,7 @@ export default function AnnounceDetailsPage() {
                         )}
                         {coldRoom.flexibilite?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Flexibilité d'espace</span>
+                            <span className="text-gray-500 text-xs">Flexibilité d&apos;espace</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.flexibilite.map((f: string) => (
                                 <span key={f} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[f] || f}</span>
@@ -1744,10 +1769,56 @@ export default function AnnounceDetailsPage() {
                         )}
                         {coldRoom.dureeEngagement?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Durée d'engagement</span>
+                            <span className="text-gray-500 text-xs">Durée d&apos;engagement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.dureeEngagement.map((d: string) => (
                                 <span key={d} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 4 — Annexes */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                        <LayoutGrid className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Annexes</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {coldRoom.annexes?.offices != null && (
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Bureaux</span>
+                            <span className="font-bold text-gray-900 text-sm">{coldRoom.annexes.offices ? "Oui" : "Non"}</span>
+                          </div>
+                        )}
+                        {coldRoom.annexes?.socialLocales?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Locaux sociaux</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.annexes.socialLocales.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {coldRoom.annexes?.hebergement?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                            <span className="text-gray-500 text-xs">Hébergement</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.annexes.hebergement.map((h: string) => (
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {coldRoom.annexes?.security?.length > 0 && (
+                          <div className="flex flex-col gap-2 py-1.5">
+                            <span className="text-gray-500 text-xs">Sécurité</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coldRoom.annexes.security.map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
