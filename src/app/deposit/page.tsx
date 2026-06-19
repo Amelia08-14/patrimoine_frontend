@@ -176,6 +176,7 @@ const BASE_PROPERTY_TYPES = [
   { id: "VILLA_COMMERCIALE", label: "Villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "VillaBureau" },
   { id: "NIVEAU_VILLA_COMMERCIAL", label: "Niveau de villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "NiveauVillaBureau" },
   { id: "IMMEUBLE_BUREAU", label: "Immeuble de bureaux", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
+  { id: "IMMEUBLE_COMMERCIAL", label: "Immeuble commercial", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "LOCAL_COMMERCIAL", label: "Local commercial", categoryId: "BUREAUX_COMMERCES", iconName: "LocalCommercial" },
   { id: "SHOWROOM", label: "Showroom", categoryId: "BUREAUX_COMMERCES", iconName: "Showroom" },
   { id: "CENTRE_AFFAIRES", label: "Centre d'affaires", categoryId: "BUREAUX_COMMERCES", iconName: "CentreAffaires" },
@@ -418,6 +419,101 @@ const TERRAIN_AGRICOLE_ENSOLEILLEMENT = [
     { id: "ELEVE", label: "Élevé (> 8h/jour)" },
     { id: "MOYEN", label: "Moyen (5 à 8h/jour)" },
     { id: "FAIBLE", label: "Faible (< 5h/jour)" },
+]
+const TERRAIN_AGRICOLE_NATURE_SOL = [
+    { id: "ARGILEUX", label: "Argileux" },
+    { id: "SABLONNEUX", label: "Sablonneux" },
+    { id: "LIMONEUX", label: "Limoneux" },
+    { id: "AUTRE_MIXTE", label: "Autre / Mixte" },
+]
+const TERRAIN_AGRICOLE_QUALITE_EAU = [
+    { id: "DOUCE", label: "Douce" },
+    { id: "SAUMATRE", label: "Saumâtre" },
+    { id: "AUTRE_EAU", label: "Autre" },
+]
+const TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE = [
+    { id: "BASSIN_RETENTION", label: "Bassin de rétention / Réservoir" },
+    { id: "IRRIGATION_GOUTTE", label: "Système d'irrigation goutte-à-goutte" },
+    { id: "AUTRE_SYSTEME", label: "Autre système" },
+]
+const TERRAIN_AGRICOLE_TYPE_CULTURE = [
+    { id: "ARBORICULTURE", label: "Arboriculture (Arbres fruitiers, oliviers…)" },
+    { id: "MARAICHAGE", label: "Maraîchage (Légumes)" },
+    { id: "GRANDES_CULTURES", label: "Grandes cultures (Céréales, fourrage)" },
+    { id: "AUTRE_CULTURE", label: "Autre" },
+]
+const TERRAIN_AGRICOLE_ACCES = [
+    { id: "ROUTE_GOUDRON", label: "Route goudronnée" },
+    { id: "PISTE_CARROSSABLE", label: "Piste carrossable (accessible en voiture standard)" },
+    { id: "ACCES_DIFFICILE", label: "Accès difficile (nécessite 4x4)" },
+]
+const TERRAIN_AGRICOLE_ACCES_LOURDS = [
+    { id: "CAMION_PORTEUR", label: "Accessible en Camion porteur" },
+    { id: "SEMI_REMORQUE", label: "Accessible en Semi-remorque" },
+]
+const TERRAIN_AGRICOLE_CONSTRUCTIONS = [
+    { id: "HANGAR_STOCKAGE", label: "Hangar de stockage" },
+    { id: "ECURIES_ELEVAGE", label: "Écuries / Bâtiments d'élevage" },
+    { id: "MAISON_GARDIENNAGE", label: "Maison de gardiennage / Logement de fonction" },
+    { id: "AUCUNE", label: "Aucune construction" },
+]
+const TERRAIN_AGRICOLE_CLOTURE = [
+    { id: "OUVERT", label: "Terrain libre / Ouvert (Non clôturé)" },
+    { id: "GRILLAGE", label: "Clôture en grillage" },
+    { id: "MURS_ENCEINTE", label: "Murs d'enceinte" },
+    { id: "HAIES", label: "Haies naturelles" },
+]
+const TERRAIN_AGRICOLE_ZONE = [
+    { id: "PERIURBAINE", label: "Zone périurbaine (proche de la ville)" },
+    { id: "RURALE", label: "Zone rurale (village ou communauté agricole)" },
+    { id: "ISOLEE", label: "Zone isolée" },
+]
+// ===== TERRAIN TOURISTIQUE =====
+const TERRAIN_TOURISTIQUE_ZONE = [
+    { id: "BALNEAIRE", label: "Zone balnéaire (Littoral, bord de mer)" },
+    { id: "SAHARIEN", label: "Zone saharienne (Sud, oasis, tourisme saharien)" },
+    { id: "CLIMATIQUE", label: "Zone climatique (Montagne, forêt, tourisme vert)" },
+    { id: "THERMAL", label: "Zone thermale (Sources thermales, hammams)" },
+    { id: "URBAINE", label: "Zone urbaine (Centre-ville, tourisme d'affaires)" },
+    { id: "AUTRE_ZONE", label: "Autre situation" },
+]
+const TERRAIN_TOURISTIQUE_ZET = [
+    { id: "OUI", label: "Oui — Situé dans une Z.E.T décrétée" },
+    { id: "NON", label: "Non" },
+]
+const TERRAIN_TOURISTIQUE_PAT = [
+    { id: "OUI_APPROUVE", label: "Oui (Approuvé et publié)" },
+    { id: "EN_COURS", label: "En cours d'étude / En cours d'approbation" },
+    { id: "NON", label: "Non / Aucun plan d'aménagement disponible" },
+]
+const TERRAIN_TOURISTIQUE_RESEAUX = [
+    { id: "ELECTRICITE", label: "Électricité (Basse tension / Moyenne tension)" },
+    { id: "EAU_POTABLE", label: "Eau potable (Réseau public)" },
+    { id: "GAZ_VILLE", label: "Gaz de ville" },
+    { id: "ASSAINISSEMENT", label: "Assainissement (Réseau d'égouts)" },
+    { id: "FIBRE_OPTIQUE", label: "Fibre optique / Télécom" },
+]
+// ===== IMMEUBLE BUREAU/COMMERCIAL =====
+const IMMEUBLE_TYPE_ZONE = [
+    { id: "GRAND_BOULEVARD", label: "Grand Boulevard / Axe Principal" },
+    { id: "ZONE_COMMERCIALE", label: "Zone Commerciale (Retail Park)" },
+    { id: "ZONE_RESIDENTIELLE", label: "Zone Résidentielle (Forte densité)" },
+    { id: "ZONE_INDUSTRIELLE", label: "Zone Industrielle / Logistique" },
+]
+const IMMEUBLE_VISIBILITE = [
+    { id: "VIS_AUTOROUTE", label: "Visible depuis l'autoroute" },
+    { id: "ANGLE_RUE", label: "Angle de rue (Multi-façades)" },
+    { id: "FORTE_VISIBILITE", label: "Forte visibilité piétonne et routière" },
+]
+const IMMEUBLE_TYPE_ACCES = [
+    { id: "ROUTE_MIXTE", label: "Route mixte (Piétonne et Voiture)", desc: "Accessible aux véhicules avec trottoirs aménagés (idéal tous commerces)" },
+    { id: "PIETONNE", label: "Route uniquement piétonne", desc: "Zone 100% piétonne / Centre-ville historique (fort flux, restrictions livraisons)" },
+    { id: "VOITURE", label: "Route uniquement voiture", desc: "Axe routier rapide / Voie express (fort flux véhicules, aucun passage piéton)" },
+]
+const IMMEUBLE_ETAT_GLOBAL = [
+    { id: "NEUF", label: "Neuf / Première occupation", desc: "Prêt à l'emploi, normes récentes" },
+    { id: "BON_ETAT", label: "Ancien / Bon état", desc: "Structure saine, rafraîchissement mineur possible" },
+    { id: "A_RENOVER", label: "À rénover / À aménager", desc: "Travaux lourds ou aménagement intérieur complet à prévoir" },
 ]
 // ===== SHOWROOM =====
 const SHOWROOM_STYLE = [
@@ -959,10 +1055,10 @@ const formSchema = z.object({
     if (v === "false") return false
     return v
   }, z.boolean().optional()),
-  industrialGas: z.enum(["INDUSTRIEL", "VILLE", "AUCUN"]).optional(),
+  industrialGas: stringArrayOptional,
   industrialWaterSources: stringArrayOptional,
   industrialWaterTankCapacityLiters: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Capacité invalide"),
-  industrialSanitation: z.enum(["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).optional(),
+  industrialSanitation: stringArrayOptional,
   industrialFireNetwork: stringArrayOptional,
   industrialFireEquipment: stringArrayOptional,
   industrialFireWaterReserveLiters: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Volume invalide"),
@@ -1042,6 +1138,36 @@ const formSchema = z.object({
   terrainAgricoleDebitForage: z.string().optional(),
   terrainAgricoleExposition: stringArrayOptional,
   terrainAgricoleEnsoleillement: z.string().optional(),
+  terrainAgricoleNatureSol: stringArrayOptional,
+  terrainAgricoleAltitude: z.string().optional(),
+  terrainAgricoleQualiteEau: z.string().optional(),
+  terrainAgricoleEquipementHydro: stringArrayOptional,
+  terrainAgricoleEtatCulture: z.string().optional(),
+  terrainAgricoleTypeCulture: stringArrayOptional,
+  terrainAgricoleTypeCultureAutre: z.string().optional(),
+  terrainAgricoleAcces: z.string().optional(),
+  terrainAgricoleAccesLourds: stringArrayOptional,
+  terrainAgricoleConstructions: stringArrayOptional,
+  terrainAgricoleCloture: z.string().optional(),
+  terrainAgricoleZone: z.string().optional(),
+  // Terrain Touristique
+  terrainTouristiqueZone: z.string().optional(),
+  terrainTouristiqueZoneAutre: z.string().optional(),
+  terrainTouristiqueZet: z.string().optional(),
+  terrainTouristiqueZetNom: z.string().optional(),
+  terrainTouristiquePat: z.string().optional(),
+  terrainTouristiqueReseaux: stringArrayOptional,
+  // Immeuble Bureau/Commercial
+  immeubleSurfaceTerrain: z.string().optional(),
+  immeubleSurfaceBatie: z.string().optional(),
+  immeubleNbEtages: z.string().optional(),
+  immeubleHsp: z.string().optional(),
+  immeubleEtatGlobal: z.string().optional(),
+  immeubleTypeZone: stringArrayOptional,
+  immeubleVisibilite: stringArrayOptional,
+  immeubleNbRideaux: z.string().optional(),
+  immeubleFacadeLineaire: z.string().optional(),
+  immeubleTypeAcces: z.string().optional(),
 
   // Showroom
   showroomSurfaceTerrain: z.string().optional(),
@@ -1678,6 +1804,11 @@ export default function DepositPage() {
     propertyType === "BLOC_ADMINISTRATIF"
   const isBureauCommerceSpecialParticulier = isShowroomParticulier || isLocalCommercialParticulier || isBlocAdministratifParticulier
   const isTerrainAgricole = propertyType === "TERRAIN_AGRICOLE"
+  const isTerrainTouristique = propertyType === "TERRAIN_TOURISTIQUE"
+  const isImmeubleCommercialParticulier =
+    (transactionType === "RENTAL" || transactionType === "SALE") &&
+    userType === "PARTICULIER" &&
+    propertyType === "IMMEUBLE_COMMERCIAL"
   const isHebergementHabitant =
     transactionType === "RENTAL" &&
     userType === "PARTICULIER" &&
@@ -1693,6 +1824,9 @@ export default function DepositPage() {
   const terrainAgricoleRessourcesEau = watch("terrainAgricoleRessourcesEau")
   const terrainAgricoleVocationList = normalizeToStringArray(terrainAgricoleVocation)
   const terrainAgricoleRessourcesEauList = normalizeToStringArray(terrainAgricoleRessourcesEau)
+  const terrainAgricoleEtatCulture = watch("terrainAgricoleEtatCulture")
+  const terrainTouristiqueZone = watch("terrainTouristiqueZone")
+  const terrainTouristiqueZet = watch("terrainTouristiqueZet")
   const localMezzanine = watch("localMezzanine")
   const localEnvironnement = watch("localEnvironnement")
   const showroomVisibiliteAutoroute = watch("showroomVisibiliteAutoroute")
@@ -2402,6 +2536,17 @@ export default function DepositPage() {
             "habFormule",
             "habUnitType",
         ], { shouldFocus: true })
+    } else if (isImmeubleCommercialParticulier) {
+        isValid = true
+    } else if (isCommercialPropertyType) {
+        isValid = await trigger([
+            "state",
+            "landArea",
+            "builtArea",
+            "bedrooms",
+            "livingRooms",
+            "wc",
+        ], { shouldFocus: true })
     } else {
         // Autres types de biens
         isValid = await trigger([
@@ -2963,6 +3108,7 @@ export default function DepositPage() {
           if (propertyType === "NIVEAU_VILLA_COMMERCIAL") return "Fiche descriptive - Niveau de villa commerciale"
           if (propertyType === "APPARTEMENT_COMMERCIAL") return "Fiche descriptive - Appartement commercial"
           if (propertyType === "IMMEUBLE_BUREAU") return "Fiche descriptive - Immeuble de bureaux"
+          if (propertyType === "IMMEUBLE_COMMERCIAL") return "Fiche descriptive - Immeuble commercial"
           if (propertyType === "USINE") return "Fiche descriptive - Usine"
           if (propertyType === "CHAMBRE_FROIDE") return "Fiche descriptive - Chambre froide"
           if (propertyType === "HANGAR") return "Fiche descriptive - Hangar"
@@ -3010,8 +3156,8 @@ export default function DepositPage() {
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "USINE") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "CHAMBRE_FROIDE") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HANGAR") ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
-      (userType === "PARTICULIER" && transactionType === "SALE" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)) ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU", "IMMEUBLE_COMMERCIAL"].includes(propertyType)) ||
+      (userType === "PARTICULIER" && transactionType === "SALE" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU", "IMMEUBLE_COMMERCIAL"].includes(propertyType)) ||
       (userType === "PARTICULIER" && ["RENTAL", "SALE"].includes(transactionType) && ["SHOWROOM", "LOCAL_COMMERCIAL", "BLOC_ADMINISTRATIF"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_HABITANT");
@@ -3430,17 +3576,17 @@ export default function DepositPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">Bureaux</div>
-                                        <div className="flex gap-4 flex-wrap items-end">
+                                        <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === true} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="radio" name="industrialOffices_choice" checked={!!industrialOffices} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
                                                 Oui
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === false} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
                                                 Non
                                             </label>
-                                            {industrialOffices === true && (
-                                                <div className="w-full">
+                                            {!!industrialOffices && (
+                                                <div className="w-full mt-2">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
                                                     <input
                                                         {...register("industrialOfficesArea")}
@@ -3528,15 +3674,15 @@ export default function DepositPage() {
                                         <div className="font-bold text-gray-900">Gaz</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Industriel
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
                                                 De ville
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Aucun
                                             </label>
                                         </div>
@@ -3561,11 +3707,11 @@ export default function DepositPage() {
                                         <div className="font-bold text-gray-900">Assainissement</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Réseau public
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Fosse septique
                                             </label>
                                         </div>
@@ -3818,17 +3964,17 @@ export default function DepositPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">Bureaux</div>
-                                        <div className="flex gap-4 flex-wrap items-end">
+                                        <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === true} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="radio" name="industrialOffices_choice" checked={!!industrialOffices} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
                                                 Oui
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={industrialOffices === false} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
                                                 Non
                                             </label>
-                                            {industrialOffices === true && (
-                                                <div className="w-full">
+                                            {!!industrialOffices && (
+                                                <div className="w-full mt-2">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
                                                     <input
                                                         {...register("industrialOfficesArea")}
@@ -3915,15 +4061,15 @@ export default function DepositPage() {
                                         <div className="font-bold text-gray-900">Gaz</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Industriel
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
                                                 De ville
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Aucun
                                             </label>
                                         </div>
@@ -3947,11 +4093,11 @@ export default function DepositPage() {
                                         <div className="font-bold text-gray-900">Assainissement</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Réseau public
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                <input type="checkbox" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
                                                 Fosse septique
                                             </label>
                                         </div>
@@ -4493,6 +4639,7 @@ export default function DepositPage() {
 
                             {/* Section Agricole — uniquement pour Terrain Agricole */}
                             {isTerrainAgricole && (
+                            <>
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Leaf className="h-5 w-5 text-[#00BFA6]" />
@@ -4575,9 +4722,333 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
+                                    {/* Nature du sol */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Nature du sol</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_NATURE_SOL.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("terrainAgricoleNatureSol")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Altitude */}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Altitude (mètres)</label>
+                                        <input {...register("terrainAgricoleAltitude")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 800" />
+                                    </div>
+                                    {/* Qualité de l'eau */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Qualité de l&apos;eau</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_QUALITE_EAU.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={x.id} {...register("terrainAgricoleQualiteEau")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Équipements hydrauliques */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Équipements hydrauliques</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("terrainAgricoleEquipementHydro")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* État actuel du terrain */}
+                                    <div className="md:col-span-2 bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">État actuel du terrain</div>
+                                        <div className="flex gap-6 flex-wrap">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="VIDE" {...register("terrainAgricoleEtatCulture")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Terrain vide / Nu
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value="EXPLOITE" {...register("terrainAgricoleEtatCulture")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Terrain exploité / Planté
+                                            </label>
+                                        </div>
+                                        {terrainAgricoleEtatCulture === "EXPLOITE" && (
+                                            <div className="mt-3 space-y-2">
+                                                <div className="text-sm font-bold text-gray-700 mb-2">Type de culture / plantation</div>
+                                                {TERRAIN_AGRICOLE_TYPE_CULTURE.map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="checkbox" value={x.id} {...register("terrainAgricoleTypeCulture")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
+                                                <input {...register("terrainAgricoleTypeCultureAutre")} type="text" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium mt-2" placeholder="Autre culture…" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Section Accessibilité & Logistique — uniquement pour Terrain Agricole */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Navigation className="h-5 w-5 text-[#00BFA6]" />
+                                    Accessibilité &amp; Logistique
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;accès principal</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_ACCES.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={x.id} {...register("terrainAgricoleAcces")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Accessibilité véhicules lourds</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_ACCES_LOURDS.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("terrainAgricoleAccesLourds")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Section Bâtiments & Clôture — uniquement pour Terrain Agricole */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Home className="h-5 w-5 text-[#00BFA6]" />
+                                    Bâtiments, Constructions &amp; Clôture
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Constructions présentes</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_CONSTRUCTIONS.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("terrainAgricoleConstructions")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Clôture du terrain</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_CLOTURE.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={x.id} {...register("terrainAgricoleCloture")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Zone d&apos;implantation</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_ZONE.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={x.id} {...register("terrainAgricoleZone")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            </>
+                            )}
+
+                            {/* Section Touristique — uniquement pour Terrain Touristique */}
+                            {isTerrainTouristique && (
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Palmtree className="h-5 w-5 text-[#00BFA6]" />
+                                    Statut &amp; Vocation Touristique
+                                </h2>
+                                <div className="space-y-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Classification de la zone</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_TOURISTIQUE_ZONE.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={x.id} {...register("terrainTouristiqueZone")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {terrainTouristiqueZone === "AUTRE_ZONE" && (
+                                            <div className="mt-3">
+                                                <input {...register("terrainTouristiqueZoneAutre")} type="text" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="Préciser la zone…" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-1">Zone d&apos;Expansion Touristique (Z.E.T)</div>
+                                            <div className="text-xs text-gray-500 mb-3">Le terrain est-il situé à l&apos;intérieur d&apos;une Z.E.T décrétée ?</div>
+                                            <div className="space-y-2">
+                                                {TERRAIN_TOURISTIQUE_ZET.map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="radio" value={x.id} {...register("terrainTouristiqueZet")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {terrainTouristiqueZet === "OUI" && (
+                                                <div className="mt-3">
+                                                    <input {...register("terrainTouristiqueZetNom")} type="text" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="Nom de la Z.E.T…" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                            <div className="font-bold text-gray-900 mb-1">Plan d&apos;Aménagement Touristique (P.A.T)</div>
+                                            <div className="text-xs text-gray-500 mb-3">Existe-t-il un P.A.T approuvé par le Ministère du Tourisme ?</div>
+                                            <div className="space-y-2">
+                                                {TERRAIN_TOURISTIQUE_PAT.map((x) => (
+                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="radio" value={x.id} {...register("terrainTouristiquePat")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {x.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Viabilisation &amp; Réseaux disponibles en bordure</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {TERRAIN_TOURISTIQUE_RESEAUX.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("terrainTouristiqueReseaux")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
                             )}
+
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive - Immeuble Commercial */}
+                    {currentStep === 4 && isImmeubleCommercialParticulier && (
+                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+
+                            {/* Section 1 : Informations Générales & Superficies */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                    Informations Générales &amp; Superficies
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale terrain (m²)</label>
+                                        <input {...register("immeubleSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²)</label>
+                                        <input {...register("immeubleSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 300" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages (RDC inclus)</label>
+                                        <input {...register("immeubleNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
+                                        <input {...register("immeubleHsp")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3.5" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-900 mb-3">État général du bâtiment</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        {IMMEUBLE_ETAT_GLOBAL.map((eg) => (
+                                            <label key={eg.id} className="flex items-start gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6]/40 bg-white">
+                                                <input type="radio" value={eg.id} {...register("immeubleEtatGlobal")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
+                                                <div>
+                                                    <div className="font-bold text-gray-900 text-sm">{eg.label}</div>
+                                                    <div className="text-xs text-gray-500 mt-0.5">{eg.desc}</div>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Section 2 : Emplacement & Visibilité */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                                    Emplacement &amp; Visibilité
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Type de zone</div>
+                                        <div className="space-y-2">
+                                            {IMMEUBLE_TYPE_ZONE.map((z) => (
+                                                <label key={z.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={z.id} {...register("immeubleTypeZone")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {z.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Visibilité &amp; Flux</div>
+                                        <div className="space-y-2">
+                                            {IMMEUBLE_VISIBILITE.map((v) => (
+                                                <label key={v.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={v.id} {...register("immeubleVisibilite")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {v.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Section 3 : Façade & Vitrine */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Store className="h-5 w-5 text-[#00BFA6]" />
+                                    Façade &amp; Vitrine
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de rideaux (accès façade)</label>
+                                        <input {...register("immeubleNbRideaux")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface linéaire façade (ml)</label>
+                                        <input {...register("immeubleFacadeLineaire")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-900 mb-3">Type d&apos;accès et flux de circulation</label>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {IMMEUBLE_TYPE_ACCES.map((a) => (
+                                            <label key={a.id} className="flex items-start gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6]/40 bg-white">
+                                                <input type="radio" value={a.id} {...register("immeubleTypeAcces")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
+                                                <div>
+                                                    <div className="font-bold text-gray-900 text-sm">{a.label}</div>
+                                                    <div className="text-xs text-gray-500 mt-0.5">{a.desc}</div>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
 
                         </div>
                     )}
@@ -5840,6 +6311,7 @@ export default function DepositPage() {
                         (propertyType === "VILLA_COMMERCIALE" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
                         (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
                         ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                        isImmeubleCommercialParticulier ||
                         isUsineRentalParticulier ||
                         isChambreFroideRentalParticulier ||
                         isHangarRentalParticulier ||

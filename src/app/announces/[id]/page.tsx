@@ -945,6 +945,16 @@ export default function AnnounceDetailsPage() {
                   </div>
                 ) : isColdRoomRental ? (
                   <div className="w-full flex items-center justify-between gap-3">
+                    {coldRoom?.structureType && (
+                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                          <div className="font-bold text-base">{LABELS[coldRoom.structureType] || coldRoom.structureType}</div>
+                          <div className="text-xs text-gray-500">Structure</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
                     {coldRoom?.dimensions?.length != null && (
                       <div className="flex items-center gap-2 text-gray-700 shrink-0">
                         <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
@@ -971,16 +981,6 @@ export default function AnnounceDetailsPage() {
                         <div>
                           <div className="font-bold text-base">{coldRoom.dimensions.height} ml</div>
                           <div className="text-xs text-gray-500">Hauteur</div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {coldRoom?.structureType && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{LABELS[coldRoom.structureType] || coldRoom.structureType}</div>
-                          <div className="text-xs text-gray-500">Structure</div>
                         </div>
                       </div>
                     )}
@@ -1543,12 +1543,24 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                        {industrialFactory.energy?.gas && industrialFactory.energy.gas !== "AUCUN" && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Gaz</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.gas] || industrialFactory.energy.gas}</span>
-                          </div>
-                        )}
+                        {Array.isArray(industrialFactory.energy?.gas)
+                          ? industrialFactory.energy.gas.filter((g: string) => g !== "AUCUN").length > 0 && (
+                            <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                              <span className="text-gray-500 text-xs">Gaz</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {industrialFactory.energy.gas.filter((g: string) => g !== "AUCUN").map((g: string) => (
+                                  <span key={g} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                          : industrialFactory.energy?.gas && industrialFactory.energy.gas !== "AUCUN" && (
+                            <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                              <span className="text-gray-500 text-xs">Gaz</span>
+                              <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.gas] || industrialFactory.energy.gas}</span>
+                            </div>
+                          )
+                        }
                         {industrialFactory.energy?.waterSources?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Eau</span>
@@ -1559,12 +1571,24 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                        {industrialFactory.energy?.sanitation && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Assainissement</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.sanitation] || industrialFactory.energy.sanitation}</span>
-                          </div>
-                        )}
+                        {Array.isArray(industrialFactory.energy?.sanitation)
+                          ? industrialFactory.energy.sanitation.length > 0 && (
+                            <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
+                              <span className="text-gray-500 text-xs">Assainissement</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {industrialFactory.energy.sanitation.map((s: string) => (
+                                  <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                          : industrialFactory.energy?.sanitation && (
+                            <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
+                              <span className="text-gray-500 text-xs">Assainissement</span>
+                              <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.sanitation] || industrialFactory.energy.sanitation}</span>
+                            </div>
+                          )
+                        }
                         {industrialFactory.fireSafety?.network?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
@@ -1580,7 +1604,12 @@ export default function AnnounceDetailsPage() {
                             <span className="text-gray-500 text-xs">Équipements complémentaires</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.fireSafety.equipment.map((e: string) => (
-                                <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[e] || e}</span>
+                                <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
+                                  {LABELS[e] || e}
+                                  {e === "BACHE_EAU" && industrialFactory.energy?.waterTankCapacityLiters
+                                    ? ` — ${industrialFactory.energy.waterTankCapacityLiters.toLocaleString("fr-DZ")} L`
+                                    : ""}
+                                </span>
                               ))}
                             </div>
                           </div>
@@ -1656,6 +1685,16 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Col 2 — Équipements */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
+                        <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Équipements</h3>
+                      </div>
+                      <div className="space-y-3">
                         {coldRoom.typeFroid?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Type de froid</span>
@@ -1667,7 +1706,7 @@ export default function AnnounceDetailsPage() {
                           </div>
                         )}
                         {coldRoom.modeDiffusion?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5">
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Mode de diffusion</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.modeDiffusion.map((m: string) => (
@@ -1676,16 +1715,6 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Col 2 — Équipements */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
-                      <div className="flex items-start gap-2 min-h-[40px] mb-3">
-                        <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Équipements</h3>
-                      </div>
-                      <div className="space-y-3">
                         {coldRoom.techniqueFroid?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Technique froid</span>
