@@ -4587,12 +4587,12 @@ export default function DepositPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Longueur façade principale */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur façade principale</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? "Longueur" : "Longueur façade principale"}</label>
                                         <input {...register("terrainFacadeLength")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12 ml" />
                                     </div>
                                     {/* Profondeur terrain */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Profondeur terrain</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? "Largeur" : "Profondeur terrain"}</label>
                                         <input {...register("terrainDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 25 m" />
                                     </div>
                                     {/* Topographie */}
