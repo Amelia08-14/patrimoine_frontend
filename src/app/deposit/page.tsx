@@ -458,12 +458,12 @@ const TERRAIN_AGRICOLE_ACCES_LOURDS = [
 ]
 const TERRAIN_AGRICOLE_CONSTRUCTIONS = [
     { id: "HANGAR_STOCKAGE", label: "Hangar de stockage" },
-    { id: "ECURIES_ELEVAGE", label: "Écuries / Bâtiments d'élevage" },
-    { id: "MAISON_GARDIENNAGE", label: "Maison de gardiennage / Logement de fonction" },
+    { id: "ECURIES_ELEVAGE", label: "Bâtiment d'élevage" },
+    { id: "MAISON_GARDIENNAGE", label: "Logement de fonction" },
     { id: "AUCUNE", label: "Aucune construction" },
 ]
 const TERRAIN_AGRICOLE_CLOTURE = [
-    { id: "OUVERT", label: "Terrain libre / Ouvert (Non clôturé)" },
+    { id: "OUVERT", label: "Terrain non clôturé" },
     { id: "GRILLAGE", label: "Clôture en grillage" },
     { id: "MURS_ENCEINTE", label: "Murs d'enceinte" },
     { id: "HAIES", label: "Haies naturelles" },
@@ -1150,7 +1150,7 @@ const formSchema = z.object({
   terrainAgricoleEtatCulture: z.string().optional(),
   terrainAgricoleTypeCulture: stringArrayOptional,
   terrainAgricoleTypeCultureAutre: z.string().optional(),
-  terrainAgricoleAcces: z.string().optional(),
+  terrainAgricoleAcces: stringArrayOptional,
   terrainAgricoleAccesLourds: stringArrayOptional,
   terrainAgricoleConstructions: stringArrayOptional,
   terrainAgricoleCloture: z.string().optional(),
@@ -4771,7 +4771,19 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    {/* Qualité de l'eau */}
+                                    {/* Zone d'implantation — déplacée depuis Bâtiments */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Zone d&apos;implantation</div>
+                                        <div className="space-y-2">
+                                            {TERRAIN_AGRICOLE_ZONE.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={x.id} {...register("terrainAgricoleZone")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Qualité de l'eau — juste avant Équipements hydrauliques */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Qualité de l&apos;eau</div>
                                         <div className="space-y-2">
@@ -4824,7 +4836,7 @@ export default function DepositPage() {
                                         <div className="space-y-2">
                                             {TERRAIN_AGRICOLE_ACCES.map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={x.id} {...register("terrainAgricoleAcces")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="checkbox" value={x.id} {...register("terrainAgricoleAcces")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
                                                 </label>
                                             ))}
@@ -4850,7 +4862,7 @@ export default function DepositPage() {
                                     <Home className="h-5 w-5 text-[#00BFA6]" />
                                     Bâtiments, Constructions &amp; Clôture
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Constructions présentes</div>
                                         <div className="space-y-2">
@@ -4868,17 +4880,6 @@ export default function DepositPage() {
                                             {TERRAIN_AGRICOLE_CLOTURE.map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainAgricoleCloture")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Zone d&apos;implantation</div>
-                                        <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_ZONE.map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={x.id} {...register("terrainAgricoleZone")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
                                                 </label>
                                             ))}
