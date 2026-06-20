@@ -389,8 +389,8 @@ const TERRAIN_RACCORDEMENTS = [
 // ===== TERRAIN AGRICOLE =====
 const TERRAIN_AGRICOLE_UNITE = [
     { id: "M2", label: "m²" },
-    { id: "HA", label: "Hectare (ha)" },
-    { id: "DOUNEM", label: "Dounem" },
+    { id: "HA", label: "Hectare" },
+    { id: "DOUNEM", label: "Are" },
 ]
 const TERRAIN_AGRICOLE_VOCATION = [
     { id: "MARAICHAGE", label: "Maraîchage" },
