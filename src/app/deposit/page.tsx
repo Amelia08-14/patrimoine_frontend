@@ -367,6 +367,11 @@ const TERRAIN_STATUT_ZONE = [
     { id: "COOPERATIVE_IMMOBILIERE", label: "Coopérative immobilière" },
     { id: "RESIDENCE_FERMEE", label: "Résidence fermée" },
 ]
+const TERRAIN_INDUSTRIEL_ZONE = [
+    { id: "ZONE_INDUSTRIELLE", label: "Zone Industrielle" },
+    { id: "ZONE_URBAINE_IND", label: "Zone Urbaine" },
+    { id: "ZONE_ACTIVITE", label: "Zone d'Activité" },
+]
 const TERRAIN_DOCUMENTS = [
     { id: "ACTE_PROPRIETE", label: "Acte de propriété (Notarié)" },
     { id: "LIVRET_FONCIER", label: "Livret foncier" },
@@ -395,15 +400,15 @@ const TERRAIN_AGRICOLE_VOCATION = [
     { id: "ELEVAGE", label: "Élevage" },
     { id: "APICULTURE", label: "Apiculture" },
     { id: "SERRES", label: "Serres / hors-sol" },
-    { id: "MIXTE", label: "Mixte / polyculture" },
+    { id: "MIXTE", label: "Autre" },
 ]
 const TERRAIN_AGRICOLE_RESSOURCES_EAU = [
     { id: "PUITS", label: "Puits" },
-    { id: "FORAGE", label: "Forage" },
     { id: "CANAL_IRRIGATION", label: "Canal d'irrigation" },
     { id: "BARRAGE_RETENUE", label: "Barrage / retenue d'eau" },
     { id: "BASSIN_COLLECTE", label: "Bassin de collecte" },
     { id: "RESEAU_ADE", label: "Réseau ADE" },
+    { id: "FORAGE", label: "Forage" },
 ]
 const TERRAIN_AGRICOLE_EXPOSITION = [
     { id: "NORD", label: "Nord" },
@@ -424,7 +429,7 @@ const TERRAIN_AGRICOLE_NATURE_SOL = [
     { id: "ARGILEUX", label: "Argileux" },
     { id: "SABLONNEUX", label: "Sablonneux" },
     { id: "LIMONEUX", label: "Limoneux" },
-    { id: "AUTRE_MIXTE", label: "Autre / Mixte" },
+    { id: "AUTRE_MIXTE", label: "Autre" },
 ]
 const TERRAIN_AGRICOLE_QUALITE_EAU = [
     { id: "DOUCE", label: "Douce" },
@@ -464,9 +469,9 @@ const TERRAIN_AGRICOLE_CLOTURE = [
     { id: "HAIES", label: "Haies naturelles" },
 ]
 const TERRAIN_AGRICOLE_ZONE = [
-    { id: "PERIURBAINE", label: "Zone périurbaine (proche de la ville)" },
-    { id: "RURALE", label: "Zone rurale (village ou communauté agricole)" },
+    { id: "URBAINE", label: "Zone urbaine" },
     { id: "ISOLEE", label: "Zone isolée" },
+    { id: "SAHARIENNE", label: "Zone saharienne" },
 ]
 // ===== TERRAIN TOURISTIQUE =====
 const TERRAIN_TOURISTIQUE_ZONE = [
@@ -1913,7 +1918,7 @@ export default function DepositPage() {
   }, [industrialSectorList.join("|"), getValues, setValue, clearErrors])
 
   useEffect(() => {
-    if (!isIndustrialRentalParticulier) {
+    if (!isIndustrialRentalParticulier && !isTerrainRentalParticulier) {
       if (usineShowPrice) setUsineShowPrice(false)
       return
     }
@@ -1921,7 +1926,7 @@ export default function DepositPage() {
       const v = getValues("price")
       if (v) setValue("price", "", { shouldValidate: false })
     }
-  }, [isIndustrialRentalParticulier, usineShowPrice, getValues, setValue])
+  }, [isIndustrialRentalParticulier, isTerrainRentalParticulier, usineShowPrice, getValues, setValue])
 
   useEffect(() => {
     setPhotoCategories(prev => {
@@ -4525,20 +4530,46 @@ export default function DepositPage() {
 
                     {/* Step 4: Fiche descriptive - Terrain */}
                     {currentStep === 4 && isTerrainRentalParticulier && (
-                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+                        <div className="w-full max-w-4xl animate-fade-in flex flex-col gap-10">
 
                             {/* Section B : Caractéristiques Physiques */}
-                            <section className="space-y-6">
+                            <section className="space-y-6 order-1">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Caractéristiques Physiques
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Ligne 1 : Superficie / Altitude / Nb façades */}
+                                <div className={`grid grid-cols-1 gap-5 ${isTerrainAgricole ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
                                     {/* Surface terrain */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain</label>
-                                        <input {...register("landArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 300 m²" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? "Superficie" : "Surface terrain"}</label>
+                                        {isTerrainAgricole ? (
+                                            <div className="relative">
+                                                <input
+                                                    {...register("landArea")}
+                                                    type="number" min="0" step="0.01"
+                                                    onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()}
+                                                    className="w-full p-3 pr-32 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium"
+                                                    placeholder="ex: 5"
+                                                />
+                                                <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-1">
+                                                    <select {...register("terrainAgricoleUnite")} className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none pr-1">
+                                                        <option value="">Unité</option>
+                                                        {TERRAIN_AGRICOLE_UNITE.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <input {...register("landArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 300 m²" />
+                                        )}
                                     </div>
+                                    {/* Altitude — uniquement terrain agricole */}
+                                    {isTerrainAgricole && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Altitude (mètres)</label>
+                                            <input {...register("terrainAgricoleAltitude")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 800" />
+                                        </div>
+                                    )}
                                     {/* Nombre de façades */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Nombre de façades</label>
@@ -4551,6 +4582,9 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
+                                </div>
+                                {/* Reste des champs en 2 colonnes */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Longueur façade principale */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Longueur façade principale</label>
@@ -4573,11 +4607,26 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    {/* Statut de la zone */}
+                                    {/* Statut de la zone / Viabilité selon le type de terrain */}
+                                    {isTerrainAgricole ? (
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Viabilisation</div>
+                                        <div className="flex gap-6 flex-wrap">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />
+                                                Terrain viabilisé
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />
+                                                Non viabilisé
+                                            </label>
+                                        </div>
+                                    </div>
+                                    ) : !isTerrainTouristique ? (
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Statut de la zone</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_STATUT_ZONE.map((x) => (
+                                            {(propertyType === "TERRAIN_INDUSTRIEL" ? TERRAIN_INDUSTRIEL_ZONE : TERRAIN_STATUT_ZONE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("terrainStatutZone")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4585,11 +4634,12 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
+                                    ) : null}
                                 </div>
                             </section>
 
                             {/* Section C : État Juridique & Urbanisme */}
-                            <section className="space-y-6">
+                            <section className={`space-y-6 ${isTerrainAgricole ? "order-3" : "order-2"}`}>
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <FileText className="h-5 w-5 text-[#00BFA6]" />
                                     État Juridique &amp; Urbanisme
@@ -4607,8 +4657,8 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    {/* Viabilisation & Raccordements — ligne suivante */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    {/* Viabilisation & Raccordements — masqué pour agricole (viabilité déjà dans Caractéristiques Physiques) */}
+                                    {!isTerrainAgricole && <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">Viabilisation</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -4620,7 +4670,7 @@ export default function DepositPage() {
                                                 Non viabilisé
                                             </label>
                                         </div>
-                                        {terrainViabilise === false && (
+                                        {terrainViabilise === false && !isTerrainAgricole && !isTerrainTouristique && (
                                             <div>
                                                 <div className="text-sm font-bold text-gray-700 mb-2">Raccordements à proximité</div>
                                                 <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -4633,36 +4683,19 @@ export default function DepositPage() {
                                                 </div>
                                             </div>
                                         )}
-                                    </div>
+                                    </div>}
                                 </div>
                             </section>
 
                             {/* Section Agricole — uniquement pour Terrain Agricole */}
                             {isTerrainAgricole && (
                             <>
-                            <section className="space-y-6">
+                            <section className="space-y-6 order-2">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Leaf className="h-5 w-5 text-[#00BFA6]" />
                                     Caractéristiques Agricoles
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    {/* Superficie + Unité */}
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Superficie</label>
-                                        <div className="flex gap-3">
-                                            <input
-                                                {...register("landArea")}
-                                                type="number" min="0" step="0.01"
-                                                onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()}
-                                                className="flex-1 p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium"
-                                                placeholder="ex: 5"
-                                            />
-                                            <select {...register("terrainAgricoleUnite")} className="p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium min-w-[140px]">
-                                                <option value="">Unité</option>
-                                                {TERRAIN_AGRICOLE_UNITE.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
                                     {/* Vocation agricole */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Vocation / Type de culture</div>
@@ -4684,12 +4717,16 @@ export default function DepositPage() {
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Ressources en eau</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_RESSOURCES_EAU.map((r) => (
+                                            {TERRAIN_AGRICOLE_RESSOURCES_EAU.filter(r => r.id !== "FORAGE").map((r) => (
                                                 <label key={r.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={r.id} {...register("terrainAgricoleRessourcesEau")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {r.label}
                                                 </label>
                                             ))}
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="checkbox" value="FORAGE" {...register("terrainAgricoleRessourcesEau")} className="accent-[#00BFA6] w-4 h-4" />
+                                                Forage
+                                            </label>
                                         </div>
                                         {terrainAgricoleRessourcesEauList.includes("FORAGE") && (
                                             <div className="mt-3">
@@ -4734,11 +4771,6 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    {/* Altitude */}
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Altitude (mètres)</label>
-                                        <input {...register("terrainAgricoleAltitude")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 800" />
-                                    </div>
                                     {/* Qualité de l'eau */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Qualité de l&apos;eau</div>
@@ -4776,24 +4808,12 @@ export default function DepositPage() {
                                                 Terrain exploité / Planté
                                             </label>
                                         </div>
-                                        {terrainAgricoleEtatCulture === "EXPLOITE" && (
-                                            <div className="mt-3 space-y-2">
-                                                <div className="text-sm font-bold text-gray-700 mb-2">Type de culture / plantation</div>
-                                                {TERRAIN_AGRICOLE_TYPE_CULTURE.map((x) => (
-                                                    <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                        <input type="checkbox" value={x.id} {...register("terrainAgricoleTypeCulture")} className="accent-[#00BFA6] w-4 h-4" />
-                                                        {x.label}
-                                                    </label>
-                                                ))}
-                                                <input {...register("terrainAgricoleTypeCultureAutre")} type="text" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium mt-2" placeholder="Autre culture…" />
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </section>
 
                             {/* Section Accessibilité & Logistique — uniquement pour Terrain Agricole */}
-                            <section className="space-y-6">
+                            <section className="space-y-6 order-4">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Navigation className="h-5 w-5 text-[#00BFA6]" />
                                     Accessibilité &amp; Logistique
@@ -4825,7 +4845,7 @@ export default function DepositPage() {
                             </section>
 
                             {/* Section Bâtiments & Clôture — uniquement pour Terrain Agricole */}
-                            <section className="space-y-6">
+                            <section className="space-y-6 order-5">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Home className="h-5 w-5 text-[#00BFA6]" />
                                     Bâtiments, Constructions &amp; Clôture
@@ -4871,28 +4891,12 @@ export default function DepositPage() {
 
                             {/* Section Touristique — uniquement pour Terrain Touristique */}
                             {isTerrainTouristique && (
-                            <section className="space-y-6">
+                            <section className="space-y-6 order-2">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Palmtree className="h-5 w-5 text-[#00BFA6]" />
                                     Statut &amp; Vocation Touristique
                                 </h2>
                                 <div className="space-y-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Classification de la zone</div>
-                                        <div className="space-y-2">
-                                            {TERRAIN_TOURISTIQUE_ZONE.map((x) => (
-                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={x.id} {...register("terrainTouristiqueZone")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {x.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                        {terrainTouristiqueZone === "AUTRE_ZONE" && (
-                                            <div className="mt-3">
-                                                <input {...register("terrainTouristiqueZoneAutre")} type="text" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="Préciser la zone…" />
-                                            </div>
-                                        )}
-                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-1">Zone d&apos;Expansion Touristique (Z.E.T)</div>
