@@ -500,14 +500,13 @@ const TERRAIN_TOURISTIQUE_RESEAUX = [
 ]
 // ===== IMMEUBLE BUREAU/COMMERCIAL =====
 const IMMEUBLE_TYPE_ZONE = [
-    { id: "GRAND_BOULEVARD", label: "Grand Boulevard / Axe Principal" },
-    { id: "ZONE_COMMERCIALE", label: "Zone Commerciale (Retail Park)" },
-    { id: "ZONE_RESIDENTIELLE", label: "Zone Résidentielle (Forte densité)" },
-    { id: "ZONE_INDUSTRIELLE", label: "Zone Industrielle / Logistique" },
+    { id: "ZONE_COMMERCIALE", label: "Zone Commerciale" },
+    { id: "ZONE_RESIDENTIELLE", label: "Zone Résidentielle" },
+    { id: "ZONE_INDUSTRIELLE", label: "Zone Industrielle" },
 ]
 const IMMEUBLE_VISIBILITE = [
     { id: "VIS_AUTOROUTE", label: "Visible depuis l'autoroute" },
-    { id: "ANGLE_RUE", label: "Angle de rue (Multi-façades)" },
+    { id: "ANGLE_RUE", label: "Façade commerciale" },
     { id: "FORTE_VISIBILITE", label: "Forte visibilité piétonne et routière" },
 ]
 const IMMEUBLE_TYPE_ACCES = [
@@ -888,7 +887,7 @@ const VILLA_EQUIPMENTS = {
     { id: "terrace", label: "Terrasse", icon: "Sun" },
     { id: "balcony", label: "Balcon", icon: "Home" },
     { id: "pool", label: "Piscine", icon: "LifeBuoy" },
-    { id: "playground", label: "Espace de jeux", icon: "Dumbbell" },
+    { id: "playground", label: "Espace extérieur", icon: "Dumbbell" },
     { id: "barbecue", label: "Barbecue", icon: "Flame" },
     { id: "elevator", label: "Ascenseur", icon: "Layers" },
   ],
@@ -1165,6 +1164,7 @@ const formSchema = z.object({
   // Immeuble Bureau/Commercial
   immeubleSurfaceTerrain: z.string().optional(),
   immeubleSurfaceBatie: z.string().optional(),
+  immeubleLargeur: z.string().optional(),
   immeubleNbEtages: z.string().optional(),
   immeubleHsp: z.string().optional(),
   immeubleEtatGlobal: z.string().optional(),
@@ -4957,14 +4957,18 @@ export default function DepositPage() {
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Informations Générales &amp; Superficies
                                 </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale terrain (m²)</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
                                         <input {...register("immeubleSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²)</label>
-                                        <input {...register("immeubleSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 300" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m)</label>
+                                        <input {...register("immeubleSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 30" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
+                                        <input {...register("immeubleLargeur")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages (RDC inclus)</label>
@@ -4973,6 +4977,14 @@ export default function DepositPage() {
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
                                         <input {...register("immeubleHsp")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3.5" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de rideaux</label>
+                                        <input {...register("immeubleNbRideaux")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3" />
+                                    </div>
+                                    <div className="md:col-span-3">
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface linéaire façade (ml)</label>
+                                        <input {...register("immeubleFacadeLineaire")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
                                     </div>
                                 </div>
                                 <div>
@@ -4991,13 +5003,13 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
-                            {/* Section 2 : Emplacement & Visibilité */}
+                            {/* Section 2 : Emplacement, Visibilité & Accès — 3 colonnes */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Emplacement &amp; Visibilité
+                                    Emplacement, Visibilité &amp; Accès
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Type de zone</div>
                                         <div className="space-y-2">
@@ -5020,37 +5032,19 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                </div>
-                            </section>
-
-                            {/* Section 3 : Façade & Vitrine */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Store className="h-5 w-5 text-[#00BFA6]" />
-                                    Façade &amp; Vitrine
-                                </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de rideaux (accès façade)</label>
-                                        <input {...register("immeubleNbRideaux")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface linéaire façade (ml)</label>
-                                        <input {...register("immeubleFacadeLineaire")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">Type d&apos;accès et flux de circulation</label>
-                                    <div className="grid grid-cols-1 gap-3">
-                                        {IMMEUBLE_TYPE_ACCES.map((a) => (
-                                            <label key={a.id} className="flex items-start gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6]/40 bg-white">
-                                                <input type="radio" value={a.id} {...register("immeubleTypeAcces")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
-                                                <div>
-                                                    <div className="font-bold text-gray-900 text-sm">{a.label}</div>
-                                                    <div className="text-xs text-gray-500 mt-0.5">{a.desc}</div>
-                                                </div>
-                                            </label>
-                                        ))}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;accès &amp; Flux de circulation</div>
+                                        <div className="space-y-2">
+                                            {IMMEUBLE_TYPE_ACCES.map((a) => (
+                                                <label key={a.id} className="flex items-start gap-2 cursor-pointer">
+                                                    <input type="radio" value={a.id} {...register("immeubleTypeAcces")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
+                                                    <div>
+                                                        <div className="font-medium text-gray-700 text-sm">{a.label}</div>
+                                                        <div className="text-xs text-gray-400 mt-0.5">{a.desc}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -7785,8 +7779,8 @@ export default function DepositPage() {
                                                 {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
                                             </div>
 
-                                            {/* Usage cross-catégorie */}
-                                            <div>
+                                            {/* Usage cross-catégorie — masqué pour local commercial, showroom, bloc */}
+                                            {!isBureauCommerceSpecialParticulier && <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-3">
                                                     {["VILLA_COMMERCIALE","NIVEAU_VILLA_COMMERCIAL","APPARTEMENT_COMMERCIAL","IMMEUBLE_BUREAU"].includes(propertyType)
                                                         ? "Votre bien accepte-t-il un usage d'habitation ?"
@@ -7830,7 +7824,7 @@ export default function DepositPage() {
                                                         </span>
                                                     </div>
                                                 )}
-                                            </div>
+                                            </div>}
                                         </div>
                                     </section>
                                 )}
