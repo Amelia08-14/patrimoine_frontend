@@ -1323,6 +1323,11 @@ const formSchema = z.object({
     const isTerrainRental =
         data.transactionType === "RENTAL" &&
         ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(data.propertyType)
+    // Types purement commerciaux sans champs résidentiels
+    const isSpecialBureauCommerce = ["SHOWROOM", "LOCAL_COMMERCIAL", "BLOC_ADMINISTRATIF", "IMMEUBLE_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(data.propertyType)
+    // Commerciaux hybrides (ont state/bedrooms mais pas cuisine/chauffage/compteurs)
+    const isBureauCommerceHybrid = ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL"].includes(data.propertyType)
+    const isAnyCommercial = isSpecialBureauCommerce || isBureauCommerceHybrid
 
     if (isFactoryRental || isColdRoomRental || isHangarRental || isTerrainRental) {
         return
@@ -1336,7 +1341,7 @@ const formSchema = z.object({
             }
         }
 
-        if (!data.state) {
+        if (!data.state && !isSpecialBureauCommerce) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "État du bien requis", path: ["state"] })
         }
 
@@ -1455,26 +1460,26 @@ const formSchema = z.object({
         }
     }
 
-    if (!isVillaDemolition && !isBuildingDemolition && !data.kitchenType) {
+    if (!isVillaDemolition && !isBuildingDemolition && !isAnyCommercial && !data.kitchenType) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de cuisine requis", path: ["kitchenType"] })
     }
-    if (!isVillaDemolition && !isBuildingDemolition && !data.heatingType) {
+    if (!isVillaDemolition && !isBuildingDemolition && !isAnyCommercial && !data.heatingType) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de chauffage requis", path: ["heatingType"] })
     }
-    if (!isVillaDemolition && !isBuildingDemolition && !data.acType) {
+    if (!isVillaDemolition && !isBuildingDemolition && !isAnyCommercial && !data.acType) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type de climatisation requis", path: ["acType"] })
     }
-    if (!data.waterCounter) {
+    if (!isAnyCommercial && !data.waterCounter) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Compteur d'eau requis", path: ["waterCounter"] })
     }
-    if (!data.elecCounter) {
+    if (!isAnyCommercial && !data.elecCounter) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Compteur électrique requis", path: ["elecCounter"] })
     }
-    if (!data.gasCounter) {
+    if (!isAnyCommercial && !data.gasCounter) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Compteur gaz requis", path: ["gasCounter"] })
     }
 
-    if (!isVillaDemolition && !isBuildingDemolition) {
+    if (!isVillaDemolition && !isBuildingDemolition && !isAnyCommercial) {
         if (!data.bedrooms) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Requis", path: ["bedrooms"] })
         }
