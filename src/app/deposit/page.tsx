@@ -1844,6 +1844,7 @@ export default function DepositPage() {
   const showroomVisibiliteAutoroute = watch("showroomVisibiliteAutoroute")
   const showroomStructureList = (watch("showroomStructure") as string[] | undefined) ?? []
   const blocLogementFonction = watch("blocLogementFonction")
+  const blocSousSolVal = watch("blocSousSol")
   const habAmbiancesList = normalizeToStringArray(watch("habAmbiances"))
   const habConditionPaiement = watch("habConditionPaiement")
   const habAnnulation = watch("habAnnulation")
@@ -2552,14 +2553,17 @@ export default function DepositPage() {
         ], { shouldFocus: true })
     } else if (isImmeubleCommercialParticulier) {
         isValid = true
-    } else if (isCommercialPropertyType) {
+    } else if (propertyType === "VILLA_COMMERCIALE") {
         isValid = await trigger([
-            "state",
-            "landArea",
-            "builtArea",
-            "bedrooms",
-            "livingRooms",
-            "wc",
+            "state", "landArea", "builtArea", "usageType",
+        ], { shouldFocus: true })
+    } else if (propertyType === "NIVEAU_VILLA_COMMERCIAL") {
+        isValid = await trigger([
+            "state", "area", "usageType",
+        ], { shouldFocus: true })
+    } else if (propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") {
+        isValid = await trigger([
+            "state", "area",
         ], { shouldFocus: true })
     } else {
         // Autres types de biens
@@ -5372,11 +5376,11 @@ export default function DepositPage() {
                                         <div className="font-bold text-gray-900">Sous-sol</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"true" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", true as any)} />
+                                                <input type="radio" value={"true" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", true as any)} checked={blocSousSolVal === true} />
                                                 Oui
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"false" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", false as any)} />
+                                                <input type="radio" value={"false" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", false as any)} checked={blocSousSolVal === false} />
                                                 Non
                                             </label>
                                         </div>
@@ -5942,7 +5946,7 @@ export default function DepositPage() {
                                             {/* Row 1 */}
                                             <div className={cn(
                                                 "grid grid-cols-1 gap-5 items-end",
-                                                (propertyType === "VILLA" || isSaleParticulierApartment || isSaleParticulierNiveauVilla) ? "md:grid-cols-4" : "md:grid-cols-3"
+                                                (propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE" || isSaleParticulierApartment || isSaleParticulierNiveauVilla) ? "md:grid-cols-4" : "md:grid-cols-3"
                                             )}>
                                                 {!(propertyType === "VILLA" && isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
@@ -5967,9 +5971,9 @@ export default function DepositPage() {
                                                 )}
 
                                                 <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{propertyType === "VILLA" ? "Nombre d'étages" : "Étage"} <span className="text-red-500">*</span></label>
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? "Nombre d'étages" : "Étage"} <span className="text-red-500">*</span></label>
                                                     <div className="flex items-center gap-2">
-                                                        {propertyType === "VILLA" && (
+                                                        {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && (
                                                             <span className="font-bold text-gray-700 text-lg whitespace-nowrap">R +</span>
                                                         )}
                                                         {propertyType === "NIVEAU_VILLA" ? (
@@ -5995,7 +5999,7 @@ export default function DepositPage() {
                                                     {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                                 </div>
 
-                                                {propertyType === "VILLA" ? (
+                                                {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? (
                                                     <>
                                                         <div className="min-w-0">
                                                             <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²) <span className="text-red-500">*</span></label>
@@ -6071,7 +6075,7 @@ export default function DepositPage() {
                                             {/* Row 2: État Général, Garage, Stationnement */}
                                             <div className={cn(
                                                 "grid grid-cols-1 gap-5 items-end",
-                                                propertyType === "VILLA" ? (isSaleVillaDemolition ? "md:grid-cols-1" : "md:grid-cols-4") : "md:grid-cols-3"
+                                                (propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? (isSaleVillaDemolition ? "md:grid-cols-1" : "md:grid-cols-4") : "md:grid-cols-3"
                                             )}>
                                                 <div className="min-w-0">
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
@@ -6081,7 +6085,7 @@ export default function DepositPage() {
                                                     </select>
                                                     {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                 </div>
-                                                {propertyType === "VILLA" && !isSaleVillaDemolition && (
+                                                {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && !isSaleVillaDemolition && (
                                                     <div className="min-w-0">
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
                                                         <input
@@ -6095,21 +6099,21 @@ export default function DepositPage() {
                                                         {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
                                                     </div>
                                                 )}
-                                                {(propertyType !== "VILLA" || !isSaleVillaDemolition) && (
+                                                {(!["VILLA", "VILLA_COMMERCIALE"].includes(propertyType) || !isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
-                                                        <input 
-                                                            {...register("parkingCount")} 
-                                                            type="number" 
+                                                        <input
+                                                            {...register("parkingCount")}
+                                                            type="number"
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                            placeholder="Ex: 1" 
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
+                                                            placeholder="Ex: 1"
                                                         />
                                                         {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
                                                     </div>
                                                 )}
-                                                {(propertyType !== "VILLA" || !isSaleVillaDemolition) && (
+                                                {(!["VILLA", "VILLA_COMMERCIALE"].includes(propertyType) || !isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
                                                         <input 
