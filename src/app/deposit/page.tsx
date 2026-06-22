@@ -175,7 +175,7 @@ const BASE_PROPERTY_TYPES = [
   { id: "APPARTEMENT_COMMERCIAL", label: "Appartement commercial", categoryId: "BUREAUX_COMMERCES", iconName: "AppartementBureau" },
   { id: "VILLA_COMMERCIALE", label: "Villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "VillaBureau" },
   { id: "NIVEAU_VILLA_COMMERCIAL", label: "Niveau de villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "NiveauVillaBureau" },
-  { id: "IMMEUBLE_BUREAU", label: "Immeuble de bureaux", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
+  { id: "IMMEUBLE_BUREAU", label: "Immeuble d'appartements commerciales", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "IMMEUBLE_COMMERCIAL", label: "Immeuble commercial", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "LOCAL_COMMERCIAL", label: "Local commercial", categoryId: "BUREAUX_COMMERCES", iconName: "LocalCommercial" },
   { id: "SHOWROOM", label: "Showroom", categoryId: "BUREAUX_COMMERCES", iconName: "Showroom" },
@@ -983,6 +983,7 @@ const formSchema = z.object({
   buildingApartmentTypologies: stringArrayOptional,
   buildingApartmentTypologyOther: z.string().optional(),
   buildingApartmentStyle: stringArrayOptional,
+  buildingUsageTypes: stringArrayOptional,
   buildingCountF3: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
   buildingCountF4: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
   buildingCountF5: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Nombre invalide"),
@@ -1418,7 +1419,7 @@ const formSchema = z.object({
         }
     }
     
-    if (data.propertyType === "IMMEUBLE_RESIDENTIEL") {
+    if (data.propertyType === "IMMEUBLE_RESIDENTIEL" || data.propertyType === "IMMEUBLE_BUREAU") {
         if (isBuildingDemolition) {
             if (!data.landArea || isNaN(Number(data.landArea)) || Number(data.landArea) <= 0) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface terrain requise", path: ["landArea"] })
@@ -1863,9 +1864,9 @@ export default function DepositPage() {
     transactionType === "SALE" &&
     userType === "PARTICULIER" &&
     propertyType === "NIVEAU_VILLA"
-  const isSaleBuilding = propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE"
-  const isBuildingDemolition = isSaleBuilding && currentState === "A_DEMOLIR"
-  const allowDemolirOption = propertyType === "VILLA" || isSaleBuilding
+  const isSaleBuilding = (propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") && transactionType === "SALE"
+  const isBuildingDemolition = propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE" && currentState === "A_DEMOLIR"
+  const allowDemolirOption = propertyType === "VILLA" || (propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE")
   const isVillaDemolition =
     propertyType === "VILLA" &&
     (currentState === "A_DEMOLIR" || String(currentState || "").toUpperCase().includes("DEMOLIR"))
@@ -2561,7 +2562,12 @@ export default function DepositPage() {
         isValid = await trigger([
             "state", "area", "usageType",
         ], { shouldFocus: true })
-    } else if (propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") {
+    } else if (propertyType === "IMMEUBLE_BUREAU") {
+        isValid = await trigger([
+            "buildingTypologyMode",
+            "state",
+        ], { shouldFocus: true })
+    } else if (propertyType === "APPARTEMENT_COMMERCIAL") {
         isValid = await trigger([
             "state", "area",
         ], { shouldFocus: true })
@@ -3125,7 +3131,7 @@ export default function DepositPage() {
           if (propertyType === "VILLA_COMMERCIALE") return "Fiche descriptive - Villa commerciale"
           if (propertyType === "NIVEAU_VILLA_COMMERCIAL") return "Fiche descriptive - Niveau de villa commerciale"
           if (propertyType === "APPARTEMENT_COMMERCIAL") return "Fiche descriptive - Appartement commercial"
-          if (propertyType === "IMMEUBLE_BUREAU") return "Fiche descriptive - Immeuble de bureaux"
+          if (propertyType === "IMMEUBLE_BUREAU") return "Fiche descriptive - Immeuble d'appartements commerciales"
           if (propertyType === "IMMEUBLE_COMMERCIAL") return "Fiche descriptive - Immeuble commercial"
           if (propertyType === "USINE") return "Fiche descriptive - Usine"
           if (propertyType === "CHAMBRE_FROIDE") return "Fiche descriptive - Chambre froide"
@@ -5669,7 +5675,7 @@ export default function DepositPage() {
                                 </h2>
                                 
                                 <div className="flex flex-col gap-5">
-                                    {propertyType === "IMMEUBLE_RESIDENTIEL" ? (
+                                    {(propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") ? (
                                         <div className="flex flex-col gap-5">
                                             {isSaleBuilding && (
                                                 <div className={cn(
@@ -6133,8 +6139,27 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
-                            {/* 2. Mode de vie */}
-                            {!isVillaDemolition && !isBuildingDemolition && propertyType !== "IMMEUBLE_RESIDENTIEL" && (
+                            {/* 2. Mode de vie – multi-choix pour immeubles */}
+                            {(propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") && !isBuildingDemolition && (
+                                <section className="space-y-6">
+                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                        <Users className="text-[#00BFA6]" /> Mode de vie
+                                    </h2>
+                                    <div className="flex flex-wrap gap-4">
+                                        {APARTMENT_LIFESTYLE_TYPES.map((u) => (
+                                            <label key={u.id} className="cursor-pointer">
+                                                <input type="checkbox" value={u.id} {...register("buildingUsageTypes")} className="peer sr-only" />
+                                                <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
+                                                    {u.label}
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* 2. Mode de vie – mono-choix pour villas / appartements */}
+                            {!isVillaDemolition && !isBuildingDemolition && propertyType !== "IMMEUBLE_RESIDENTIEL" && propertyType !== "IMMEUBLE_BUREAU" && (
                                 <section className="space-y-6">
                                     <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                         <Users className="text-[#00BFA6]" /> Mode de vie
