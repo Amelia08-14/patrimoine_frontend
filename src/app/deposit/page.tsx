@@ -521,34 +521,32 @@ const IMMEUBLE_ETAT_GLOBAL = [
 ]
 // ===== SHOWROOM =====
 const SHOWROOM_STYLE = [
-    { id: "MODERNE", label: "Moderne / Contemporain" },
-    { id: "CLASSIQUE", label: "Classique / Traditionnel" },
-    { id: "INDUSTRIEL", label: "Industriel (Loft)" },
-    { id: "HAUSSMANNIEN", label: "Haussmannien / Prestige" },
+    { id: "MODERNE", label: "Moderne" },
+    { id: "CLASSIQUE", label: "Classique" },
+    { id: "INDUSTRIEL", label: "Industriel" },
 ]
 const SHOWROOM_STRUCTURE = [
     { id: "BETON_ARME", label: "Béton armé" },
     { id: "STRUCTURE_METALLIQUE", label: "Structure métallique" },
-    { id: "MIXTE", label: "Mixte (béton + métal)" },
+    { id: "AUTRE", label: "Autre" },
 ]
 // ===== LOCAL COMMERCIAL =====
 const LOCAL_ENVIRONNEMENT = [
-    { id: "GALERIE_MARCHANDE", label: "Galerie marchande / Centre commercial" },
+    { id: "GALERIE_MARCHANDE", label: "Galerie marchande" },
+    { id: "CENTRE_COMMERCIAL", label: "Centre commercial" },
     { id: "RUE_COMMERCANTE", label: "Rue commerçante" },
     { id: "ZONE_ACTIVITE", label: "Zone d'activité commerciale" },
-    { id: "MARCHE", label: "Marché / souk" },
     { id: "ZONE_INDUSTRIELLE", label: "Zone industrielle" },
     { id: "AUTRE", label: "Autre" },
 ]
 const LOCAL_STYLE = [
     { id: "MODERNE", label: "Moderne" },
     { id: "CLASSIQUE", label: "Classique" },
-    { id: "BRUT", label: "Brut / Industriel" },
+    { id: "BRUT", label: "À rénover" },
 ]
 const LOCAL_ZONE_TYPE = [
     { id: "COMMERCIALE", label: "Zone commerciale" },
     { id: "RESIDENTIELLE", label: "Zone résidentielle" },
-    { id: "MIXTE", label: "Zone mixte" },
     { id: "INDUSTRIELLE", label: "Zone industrielle" },
 ]
 const LOCAL_FLUX = [
@@ -557,27 +555,27 @@ const LOCAL_FLUX = [
     { id: "FAIBLE", label: "Faible" },
 ]
 const LOCAL_USAGE = [
-    { id: "MAGASIN_VENTE", label: "Magasin de vente / Boutique" },
-    { id: "SHOWROOM", label: "Showroom / Exposition" },
-    { id: "DEPOT_VENTE", label: "Dépôt-vente / Stockage" },
-    { id: "PHARMACIE", label: "Pharmacie / Parapharmacie" },
-    { id: "ALIMENTATION", label: "Alimentation générale" },
-    { id: "CAFE_RESTAURANT", label: "Café / Restaurant" },
-    { id: "BUREAU", label: "Bureau / Cabinet" },
+    { id: "MAGASIN", label: "Magasin" },
+    { id: "DEPOT", label: "Dépôt" },
+    { id: "BUREAU", label: "Bureau" },
+    { id: "SHOWROOM", label: "Showroom" },
     { id: "AUTRE", label: "Autre" },
 ]
 // ===== BLOC ADMINISTRATIF =====
 const BLOC_TYPE_ESPACE = [
-    { id: "OPEN_SPACE", label: "Open-space (bureaux paysagers)" },
+    { id: "OPEN_SPACE", label: "Open space" },
     { id: "CLOISONNE", label: "Bureaux cloisonnés" },
-    { id: "MIXTE", label: "Mixte (open-space + cloisonné)" },
-    { id: "SALLES_REUNION", label: "Salles de réunion dédiées" },
+    { id: "AUTRE", label: "Autre" },
 ]
 const BLOC_CLOISONNEMENT = [
     { id: "AMOVIBLE", label: "Amovible (modulable)" },
-    { id: "FIXE", label: "Fixe (maçonnerie / cloisons lourdes)" },
-    { id: "VITRE", label: "Vitré (cloisons vitrées)" },
-    { id: "MIXTE", label: "Mixte" },
+    { id: "FIXE", label: "Fixe (maçonnerie)" },
+    { id: "VITRE", label: "Vitré" },
+]
+const BLOC_CUISINE = [
+    { id: "CANTINE", label: "Cantine" },
+    { id: "KITCHENETTE", label: "Kitchenette à chaque étage" },
+    { id: "SANS_CUISINE", label: "Sans cuisine" },
 ]
 const BLOC_CONNECTIVITE = [
     { id: "FIBRE_OPTIQUE", label: "Fibre optique" },
@@ -1181,8 +1179,9 @@ const formSchema = z.object({
   showroomFacadeWidth: z.string().optional(),
   showroomFacadeDepth: z.string().optional(),
   showroomHauteurPlafond: z.string().optional(),
-  showroomStyle: z.string().optional(),
-  showroomStructure: z.string().optional(),
+  showroomStyle: stringArrayOptional,
+  showroomStructure: stringArrayOptional,
+  showroomStructureAutre: z.string().optional(),
   showroomVisibiliteAutoroute: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   showroomAxeRoutier: z.string().optional(),
 
@@ -1194,6 +1193,7 @@ const formSchema = z.object({
   localLargeur: z.string().optional(),
   localProfondeur: z.string().optional(),
   localHauteurPlafond: z.string().optional(),
+  localNbEtages: z.string().optional(),
   localMezzanine: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   localMezzanineSurface: z.string().optional(),
   localStyle: z.string().optional(),
@@ -1208,8 +1208,10 @@ const formSchema = z.object({
   blocEtages: z.string().optional(),
   blocSousSol: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   blocFacades: z.string().optional(),
-  blocTypeEspace: z.string().optional(),
+  blocTypeEspace: stringArrayOptional,
   blocTypeCloisonnement: stringArrayOptional,
+  blocCuisine: z.string().optional(),
+  blocLogementFonction: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   blocConnectivite: z.string().optional(),
   blocTypeConnexion: stringArrayOptional,
   blocEquipementServeur: stringArrayOptional,
@@ -1840,6 +1842,8 @@ export default function DepositPage() {
   const localMezzanine = watch("localMezzanine")
   const localEnvironnement = watch("localEnvironnement")
   const showroomVisibiliteAutoroute = watch("showroomVisibiliteAutoroute")
+  const showroomStructureList = (watch("showroomStructure") as string[] | undefined) ?? []
+  const blocLogementFonction = watch("blocLogementFonction")
   const habAmbiancesList = normalizeToStringArray(watch("habAmbiances"))
   const habConditionPaiement = watch("habConditionPaiement")
   const habAnnulation = watch("habAnnulation")
@@ -5067,30 +5071,34 @@ export default function DepositPage() {
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Superficies &amp; Dimensions
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Ligne 1 : 3 colonnes */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
-                                        <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie / expo (m²)</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²)</label>
                                         <input {...register("showroomSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 350" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de niveaux</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages</label>
                                         <input {...register("showroomNiveaux")} type="number" min="1" max="10" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
                                         <input {...register("showroomHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
                                     </div>
+                                </div>
+                                {/* Ligne 2 : 3 colonnes */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur façade (m)</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m)</label>
                                         <input {...register("showroomFacadeWidth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Profondeur (m)</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
                                         <input {...register("showroomFacadeDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
+                                        <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
                                     </div>
                                 </div>
                             </section>
@@ -5107,22 +5115,25 @@ export default function DepositPage() {
                                         <div className="space-y-2">
                                             {SHOWROOM_STYLE.map((s) => (
                                                 <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={s.id} {...register("showroomStyle")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="checkbox" value={s.id} {...register("showroomStyle")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {s.label}
                                                 </label>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Structure principale</div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Structure</div>
                                         <div className="space-y-2">
                                             {SHOWROOM_STRUCTURE.map((s) => (
                                                 <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={s.id} {...register("showroomStructure")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="checkbox" value={s.id} {...register("showroomStructure")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {s.label}
                                                 </label>
                                             ))}
                                         </div>
+                                        {showroomStructureList.includes("AUTRE") && (
+                                            <input {...register("showroomStructureAutre")} className="w-full p-2.5 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="Préciser…" />
+                                        )}
                                     </div>
                                 </div>
                             </section>
@@ -5133,7 +5144,7 @@ export default function DepositPage() {
                                     <Eye className="h-5 w-5 text-[#00BFA6]" />
                                     Visibilité &amp; Accessibilité
                                 </h2>
-                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-5">
+                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
                                     <div>
                                         <div className="font-bold text-gray-900 mb-3">Visibilité depuis autoroute / voie rapide</div>
                                         <div className="flex gap-6">
@@ -5147,10 +5158,12 @@ export default function DepositPage() {
                                             </label>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Axe routier / adresse commerciale</label>
-                                        <input {...register("showroomAxeRoutier")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: RN5, Boulevard Didouche Mourad…" />
-                                    </div>
+                                    {showroomVisibiliteAutoroute === true && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Axe routier / adresse commerciale</label>
+                                            <input {...register("showroomAxeRoutier")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: RN5, Boulevard Didouche Mourad…" />
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
@@ -5161,78 +5174,36 @@ export default function DepositPage() {
                     {currentStep === 4 && isLocalCommercialParticulier && (
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
 
-                            {/* Environnement du local */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Environnement du local
-                                </h2>
-                                <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
-                                    <div>
-                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;environnement commercial</div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {LOCAL_ENVIRONNEMENT.map((e) => (
-                                                <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={e.id} {...register("localEnvironnement")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {e.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    {localEnvironnement === "AUTRE" && (
-                                        <div>
-                                            <input {...register("localEnvironnementAutre")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Préciser l'environnement…" />
-                                        </div>
-                                    )}
-                                </div>
-                            </section>
-
-                            {/* Superficies & Dimensions */}
+                            {/* Superficies & Dimensions — PREMIÈRE SECTION */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Superficies &amp; Dimensions
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale (m²)</label>
+                                {/* Ligne 1 : 3 colonnes */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
                                         <input {...register("localSurfaceTotal")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 120" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur vitrine (ml)</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m)</label>
                                         <input {...register("localVitrineLongueur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 8" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
                                         <input {...register("localLargeur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 10" />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Profondeur (m)</label>
-                                        <input {...register("localProfondeur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12" />
-                                    </div>
+                                </div>
+                                {/* Ligne 2 : 2 colonnes */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
                                         <input {...register("localHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3.5" />
                                     </div>
-                                    {/* Mezzanine */}
-                                    <div className="md:col-span-2 bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Mezzanine</div>
-                                        <div className="flex gap-6">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"true" as any} {...register("localMezzanine")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("localMezzanine", true as any)} checked={localMezzanine === true} />
-                                                Oui
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"false" as any} {...register("localMezzanine")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("localMezzanine", false as any)} checked={localMezzanine === false} />
-                                                Non
-                                            </label>
-                                        </div>
-                                        {localMezzanine === true && (
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Surface mezzanine (m²)</label>
-                                                <input {...register("localMezzanineSurface")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 30" />
-                                            </div>
-                                        )}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages</label>
+                                        <input {...register("localNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 1" />
                                     </div>
                                 </div>
                             </section>
@@ -5258,11 +5229,11 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
-                            {/* Emplacement & Environnement */}
+                            {/* Emplacement & Flux */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Emplacement &amp; Environnement
+                                    Emplacement &amp; Flux
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
@@ -5301,21 +5272,40 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
-                            {/* Usage */}
+                            {/* Environnement & Usage — DERNIÈRE SECTION (fusionnée) */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Store className="h-5 w-5 text-[#00BFA6]" />
-                                    Usage du local
+                                    Environnement &amp; Usage
                                 </h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {LOCAL_USAGE.map((u) => (
-                                        <label key={u.id} className="cursor-pointer">
-                                            <input type="radio" value={u.id} {...register("localUsage")} className="peer sr-only" />
-                                            <div className="w-full p-3 border-2 border-gray-200 rounded-xl font-medium text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-gray-50 text-sm">
-                                                {u.label}
-                                            </div>
-                                        </label>
-                                    ))}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* Environnement */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Environnement du local</div>
+                                        <div className="space-y-2">
+                                            {LOCAL_ENVIRONNEMENT.map((e) => (
+                                                <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={e.id} {...register("localEnvironnement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {e.label}
+                                                </label>
+                                            ))}
+                                            {localEnvironnement === "AUTRE" && (
+                                                <input {...register("localEnvironnementAutre")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm mt-1" placeholder="Préciser l'environnement…" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    {/* Usage */}
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Usage du local</div>
+                                        <div className="space-y-2">
+                                            {LOCAL_USAGE.map((u) => (
+                                                <label key={u.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="radio" value={u.id} {...register("localUsage")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {u.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
 
@@ -5326,13 +5316,14 @@ export default function DepositPage() {
                     {currentStep === 4 && isBlocAdministratifParticulier && (
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
 
-                            {/* Caractéristiques Extérieures */}
+                            {/* Caractéristiques Extérieures — redesignée */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Building2 className="h-5 w-5 text-[#00BFA6]" />
                                     Caractéristiques Extérieures
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Ligne 1 : surfaces + étages */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
                                         <input {...register("blocSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 1200" />
@@ -5345,6 +5336,27 @@ export default function DepositPage() {
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages (R+)</label>
                                         <input {...register("blocEtages")} type="number" min="0" max="20" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3" />
                                     </div>
+                                </div>
+                                {/* Ligne 2 : état général + garage + stationnement */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">État général</label>
+                                        <select {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
+                                            <option value="">Sélectionner</option>
+                                            {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                        <input {...register("parkingCount")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 10" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                        <input {...register("outdoorParking")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
+                                    </div>
+                                </div>
+                                {/* Ligne 3 : façades + sous-sol */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
                                         <div className="flex gap-3">
@@ -5356,12 +5368,12 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2 bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">Sous-sol</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
                                                 <input type="radio" value={"true" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", true as any)} />
-                                                Oui (avec sous-sol)
+                                                Oui
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
                                                 <input type="radio" value={"false" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", false as any)} />
@@ -5372,7 +5384,7 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
-                            {/* Type d'Espace */}
+                            {/* Type d'Espace (multi-choix) */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
@@ -5384,7 +5396,7 @@ export default function DepositPage() {
                                         <div className="space-y-2">
                                             {BLOC_TYPE_ESPACE.map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={e.id} {...register("blocTypeEspace")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="checkbox" value={e.id} {...register("blocTypeEspace")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {e.label}
                                                 </label>
                                             ))}
@@ -5404,24 +5416,112 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
+                            {/* Extérieurs & Commodités — comme appartement résidentiel */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Trees className="text-[#00BFA6]" /> Extérieurs &amp; Commodités
+                                </h2>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
+                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                                        {VILLA_EQUIPMENTS.exterior.filter(item => item.id !== 'elevator').map((item) => {
+                                            const Icon = IconMap[item.icon] || Trees
+                                            return (
+                                                <label key={item.id} className="cursor-pointer group">
+                                                    <input type="checkbox" value={item.id} {...register("exteriorFeatures")} className="peer sr-only" />
+                                                    <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                        <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                        <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                    </div>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-6">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Sécurité</label>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {VILLA_EQUIPMENTS.security.map(s => {
+                                                const Icon = IconMap[s.icon] || Shield
+                                                return (
+                                                    <label key={s.id} className="cursor-pointer group">
+                                                        <input type="checkbox" value={s.id} {...register("securityFeatures")} className="peer sr-only" />
+                                                        <div className="flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                            <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                            <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{s.label}</span>
+                                                        </div>
+                                                    </label>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Connectivité</label>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {VILLA_EQUIPMENTS.connectivity.map(c => {
+                                                const Icon = IconMap[c.icon] || Wifi
+                                                return (
+                                                    <label key={c.id} className="cursor-pointer group">
+                                                        <input type="checkbox" value={c.id} {...register("connectivity")} className="peer sr-only" />
+                                                        <div className="flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
+                                                            <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
+                                                            <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{c.label}</span>
+                                                        </div>
+                                                    </label>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Cuisine */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Utensils className="h-5 w-5 text-[#00BFA6]" />
+                                    Cuisine
+                                </h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {BLOC_CUISINE.map((c) => (
+                                        <label key={c.id} className="cursor-pointer">
+                                            <input type="radio" value={c.id} {...register("blocCuisine")} className="peer sr-only" />
+                                            <div className="w-full p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-gray-50 text-sm">
+                                                {c.label}
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Logement de fonction */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Home className="h-5 w-5 text-[#00BFA6]" />
+                                    Logement de fonction
+                                </h2>
+                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="font-bold text-gray-900">Logement de fonction dans l&apos;immeuble</div>
+                                    <div className="flex gap-6">
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                            <input type="radio" value={"true" as any} {...register("blocLogementFonction")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocLogementFonction", true as any)} checked={blocLogementFonction === true} />
+                                            Oui
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                                            <input type="radio" value={"false" as any} {...register("blocLogementFonction")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocLogementFonction", false as any)} checked={blocLogementFonction === false} />
+                                            Non
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+
                             {/* Connectivité & Réseau */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Wifi className="h-5 w-5 text-[#00BFA6]" />
                                     Connectivité &amp; Réseau
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type de connectivité</div>
-                                        <div className="space-y-2">
-                                            {BLOC_CONNECTIVITE.map((c) => (
-                                                <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={c.id} {...register("blocConnectivite")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    {c.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Mode de connexion</div>
                                         <div className="space-y-2">
@@ -5443,6 +5543,100 @@ export default function DepositPage() {
                                                 </label>
                                             ))}
                                         </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Énergie & Fluides */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
+                                    Énergie &amp; Fluides
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Électricité</div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Poste transfo (KVA)</label>
+                                                <input {...register("industrialElectricityTransformerKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Ex: 250" />
+                                            </div>
+                                            <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                                                <input type="checkbox" {...register("industrialElectricityForceMotrice")} className="accent-[#00BFA6] w-5 h-5" />
+                                                <span className="font-bold text-gray-900 text-sm">Force motrice (380V)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Gaz</div>
+                                        <div className="space-y-2">
+                                            {[{ id: "INDUSTRIEL", label: "Industriel" }, { id: "VILLE", label: "De ville" }, { id: "AUCUN", label: "Aucun" }].map(g => (
+                                                <label key={g.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={g.id} {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {g.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Eau</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_WATER_SOURCES.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialWaterSources")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Assainissement</div>
+                                        <div className="space-y-2">
+                                            {[{ id: "RESEAU_PUBLIC", label: "Réseau public" }, { id: "FOSSE_INDUSTRIELLE", label: "Fosse septique" }].map(a => (
+                                                <label key={a.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={a.id} {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {a.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Sécurité incendie & Protection */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
+                                    Sécurité incendie &amp; Protection
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="font-bold text-gray-900 mb-3">Réseau anti-incendie</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_FIRE_NETWORK.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialFireNetwork")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                        <div className="font-bold text-gray-900">Équipements complémentaires</div>
+                                        <div className="space-y-2">
+                                            {INDUSTRIAL_FIRE_EQUIPMENT.map((x) => (
+                                                <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                    <input type="checkbox" value={x.id} {...register("industrialFireEquipment")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    {x.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {industrialFireEquipmentList.includes("BACHE_EAU") && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres)</label>
+                                                <input {...register("industrialFireWaterReserveLiters")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Ex: 10000" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </section>
@@ -5943,9 +6137,9 @@ export default function DepositPage() {
                                     </h2>
                                     <div>
                                         <div className="flex flex-wrap gap-4">
-                                            {(propertyType === "VILLA"
+                                            {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE"
                                                 ? USAGE_TYPES
-                                                : propertyType === "NIVEAU_VILLA"
+                                                : propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL"
                                                     ? ENTRY_ACCESS_TYPES
                                                     : APARTMENT_LIFESTYLE_TYPES
                                             ).map((u) => (
