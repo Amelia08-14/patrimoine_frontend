@@ -360,6 +360,17 @@ export default function HomePage() {
            a.type === 'SALE';
   });
 
+  const CROSS_TYPE_MAP: Record<string, string> = {
+    'APPARTEMENT_COMMERCIAL': 'APPARTEMENT',
+    'VILLA_COMMERCIALE': 'VILLA',
+    'NIVEAU_VILLA_COMMERCIAL': 'NIVEAU_VILLA',
+    'IMMEUBLE_BUREAU': 'IMMEUBLE_RESIDENTIEL',
+    'APPARTEMENT': 'APPARTEMENT_COMMERCIAL',
+    'VILLA': 'VILLA_COMMERCIALE',
+    'NIVEAU_VILLA': 'NIVEAU_VILLA_COMMERCIAL',
+    'IMMEUBLE_RESIDENTIEL': 'IMMEUBLE_BUREAU',
+  };
+
   const groupedAnnounces = filteredAnnounces.reduce((acc, announce) => {
     let pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType?.toUpperCase());
     if (!pType) pType = PROPERTY_TYPES.find(t => t.label === announce.property?.propertyType);
@@ -378,7 +389,12 @@ export default function HomePage() {
         const crossCat = REAL_ESTATE_CATEGORIES.find(c => c.id === crossCatId);
         if (crossCat && crossCatId !== pType!.categoryId) {
           if (!acc[crossCatId]) acc[crossCatId] = { label: crossCat.label, items: [] };
-          acc[crossCatId].items.push(announce);
+          const originalType = announce.property?.propertyType?.toUpperCase();
+          const mappedType = CROSS_TYPE_MAP[originalType] || originalType;
+          acc[crossCatId].items.push({
+            ...announce,
+            property: { ...announce.property, _displayPropertyType: mappedType }
+          });
         }
       }
     }

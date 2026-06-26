@@ -398,8 +398,6 @@ const TERRAIN_AGRICOLE_VOCATION = [
     { id: "VITICULTURE", label: "Viticulture" },
     { id: "CEREALES", label: "Céréales (blé, orge…)" },
     { id: "ELEVAGE", label: "Élevage" },
-    { id: "APICULTURE", label: "Apiculture" },
-    { id: "SERRES", label: "Serres / hors-sol" },
     { id: "MIXTE", label: "Autre" },
 ]
 const TERRAIN_AGRICOLE_RESSOURCES_EAU = [
@@ -449,7 +447,7 @@ const TERRAIN_AGRICOLE_TYPE_CULTURE = [
 ]
 const TERRAIN_AGRICOLE_ACCES = [
     { id: "ROUTE_GOUDRON", label: "Route goudronnée" },
-    { id: "PISTE_CARROSSABLE", label: "Piste carrossable (accessible en voiture standard)" },
+    { id: "PISTE_CARROSSABLE", label: "Piste carrossable (accessible en voiture)" },
     { id: "ACCES_DIFFICILE", label: "Accès difficile (nécessite 4x4)" },
 ]
 const TERRAIN_AGRICOLE_ACCES_LOURDS = [
@@ -492,9 +490,6 @@ const TERRAIN_TOURISTIQUE_PAT = [
     { id: "NON", label: "Non / Aucun plan d'aménagement disponible" },
 ]
 const TERRAIN_TOURISTIQUE_RESEAUX = [
-    { id: "ELECTRICITE", label: "Électricité (Basse tension / Moyenne tension)" },
-    { id: "EAU_POTABLE", label: "Eau potable (Réseau public)" },
-    { id: "GAZ_VILLE", label: "Gaz de ville" },
     { id: "ASSAINISSEMENT", label: "Assainissement (Réseau d'égouts)" },
     { id: "FIBRE_OPTIQUE", label: "Fibre optique / Télécom" },
 ]
@@ -1187,7 +1182,7 @@ const formSchema = z.object({
   showroomAxeRoutier: z.string().optional(),
 
   // Local Commercial
-  localEnvironnement: z.string().optional(),
+  localEnvironnement: stringArrayOptional,
   localEnvironnementAutre: z.string().optional(),
   localSurfaceTotal: z.string().optional(),
   localVitrineLongueur: z.string().optional(),
@@ -1198,10 +1193,10 @@ const formSchema = z.object({
   localMezzanine: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   localMezzanineSurface: z.string().optional(),
   localStyle: z.string().optional(),
-  localZoneType: z.string().optional(),
+  localZoneType: stringArrayOptional,
   localFluxPieton: z.string().optional(),
   localFluxVehicules: z.string().optional(),
-  localUsage: z.string().optional(),
+  localUsage: stringArrayOptional,
 
   // Bloc Administratif
   blocSurfaceTerrain: z.string().optional(),
@@ -4641,7 +4636,21 @@ export default function DepositPage() {
                                             </label>
                                         </div>
                                     </div>
-                                    ) : !isTerrainTouristique ? (
+                                    ) : isTerrainTouristique ? (
+                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                        <div className="font-bold text-gray-900">Viabilisation</div>
+                                        <div className="flex gap-6 flex-wrap">
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />
+                                                Terrain viabilisé
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />
+                                                Non viabilisé
+                                            </label>
+                                        </div>
+                                    </div>
+                                    ) : (
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Statut de la zone</div>
                                         <div className="space-y-2">
@@ -4653,7 +4662,7 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    ) : null}
+                                    )}
                                 </div>
                             </section>
 
@@ -4676,8 +4685,8 @@ export default function DepositPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    {/* Viabilisation & Raccordements — masqué pour agricole (viabilité déjà dans Caractéristiques Physiques) */}
-                                    {!isTerrainAgricole && <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    {/* Viabilisation & Raccordements — masqué pour agricole et touristique (viabilité déjà dans Caractéristiques Physiques) */}
+                                    {!isTerrainAgricole && !isTerrainTouristique && <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">Viabilisation</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -4917,6 +4926,7 @@ export default function DepositPage() {
                                     Statut &amp; Vocation Touristique
                                 </h2>
                                 <div className="space-y-5">
+                                    {/* ZET + PAT */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-1">Zone d&apos;Expansion Touristique (Z.E.T)</div>
@@ -4948,12 +4958,14 @@ export default function DepositPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    {/* Classification de la zone */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Viabilisation &amp; Réseaux disponibles en bordure</div>
+                                        <div className="font-bold text-gray-900 mb-3">Classification de la zone</div>
+                                        <div className="text-xs text-gray-500 mb-3">Cocher la vocation principale</div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {TERRAIN_TOURISTIQUE_RESEAUX.map((x) => (
+                                            {TERRAIN_TOURISTIQUE_ZONE.map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="checkbox" value={x.id} {...register("terrainTouristiqueReseaux")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="radio" value={x.id} {...register("terrainTouristiqueZone")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
                                                 </label>
                                             ))}
@@ -5055,11 +5067,14 @@ export default function DepositPage() {
                                         <div className="font-bold text-gray-900 mb-3">Type d&apos;accès &amp; Flux de circulation</div>
                                         <div className="space-y-2">
                                             {IMMEUBLE_TYPE_ACCES.map((a) => (
-                                                <label key={a.id} className="flex items-start gap-2 cursor-pointer">
-                                                    <input type="radio" value={a.id} {...register("immeubleTypeAcces")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
-                                                    <div>
-                                                        <div className="font-medium text-gray-700 text-sm">{a.label}</div>
-                                                        <div className="text-xs text-gray-400 mt-0.5">{a.desc}</div>
+                                                <label key={a.id} className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="radio" value={a.id} {...register("immeubleTypeAcces")} className="accent-[#00BFA6] w-4 h-4 shrink-0" />
+                                                    <span className="font-medium text-gray-700 text-sm">{a.label}</span>
+                                                    <div className="relative group">
+                                                        <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                                                        <div className="absolute left-0 bottom-6 z-20 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-normal pointer-events-none">
+                                                            {a.desc}
+                                                        </div>
                                                     </div>
                                                 </label>
                                             ))}
@@ -5084,16 +5099,16 @@ export default function DepositPage() {
                                 {/* Ligne 1 : 3 colonnes */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
+                                        <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²)</label>
                                         <input {...register("showroomSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 350" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages</label>
                                         <input {...register("showroomNiveaux")} type="number" min="1" max="10" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
-                                        <input {...register("showroomHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
                                     </div>
                                 </div>
                                 {/* Ligne 2 : 3 colonnes */}
@@ -5107,8 +5122,8 @@ export default function DepositPage() {
                                         <input {...register("showroomFacadeDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
-                                        <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
+                                        <input {...register("showroomHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
                                     </div>
                                 </div>
                             </section>
@@ -5251,7 +5266,7 @@ export default function DepositPage() {
                                         <div className="space-y-2">
                                             {LOCAL_ZONE_TYPE.map((z) => (
                                                 <label key={z.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={z.id} {...register("localZoneType")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="checkbox" value={z.id} {...register("localZoneType")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {z.label}
                                                 </label>
                                             ))}
@@ -5295,11 +5310,11 @@ export default function DepositPage() {
                                         <div className="space-y-2">
                                             {LOCAL_ENVIRONNEMENT.map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={e.id} {...register("localEnvironnement")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="checkbox" value={e.id} {...register("localEnvironnement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {e.label}
                                                 </label>
                                             ))}
-                                            {localEnvironnement === "AUTRE" && (
+                                            {(localEnvironnement as any)?.includes?.("AUTRE") && (
                                                 <input {...register("localEnvironnementAutre")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm mt-1" placeholder="Préciser l'environnement…" />
                                             )}
                                         </div>
@@ -5310,7 +5325,7 @@ export default function DepositPage() {
                                         <div className="space-y-2">
                                             {LOCAL_USAGE.map((u) => (
                                                 <label key={u.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                    <input type="radio" value={u.id} {...register("localUsage")} className="accent-[#00BFA6] w-4 h-4" />
+                                                    <input type="checkbox" value={u.id} {...register("localUsage")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {u.label}
                                                 </label>
                                             ))}
@@ -5434,7 +5449,7 @@ export default function DepositPage() {
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
                                     <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                                        {VILLA_EQUIPMENTS.exterior.filter(item => item.id !== 'elevator').map((item) => {
+                                        {VILLA_EQUIPMENTS.exterior.filter(item => item.id !== 'barbecue').map((item) => {
                                             const Icon = IconMap[item.icon] || Trees
                                             return (
                                                 <label key={item.id} className="cursor-pointer group">
@@ -5982,14 +5997,14 @@ export default function DepositPage() {
                                                         {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && (
                                                             <span className="font-bold text-gray-700 text-lg whitespace-nowrap">R +</span>
                                                         )}
-                                                        {propertyType === "NIVEAU_VILLA" ? (
+                                                        {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL") ? (
                                                             <select
                                                                 {...register("floorCount")}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
                                                             >
                                                                 <option value="">Sélectionner</option>
                                                                 <option value="0">Rez-de-chaussée</option>
-                                                                <option value="1">Autre étage</option>
+                                                                <option value="1">Étage supérieur</option>
                                                             </select>
                                                         ) : (
                                                             <input 
@@ -6369,14 +6384,17 @@ export default function DepositPage() {
                                     <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
                                     <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter((item) => {
-                                            if (propertyType === 'VILLA' || propertyType === 'NIVEAU_VILLA') {
+                                            if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
                                                 return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
                                             }
-                                            if (['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO'].includes(propertyType)) {
+                                            if (['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO', 'APPARTEMENT_COMMERCIAL'].includes(propertyType)) {
                                                 return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
                                             }
                                             if (propertyType === 'IMMEUBLE_RESIDENTIEL') {
-                                                return ['garden', 'terrace', 'balcony', 'pool', 'playground'].includes(item.id)
+                                                return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
+                                            }
+                                            if (propertyType === 'IMMEUBLE_BUREAU') {
+                                                return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
                                             }
                                             return item.id !== 'elevator'
                                         }).map((item) => {
@@ -6807,14 +6825,17 @@ export default function DepositPage() {
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Extérieur</label>
                                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.exterior.filter((item) => {
-                                                if (propertyType === 'VILLA' || propertyType === 'NIVEAU_VILLA') {
+                                                if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
                                                     return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
                                                 }
-                                                if (['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO'].includes(propertyType)) {
+                                                if (['APPARTEMENT', 'DUPLEX', 'TRIPLEX', 'STUDIO', 'APPARTEMENT_COMMERCIAL'].includes(propertyType)) {
                                                     return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
                                                 }
                                                 if (propertyType === 'IMMEUBLE_RESIDENTIEL') {
-                                                    return ['garden', 'terrace', 'balcony', 'pool', 'playground'].includes(item.id)
+                                                    return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
+                                                }
+                                                if (propertyType === 'IMMEUBLE_BUREAU') {
+                                                    return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'elevator'].includes(item.id)
                                                 }
                                                 return item.id !== 'elevator'
                                             }).map((item) => {
@@ -8007,52 +8028,6 @@ export default function DepositPage() {
                                                 {errors.depositMonths && <p className="text-red-500 text-sm mt-1">{errors.depositMonths.message}</p>}
                                             </div>
 
-                                            {/* Usage cross-catégorie — masqué pour local commercial, showroom, bloc */}
-                                            {!isBureauCommerceSpecialParticulier && <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-3">
-                                                    {["VILLA_COMMERCIALE","NIVEAU_VILLA_COMMERCIAL","APPARTEMENT_COMMERCIAL","IMMEUBLE_BUREAU"].includes(propertyType)
-                                                        ? "Votre bien accepte-t-il un usage d'habitation ?"
-                                                        : "Votre bien accepte-t-il un usage commercial ?"
-                                                    }
-                                                </label>
-                                                <div className="flex gap-4 flex-wrap">
-                                                    <label className="cursor-pointer">
-                                                        <input
-                                                            type="radio"
-                                                            name="acceptsCrossUsage_radio"
-                                                            className="peer sr-only"
-                                                            checked={watch("acceptsCrossUsage") === false}
-                                                            onChange={() => setValue("acceptsCrossUsage", false as any, { shouldValidate: true })}
-                                                        />
-                                                        <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            Non
-                                                        </div>
-                                                    </label>
-                                                    <label className="cursor-pointer">
-                                                        <input
-                                                            type="radio"
-                                                            name="acceptsCrossUsage_radio"
-                                                            className="peer sr-only"
-                                                            checked={watch("acceptsCrossUsage") === true}
-                                                            onChange={() => setValue("acceptsCrossUsage", true as any, { shouldValidate: true })}
-                                                        />
-                                                        <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                            Oui
-                                                        </div>
-                                                    </label>
-                                                </div>
-                                                {watch("acceptsCrossUsage") === true && (
-                                                    <div className="mt-3 flex items-start gap-3 p-4 bg-teal-50 border border-[#00BFA6]/30 rounded-xl text-sm text-[#007A75]">
-                                                        <Info className="h-4 w-4 mt-0.5 shrink-0 text-[#00BFA6]" />
-                                                        <span>
-                                                            {["VILLA_COMMERCIALE","NIVEAU_VILLA_COMMERCIAL","APPARTEMENT_COMMERCIAL","IMMEUBLE_BUREAU"].includes(propertyType)
-                                                                ? "Vous n'aurez pas besoin de republier votre annonce dans la catégorie Immobilier Résidentiel, car elle sera automatiquement publiée dans les deux catégories."
-                                                                : "Vous n'aurez pas besoin de republier votre annonce dans la catégorie Bureaux et Commerces, car elle sera automatiquement publiée dans les deux catégories."
-                                                            }
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>}
                                         </div>
                                     </section>
                                 )}

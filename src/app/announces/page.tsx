@@ -112,6 +112,16 @@ function AnnouncesContent() {
           }
           
           if (filters.realEstateCategory) {
+            const CROSS_TYPE_MAP: Record<string, string> = {
+                'APPARTEMENT_COMMERCIAL': 'APPARTEMENT',
+                'VILLA_COMMERCIALE': 'VILLA',
+                'NIVEAU_VILLA_COMMERCIAL': 'NIVEAU_VILLA',
+                'IMMEUBLE_BUREAU': 'IMMEUBLE_RESIDENTIEL',
+                'APPARTEMENT': 'APPARTEMENT_COMMERCIAL',
+                'VILLA': 'VILLA_COMMERCIALE',
+                'NIVEAU_VILLA': 'NIVEAU_VILLA_COMMERCIAL',
+                'IMMEUBLE_RESIDENTIEL': 'IMMEUBLE_BUREAU',
+            };
             const validTypes = PROPERTY_TYPES
                 .filter(t => t.categoryId === filters.realEstateCategory)
                 .map(t => t.id);
@@ -119,8 +129,11 @@ function AnnouncesContent() {
             if (validTypes.length > 0) {
                 data = data.filter((a: any) => {
                     if (validTypes.includes(a.property?.propertyType?.toUpperCase())) return true;
-                    // Cross-category: annonce résidentielle/commerciale publiée dans les deux catégories
-                    if (a.property?.acceptsCrossUsage && a.property?.crossRealEstateType === filters.realEstateCategory) return true;
+                    if (a.property?.acceptsCrossUsage && a.property?.crossRealEstateType === filters.realEstateCategory) {
+                        const originalType = a.property?.propertyType?.toUpperCase();
+                        a.property._displayPropertyType = CROSS_TYPE_MAP[originalType] || originalType;
+                        return true;
+                    }
                     const typeObj = PROPERTY_TYPES.find(t => t.label === a.property?.propertyType);
                     return typeObj && typeObj.categoryId === filters.realEstateCategory;
                 });
