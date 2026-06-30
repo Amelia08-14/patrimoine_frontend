@@ -535,12 +535,13 @@ export default function AnnounceDetailsPage() {
   const isColdRoomRental = isRental && normalizedPropertyType === "CHAMBRE_FROIDE"
   const isHangarRental = isRental && normalizedPropertyType === "HANGAR"
   const isTerrainRental = isRental && (normalizedPropertyType === "TERRAIN_RESIDENTIEL" || normalizedPropertyType === "TERRAIN_INDUSTRIEL")
+  const isTerrainAgricoleProperty = normalizedPropertyType === "TERRAIN_AGRICOLE"
+  const isTerrainTouristiqueProperty = normalizedPropertyType === "TERRAIN_TOURISTIQUE"
   const isIndustrialRental = isFactoryRental || isColdRoomRental || isHangarRental
-  const isSpecialRental = isIndustrialRental || isTerrainRental
+  const isSpecialRental = isIndustrialRental || isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty
   const isShowroomProperty = normalizedPropertyType === "SHOWROOM"
   const isLocalCommercialProperty = normalizedPropertyType === "LOCAL_COMMERCIAL"
   const isBlocAdministratifProperty = normalizedPropertyType === "BLOC_ADMINISTRATIF"
-  const isTerrainAgricoleProperty = normalizedPropertyType === "TERRAIN_AGRICOLE"
   const isSaleBuildingDemolition =
       isSale &&
       normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" &&
@@ -554,8 +555,8 @@ export default function AnnounceDetailsPage() {
       if (!Number.isFinite(n)) return String(v);
       const i = Math.trunc(n);
       if (i === 0) return "RDC";
-      if (i === 1) return "1er étage";
-      return `${i}ème étage`;
+      if (i === 1) return "1er";
+      return `${i}ème`;
   }
 
   const formatFloorsLabel = (v: any) => {
@@ -904,7 +905,11 @@ export default function AnnounceDetailsPage() {
                       <div className="flex items-center gap-2 text-gray-700 min-w-0">
                         <Factory className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
                         <div className="min-w-0">
-                          <div className="font-bold text-base truncate">{LABELS[industrialFactory.sector[0]] || (industrialFactory.sectorOther || industrialFactory.sector[0])}</div>
+                          <div className="font-bold text-base truncate">
+                            {industrialFactory.sector[0] === "AUTRE_ACTIVITE"
+                              ? (industrialFactory.sectorOther || "Autre activité")
+                              : (LABELS[industrialFactory.sector[0]] || industrialFactory.sector[0])}
+                          </div>
                           <div className="text-xs text-gray-500">Activité compatible</div>
                         </div>
                       </div>
@@ -1037,8 +1042,8 @@ export default function AnnounceDetailsPage() {
                       </div>
                     )}
                   </div>
-                ) : isTerrainRental ? (
-                  <div className="w-full flex items-center justify-between gap-3">
+                ) : (isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty) ? (
+                  <div className="w-full flex items-center justify-between gap-3 flex-wrap">
                     {/* Surface terrain */}
                     {property.landArea != null && (
                       <div className="flex items-center gap-2 text-gray-700 shrink-0">
@@ -1049,30 +1054,60 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    {/* Façades */}
-                    {property.facadesCount != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</div>
-                          <div className="text-xs text-gray-500">Façades</div>
+                    {/* Longueur */}
+                    {terrain?.facadeLength != null && (
+                      <>
+                        <div className="h-8 w-px bg-gray-200 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                          <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                          <div>
+                            <div className="font-bold text-base">{terrain.facadeLength} ml</div>
+                            <div className="text-xs text-gray-500">Longueur</div>
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Largeur */}
+                    {terrain?.depth != null && (
+                      <>
+                        <div className="h-8 w-px bg-gray-200 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                          <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                          <div>
+                            <div className="font-bold text-base">{terrain.depth} m</div>
+                            <div className="text-xs text-gray-500">Largeur</div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                     {/* Topographie */}
                     {terrain?.topographie && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{LABELS[terrain.topographie] || terrain.topographie}</div>
-                          <div className="text-xs text-gray-500">Relief</div>
+                      <>
+                        <div className="h-8 w-px bg-gray-200 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                          <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                          <div>
+                            <div className="font-bold text-base">{LABELS[terrain.topographie] || terrain.topographie}</div>
+                            <div className="text-xs text-gray-500">Topographie</div>
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    {/* Façades */}
+                    {property.facadesCount != null && (
+                      <>
+                        <div className="h-8 w-px bg-gray-200 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
+                          <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                          <div>
+                            <div className="font-bold text-base">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</div>
+                            <div className="text-xs text-gray-500">Façades</div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                     {/* Viabilisé */}
+                    <div className="h-8 w-px bg-gray-200 shrink-0" />
                     <div className="flex items-center gap-2 text-gray-700 shrink-0">
                       <Key className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
                       <div>
@@ -1104,18 +1139,6 @@ export default function AnnounceDetailsPage() {
                         </div>
                     </div>
                 )}
-                
-                {property.nbFloors !== undefined && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
-                        <div>
-                            <div className="font-bold text-xl">
-                                {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
-                            </div>
-                            <div className="text-sm text-gray-500">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
-                        </div>
-                    </div>
-                )}
 
                 {normalizedPropertyType === "VILLA" && property.landArea !== undefined && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
@@ -1137,16 +1160,7 @@ export default function AnnounceDetailsPage() {
                     </div>
                 )}
 
-                {normalizedPropertyType === "VILLA" && property.facadesCount !== undefined && property.facadesCount !== null && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
-                        <div>
-                            <div className="font-bold text-xl">{property.facadesCount}</div>
-                            <div className="text-sm text-gray-500">Façades</div>
-                        </div>
-                    </div>
-                )}
-
+                {/* Surface — shown before étage for appartement types */}
                 {normalizedPropertyType !== "VILLA" && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && displayArea !== undefined && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
@@ -1157,7 +1171,29 @@ export default function AnnounceDetailsPage() {
                     </div>
                 )}
 
-                {normalizedPropertyType !== "VILLA" && hasElevator && (
+                {property.nbFloors !== undefined && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                            <div className="font-bold text-xl">
+                                {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
+                            </div>
+                            <div className="text-sm text-gray-500">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
+                        </div>
+                    </div>
+                )}
+
+                {normalizedPropertyType === "VILLA" && property.facadesCount !== undefined && property.facadesCount !== null && (
+                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                        <div>
+                            <div className="font-bold text-xl">{property.facadesCount}</div>
+                            <div className="text-sm text-gray-500">Façades</div>
+                        </div>
+                    </div>
+                )}
+
+                {normalizedPropertyType !== "VILLA" && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && hasElevator && (
                     <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
                         <div>
@@ -1169,15 +1205,6 @@ export default function AnnounceDetailsPage() {
 
                 {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && (
                     <>
-                        {property.nbFloors !== undefined && (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
-                                <div>
-                                    <div className="font-bold text-xl">{property.nbFloors}</div>
-                                    <div className="text-sm text-gray-500">{formatFloorsLabel(property.nbFloors)}</div>
-                                </div>
-                            </div>
-                        )}
                         {buildingTypology?.mode && (
                             <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                                 <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
@@ -1186,15 +1213,6 @@ export default function AnnounceDetailsPage() {
                                         {buildingTypology.mode === "SIMILAIRES" ? "Similaires" : buildingTypology.mode === "DIFFERENTES" ? "Différentes" : buildingTypology.mode}
                                     </div>
                                     <div className="text-sm text-gray-500">Typologie</div>
-                                </div>
-                            </div>
-                        )}
-                        {buildingTypology?.mode === "SIMILAIRES" && property.area !== undefined && property.area !== null && Number(property.area) > 0 && (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
-                                <div>
-                                    <div className="font-bold text-xl">{property.area} m²</div>
-                                    <div className="text-sm text-gray-500">Surface</div>
                                 </div>
                             </div>
                         )}
@@ -1207,6 +1225,41 @@ export default function AnnounceDetailsPage() {
                                 </div>
                             </div>
                         )}
+                        {property.nbFloors !== undefined && (
+                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                                <div>
+                                    <div className="font-bold text-xl">{property.nbFloors}</div>
+                                    <div className="text-sm text-gray-500">{formatFloorsLabel(property.nbFloors)}</div>
+                                </div>
+                            </div>
+                        )}
+                        {hasElevator && (
+                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                                <div>
+                                    <div className="font-bold text-xl">Oui</div>
+                                    <div className="text-sm text-gray-500">Ascenseur</div>
+                                </div>
+                            </div>
+                        )}
+                        {buildingTypology?.mode === "SIMILAIRES" && property.area !== undefined && property.area !== null && Number(property.area) > 0 ? (
+                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                                <div>
+                                    <div className="font-bold text-xl">{property.area} m²</div>
+                                    <div className="text-sm text-gray-500">Surface unique</div>
+                                </div>
+                            </div>
+                        ) : buildingTypology?.mode === "DIFFERENTES" ? (
+                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                                <div>
+                                    <div className="font-bold text-xl">Variable</div>
+                                    <div className="text-sm text-gray-500">Surfaces</div>
+                                </div>
+                            </div>
+                        ) : null}
                     </>
                 )}
 
@@ -1654,7 +1707,7 @@ export default function AnnounceDetailsPage() {
                         {coldRoom.structureType && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Structure</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[coldRoom.structureType] || coldRoom.structureType}</span>
+                            <span className="font-bold text-gray-900 text-sm">{(LABELS[coldRoom.structureType] || coldRoom.structureType).replace(/\s*\([^)]*\)/g, '').trim()}</span>
                           </div>
                         )}
                         {coldRoom.configuration && (
@@ -1874,7 +1927,7 @@ export default function AnnounceDetailsPage() {
           {/* ===== FIN SECTION CHAMBRE FROIDE ===== */}
 
           {/* ===== SECTION TERRAIN ===== */}
-          {isTerrainRental && (
+          {(isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty) && (
             <>
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
@@ -1901,13 +1954,13 @@ export default function AnnounceDetailsPage() {
                       )}
                       {terrain?.facadeLength != null && (
                         <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                          <span className="text-gray-500 text-xs">Longueur façade principale</span>
+                          <span className="text-gray-500 text-xs">Longueur</span>
                           <span className="font-bold text-gray-900 text-sm">{terrain.facadeLength} ml</span>
                         </div>
                       )}
                       {terrain?.depth != null && (
                         <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                          <span className="text-gray-500 text-xs">Profondeur</span>
+                          <span className="text-gray-500 text-xs">Largeur</span>
                           <span className="font-bold text-gray-900 text-sm">{terrain.depth} m</span>
                         </div>
                       )}
@@ -1950,7 +2003,8 @@ export default function AnnounceDetailsPage() {
                     </div>
                   </div>
 
-                  {/* Col 3 — Viabilisation */}
+                  {/* Col 3 — Viabilisation (non affiché pour agricole et touristique) */}
+                  {!isTerrainAgricoleProperty && !isTerrainTouristiqueProperty && (
                   <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                     <div className="flex items-start gap-2 min-h-[40px] mb-3">
                       <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
@@ -1975,6 +2029,7 @@ export default function AnnounceDetailsPage() {
                       )}
                     </div>
                   </div>
+                  )}
 
                 </div>
               </div>
@@ -2004,17 +2059,9 @@ export default function AnnounceDetailsPage() {
 
                     {/* Col 1 — Infrastructure */}
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
-                      {/* En-tête : Titre + État global */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                          <h3 className="text-[17px] font-bold text-gray-900">Infrastructure</h3>
-                        </div>
-                        {hangar.globalState && (
-                          <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full whitespace-nowrap">
-                            {LABELS[hangar.globalState] || hangar.globalState}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                        <h3 className="text-[17px] font-bold text-gray-900">Infrastructure</h3>
                       </div>
 
                       <div className="space-y-3">
@@ -2192,7 +2239,12 @@ export default function AnnounceDetailsPage() {
                             <span className="text-gray-500 text-xs">Équipements incendie</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.fireSafety.equipment.map((e: string) => (
-                                <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[e] || e}</span>
+                                <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
+                                  {LABELS[e] || e}
+                                  {e === "BACHE_EAU" && hangar.energy?.waterTankCapacityLiters
+                                    ? ` — ${hangar.energy.waterTankCapacityLiters.toLocaleString("fr-DZ")} L`
+                                    : ""}
+                                </span>
                               ))}
                             </div>
                           </div>
@@ -2432,50 +2484,50 @@ export default function AnnounceDetailsPage() {
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Accès" : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") ? "Environnement" : "Mode de vie"}
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Mode de vie et type d'accès" : "Promotion immobilière"}
                               </h2>
                               <div className="flex gap-4">
-                                  {(normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'UNIQUE' || property.usageType === 'Unique') ? (
+                                  {property.usageType === 'UNIQUE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Usage unique (Communicante)</span>
                                           <span className="text-gray-500 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'SEPARE' || property.usageType === 'Séparé') ? (
+                                  ) : property.usageType === 'SEPARE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
                                           <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
                                       </div>
-                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_INDEPENDANTE' ? (
+                                  ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Entrée indépendante</span>
                                           <span className="text-gray-500 text-sm">(accès indépendant au niveau de villa)</span>
                                       </div>
-                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_COMMUNE' ? (
+                                  ) : property.usageType === 'ENTREE_COMMUNE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Entrée commune</span>
                                           <span className="text-gray-500 text-sm">(accès partagé / entrée commune)</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'QUARTIER_OUVERT' ? (
+                                  ) : property.usageType === 'QUARTIER_OUVERT' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Quartier ouvert</span>
+                                          <span className="font-bold text-gray-900 text-lg">Quartier classique</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'RESIDENCE_CLOTUREE' ? (
+                                  ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Résidence clôturée</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'PROMOTION_IMMOBILIERE' ? (
+                                  ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Promotion immobilière</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">{property.usageType}</span>
+                                          <span className="font-bold text-gray-900 text-lg">{LABELS[property.usageType] || property.usageType}</span>
                                       </div>
                                   )}
                               </div>
                           </div>
                       )}
-                      
+
                   </div>
               </div>
           )}
@@ -2490,7 +2542,9 @@ export default function AnnounceDetailsPage() {
                   <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <BedDouble className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Espace de Vie</h3>
+                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">
+                              {normalizedPropertyType === "APPARTEMENT_COMMERCIAL" ? "Espace exploité" : "Espace de Vie"}
+                          </h3>
                       </div>
                       <div className="space-y-4 flex-1">
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
@@ -2615,16 +2669,16 @@ export default function AnnounceDetailsPage() {
                                       </div>
                                   </div>
                               )}
-                              {buildingTypology.mode !== "SIMILAIRES" && (Array.isArray(buildingTypology.apartmentStyle) ? buildingTypology.apartmentStyle.length > 0 : !!buildingTypology.apartmentStyle) && (
-                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                                      <span className="text-gray-500 text-sm">Style</span>
-                                      <span className="font-bold text-gray-900">
-                                          {Array.isArray(buildingTypology.apartmentStyle)
-                                              ? buildingTypology.apartmentStyle
-                                                  .map((s: string) => (s === "SIMPLEX" ? "Simplex" : s === "DUPLEX" ? "Duplex" : s === "TRIPLEX" ? "Triplex" : s))
-                                                  .join(", ")
-                                              : buildingTypology.apartmentStyle}
-                                      </span>
+                              {(Array.isArray(buildingTypology.apartmentStyle) ? buildingTypology.apartmentStyle.length > 0 : !!buildingTypology.apartmentStyle) && (
+                                  <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50">
+                                      <span className="text-gray-500 text-sm">Style d&apos;appartement</span>
+                                      <div className="flex flex-wrap gap-1.5">
+                                          {(Array.isArray(buildingTypology.apartmentStyle) ? buildingTypology.apartmentStyle : [buildingTypology.apartmentStyle]).map((s: string, i: number) => (
+                                              <span key={i} className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">
+                                                  {s === "SIMPLEX" ? "Simplex" : s === "DUPLEX" ? "Duplex" : s === "TRIPLEX" ? "Triplex" : s}
+                                              </span>
+                                          ))}
+                                      </div>
                                   </div>
                               )}
                               {buildingTypology.mode === "SIMILAIRES" ? (
@@ -2911,44 +2965,44 @@ export default function AnnounceDetailsPage() {
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Accès" : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") ? "Environnement" : "Mode de vie"}
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Mode de vie et type d'accès" : "Promotion immobilière"}
                               </h2>
                               <div className="flex gap-4">
-                                  {(normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'UNIQUE' || property.usageType === 'Unique') ? (
+                                  {property.usageType === 'UNIQUE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Usage unique (Communicante)</span>
                                           <span className="text-gray-500 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "VILLA" || normalizedPropertyType === "Villa") && (property.usageType === 'SEPARE' || property.usageType === 'Séparé') ? (
+                                  ) : property.usageType === 'SEPARE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
                                           <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
                                       </div>
-                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_INDEPENDANTE' ? (
+                                  ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Entrée indépendante</span>
                                           <span className="text-gray-500 text-sm">(accès indépendant au niveau de villa)</span>
                                       </div>
-                                  ) : normalizedPropertyType === "NIVEAU_VILLA" && property.usageType === 'ENTREE_COMMUNE' ? (
+                                  ) : property.usageType === 'ENTREE_COMMUNE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Entrée commune</span>
                                           <span className="text-gray-500 text-sm">(accès partagé / entrée commune)</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'QUARTIER_OUVERT' ? (
+                                  ) : property.usageType === 'QUARTIER_OUVERT' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Quartier ouvert</span>
+                                          <span className="font-bold text-gray-900 text-lg">Quartier classique</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'RESIDENCE_CLOTUREE' ? (
+                                  ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Résidence clôturée</span>
                                       </div>
-                                  ) : (normalizedPropertyType === "APPARTEMENT" || normalizedPropertyType === "DUPLEX" || normalizedPropertyType === "TRIPLEX" || normalizedPropertyType === "STUDIO") && property.usageType === 'PROMOTION_IMMOBILIERE' ? (
+                                  ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
                                           <span className="font-bold text-gray-900 text-lg">Promotion immobilière</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">{property.usageType}</span>
+                                          <span className="font-bold text-gray-900 text-lg">{LABELS[property.usageType] || property.usageType}</span>
                                       </div>
                                   )}
                               </div>

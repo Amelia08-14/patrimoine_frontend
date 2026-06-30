@@ -777,6 +777,21 @@ const ENTRY_ACCESS_TYPES = [
         id: "ENTREE_COMMUNE",
         label: "Entrée commune",
         description: "Accès partagé (entrée commune)"
+    },
+    {
+        id: "QUARTIER_OUVERT",
+        label: "Quartier classique",
+        description: "Quartier classique ouvert"
+    },
+    {
+        id: "RESIDENCE_CLOTUREE",
+        label: "Résidence clôturée",
+        description: "Résidence clôturée sécurisée"
+    },
+    {
+        id: "PROMOTION_IMMOBILIERE",
+        label: "Promotion immobilière",
+        description: "Promotion immobilière (quartier classique & résidence clôturée)"
     }
 ]
 
@@ -1391,8 +1406,8 @@ const formSchema = z.object({
         if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
         }
-        if (!(data.usageType === "ENTREE_INDEPENDANTE" || data.usageType === "ENTREE_COMMUNE")) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type d'entrée requis", path: ["usageType"] })
+        if (!["ENTREE_INDEPENDANTE", "ENTREE_COMMUNE", "QUARTIER_OUVERT", "RESIDENCE_CLOTUREE", "PROMOTION_IMMOBILIERE"].includes(data.usageType || "")) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mode de vie requis", path: ["usageType"] })
         }
     }
 
@@ -1590,7 +1605,7 @@ const InlineCalendar = ({ value, onChange }: { value?: Date, onChange: (date: Da
     )
 }
 
-export default function DepositPage() {
+export function DepositPageComponent({ forcedUserType }: { forcedUserType?: "PARTICULIER" | "SOCIETE" }) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -1608,7 +1623,7 @@ export default function DepositPage() {
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([])
   const [mainPhoto, setMainPhoto] = useState<File | null>(null)
   const [photoOrganizationStep, setPhotoOrganizationStep] = useState<"upload" | "organize">("upload")
-  const [userType, setUserType] = useState<string>("PARTICULIER")
+  const [userType, setUserType] = useState<string>(forcedUserType || "PARTICULIER")
   const [userCompanyActivity, setUserCompanyActivity] = useState<string | null>(null)
   const [availabilityMode, setAvailabilityMode] = useState<'IMMEDIATE' | 'DATE'>('IMMEDIATE')
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
@@ -1641,8 +1656,18 @@ export default function DepositPage() {
         router.push('/')
         return
     }
-    
-    setUserType(user.userType || "PARTICULIER")
+
+    // Rediriger si le type de compte ne correspond pas à la page
+    if (forcedUserType === "PARTICULIER" && user.userType === "SOCIETE") {
+        router.replace('/deposit/professionnel')
+        return
+    }
+    if (forcedUserType === "SOCIETE" && user.userType !== "SOCIETE") {
+        router.replace('/deposit/particulier')
+        return
+    }
+
+    setUserType(forcedUserType || user.userType || "PARTICULIER")
     setUserCompanyActivity(user.companyActivity || null)
     
     // Fetch fresh profile data to ensure we have the phone number
@@ -1782,44 +1807,35 @@ export default function DepositPage() {
   const currentState = useWatch({ control, name: "state" })
   const isUsineRentalParticulier =
     transactionType === "RENTAL" &&
-    userType === "PARTICULIER" &&
     propertyType === "USINE"
   const isChambreFroideRentalParticulier =
     transactionType === "RENTAL" &&
-    userType === "PARTICULIER" &&
     propertyType === "CHAMBRE_FROIDE"
   const isHangarRentalParticulier =
     transactionType === "RENTAL" &&
-    userType === "PARTICULIER" &&
     propertyType === "HANGAR"
   const isIndustrialRentalParticulier = isUsineRentalParticulier || isChambreFroideRentalParticulier || isHangarRentalParticulier
   const isCommercialPropertyType = ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)
   const isTerrainRentalParticulier =
     transactionType === "RENTAL" &&
-    userType === "PARTICULIER" &&
     ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType)
   const isShowroomParticulier =
     ["RENTAL", "SALE"].includes(transactionType) &&
-    userType === "PARTICULIER" &&
     propertyType === "SHOWROOM"
   const isLocalCommercialParticulier =
     ["RENTAL", "SALE"].includes(transactionType) &&
-    userType === "PARTICULIER" &&
     propertyType === "LOCAL_COMMERCIAL"
   const isBlocAdministratifParticulier =
     ["RENTAL", "SALE"].includes(transactionType) &&
-    userType === "PARTICULIER" &&
     propertyType === "BLOC_ADMINISTRATIF"
   const isBureauCommerceSpecialParticulier = isShowroomParticulier || isLocalCommercialParticulier || isBlocAdministratifParticulier
   const isTerrainAgricole = propertyType === "TERRAIN_AGRICOLE"
   const isTerrainTouristique = propertyType === "TERRAIN_TOURISTIQUE"
   const isImmeubleCommercialParticulier =
     (transactionType === "RENTAL" || transactionType === "SALE") &&
-    userType === "PARTICULIER" &&
     propertyType === "IMMEUBLE_COMMERCIAL"
   const isHebergementHabitant =
     transactionType === "RENTAL" &&
-    userType === "PARTICULIER" &&
     propertyType === "HEBERGEMENT_HABITANT"
 
   const cfSector = watch("cfSector")
@@ -1853,11 +1869,9 @@ export default function DepositPage() {
   const habClimatAcces = watch("habClimatAcces")
   const isSaleParticulierApartment =
     transactionType === "SALE" &&
-    userType === "PARTICULIER" &&
     ["APPARTEMENT", "DUPLEX", "TRIPLEX", "STUDIO"].includes(propertyType)
   const isSaleParticulierNiveauVilla =
     transactionType === "SALE" &&
-    userType === "PARTICULIER" &&
     propertyType === "NIVEAU_VILLA"
   const isSaleBuilding = (propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") && transactionType === "SALE"
   const isBuildingDemolition = propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE" && currentState === "A_DEMOLIR"
@@ -1865,7 +1879,7 @@ export default function DepositPage() {
   const isVillaDemolition =
     propertyType === "VILLA" &&
     (currentState === "A_DEMOLIR" || String(currentState || "").toUpperCase().includes("DEMOLIR"))
-  const isSaleVillaDemolition = propertyType === "VILLA" && transactionType === "SALE" && userType === "PARTICULIER" && isVillaDemolition
+  const isSaleVillaDemolition = propertyType === "VILLA" && transactionType === "SALE" && isVillaDemolition
   
   // Re-hook the useEffect for price calculation since watch comes from useForm
   // We need to move the useEffect logic AFTER useForm
@@ -3166,7 +3180,9 @@ export default function DepositPage() {
   const isEligibleUser = userType === "PARTICULIER" || 
       (userType === "SOCIETE" && userCompanyActivity && ["AGENCE_IMMOBILIERE", "PROMOTEUR_IMMOBILIER", "ADMINISTRATEUR_BIENS", "AUTRES_PROFESSIONNELS"].includes(userCompanyActivity));
 
+  // Les professionnels (SOCIETE) ont accès à tous les types de biens en vente et location
   const isEligibleProperty =
+      (userType === "SOCIETE" && ["RENTAL", "SALE"].includes(transactionType) && !!propertyType) ||
       (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "NIVEAU_VILLA") ||
       (userType === "PARTICULIER" && transactionType === "SALE" && propertyType === "NIVEAU_VILLA") ||
@@ -4601,12 +4617,12 @@ export default function DepositPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Longueur façade principale */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? "Longueur" : "Longueur façade principale"}</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur</label>
                                         <input {...register("terrainFacadeLength")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12 ml" />
                                     </div>
                                     {/* Profondeur terrain */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? "Largeur" : "Profondeur terrain"}</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur</label>
                                         <input {...register("terrainDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 25 m" />
                                     </div>
                                     {/* Topographie */}
@@ -5673,12 +5689,12 @@ export default function DepositPage() {
                     {currentStep === 4 && (
                         (
                             (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
-                            (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
-                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
-                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER") ||
-                            (propertyType === "VILLA_COMMERCIALE" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
-                            (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
-                            ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER")
+                            (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
+                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL") ||
+                            ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE") ||
+                            (propertyType === "VILLA_COMMERCIALE" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
+                            (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
+                            ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE"))
                         )
                     ) && (
                         <div className="w-full max-w-5xl animate-fade-in space-y-10">
@@ -5884,12 +5900,29 @@ export default function DepositPage() {
                                                     {Array.isArray(buildingApartmentTypologies) && buildingApartmentTypologies.includes("F10_PLUS") && (
                                                         <div className="min-w-0">
                                                             <label className="block text-sm font-bold text-gray-900 mb-2">Typologies au-delà de F10 <span className="text-red-500">*</span></label>
-                                                            <input
-                                                                {...register("buildingApartmentTypologyOther")}
-                                                                type="text"
-                                                                className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                                placeholder="Ex: F11, F12"
-                                                            />
+                                                            <div className="flex gap-3 flex-wrap mb-2">
+                                                                {["F11","F12","F13","F14","F15","F16","F17","F18","F19","F20+"].map((f) => {
+                                                                    const currentOther = typeof buildingApartmentTypologyOther === "string" ? buildingApartmentTypologyOther : ""
+                                                                    const selectedOthers = currentOther.split(/[,\s]+/).map(x => x.trim()).filter(Boolean)
+                                                                    const isChecked = selectedOthers.includes(f)
+                                                                    return (
+                                                                        <button
+                                                                            key={f}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const next = isChecked
+                                                                                    ? selectedOthers.filter(x => x !== f)
+                                                                                    : [...selectedOthers, f]
+                                                                                setValue("buildingApartmentTypologyOther", next.join(", "), { shouldValidate: true })
+                                                                            }}
+                                                                            className={`px-4 py-2 border-2 rounded-full text-sm font-bold transition-all ${isChecked ? "border-[#00BFA6] bg-[#00BFA6]/10 text-[#00BFA6]" : "border-gray-200 text-gray-700 bg-white hover:border-gray-300"}`}
+                                                                        >
+                                                                            {f}
+                                                                        </button>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                            <input type="hidden" {...register("buildingApartmentTypologyOther")} />
                                                             {errors.buildingApartmentTypologyOther && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologyOther.message as any}</p>}
                                                         </div>
                                                     )}
@@ -6154,11 +6187,11 @@ export default function DepositPage() {
                                 </div>
                             </section>
 
-                            {/* 2. Mode de vie – multi-choix pour immeubles */}
+                            {/* 2. Promotion immobilière – multi-choix pour immeubles */}
                             {(propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") && !isBuildingDemolition && (
                                 <section className="space-y-6">
                                     <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                        <Users className="text-[#00BFA6]" /> Mode de vie
+                                        <Users className="text-[#00BFA6]" /> Promotion immobilière
                                     </h2>
                                     <div className="flex flex-wrap gap-4">
                                         {APARTMENT_LIFESTYLE_TYPES.map((u) => (
@@ -6177,7 +6210,10 @@ export default function DepositPage() {
                             {!isVillaDemolition && !isBuildingDemolition && propertyType !== "IMMEUBLE_RESIDENTIEL" && propertyType !== "IMMEUBLE_BUREAU" && (
                                 <section className="space-y-6">
                                     <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                        <Users className="text-[#00BFA6]" /> Mode de vie
+                                        <Users className="text-[#00BFA6]" />
+                                        {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL")
+                                            ? "Mode de vie et type d'accès"
+                                            : "Promotion immobilière"}
                                     </h2>
                                     <div>
                                         <div className="flex flex-wrap gap-4">
@@ -6211,7 +6247,7 @@ export default function DepositPage() {
                             {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <BedDouble className="text-[#00BFA6]" /> {isCommercialPropertyType ? "Type d'emplacement" : "Espaces de Vie"}
+                                    <BedDouble className="text-[#00BFA6]" /> {isCommercialPropertyType ? "Espace exploité" : "Espaces de Vie"}
                                 </h2>
                                 
                                 <div className="flex flex-col gap-5">
@@ -6550,12 +6586,12 @@ export default function DepositPage() {
                     {/* Step 4: Fiche descriptive - Autres (Ancien formulaire) */}
                     {currentStep === 4 && !(
                         (propertyType === "VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
-                        (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
-                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL" && userType === "PARTICULIER") ||
-                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE" && userType === "PARTICULIER") ||
-                        (propertyType === "VILLA_COMMERCIALE" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
-                        (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
-                        ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE") && userType === "PARTICULIER") ||
+                        (propertyType === "NIVEAU_VILLA" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
+                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "RENTAL") ||
+                        ((propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL") && transactionType === "SALE") ||
+                        (propertyType === "VILLA_COMMERCIALE" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
+                        (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
+                        ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE")) ||
                         isImmeubleCommercialParticulier ||
                         isUsineRentalParticulier ||
                         isChambreFroideRentalParticulier ||
@@ -8595,4 +8631,9 @@ export default function DepositPage() {
         </div>
     </div>
   )
+}
+
+// Page par défaut — détecte automatiquement le type d'utilisateur
+export default function DepositPage() {
+  return <DepositPageComponent />
 }

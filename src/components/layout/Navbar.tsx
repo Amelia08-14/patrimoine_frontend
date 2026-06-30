@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { User, LogOut, Plus, ChevronDown, List, CreditCard, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2 } from 'lucide-react';
+import { User, LogOut, Plus, ChevronDown, List, CreditCard, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Navbar() {
@@ -235,6 +235,11 @@ export function Navbar() {
                         </div>
                         
                         <div className="py-2">
+                            {user?.userType === 'SOCIETE' && (
+                              <Link href="/profile/boutique" className="flex items-center px-4 py-2 text-sm font-bold text-[#00BFA6] hover:bg-[#00BFA6]/5 hover:text-[#009e88]">
+                                  <Store className="h-4 w-4 mr-3" /> Ma Boutique
+                              </Link>
+                            )}
                             <Link href="/profile/announces" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
                                 <List className="h-4 w-4 mr-3" /> Annonces déposées
                             </Link>
