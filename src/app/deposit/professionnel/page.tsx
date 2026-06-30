@@ -3,5 +3,5 @@
 import DepositForm from "@/app/deposit/page"
 
 export default function DepositProfessionnelPage() {
-  return <DepositForm forcedUserType="SOCIETE" />
+  return <DepositForm />
 }

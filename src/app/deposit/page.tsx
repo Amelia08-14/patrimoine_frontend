@@ -29,7 +29,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
@@ -1605,8 +1605,13 @@ const InlineCalendar = ({ value, onChange }: { value?: Date, onChange: (date: Da
     )
 }
 
-function DepositPageComponent({ forcedUserType }: { forcedUserType?: "PARTICULIER" | "SOCIETE" }) {
+function DepositPageComponent() {
   const router = useRouter()
+  const pathname = usePathname()
+  const forcedUserType: "PARTICULIER" | "SOCIETE" | undefined =
+    pathname === "/deposit/particulier" ? "PARTICULIER"
+    : pathname === "/deposit/professionnel" ? "SOCIETE"
+    : undefined
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
