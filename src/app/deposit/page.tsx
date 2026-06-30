@@ -1605,7 +1605,7 @@ const InlineCalendar = ({ value, onChange }: { value?: Date, onChange: (date: Da
     )
 }
 
-export function DepositPageComponent({ forcedUserType }: { forcedUserType?: "PARTICULIER" | "SOCIETE" }) {
+function DepositPageComponent({ forcedUserType }: { forcedUserType?: "PARTICULIER" | "SOCIETE" }) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -8633,7 +8633,4 @@ export function DepositPageComponent({ forcedUserType }: { forcedUserType?: "PAR
   )
 }
 
-// Page par défaut — détecte automatiquement le type d'utilisateur
-export default function DepositPage() {
-  return <DepositPageComponent />
-}
+export default DepositPageComponent

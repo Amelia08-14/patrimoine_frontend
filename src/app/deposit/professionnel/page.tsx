@@ -1,7 +1,7 @@
 "use client"
 
-import { DepositPageComponent } from "@/app/deposit/page"
+import DepositForm from "@/app/deposit/page"
 
 export default function DepositProfessionnelPage() {
-  return <DepositPageComponent forcedUserType="SOCIETE" />
+  return <DepositForm forcedUserType="SOCIETE" />
 }
