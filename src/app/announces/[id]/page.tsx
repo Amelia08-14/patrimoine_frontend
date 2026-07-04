@@ -4,15 +4,14 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
-  ArrowLeft, MapPin, BedDouble, Bath, Square, Heart, Share2,
+  ArrowLeft, MapPin, BedDouble, Square, Heart, Share2,
   Phone, Mail, User, Check, Building2, Car, Wind, Sun,
-  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, Search, ChevronDown, X, Layers, Users, FileText, Handshake,
-  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid
+  Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, X, Layers, Users, FileText, Handshake,
+  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import Link from "next/link"
-import { AnnounceFilter } from "@/components/AnnounceFilter"
 
   // Helper for Image URLs
   const getImageUrl = (url: string) => {
@@ -250,6 +249,10 @@ export default function AnnounceDetailsPage() {
   const [selectedContactIndex, setSelectedContactIndex] = useState(0)
 
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [reportReason, setReportReason] = useState("")
+  const [reportSent, setReportSent] = useState(false)
+  const [boutiqueAnnounces, setBoutiqueAnnounces] = useState<any[]>([])
 
   const allImages = announce?.property?.images || [];
   
@@ -328,6 +331,15 @@ export default function AnnounceDetailsPage() {
         if (response.ok) {
           const data = await response.json()
           setAnnounce(data)
+          if (data?.user?.userType === 'SOCIETE' && data?.user?.id) {
+            try {
+              const boutiqueRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces/user/${data.user.id}`)
+              if (boutiqueRes.ok) {
+                const boutiqueData = await boutiqueRes.json()
+                setBoutiqueAnnounces(boutiqueData.filter((a: any) => a.id !== data.id).slice(0, 4))
+              }
+            } catch {}
+          }
         }
       } catch (error) {
         console.error("Error fetching announce:", error)
@@ -873,7 +885,28 @@ export default function AnnounceDetailsPage() {
                   <div className="flex items-center text-gray-500 text-lg">
                     <MapPin className="h-5 w-5 mr-2 text-[#00BFA6]" />
                     {property.address?.town?.nameFr || property.address?.street}, {property.address?.town?.city?.nameFr}
+                    {property.mapsLink && (
+                      <a href={property.mapsLink} target="_blank" rel="noopener noreferrer" className="ml-3 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-700 font-medium">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        Voir sur Maps
+                      </a>
+                    )}
                   </div>
+                  {property.availableDate && (() => {
+                    try {
+                      const d = new Date(property.availableDate)
+                      if (!isNaN(d.getTime()) && d > new Date()) {
+                        return (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full">
+                              🕐 Disponible à partir du {d.toLocaleDateString('fr-FR')}
+                            </span>
+                          </div>
+                        )
+                      }
+                    } catch {}
+                    return null
+                  })()}
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-[#00BFA6]">
@@ -1433,7 +1466,71 @@ export default function AnnounceDetailsPage() {
                       Envoyer un email
                   </a>
               )}
+
+              {/* Signaler un problème */}
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className="mt-4 w-full py-2.5 text-xs text-gray-400 hover:text-red-500 flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                Signaler un problème avec cette annonce
+              </button>
             </div>
+
+            {/* Section Boutique — pour les professionnels */}
+            {announce.user?.userType === 'SOCIETE' && (
+              <div className="mt-4 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-[#00BFA6] to-[#0088cc] p-5 flex items-center gap-3">
+                  {announce.user?.agencyLogoUrl ? (
+                    <img src={getImageUrl(announce.user.agencyLogoUrl) || ''} alt="Logo" className="h-14 w-14 rounded-full object-cover border-2 border-white shadow" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center">
+                      <Store className="h-7 w-7 text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-white font-black text-base leading-tight">{announce.user?.companyName}</div>
+                    <div className="text-white/70 text-xs mt-0.5">{announce.user?.activity || 'Professionnel immobilier'}</div>
+                    <div className="text-white/60 text-xs mt-1">{boutiqueAnnounces.length + 1} annonce{boutiqueAnnounces.length > 0 ? 's' : ''} active{boutiqueAnnounces.length > 0 ? 's' : ''}</div>
+                  </div>
+                </div>
+
+                {boutiqueAnnounces.length > 0 && (
+                  <div className="p-4 space-y-2">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Autres annonces</p>
+                    {boutiqueAnnounces.map((a: any) => {
+                      const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
+                      const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
+                      return (
+                        <a key={a.id} href={`/announces/${a.id}`} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group">
+                          <div className="h-14 w-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                            {img ? <img src={getImageUrl(img.url) || ''} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-gray-200" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-bold text-gray-900 truncate group-hover:text-[#00BFA6] transition-colors">
+                              {a.title || PROPERTY_TYPES?.find((t: any) => t.id === a.property?.propertyType)?.label || a.property?.propertyType}
+                            </div>
+                            {city && <div className="text-xs text-gray-500 truncate mt-0.5">📍 {city}</div>}
+                            <div className="text-xs font-bold text-[#00BFA6] mt-0.5">
+                              {a.price ? `${Number(a.price).toLocaleString()} DZD` : 'Prix sur demande'}
+                            </div>
+                          </div>
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div className="px-4 pb-4">
+                  <a
+                    href={`/boutique/${announce.user?.id}`}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#00BFA6]/10 hover:bg-[#00BFA6]/20 text-[#00BFA6] rounded-xl text-sm font-bold transition-colors"
+                  >
+                    <Store className="h-4 w-4" /> Voir la boutique complète
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -3052,6 +3149,56 @@ export default function AnnounceDetailsPage() {
         </div>
       )}
 
+    {/* ── MODAL SIGNALEMENT ── */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }}>
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-red-500 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                Signaler un problème
+              </h3>
+              <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              {reportSent ? (
+                <div className="text-center py-6">
+                  <div className="h-14 w-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="h-7 w-7 text-green-600" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-lg">Signalement envoyé</h4>
+                  <p className="text-gray-500 text-sm mt-2">Notre équipe examinera cette annonce. Merci pour votre contribution.</p>
+                  <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }} className="mt-5 px-6 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">Fermer</button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">Pourquoi signalez-vous cette annonce ?</p>
+                  <div className="space-y-2">
+                    {["Annonce frauduleuse", "Prix incorrect / trompeur", "Photos non conformes", "Bien déjà vendu / loué", "Informations incorrectes", "Autre raison"].map(r => (
+                      <label key={r} className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors hover:border-gray-300" style={reportReason === r ? { borderColor: '#ef4444', backgroundColor: '#fef2f2' } : { borderColor: '#f3f4f6' }}>
+                        <input type="radio" name="reportReason" value={r} checked={reportReason === r} onChange={() => setReportReason(r)} className="sr-only" />
+                        <div className={`h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center ${reportReason === r ? 'border-red-500 bg-red-500' : 'border-gray-300'}`}>
+                          {reportReason === r && <div className="h-1.5 w-1.5 bg-white rounded-full" />}
+                        </div>
+                        <span className={`text-sm font-medium ${reportReason === r ? 'text-red-600' : 'text-gray-700'}`}>{r}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <Button
+                    disabled={!reportReason}
+                    className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold disabled:opacity-40"
+                    onClick={() => { if (reportReason) setReportSent(true) }}
+                  >
+                    Envoyer le signalement
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

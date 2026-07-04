@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect, useMemo, use } from "react"
+import { useState, useEffect, useMemo, use, useRef } from "react"
 import Link from "next/link"
 import axios from "axios"
 import {
   Phone, Mail, MessageCircle, Globe, Facebook, Instagram, Linkedin,
   ChevronDown, Search, Building2, X, ArrowRight,
-  Store
+  Store, LayoutGrid, List, LayoutDashboard, ChevronLeft, ChevronRight,
+  Star, Crown, MapPin
 } from "lucide-react"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
@@ -36,6 +37,7 @@ type BoutiqueConfig = {
   slogan?: string
   description?: string
   bannerUrl?: string
+  bannerUrls?: string[]
   logoUrl?: string
   phone?: string
   email?: string
@@ -44,6 +46,8 @@ type BoutiqueConfig = {
   instagram?: string
   linkedin?: string
   website?: string
+  menuItems?: { label: string; href: string }[]
+  subscriptionPlan?: 'STARTER' | 'PRO' | 'PREMIUM'
 }
 
 const DEFAULT_CONFIG: BoutiqueConfig = {
@@ -63,7 +67,28 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   const [categoryFilter, setCategoryFilter] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
 
+  // Display style: grid | list | large
+  const [displayStyle, setDisplayStyle] = useState<"grid" | "list" | "large">("grid")
+
+  // Banner slider
+  const [bannerIndex, setBannerIndex] = useState(0)
+  const bannerTimerRef = useRef<any>(null)
+
   const color = config.primaryColor || "#00BFA6"
+
+  const bannerImages = useMemo(() => {
+    if (config.bannerUrls && config.bannerUrls.length > 0) return config.bannerUrls
+    if (config.bannerUrl) return [config.bannerUrl]
+    return []
+  }, [config.bannerUrl, config.bannerUrls])
+
+  useEffect(() => {
+    if (bannerImages.length <= 1) return
+    bannerTimerRef.current = setInterval(() => {
+      setBannerIndex(i => (i + 1) % bannerImages.length)
+    }, 5000)
+    return () => clearInterval(bannerTimerRef.current)
+  }, [bannerImages.length])
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -157,16 +182,35 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     <div className="min-h-screen bg-gray-50">
 
       {/* ── HERO SECTION ── */}
-      <div className="relative overflow-hidden" style={{ minHeight: 320 }}>
-        {/* Banner image or gradient */}
-        {config.bannerUrl ? (
+      <div className="relative overflow-hidden" style={{ minHeight: 340 }}>
+        {/* Banner: slider or gradient */}
+        {bannerImages.length > 0 ? (
           <>
-            <img
-              src={getImageUrl(config.bannerUrl)}
-              alt="Bannière"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/50" />
+            {bannerImages.map((url, i) => (
+              <img
+                key={i}
+                src={getImageUrl(url)}
+                alt="Bannière"
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+                style={{ opacity: i === bannerIndex ? 1 : 0 }}
+              />
+            ))}
+            <div className="absolute inset-0 bg-black/55" />
+            {bannerImages.length > 1 && (
+              <>
+                <button onClick={() => { setBannerIndex(i => (i - 1 + bannerImages.length) % bannerImages.length); clearInterval(bannerTimerRef.current) }} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button onClick={() => { setBannerIndex(i => (i + 1) % bannerImages.length); clearInterval(bannerTimerRef.current) }} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+                  {bannerImages.map((_, i) => (
+                    <button key={i} onClick={() => setBannerIndex(i)} className="h-1.5 rounded-full transition-all" style={{ width: i === bannerIndex ? 20 : 6, backgroundColor: i === bannerIndex ? 'white' : 'rgba(255,255,255,0.4)' }} />
+                  ))}
+                </div>
+              </>
+            )}
           </>
         ) : (
           <div
@@ -330,32 +374,86 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
             )}
           </div>
 
-          {/* Contact buttons */}
-          {hasContact && (
-            <div className="mt-8 flex flex-wrap gap-3 justify-center">
-              {config.phone && (
-                <a href={`tel:${config.phone}`} className="flex items-center gap-2 bg-white text-gray-900 px-5 py-2.5 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
-                  <Phone className="h-4 w-4" style={{ color }} /> {config.phone}
-                </a>
-              )}
-              {config.whatsapp && (
-                <a
-                  href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`}
-                  target="_blank"
-                  className="flex items-center gap-2 bg-green-500 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all"
-                >
-                  <MessageCircle className="h-4 w-4" /> WhatsApp
-                </a>
-              )}
-              {config.email && (
-                <a href={`mailto:${config.email}`} className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
-                  <Mail className="h-4 w-4" /> Email
-                </a>
-              )}
+          {/* Contact + Social buttons */}
+          <div className="mt-8 flex flex-col items-center gap-3">
+            {hasContact && (
+              <div className="flex flex-wrap gap-3 justify-center">
+                {config.phone && (
+                  <a href={`tel:${config.phone}`} className="flex items-center gap-2 bg-white text-gray-900 px-5 py-2.5 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
+                    <Phone className="h-4 w-4" style={{ color }} /> {config.phone}
+                  </a>
+                )}
+                {config.whatsapp && (
+                  <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" className="flex items-center gap-2 bg-green-500 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
+                    <MessageCircle className="h-4 w-4" /> WhatsApp
+                  </a>
+                )}
+                {config.email && (
+                  <a href={`mailto:${config.email}`} className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
+                    <Mail className="h-4 w-4" /> Email
+                  </a>
+                )}
+                {config.website && (
+                  <a href={config.website} target="_blank" className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
+                    <Globe className="h-4 w-4" /> Site web
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Social icons row */}
+            {hasSocial && (
+              <div className="flex items-center gap-3 mt-1">
+                {config.facebook && (
+                  <a href={config.facebook} target="_blank" className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all" title="Facebook">
+                    <Facebook className="h-4 w-4" />
+                  </a>
+                )}
+                {config.instagram && (
+                  <a href={config.instagram.startsWith('http') ? config.instagram : `https://instagram.com/${config.instagram.replace('@', '')}`} target="_blank" className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all" title="Instagram">
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                )}
+                {config.linkedin && (
+                  <a href={config.linkedin} target="_blank" className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all" title="LinkedIn">
+                    <Linkedin className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Badge abonnement */}
+          {config.subscriptionPlan && config.subscriptionPlan !== 'STARTER' && (
+            <div className="mt-5">
+              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 border border-white/40 text-white">
+                {config.subscriptionPlan === 'PREMIUM' ? <Crown className="h-3.5 w-3.5 text-yellow-300" /> : <Star className="h-3.5 w-3.5 text-blue-300" />}
+                Boutique {config.subscriptionPlan === 'PREMIUM' ? 'Premium' : 'Pro'} · Patrimoine.dz
+              </span>
             </div>
           )}
         </div>
       </div>
+
+      {/* ── MENU NAVIGATION ── */}
+      {config.menuItems && config.menuItems.length > 0 && (
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4">
+            <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0">
+              {config.menuItems.map((item, i) => (
+                <a
+                  key={i}
+                  href={item.href || '#'}
+                  className="px-5 py-3.5 text-sm font-bold text-gray-600 hover:text-gray-900 whitespace-nowrap border-b-2 border-transparent hover:border-gray-300 transition-all"
+                  style={{}}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
 
       {/* ── FILTER BAR ── */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -410,15 +508,28 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
             </div>
 
-            {/* Results count */}
-            <div className="text-sm text-gray-500 font-medium ml-auto">
-              <span className="font-bold text-gray-900">{filtered.length}</span> annonce{filtered.length !== 1 ? 's' : ''}
+            {/* Results count + display style toggle */}
+            <div className="flex items-center gap-3 ml-auto">
+              <div className="text-sm text-gray-500 font-medium">
+                <span className="font-bold text-gray-900">{filtered.length}</span> annonce{filtered.length !== 1 ? 's' : ''}
+              </div>
+              <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
+                <button onClick={() => setDisplayStyle("grid")} className={`p-1.5 rounded-md transition-colors ${displayStyle === "grid" ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`} title="Grille classique">
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button onClick={() => setDisplayStyle("large")} className={`p-1.5 rounded-md transition-colors ${displayStyle === "large" ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`} title="Grandes cartes">
+                  <LayoutDashboard className="h-4 w-4" />
+                </button>
+                <button onClick={() => setDisplayStyle("list")} className={`p-1.5 rounded-md transition-colors ${displayStyle === "list" ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`} title="Liste">
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── ANNOUNCES GRID ── */}
+      {/* ── ANNOUNCES ── */}
       <div className="max-w-6xl mx-auto px-4 py-10">
         {filtered.length === 0 ? (
           <div className="text-center py-24">
@@ -435,11 +546,68 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
               </button>
             )}
           </div>
-        ) : (
+        ) : displayStyle === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filtered.map(a => (
-              <PropertyCard key={a.id} announce={a} />
-            ))}
+            {filtered.map(a => <PropertyCard key={a.id} announce={a} />)}
+          </div>
+        ) : displayStyle === "large" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filtered.map(a => {
+              const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
+              const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
+              const tx = a.type || a.transactionType || a.transaction
+              return (
+                <a key={a.id} href={`/announces/${a.id}`} className="group bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+                  <div className="h-56 bg-gray-100 overflow-hidden relative">
+                    {img ? <img src={`${API_URL}/${img.url?.replace(/\\/g, '/')}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-100 flex items-center justify-center"><Building2 className="h-12 w-12 text-gray-300" /></div>}
+                    <div className="absolute top-3 left-3">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: tx === 'SALE' ? '#ef4444' : color }}>{tx === 'SALE' ? 'Vente' : tx === 'RENTAL' ? 'Location' : 'Annonce'}</span>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-bold text-gray-900 text-base group-hover:text-[#00BFA6] transition-colors line-clamp-2">
+                      {a.title || PROPERTY_TYPES?.find((t: any) => t.id === a.property?.propertyType?.toUpperCase())?.label || a.property?.propertyType}
+                    </h3>
+                    {city && <p className="flex items-center gap-1 text-gray-500 text-sm mt-2"><MapPin className="h-3.5 w-3.5 shrink-0" />{city}</p>}
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="font-black text-xl" style={{ color }}>{a.price ? `${Number(a.price).toLocaleString()} DZD` : 'Prix sur demande'}</span>
+                      <span className="text-xs text-gray-400">{a.reference}</span>
+                    </div>
+                  </div>
+                </a>
+              )
+            })}
+          </div>
+        ) : (
+          // Liste horizontale
+          <div className="flex flex-col gap-4">
+            {filtered.map(a => {
+              const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
+              const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
+              const tx = a.type || a.transactionType || a.transaction
+              const pType = PROPERTY_TYPES?.find((t: any) => t.id === a.property?.propertyType?.toUpperCase())?.label || a.property?.propertyType
+              return (
+                <a key={a.id} href={`/announces/${a.id}`} className="group flex bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
+                  <div className="w-44 h-36 shrink-0 overflow-hidden bg-gray-100">
+                    {img ? <img src={`${API_URL}/${img.url?.replace(/\\/g, '/')}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center"><Building2 className="h-8 w-8 text-gray-300" /></div>}
+                  </div>
+                  <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-gray-900 text-base group-hover:text-[#00BFA6] transition-colors line-clamp-1">{a.title || pType}</h3>
+                        <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: tx === 'SALE' ? '#ef4444' : color }}>{tx === 'SALE' ? 'Vente' : tx === 'RENTAL' ? 'Location' : 'Annonce'}</span>
+                      </div>
+                      {pType && a.title && <p className="text-sm text-gray-500 mt-0.5">{pType}</p>}
+                      {city && <p className="flex items-center gap-1 text-gray-500 text-sm mt-1"><MapPin className="h-3.5 w-3.5 shrink-0" />{city}</p>}
+                    </div>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="font-black text-lg" style={{ color }}>{a.price ? `${Number(a.price).toLocaleString()} DZD` : 'Prix sur demande'}</span>
+                      <span className="text-xs text-gray-400 font-medium">Réf: {a.reference}</span>
+                    </div>
+                  </div>
+                </a>
+              )
+            })}
           </div>
         )}
       </div>
