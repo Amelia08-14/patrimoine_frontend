@@ -33,6 +33,9 @@ function lighten(hex: string, pct: number) {
 
 type BoutiqueConfig = {
   primaryColor: string
+  headerColor?: string
+  footerColor?: string
+  bodyColor?: string
   companyName?: string
   slogan?: string
   description?: string
@@ -48,10 +51,48 @@ type BoutiqueConfig = {
   website?: string
   menuItems?: { label: string; href: string }[]
   subscriptionPlan?: 'STARTER' | 'PRO' | 'PREMIUM'
+  logoShape?: 'round' | 'rectangle' | 'none'
+  filterColor?: string
+  storyColor?: string
+  stories?: { url: string; type: 'image' | 'video'; label?: string }[]
 }
 
 const DEFAULT_CONFIG: BoutiqueConfig = {
   primaryColor: "#00BFA6",
+}
+
+function StoryCircle({ story, color }: { story: { url: string; type: 'image' | 'video'; label?: string }; color: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button onClick={() => setOpen(true)} className="flex flex-col items-center gap-1.5 shrink-0 group">
+        <div className="h-16 w-16 rounded-full overflow-hidden border-[3px] p-0.5 transition-transform group-hover:scale-105" style={{ borderColor: color }}>
+          <div className="h-full w-full rounded-full overflow-hidden bg-gray-100">
+            {story.type === 'video' ? (
+              <video src={getImageUrl(story.url)} className="h-full w-full object-cover" muted playsInline />
+            ) : (
+              <img src={getImageUrl(story.url)} alt="" className="h-full w-full object-cover" />
+            )}
+          </div>
+        </div>
+        <span className="text-[10px] font-semibold text-gray-600 max-w-[64px] truncate">{story.label || 'Story'}</span>
+      </button>
+      {open && (
+        <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center" onClick={() => setOpen(false)}>
+          <div className="relative" style={{ width: 'min(100vw, 400px)', aspectRatio: '9/16' }}>
+            {story.type === 'video' ? (
+              <video src={getImageUrl(story.url)} className="w-full h-full object-contain rounded-2xl" autoPlay controls />
+            ) : (
+              <img src={getImageUrl(story.url)} alt="" className="w-full h-full object-contain rounded-2xl" />
+            )}
+            <button onClick={() => setOpen(false)} className="absolute top-3 right-3 h-9 w-9 bg-black/50 rounded-full flex items-center justify-center text-white">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
 
 export default function BoutiquePage({ params }: { params: Promise<{ userId: string }> }) {
@@ -65,7 +106,8 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   // Filters
   const [txType, setTxType] = useState<"ALL" | "SALE" | "RENTAL">("ALL")
   const [categoryFilter, setCategoryFilter] = useState("")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [wilayas, setWilayas] = useState("")
+  const [commune, setCommune] = useState("")
 
   // Display style: grid | list | large
   const [displayStyle, setDisplayStyle] = useState<"grid" | "list" | "large">("grid")
@@ -74,7 +116,12 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   const [bannerIndex, setBannerIndex] = useState(0)
   const bannerTimerRef = useRef<any>(null)
 
-  const color = config.primaryColor || "#00BFA6"
+  const headerColor = config.headerColor || config.primaryColor || "#00BFA6"
+  const footerColor = config.footerColor || config.primaryColor || "#00BFA6"
+  const bodyColor = config.bodyColor || "#F9FAFB"
+  const filterColor = config.filterColor || headerColor
+  const storyColor = config.storyColor || headerColor
+  const color = headerColor
 
   const bannerImages = useMemo(() => {
     if (config.bannerUrls && config.bannerUrls.length > 0) return config.bannerUrls
@@ -129,6 +176,35 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     fetchAll()
   }, [userId])
 
+  const availableCategories = useMemo(() => {
+    const catIds = new Set<string>()
+    announces.forEach(a => {
+      const pType = (a.property?.propertyType || "").toUpperCase()
+      const typeObj = PROPERTY_TYPES.find(t => t.id === pType)
+      if ((typeObj as any)?.categoryId) catIds.add((typeObj as any).categoryId)
+    })
+    return REAL_ESTATE_CATEGORIES.filter(c => catIds.has(c.id))
+  }, [announces])
+
+  const availableWilayas = useMemo(() => {
+    const cities = new Map<string, string>()
+    announces.forEach(a => {
+      const city = a.property?.address?.town?.city
+      if (city?.nameFr) cities.set(city.nameFr, city.nameFr)
+    })
+    return Array.from(cities.values()).sort()
+  }, [announces])
+
+  const availableCommunes = useMemo(() => {
+    const towns = new Map<string, string>()
+    announces.filter(a => !wilayas || a.property?.address?.town?.city?.nameFr === wilayas)
+      .forEach(a => {
+        const town = a.property?.address?.town
+        if (town?.nameFr) towns.set(town.nameFr, town.nameFr)
+      })
+    return Array.from(towns.values()).sort()
+  }, [announces, wilayas])
+
   const filtered = useMemo(() => {
     return announces.filter(a => {
       const tx = a.type || a.transactionType || a.transaction || a.property?.transaction
@@ -136,22 +212,24 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
       if (txType === "RENTAL" && tx !== "RENTAL") return false
 
       if (categoryFilter) {
-        const pType = a.property?._displayPropertyType || a.property?.propertyType || ""
-        const typeObj = PROPERTY_TYPES.find(t => t.id === pType.toUpperCase())
-        if (typeObj?.categoryId !== categoryFilter) return false
+        const pType = (a.property?.propertyType || "").toUpperCase()
+        const typeObj = PROPERTY_TYPES.find(t => t.id === pType)
+        if ((typeObj as any)?.categoryId !== categoryFilter) return false
       }
 
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase()
-        const loc = (a.property?.address?.town?.nameFr || a.property?.address?.town?.city?.nameFr || "").toLowerCase()
-        const title = (a.title || "").toLowerCase()
-        const ref = (a.reference || "").toLowerCase()
-        if (!loc.includes(q) && !title.includes(q) && !ref.includes(q)) return false
+      if (wilayas) {
+        const city = a.property?.address?.town?.city?.nameFr || ""
+        if (city !== wilayas) return false
+      }
+
+      if (commune) {
+        const town = a.property?.address?.town?.nameFr || ""
+        if (town !== commune) return false
       }
 
       return true
     })
-  }, [announces, txType, categoryFilter, searchQuery])
+  }, [announces, txType, categoryFilter, wilayas, commune])
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -179,10 +257,10 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   const hasSocial = config.facebook || config.instagram || config.linkedin
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: bodyColor }}>
 
       {/* ── HERO SECTION ── */}
-      <div className="relative overflow-hidden" style={{ minHeight: 340 }}>
+      <div className="relative overflow-hidden" style={{ minHeight: 180 }}>
         {/* Banner: slider or gradient */}
         {bannerImages.length > 0 ? (
           <>
@@ -326,102 +404,77 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         )}
 
         {/* Hero content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 flex flex-col items-center text-center">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-8 flex flex-col items-center text-center">
           {/* Logo */}
-          {config.logoUrl && (
-            <div className="mb-6">
-              <img
-                src={getImageUrl(config.logoUrl)}
-                alt="Logo"
-                className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-xl mx-auto"
-              />
-            </div>
-          )}
+          {config.logoUrl && (() => {
+            const shape = config.logoShape || 'round'
+            const shapeClass = shape === 'round' ? 'rounded-full' : shape === 'rectangle' ? 'rounded-2xl' : 'rounded-none'
+            const border = shape !== 'none' ? 'border-4 border-white shadow-xl' : ''
+            return (
+              <div className="mb-4">
+                <img src={getImageUrl(config.logoUrl)} alt="Logo" className={`h-20 w-20 object-cover mx-auto ${shapeClass} ${border}`} />
+              </div>
+            )
+          })()}
 
-          <h1 className="text-4xl md:text-5xl font-black text-white drop-shadow-sm leading-tight">
+          <h1 className="text-3xl md:text-4xl font-black text-white drop-shadow-sm leading-tight">
             {config.companyName || "Boutique Immobilière"}
           </h1>
 
           {config.slogan && (
-            <p className="mt-3 text-xl text-white/90 font-medium max-w-xl">
+            <p className="mt-2 text-lg text-white/90 font-medium max-w-xl">
               {config.slogan}
             </p>
           )}
 
           {config.description && (
-            <p className="mt-4 text-white/75 max-w-2xl text-sm leading-relaxed">
+            <p className="mt-2 text-white/70 max-w-2xl text-sm leading-relaxed">
               {config.description}
             </p>
           )}
 
-          {/* Stats */}
-          <div className="mt-8 flex items-center gap-6 flex-wrap justify-center">
-            <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-3 text-white text-center">
-              <div className="text-2xl font-black">{announces.length}</div>
-              <div className="text-xs font-medium opacity-80">Annonces</div>
+          {/* Contact + Social — une seule ligne */}
+          {(hasContact || hasSocial) && (
+            <div className="mt-6 flex flex-wrap items-center gap-2.5 justify-center">
+              {config.phone && (
+                <a href={`tel:${config.phone}`} className="flex items-center gap-2 bg-white text-gray-900 px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
+                  <Phone className="h-3.5 w-3.5" style={{ color }} /> {config.phone}
+                </a>
+              )}
+              {config.whatsapp && (
+                <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                </a>
+              )}
+              {config.email && (
+                <a href={`mailto:${config.email}`} className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
+                  <Mail className="h-3.5 w-3.5" /> Email
+                </a>
+              )}
+              {config.website && (
+                <a href={config.website} target="_blank" className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
+                  <Globe className="h-3.5 w-3.5" /> Web
+                </a>
+              )}
+              {/* Séparateur visuel si contact + social */}
+              {hasContact && hasSocial && <span className="h-5 w-px bg-white/30 mx-1" />}
+              {config.facebook && (
+                <a href={config.facebook} target="_blank" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all">
+                  <Facebook className="h-3.5 w-3.5" />
+                </a>
+              )}
+              {config.instagram && (
+                <a href={config.instagram.startsWith('http') ? config.instagram : `https://instagram.com/${config.instagram.replace('@', '')}`} target="_blank" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all">
+                  <Instagram className="h-3.5 w-3.5" />
+                </a>
+              )}
+              {config.linkedin && (
+                <a href={config.linkedin} target="_blank" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all">
+                  <Linkedin className="h-3.5 w-3.5" />
+                </a>
+              )}
             </div>
-            {announces.filter(a => (a.type || a.transactionType) === 'SALE').length > 0 && (
-              <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-3 text-white text-center">
-                <div className="text-2xl font-black">{announces.filter(a => (a.type || a.transactionType) === 'SALE').length}</div>
-                <div className="text-xs font-medium opacity-80">Vente</div>
-              </div>
-            )}
-            {announces.filter(a => (a.type || a.transactionType) === 'RENTAL').length > 0 && (
-              <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-3 text-white text-center">
-                <div className="text-2xl font-black">{announces.filter(a => (a.type || a.transactionType) === 'RENTAL').length}</div>
-                <div className="text-xs font-medium opacity-80">Location</div>
-              </div>
-            )}
-          </div>
-
-          {/* Contact + Social buttons */}
-          <div className="mt-8 flex flex-col items-center gap-3">
-            {hasContact && (
-              <div className="flex flex-wrap gap-3 justify-center">
-                {config.phone && (
-                  <a href={`tel:${config.phone}`} className="flex items-center gap-2 bg-white text-gray-900 px-5 py-2.5 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
-                    <Phone className="h-4 w-4" style={{ color }} /> {config.phone}
-                  </a>
-                )}
-                {config.whatsapp && (
-                  <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" className="flex items-center gap-2 bg-green-500 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
-                    <MessageCircle className="h-4 w-4" /> WhatsApp
-                  </a>
-                )}
-                {config.email && (
-                  <a href={`mailto:${config.email}`} className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
-                    <Mail className="h-4 w-4" /> Email
-                  </a>
-                )}
-                {config.website && (
-                  <a href={config.website} target="_blank" className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
-                    <Globe className="h-4 w-4" /> Site web
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Social icons row */}
-            {hasSocial && (
-              <div className="flex items-center gap-3 mt-1">
-                {config.facebook && (
-                  <a href={config.facebook} target="_blank" className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all" title="Facebook">
-                    <Facebook className="h-4 w-4" />
-                  </a>
-                )}
-                {config.instagram && (
-                  <a href={config.instagram.startsWith('http') ? config.instagram : `https://instagram.com/${config.instagram.replace('@', '')}`} target="_blank" className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all" title="Instagram">
-                    <Instagram className="h-4 w-4" />
-                  </a>
-                )}
-                {config.linkedin && (
-                  <a href={config.linkedin} target="_blank" className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all" title="LinkedIn">
-                    <Linkedin className="h-4 w-4" />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Badge abonnement */}
           {config.subscriptionPlan && config.subscriptionPlan !== 'STARTER' && (
@@ -455,10 +508,27 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         </div>
       )}
 
+      {/* ── STORIES ── */}
+      {(() => {
+        const stories = config.stories || []
+        if (stories.length === 0) return null
+        return (
+          <div className="bg-white border-b border-gray-100 py-4">
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="flex gap-4 overflow-x-auto scrollbar-none pb-1">
+                {stories.map((s, idx) => (
+                  <StoryCircle key={idx} story={s} color={storyColor} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── FILTER BAR ── */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Transaction type tabs */}
             <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
               {[
@@ -470,43 +540,63 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
                   key={t.id}
                   onClick={() => setTxType(t.id as any)}
                   className="px-4 py-1.5 rounded-lg text-sm font-bold transition-all"
-                  style={txType === t.id ? { backgroundColor: color, color: 'white' } : { color: '#6b7280' }}
+                  style={txType === t.id ? { backgroundColor: filterColor, color: 'white' } : { color: '#6b7280' }}
                 >
                   {t.label}
                 </button>
               ))}
             </div>
 
-            {/* Search */}
-            <div className="flex-1 min-w-[180px] relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Rechercher une ville, référence..."
-                className="w-full pl-9 pr-4 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-[#00BFA6] outline-none"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
-                </button>
-              )}
-            </div>
+            {/* Category filter — only those with announces */}
+            {availableCategories.length > 0 && (
+              <div className="relative">
+                <select
+                  value={categoryFilter}
+                  onChange={e => setCategoryFilter(e.target.value)}
+                  className="appearance-none pl-3 pr-7 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer"
+                >
+                  <option value="">Catégorie</option>
+                  {availableCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+              </div>
+            )}
 
-            {/* Category filter */}
-            <div className="relative">
-              <select
-                value={categoryFilter}
-                onChange={e => setCategoryFilter(e.target.value)}
-                className="appearance-none pl-4 pr-8 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer"
-              >
-                <option value="">Toutes catégories</option>
-                {REAL_ESTATE_CATEGORIES.map(c => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
-            </div>
+            {/* Wilaya filter */}
+            {availableWilayas.length > 0 && (
+              <div className="relative">
+                <select
+                  value={wilayas}
+                  onChange={e => { setWilayas(e.target.value); setCommune("") }}
+                  className="appearance-none pl-3 pr-7 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer"
+                >
+                  <option value="">Wilaya</option>
+                  {availableWilayas.map(w => (
+                    <option key={w} value={w}>{w}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+              </div>
+            )}
+
+            {/* Commune filter — only when wilaya is selected */}
+            {wilayas && availableCommunes.length > 0 && (
+              <div className="relative">
+                <select
+                  value={commune}
+                  onChange={e => setCommune(e.target.value)}
+                  className="appearance-none pl-3 pr-7 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer"
+                >
+                  <option value="">Commune</option>
+                  {availableCommunes.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+              </div>
+            )}
 
             {/* Results count + display style toggle */}
             <div className="flex items-center gap-3 ml-auto">
@@ -536,9 +626,9 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
             <Building2 className="h-16 w-16 text-gray-200 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-500">Aucune annonce trouvée</h3>
             <p className="text-gray-400 mt-2 text-sm">Essayez de modifier vos filtres de recherche</p>
-            {(txType !== "ALL" || categoryFilter || searchQuery) && (
+            {(txType !== "ALL" || categoryFilter || wilayas || commune) && (
               <button
-                onClick={() => { setTxType("ALL"); setCategoryFilter(""); setSearchQuery(""); }}
+                onClick={() => { setTxType("ALL"); setCategoryFilter(""); setWilayas(""); setCommune(""); }}
                 className="mt-4 px-5 py-2 rounded-xl font-bold text-sm text-white"
                 style={{ backgroundColor: color }}
               >
@@ -613,7 +703,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
       </div>
 
       {/* ── FOOTER ── */}
-      <footer className="mt-10 text-white" style={{ backgroundColor: color }}>
+      <footer className="mt-10 text-white" style={{ backgroundColor: footerColor }}>
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 

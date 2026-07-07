@@ -1423,114 +1423,88 @@ export default function AnnounceDetailsPage() {
 
           </div>
 
-          {/* Sidebar - Contact */}
+          {/* Sidebar — carte unifiée annonceur + contact */}
           <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 sticky top-[100px] z-10">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-16 w-16 bg-gray-200 rounded-full overflow-hidden">
-                    {announce.user?.userType === 'SOCIETE' && announce.user?.agencyLogoUrl ? (
-                        <img src={getImageUrl(announce.user.agencyLogoUrl) || ''} alt="Agency Logo" className="w-full h-full object-cover" />
-                    ) : announce.user?.imageUrl ? (
-                        <img src={getImageUrl(announce.user.imageUrl) || ''} alt="Agent" className="w-full h-full object-cover" />
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden sticky top-[100px] z-10">
+
+              {/* En-tête annonceur */}
+              {announce.user?.userType === 'SOCIETE' ? (
+                <div className="bg-gradient-to-r from-[#00BFA6] to-[#0077b6] p-5 flex items-center gap-3">
+                  <div className="h-16 w-16 rounded-full overflow-hidden border-3 border-white shadow shrink-0" style={{ borderWidth: 3 }}>
+                    {announce.user?.agencyLogoUrl ? (
+                      <img src={getImageUrl(announce.user.agencyLogoUrl) || ''} alt="Logo" className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                            <User className="h-8 w-8" />
-                        </div>
+                      <div className="w-full h-full bg-white/20 flex items-center justify-center"><Store className="h-8 w-8 text-white" /></div>
                     )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-white font-black text-base leading-tight truncate">{announce.user?.companyName}</div>
+                    <div className="text-white/70 text-xs mt-0.5 truncate">{announce.user?.activity || 'Professionnel immobilier'}</div>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="h-1.5 w-1.5 bg-green-400 rounded-full"></span>
+                      <span className="text-white/60 text-xs">{boutiqueAnnounces.length + 1} annonce{boutiqueAnnounces.length > 0 ? 's' : ''} active{boutiqueAnnounces.length > 0 ? 's' : ''}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg">
-                      {announce.user?.userType === 'SOCIETE' ? announce.user?.companyName : 'Annonceur'}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                      {announce.user?.userType === 'SOCIETE' ? announce.user?.activity : 'Annonceur particulier'}
-                  </p>
+              ) : (
+                <div className="p-5 flex items-center gap-4 border-b border-gray-100">
+                  <div className="h-14 w-14 bg-gray-100 rounded-full overflow-hidden shrink-0">
+                    {announce.user?.imageUrl ? (
+                      <img src={getImageUrl(announce.user.imageUrl) || ''} alt="Annonceur" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400"><User className="h-7 w-7" /></div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">Annonceur particulier</h3>
+                    <p className="text-sm text-gray-500">Particulier</p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Contact Button */}
-              <Button 
-                  onClick={() => setIsContactModalOpen(true)}
-                  className="w-full py-6 text-lg bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2"
-              >
-                  <Mail className="h-5 w-5" />
-                  Envoyer un message
-              </Button>
-
-              {announce.user?.email && (
-                  <a
-                      href={`mailto:${announce.user.email}`}
-                      className="mt-3 w-full py-4 text-base bg-white hover:bg-gray-50 text-gray-900 rounded-xl border border-gray-200 shadow-sm flex items-center justify-center gap-2 font-bold"
-                  >
-                      <Mail className="h-5 w-5 text-red-500" />
-                      Envoyer un email
-                  </a>
               )}
 
-              {/* Signaler un problème */}
-              <button
-                onClick={() => setIsReportModalOpen(true)}
-                className="mt-4 w-full py-2.5 text-xs text-gray-400 hover:text-red-500 flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                Signaler un problème avec cette annonce
-              </button>
-            </div>
-
-            {/* Section Boutique — pour les professionnels */}
-            {announce.user?.userType === 'SOCIETE' && (
-              <div className="mt-4 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-[#00BFA6] to-[#0088cc] p-5 flex items-center gap-3">
-                  {announce.user?.agencyLogoUrl ? (
-                    <img src={getImageUrl(announce.user.agencyLogoUrl) || ''} alt="Logo" className="h-14 w-14 rounded-full object-cover border-2 border-white shadow" />
-                  ) : (
-                    <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center">
-                      <Store className="h-7 w-7 text-white" />
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-white font-black text-base leading-tight">{announce.user?.companyName}</div>
-                    <div className="text-white/70 text-xs mt-0.5">{announce.user?.activity || 'Professionnel immobilier'}</div>
-                    <div className="text-white/60 text-xs mt-1">{boutiqueAnnounces.length + 1} annonce{boutiqueAnnounces.length > 0 ? 's' : ''} active{boutiqueAnnounces.length > 0 ? 's' : ''}</div>
-                  </div>
-                </div>
-
-                {boutiqueAnnounces.length > 0 && (
-                  <div className="p-4 space-y-2">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Autres annonces</p>
-                    {boutiqueAnnounces.map((a: any) => {
-                      const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
-                      const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
-                      return (
-                        <a key={a.id} href={`/announces/${a.id}`} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group">
-                          <div className="h-14 w-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                            {img ? <img src={getImageUrl(img.url) || ''} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-gray-200" />}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-xs font-bold text-gray-900 truncate group-hover:text-[#00BFA6] transition-colors">
-                              {a.title || PROPERTY_TYPES?.find((t: any) => t.id === a.property?.propertyType)?.label || a.property?.propertyType}
-                            </div>
-                            {city && <div className="text-xs text-gray-500 truncate mt-0.5">📍 {city}</div>}
-                            <div className="text-xs font-bold text-[#00BFA6] mt-0.5">
-                              {a.price ? `${Number(a.price).toLocaleString()} DZD` : 'Prix sur demande'}
-                            </div>
-                          </div>
-                        </a>
-                      )
-                    })}
-                  </div>
+              {/* Boutons contact */}
+              <div className="p-5 space-y-3">
+                <Button
+                  onClick={() => setIsContactModalOpen(true)}
+                  className="w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold"
+                >
+                  <Mail className="h-4 w-4" /> Envoyer un message
+                </Button>
+                {announce.user?.email && (
+                  <a
+                    href={`mailto:${announce.user.email}`}
+                    className="flex items-center justify-center gap-2 w-full py-3.5 text-sm bg-white hover:bg-gray-50 text-gray-900 rounded-xl border-2 border-gray-200 font-bold transition-colors"
+                  >
+                    <Mail className="h-4 w-4 text-red-500" /> Envoyer un email
+                  </a>
                 )}
+              </div>
 
-                <div className="px-4 pb-4">
+
+              {/* Voir la boutique */}
+              {announce.user?.userType === 'SOCIETE' && (
+                <div className="border-t border-gray-100 p-3">
                   <a
                     href={`/boutique/${announce.user?.id}`}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#00BFA6]/10 hover:bg-[#00BFA6]/20 text-[#00BFA6] rounded-xl text-sm font-bold transition-colors"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#00BFA6]/8 hover:bg-[#00BFA6]/15 text-[#00BFA6] rounded-xl text-sm font-bold transition-colors"
+                    style={{ backgroundColor: 'rgb(0 191 166 / 0.08)' }}
                   >
-                    <Store className="h-4 w-4" /> Voir la boutique complète
+                    <Store className="h-3.5 w-3.5" /> Voir la boutique complète
                   </a>
                 </div>
+              )}
+
+              {/* Signaler */}
+              <div className="border-t border-gray-50 px-5 py-3">
+                <button
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="w-full text-xs text-gray-400 hover:text-red-500 flex items-center justify-center gap-1.5 transition-colors py-1"
+                >
+                  <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                  Signaler un problème
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
