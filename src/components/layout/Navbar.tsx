@@ -250,10 +250,7 @@ export function Navbar() {
                                 <MessageSquare className="h-4 w-4 mr-3" /> Ma messagerie
                             </Link>
                             <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <CreditCard className="h-4 w-4 mr-3" /> Mes points
-                            </Link>
-                            <Link href="/profile/packs" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <CreditCard className="h-4 w-4 mr-3" /> Packs de points
+                                <CreditCard className="h-4 w-4 mr-3" /> Espace Publicitaire et Points
                             </Link>
                             <Link href="/profile/researches" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
                                 <Search className="h-4 w-4 mr-3" /> Recherches confiées

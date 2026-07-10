@@ -34,7 +34,7 @@ function AnnouncesContent() {
   // Initialize filters from URL params
   const [filters, setFilters] = useState({
     sortBy: searchParams.get('sortBy') || 'LAST_MODIFIED_DATE_DESC',
-    transactionType: searchParams.get('transactionType') || 'RENTAL',
+    transactionType: searchParams.get('transactionType') || '',
     realEstateCategory: searchParams.get('realEstateCategory') || '',
     propertyType: searchParams.get('propertyType') || '',
     wilaya: searchParams.get('wilaya') || '',
@@ -50,7 +50,7 @@ function AnnouncesContent() {
     // Update filters when URL params change (e.g. navigation)
     setFilters({
       sortBy: searchParams.get('sortBy') || 'LAST_MODIFIED_DATE_DESC',
-      transactionType: searchParams.get('transactionType') || 'RENTAL',
+      transactionType: searchParams.get('transactionType') || '',
       realEstateCategory: searchParams.get('realEstateCategory') || '',
       propertyType: searchParams.get('propertyType') || '',
       wilaya: searchParams.get('wilaya') || '',
@@ -106,8 +106,8 @@ function AnnouncesContent() {
         if (response.ok) {
           let data = await response.json()
           
-          // CLIENT-SIDE FILTERING (Temporary until Backend Search is ready)
-          if (filters.transactionType) {
+          // CLIENT-SIDE FILTERING
+          if (filters.transactionType === 'RENTAL' || filters.transactionType === 'SALE') {
             data = data.filter((a: any) => a.type === filters.transactionType)
           }
           
@@ -229,9 +229,38 @@ function AnnouncesContent() {
         </div>
       </div>
 
+      {/* Transaction Type Tabs */}
+      <div className="bg-white border-b border-gray-100 shadow-sm py-3 px-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-2">
+          {[
+            { value: '', label: 'Tout voir' },
+            { value: 'RENTAL', label: 'Louer' },
+            { value: 'SALE', label: 'Acheter' },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => {
+                handleFilterChange('transactionType', opt.value)
+                const params = new URLSearchParams(searchParams.toString())
+                if (opt.value) params.set('transactionType', opt.value)
+                else params.delete('transactionType')
+                router.push(`/announces?${params.toString()}`)
+              }}
+              className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+                (filters.transactionType || '') === opt.value
+                  ? 'bg-[#00BFA6] text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row gap-8">
-          
+
           {/* Listings Grid */}
           <div className="flex-grow">
             <div className="flex justify-between items-center mb-6">

@@ -7,7 +7,7 @@ import {
   Phone, Mail, MessageCircle, Globe, Facebook, Instagram, Linkedin,
   ChevronDown, Search, Building2, X, ArrowRight,
   Store, LayoutGrid, List, LayoutDashboard, ChevronLeft, ChevronRight,
-  Star, Crown, MapPin
+  Star, Crown, MapPin, Bell, Send
 } from "lucide-react"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
@@ -54,6 +54,16 @@ type BoutiqueConfig = {
   logoShape?: 'round' | 'rectangle' | 'none'
   filterColor?: string
   storyColor?: string
+  fontFamily?: string
+  headerTextColor?: string
+  footerTextColor?: string
+  secondLogoUrl?: string
+  secondLogoShape?: 'round' | 'rectangle' | 'none'
+  logoAlignment?: 'center' | 'sides'
+  aboutImage?: string
+  aboutDescription?: string
+  aboutButtonLabel?: string
+  aboutButtonUrl?: string
   stories?: { url: string; type: 'image' | 'video'; label?: string }[]
 }
 
@@ -88,6 +98,11 @@ function StoryCircle({ story, color }: { story: { url: string; type: 'image' | '
             <button onClick={() => setOpen(false)} className="absolute top-3 right-3 h-9 w-9 bg-black/50 rounded-full flex items-center justify-center text-white">
               <X className="h-5 w-5" />
             </button>
+            {story.label && (
+              <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/70 to-transparent rounded-b-2xl">
+                <p className="text-white font-bold text-sm">{story.label}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -102,6 +117,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   const [announces, setAnnounces] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [boutiqueInactive, setBoutiqueInactive] = useState(false)
 
   // Filters
   const [txType, setTxType] = useState<"ALL" | "SALE" | "RENTAL">("ALL")
@@ -121,6 +137,9 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   const bodyColor = config.bodyColor || "#F9FAFB"
   const filterColor = config.filterColor || headerColor
   const storyColor = config.storyColor || headerColor
+  const headerTextColor = config.headerTextColor || "#ffffff"
+  const footerTextColor = config.footerTextColor || "#ffffff"
+  const fontFamily = config.fontFamily || ""
   const color = headerColor
 
   const bannerImages = useMemo(() => {
@@ -140,6 +159,13 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   useEffect(() => {
     const fetchAll = async () => {
       let hasConfig = false
+
+      // Vérifier que la boutique est active (abonnement validé)
+      try {
+        const subRes = await fetch(`${API_URL}/boutique-sub/public/${userId}/active`)
+        const subData = subRes.ok ? await subRes.json() : null
+        if (!subData) { setBoutiqueInactive(true); setLoading(false); return }
+      } catch { setBoutiqueInactive(true); setLoading(false); return }
 
       // Boutique config (non bloquant)
       try {
@@ -240,6 +266,21 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     </div>
   )
 
+  if (boutiqueInactive) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center max-w-sm">
+        <div className="h-20 w-20 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
+          <Store className="h-10 w-10 text-amber-400" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Boutique non disponible</h1>
+        <p className="text-gray-500 mt-2 text-sm">Cette vitrine n&apos;est pas encore activée ou son abonnement a expiré.</p>
+        <Link href="/" className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">
+          Retour à l&apos;accueil <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
+  )
+
   if (notFound) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
@@ -257,7 +298,34 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   const hasSocial = config.facebook || config.instagram || config.linkedin
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: bodyColor }}>
+    <div className="min-h-screen" style={{ backgroundColor: bodyColor, fontFamily: fontFamily || undefined }}>
+      {/* Google Font loader */}
+      {fontFamily && (
+        <link
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontFamily)}:wght@400;500;600;700;900&display=swap`}
+        />
+      )}
+
+      {/* ── MENU NAVIGATION ── */}
+      {config.menuItems && config.menuItems.length > 0 && (
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4">
+            <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0">
+              {config.menuItems.map((item, i) => (
+                <a
+                  key={i}
+                  href={item.href || '#'}
+                  className="px-5 py-3.5 text-sm font-bold text-gray-600 hover:text-gray-900 whitespace-nowrap border-b-2 border-transparent hover:border-gray-300 transition-all"
+                  style={{}}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
 
       {/* ── HERO SECTION ── */}
       <div className="relative overflow-hidden" style={{ minHeight: 180 }}>
@@ -405,30 +473,42 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
 
         {/* Hero content */}
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-8 flex flex-col items-center text-center">
-          {/* Logo */}
-          {config.logoUrl && (() => {
-            const shape = config.logoShape || 'round'
-            const shapeClass = shape === 'round' ? 'rounded-full' : shape === 'rectangle' ? 'rounded-2xl' : 'rounded-none'
-            const border = shape !== 'none' ? 'border-4 border-white shadow-xl' : ''
+          {/* Logos */}
+          {(() => {
+            const hasLogo = !!config.logoUrl
+            const hasSecond = !!config.secondLogoUrl
+            const isSides = config.logoAlignment === 'sides' && hasLogo && hasSecond
+            const shape1 = config.logoShape || 'round'
+            const shape2 = config.secondLogoShape || 'round'
+            const sc1 = shape1 === 'round' ? 'rounded-full' : shape1 === 'rectangle' ? 'rounded-2xl' : 'rounded-none'
+            const sc2 = shape2 === 'round' ? 'rounded-full' : shape2 === 'rectangle' ? 'rounded-2xl' : 'rounded-none'
+            const border = 'border-4 border-white shadow-xl'
+            if (isSides) return (
+              <div className="w-full flex items-center justify-between mb-4 px-4">
+                <img src={getImageUrl(config.logoUrl!)} alt="Logo" className={`h-16 w-16 object-contain bg-white/10 ${sc1} ${border}`} />
+                <img src={getImageUrl(config.secondLogoUrl!)} alt="Logo 2" className={`h-16 w-16 object-contain bg-white/10 ${sc2} ${border}`} />
+              </div>
+            )
             return (
-              <div className="mb-4">
-                <img src={getImageUrl(config.logoUrl)} alt="Logo" className={`h-20 w-20 object-cover mx-auto ${shapeClass} ${border}`} />
+              <div className="flex items-center gap-4 mb-4 justify-center">
+                {hasLogo && <img src={getImageUrl(config.logoUrl!)} alt="Logo" className={`h-20 w-20 object-contain bg-white/10 ${sc1} ${shape1 !== 'none' ? border : ''}`} />}
+                {hasSecond && <img src={getImageUrl(config.secondLogoUrl!)} alt="Logo 2" className={`h-16 w-16 object-contain bg-white/10 ${sc2} ${shape2 !== 'none' ? border : ''}`} />}
               </div>
             )
           })()}
 
-          <h1 className="text-3xl md:text-4xl font-black text-white drop-shadow-sm leading-tight">
+          <h1 className="text-3xl md:text-4xl font-black drop-shadow-sm leading-tight" style={{ color: headerTextColor }}>
             {config.companyName || "Boutique Immobilière"}
           </h1>
 
           {config.slogan && (
-            <p className="mt-2 text-lg text-white/90 font-medium max-w-xl">
+            <p className="mt-2 text-lg font-medium max-w-xl" style={{ color: headerTextColor, opacity: 0.9 }}>
               {config.slogan}
             </p>
           )}
 
           {config.description && (
-            <p className="mt-2 text-white/70 max-w-2xl text-sm leading-relaxed">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: headerTextColor, opacity: 0.7 }}>
               {config.description}
             </p>
           )}
@@ -478,35 +558,33 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
 
           {/* Badge abonnement */}
           {config.subscriptionPlan && config.subscriptionPlan !== 'STARTER' && (
-            <div className="mt-5">
+            <div className="mt-4">
               <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 border border-white/40 text-white">
                 {config.subscriptionPlan === 'PREMIUM' ? <Crown className="h-3.5 w-3.5 text-yellow-300" /> : <Star className="h-3.5 w-3.5 text-blue-300" />}
                 Boutique {config.subscriptionPlan === 'PREMIUM' ? 'Premium' : 'Pro'} · Patrimoine.dz
               </span>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* ── MENU NAVIGATION ── */}
-      {config.menuItems && config.menuItems.length > 0 && (
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-6xl mx-auto px-4">
-            <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0">
-              {config.menuItems.map((item, i) => (
-                <a
-                  key={i}
-                  href={item.href || '#'}
-                  className="px-5 py-3.5 text-sm font-bold text-gray-600 hover:text-gray-900 whitespace-nowrap border-b-2 border-transparent hover:border-gray-300 transition-all"
-                  style={{}}
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
+          {/* Boutons action visiteur */}
+          <div className="mt-5 flex items-center gap-2.5 flex-wrap justify-center">
+            <a
+              href={`/messages?to=${userId}`}
+              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all"
+              style={{ color: headerTextColor }}
+            >
+              <Send className="h-3.5 w-3.5" /> Envoyer un message
+            </a>
+            <button
+              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all"
+              style={{ color: headerTextColor }}
+              onClick={() => alert("Fonctionnalité d'abonnement bientôt disponible !")}
+            >
+              <Bell className="h-3.5 w-3.5" /> S'abonner
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* ── STORIES ── */}
       {(() => {
@@ -527,84 +605,65 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
 
       {/* ── FILTER BAR ── */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Transaction type tabs */}
-            <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
-              {[
-                { id: "ALL", label: "Tout" },
-                { id: "SALE", label: "Vente" },
-                { id: "RENTAL", label: "Location" },
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setTxType(t.id as any)}
-                  className="px-4 py-1.5 rounded-lg text-sm font-bold transition-all"
-                  style={txType === t.id ? { backgroundColor: filterColor, color: 'white' } : { color: '#6b7280' }}
-                >
-                  {t.label}
-                </button>
-              ))}
+        <div className="max-w-6xl mx-auto px-4 py-2">
+          <div className="relative flex items-center justify-center">
+            {/* Filters — centered */}
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+              <div className="flex bg-gray-100 rounded-xl p-1 gap-0.5">
+                {[
+                  { id: "ALL", label: "Tout" },
+                  { id: "SALE", label: "Vente" },
+                  { id: "RENTAL", label: "Location" },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTxType(t.id as any)}
+                    className="px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all"
+                    style={txType === t.id ? { backgroundColor: filterColor, color: 'white' } : { color: '#6b7280' }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {availableCategories.length > 0 && (
+                <div className="relative">
+                  <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
+                    <option value="">Catégorie</option>
+                    {availableCategories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                </div>
+              )}
+
+              {availableWilayas.length > 0 && (
+                <div className="relative">
+                  <select value={wilayas} onChange={e => { setWilayas(e.target.value); setCommune("") }} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
+                    <option value="">Wilaya</option>
+                    {availableWilayas.map(w => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                </div>
+              )}
+
+              {wilayas && availableCommunes.length > 0 && (
+                <div className="relative">
+                  <select value={commune} onChange={e => setCommune(e.target.value)} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
+                    <option value="">Commune</option>
+                    {availableCommunes.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                </div>
+              )}
             </div>
 
-            {/* Category filter — only those with announces */}
-            {availableCategories.length > 0 && (
-              <div className="relative">
-                <select
-                  value={categoryFilter}
-                  onChange={e => setCategoryFilter(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer"
-                >
-                  <option value="">Catégorie</option>
-                  {availableCategories.map(c => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
-              </div>
-            )}
-
-            {/* Wilaya filter */}
-            {availableWilayas.length > 0 && (
-              <div className="relative">
-                <select
-                  value={wilayas}
-                  onChange={e => { setWilayas(e.target.value); setCommune("") }}
-                  className="appearance-none pl-3 pr-7 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer"
-                >
-                  <option value="">Wilaya</option>
-                  {availableWilayas.map(w => (
-                    <option key={w} value={w}>{w}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
-              </div>
-            )}
-
-            {/* Commune filter — only when wilaya is selected */}
-            {wilayas && availableCommunes.length > 0 && (
-              <div className="relative">
-                <select
-                  value={commune}
-                  onChange={e => setCommune(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer"
-                >
-                  <option value="">Commune</option>
-                  {availableCommunes.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
-              </div>
-            )}
-
-            {/* Results count + display style toggle */}
-            <div className="flex items-center gap-3 ml-auto">
-              <div className="text-sm text-gray-500 font-medium">
+            {/* Count + display — absolute right */}
+            <div className="absolute right-0 flex items-center gap-2">
+              <span className="text-sm text-gray-500 font-medium hidden sm:inline">
                 <span className="font-bold text-gray-900">{filtered.length}</span> annonce{filtered.length !== 1 ? 's' : ''}
-              </div>
+              </span>
               <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
-                <button onClick={() => setDisplayStyle("grid")} className={`p-1.5 rounded-md transition-colors ${displayStyle === "grid" ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`} title="Grille classique">
+                <button onClick={() => setDisplayStyle("grid")} className={`p-1.5 rounded-md transition-colors ${displayStyle === "grid" ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`} title="Grille">
                   <LayoutGrid className="h-4 w-4" />
                 </button>
                 <button onClick={() => setDisplayStyle("large")} className={`p-1.5 rounded-md transition-colors ${displayStyle === "large" ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`} title="Grandes cartes">
@@ -649,7 +708,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
               return (
                 <a key={a.id} href={`/announces/${a.id}`} className="group bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
                   <div className="h-56 bg-gray-100 overflow-hidden relative">
-                    {img ? <img src={`${API_URL}/${img.url?.replace(/\\/g, '/')}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-100 flex items-center justify-center"><Building2 className="h-12 w-12 text-gray-300" /></div>}
+                    {img ? <img src={getImageUrl(img.url || '')} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-100 flex items-center justify-center"><Building2 className="h-12 w-12 text-gray-300" /></div>}
                     <div className="absolute top-3 left-3">
                       <span className="px-2.5 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: tx === 'SALE' ? '#ef4444' : color }}>{tx === 'SALE' ? 'Vente' : tx === 'RENTAL' ? 'Location' : 'Annonce'}</span>
                     </div>
@@ -679,7 +738,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
               return (
                 <a key={a.id} href={`/announces/${a.id}`} className="group flex bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
                   <div className="w-44 h-36 shrink-0 overflow-hidden bg-gray-100">
-                    {img ? <img src={`${API_URL}/${img.url?.replace(/\\/g, '/')}`} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center"><Building2 className="h-8 w-8 text-gray-300" /></div>}
+                    {img ? <img src={getImageUrl(img.url || '')} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center"><Building2 className="h-8 w-8 text-gray-300" /></div>}
                   </div>
                   <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
                     <div>
@@ -703,7 +762,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
       </div>
 
       {/* ── FOOTER ── */}
-      <footer className="mt-10 text-white" style={{ backgroundColor: footerColor }}>
+      <footer className="mt-10" style={{ backgroundColor: footerColor, color: footerTextColor }}>
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, FileText, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, FileText, Coins, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function AdminLayout({
@@ -17,7 +17,7 @@ export default function AdminLayout({
     { name: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
     { name: "Utilisateurs", href: "/admin/users", icon: Users },
     { name: "Annonces", href: "/admin/announces", icon: FileText },
-    // { name: "Paramètres", href: "/admin/settings", icon: Settings },
+    { name: "Points & Achats", href: "/admin/points", icon: Coins },
   ]
 
   useEffect(() => {

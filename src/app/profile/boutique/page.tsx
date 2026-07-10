@@ -47,27 +47,39 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
 }
 
 // Mini aperçu du hero pour le panel de droite
-function HeroPreview({ config, logoShape }: { config: any; logoShape: string }) {
+function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { config: any; logoShape: string; secondLogoShape?: string; logoAlignment?: string }) {
   const hc = config.headerColor || config.primaryColor || '#00BFA6'
-  const shapeClass = logoShape === 'round' ? 'rounded-full' : logoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'
-  const border = logoShape !== 'none' ? 'border-2 border-white shadow' : ''
+  const htc = config.headerTextColor || '#ffffff'
+  const sc1 = logoShape === 'round' ? 'rounded-full' : logoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'
+  const sc2 = (secondLogoShape || 'round') === 'round' ? 'rounded-full' : (secondLogoShape || 'round') === 'rectangle' ? 'rounded-xl' : 'rounded-none'
+  const border = 'border-2 border-white shadow'
+  const isSides = logoAlignment === 'sides' && config.logoUrl && config.secondLogoUrl
+  const ff = config.fontFamily || undefined
 
   return (
-    <div className="text-white text-center" style={{ background: `linear-gradient(135deg, ${hc} 0%, ${hc}cc 100%)`, minHeight: 160 }}>
+    <div className="text-center" style={{ background: `linear-gradient(135deg, ${hc} 0%, ${hc}cc 100%)`, minHeight: 160, fontFamily: ff }}>
       <div className="px-4 py-5 flex flex-col items-center">
-        {config.logoUrl && (
-          <img src={getImageUrl(config.logoUrl)} alt="logo" className={`h-12 w-12 object-cover mb-2 ${shapeClass} ${border}`} />
+        {isSides ? (
+          <div className="w-full flex items-center justify-between px-4 mb-2">
+            <img src={getImageUrl(config.logoUrl)} alt="logo" className={`h-10 w-10 object-contain ${sc1} ${border}`} />
+            <img src={getImageUrl(config.secondLogoUrl)} alt="logo2" className={`h-10 w-10 object-contain ${sc2} ${border}`} />
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 mb-2 justify-center">
+            {config.logoUrl && <img src={getImageUrl(config.logoUrl)} alt="logo" className={`h-12 w-12 object-contain ${sc1} ${logoShape !== 'none' ? border : ''}`} />}
+            {config.secondLogoUrl && <img src={getImageUrl(config.secondLogoUrl)} alt="logo2" className={`h-10 w-10 object-contain ${sc2} ${(secondLogoShape || 'round') !== 'none' ? border : ''}`} />}
+          </div>
         )}
-        <div className="font-black text-base leading-tight">{config.companyName || 'Ma Boutique'}</div>
-        {config.slogan && <div className="text-xs text-white/80 mt-1">{config.slogan}</div>}
-        {config.description && <div className="text-[10px] text-white/60 mt-1 line-clamp-2">{config.description}</div>}
+        <div className="font-black text-base leading-tight" style={{ color: htc }}>{config.companyName || 'Ma Boutique'}</div>
+        {config.slogan && <div className="text-xs mt-1" style={{ color: htc, opacity: 0.8 }}>{config.slogan}</div>}
+        {config.description && <div className="text-[10px] mt-1 line-clamp-2" style={{ color: htc, opacity: 0.6 }}>{config.description}</div>}
         <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
           {config.phone && <span className="text-[10px] bg-white text-gray-800 px-2 py-0.5 rounded-full font-bold">{config.phone}</span>}
           {config.whatsapp && <span className="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-bold">WhatsApp</span>}
-          {config.email && <span className="text-[10px] bg-white/20 border border-white/40 text-white px-2 py-0.5 rounded-full font-bold">Email</span>}
-          {config.facebook && <span className="text-[10px] bg-white/20 border border-white/40 text-white px-1.5 py-0.5 rounded-full">f</span>}
-          {config.instagram && <span className="text-[10px] bg-white/20 border border-white/40 text-white px-1.5 py-0.5 rounded-full">ig</span>}
-          {config.linkedin && <span className="text-[10px] bg-white/20 border border-white/40 text-white px-1.5 py-0.5 rounded-full">in</span>}
+          {config.email && <span className="text-[10px] bg-white/20 border border-white/40 px-2 py-0.5 rounded-full font-bold" style={{ color: htc }}>Email</span>}
+          {config.facebook && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>f</span>}
+          {config.instagram && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>ig</span>}
+          {config.linkedin && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>in</span>}
         </div>
       </div>
     </div>
@@ -77,6 +89,7 @@ function HeroPreview({ config, logoShape }: { config: any; logoShape: string }) 
 export default function BoutiqueConfigPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
+  const [activeSub, setActiveSub] = useState<any | null | 'loading'>('loading')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState("")
@@ -86,13 +99,20 @@ export default function BoutiqueConfigPage() {
 
   const [logoSource, setLogoSource] = useState<'account' | 'custom'>('account')
   const [logoShape, setLogoShape] = useState<'round' | 'rectangle' | 'none'>('round')
+  const [secondLogoShape, setSecondLogoShape] = useState<'round' | 'rectangle' | 'none'>('round')
+  const [logoAlignment, setLogoAlignment] = useState<'center' | 'sides'>('center')
+  const secondLogoInputRef = useRef<HTMLInputElement>(null)
+  const aboutImageInputRef = useRef<HTMLInputElement>(null)
 
   const [config, setConfig] = useState({
     headerColor: "#00BFA6",
+    headerTextColor: "#ffffff",
     footerColor: "#00BFA6",
+    footerTextColor: "#ffffff",
     bodyColor: "#F9FAFB",
     filterColor: "#00BFA6",
     storyColor: "#00BFA6",
+    fontFamily: "",
     primaryColor: "#00BFA6",
     companyName: "",
     slogan: "",
@@ -100,6 +120,7 @@ export default function BoutiqueConfigPage() {
     bannerUrl: "",
     bannerUrls: [] as string[],
     logoUrl: "",
+    secondLogoUrl: "",
     phone: "",
     email: "",
     whatsapp: "",
@@ -108,6 +129,11 @@ export default function BoutiqueConfigPage() {
     linkedin: "",
     website: "",
     stories: [] as { url: string; type: 'image' | 'video'; label: string }[],
+    menuItems: [] as { label: string; href: string }[],
+    aboutImage: "",
+    aboutDescription: "",
+    aboutButtonLabel: "",
+    aboutButtonUrl: "",
   })
 
   useEffect(() => {
@@ -117,6 +143,13 @@ export default function BoutiqueConfigPage() {
     const userData = JSON.parse(userStr)
     if (userData.userType !== 'SOCIETE') { router.push('/profile'); return }
     setUser(userData)
+
+    // Vérifier abonnement boutique actif
+    fetch(`${API_URL}/boutique-sub/active`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => setActiveSub(data || null))
+      .catch(() => setActiveSub(null))
+
     const accountLogo = userData.agencyLogoUrl || userData.imageUrl || ""
     setConfig(prev => ({
       ...prev,
@@ -133,13 +166,27 @@ export default function BoutiqueConfigPage() {
             ...prev,
             ...data,
             headerColor: data.headerColor || data.primaryColor || "#00BFA6",
+            headerTextColor: data.headerTextColor || "#ffffff",
             footerColor: data.footerColor || data.primaryColor || "#00BFA6",
+            footerTextColor: data.footerTextColor || "#ffffff",
             bodyColor: data.bodyColor || "#F9FAFB",
+            filterColor: data.filterColor || data.primaryColor || "#00BFA6",
+            storyColor: data.storyColor || data.primaryColor || "#00BFA6",
+            fontFamily: data.fontFamily || "",
             stories: data.stories || [],
             bannerUrls: data.bannerUrls || [],
+            menuItems: data.menuItems || [],
+            secondLogoUrl: data.secondLogoUrl || "",
           }))
           if (data.logoShape) setLogoShape(data.logoShape)
+          if (data.secondLogoShape) setSecondLogoShape(data.secondLogoShape)
+          if (data.logoAlignment) setLogoAlignment(data.logoAlignment)
           if (data.logoUrl && data.logoUrl !== accountLogo) setLogoSource('custom')
+          // About fields
+          if (data.aboutImage) setConfig(prev => ({ ...prev, aboutImage: data.aboutImage }))
+          if (data.aboutDescription) setConfig(prev => ({ ...prev, aboutDescription: data.aboutDescription }))
+          if (data.aboutButtonLabel) setConfig(prev => ({ ...prev, aboutButtonLabel: data.aboutButtonLabel }))
+          if (data.aboutButtonUrl) setConfig(prev => ({ ...prev, aboutButtonUrl: data.aboutButtonUrl }))
         }
       })
       .catch(() => {})
@@ -147,7 +194,7 @@ export default function BoutiqueConfigPage() {
 
   const handleChange = (k: string, v: any) => setConfig(prev => ({ ...prev, [k]: v }))
 
-  const uploadImage = async (file: File, field: 'bannerUrl' | 'logoUrl') => {
+  const uploadImage = async (file: File, field: 'bannerUrl' | 'logoUrl' | 'secondLogoUrl') => {
     try {
       const token = localStorage.getItem('token')
       const form = new FormData()
@@ -193,13 +240,41 @@ export default function BoutiqueConfigPage() {
   const removeStory = (idx: number) => setConfig(prev => ({ ...prev, stories: prev.stories.filter((_, i) => i !== idx) }))
   const updateStoryLabel = (idx: number, label: string) => setConfig(prev => ({ ...prev, stories: prev.stories.map((s, i) => i === idx ? { ...s, label } : s) }))
 
+  const uploadAboutImage = async (file: File) => {
+    try {
+      const token = localStorage.getItem('token')
+      const form = new FormData()
+      form.append('file', file)
+      const res = await axios.post(`${API_URL}/uploads`, form, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } })
+      handleChange('aboutImage', res.data?.url || res.data?.path || res.data)
+    } catch {
+      setError("Erreur lors de l'upload de l'image à propos.")
+    }
+  }
+
+  const stripBlob = (val: string) => (val?.startsWith('blob:') ? '' : val)
+
   const handleSave = async () => {
     setSaving(true); setError(""); setSaved(false)
     try {
+      const payload = {
+        ...config,
+        primaryColor: config.headerColor,
+        logoShape,
+        secondLogoShape,
+        logoAlignment,
+        // Ne jamais persister des blob: URLs
+        logoUrl: stripBlob(config.logoUrl),
+        secondLogoUrl: stripBlob(config.secondLogoUrl),
+        bannerUrl: stripBlob(config.bannerUrl),
+        bannerUrls: config.bannerUrls.filter(u => !u.startsWith('blob:')),
+        stories: config.stories.filter(s => !s.url.startsWith('blob:')),
+        aboutImage: stripBlob(config.aboutImage),
+      }
       await fetch(`/api/boutique/${user.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...config, primaryColor: config.headerColor, logoShape })
+        body: JSON.stringify(payload)
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -250,7 +325,41 @@ export default function BoutiqueConfigPage() {
     </div>
   )
 
-  if (!user) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin h-8 w-8 text-[#00BFA6]" /></div>
+  if (!user || activeSub === 'loading') return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin h-8 w-8 text-[#00BFA6]" /></div>
+
+  // Garde : boutique inactive → page d'activation
+  if (!activeSub) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 max-w-lg w-full p-8 text-center">
+        <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
+          <Store className="h-8 w-8 text-amber-500" />
+        </div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">Boutique non activée</h2>
+        <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+          Votre vitrine publique n&apos;est pas encore active. Achetez un pack boutique — après validation par l&apos;administrateur, vous pourrez personnaliser et publier votre boutique.
+        </p>
+        <div className="grid grid-cols-3 gap-3 mb-6 text-left">
+          {[
+            { pack: 'Standard', price: '5 000 DA', pts: '50 pts' },
+            { pack: 'Avancée', price: '10 000 DA', pts: '100 pts', hot: true },
+            { pack: 'Entreprise', price: '15 000 DA', pts: '200 pts' },
+          ].map(p => (
+            <div key={p.pack} className={`p-3 rounded-xl border-2 text-center ${p.hot ? 'border-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200'}`}>
+              <div className="font-black text-gray-900 text-xs">{p.pack}</div>
+              <div className="font-bold text-[#00BFA6] text-sm mt-0.5">{p.pts}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{p.price}/mois</div>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => router.push('/profile/points')}
+          className="w-full py-3 bg-[#00BFA6] text-white rounded-xl font-bold hover:bg-[#009e88] transition-colors flex items-center justify-center gap-2"
+        >
+          <Store className="h-5 w-5" /> Activer ma boutique
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -332,7 +441,7 @@ export default function BoutiqueConfigPage() {
                         <img
                           src={getImageUrl(config.logoUrl)}
                           alt="Logo"
-                          className={`h-16 w-16 object-cover border-4 border-gray-100 ${logoShape === 'round' ? 'rounded-full' : logoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'}`}
+                          className={`h-16 w-16 object-contain border-4 border-gray-100 ${logoShape === 'round' ? 'rounded-full' : logoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'}`}
                         />
                         {logoSource === 'custom' && (
                           <button onClick={() => { handleChange('logoUrl', accountLogo); setLogoSource('account') }} className="absolute -top-1 -right-1 p-1 bg-white border border-gray-200 rounded-full shadow">
@@ -365,9 +474,47 @@ export default function BoutiqueConfigPage() {
                   </div>
                 </div>
 
+                {/* Second logo / Commercial */}
+                <div className="mb-5 pb-5 border-b border-gray-100">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Logo secondaire <span className="text-gray-400 font-normal text-xs">(commercial, partenaire…)</span>
+                  </label>
+                  <input ref={secondLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'secondLogoUrl') }} />
+                  <div className="flex items-center gap-4">
+                    {config.secondLogoUrl ? (
+                      <div className="relative">
+                        <img src={getImageUrl(config.secondLogoUrl)} alt="Logo 2" className={`h-14 w-14 object-contain border-4 border-gray-100 ${secondLogoShape === 'round' ? 'rounded-full' : secondLogoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'}`} />
+                        <button onClick={() => handleChange('secondLogoUrl', '')} className="absolute -top-1 -right-1 p-1 bg-white border border-gray-200 rounded-full shadow"><X className="h-3 w-3 text-gray-600" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => secondLogoInputRef.current?.click()} className="h-14 w-14 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-[#00BFA6] transition-colors">
+                        <Upload className="h-5 w-5 text-gray-400" />
+                      </button>
+                    )}
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 mb-1.5">Forme</p>
+                      <div className="flex gap-1.5">
+                        {([{ v: 'round', label: 'Rond' }, { v: 'rectangle', label: 'Rect' }, { v: 'none', label: 'Sans' }] as { v: 'round'|'rectangle'|'none'; label: string }[]).map(({ v, label }) => (
+                          <button key={v} onClick={() => setSecondLogoShape(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${secondLogoShape === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-500'}`}>{label}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 mb-1.5">Alignement</p>
+                      <div className="flex gap-1.5">
+                        {([{ v: 'center', label: 'Centré' }, { v: 'sides', label: 'Côte à côte' }] as { v: 'center'|'sides'; label: string }[]).map(({ v, label }) => (
+                          <button key={v} onClick={() => setLogoAlignment(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${logoAlignment === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-500'}`}>{label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Bannière slider */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Bannière(s) <span className="text-gray-400 font-normal text-xs">(slider auto si plusieurs)</span></label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Bannière(s) <span className="text-gray-400 font-normal text-xs">1920×400 px recommandé · slider auto si plusieurs</span>
+                  </label>
                   <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && addBannerSlide(e.target.files[0])} />
                   {config.bannerUrls.length > 0 ? (
                     <div className="space-y-2">
@@ -394,17 +541,69 @@ export default function BoutiqueConfigPage() {
 
             {/* Couleurs */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><Palette className="h-5 w-5 text-[#00BFA6]" /> Couleurs</h2>
-              <ColorPicker label="En-tête" value={config.headerColor} onChange={v => handleChange('headerColor', v)} />
-              <ColorPicker label="Pied de page" value={config.footerColor} onChange={v => handleChange('footerColor', v)} />
-              <ColorPicker label="Fond de page" value={config.bodyColor} onChange={v => handleChange('bodyColor', v)} />
-              <ColorPicker label="Barre de filtres" value={config.filterColor} onChange={v => handleChange('filterColor', v)} />
-              <ColorPicker label="Bordure stories" value={config.storyColor} onChange={v => handleChange('storyColor', v)} />
-              <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 text-xs">
-                <div className="h-7 flex items-center px-4 text-white font-bold" style={{ backgroundColor: config.headerColor }}>En-tête</div>
-                <div className="h-8 flex items-center px-4 text-gray-500 font-medium text-[11px]" style={{ backgroundColor: config.bodyColor }}>Contenu de la page</div>
-                <div className="h-7 flex items-center px-4 text-white font-bold" style={{ backgroundColor: config.footerColor }}>Pied de page</div>
+              <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Palette className="h-5 w-5 text-[#00BFA6]" /> Couleurs</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Couleurs de fond */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Fonds</p>
+                  <ColorPicker label="En-tête" value={config.headerColor} onChange={v => handleChange('headerColor', v)} />
+                  <ColorPicker label="Pied de page" value={config.footerColor} onChange={v => handleChange('footerColor', v)} />
+                  <ColorPicker label="Fond de page" value={config.bodyColor} onChange={v => handleChange('bodyColor', v)} />
+                  <ColorPicker label="Barre filtres" value={config.filterColor} onChange={v => handleChange('filterColor', v)} />
+                  <ColorPicker label="Bordure stories" value={config.storyColor} onChange={v => handleChange('storyColor', v)} />
+                </div>
+                {/* Couleurs de texte */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Textes</p>
+                  <ColorPicker label="Texte en-tête" value={config.headerTextColor} onChange={v => handleChange('headerTextColor', v)} />
+                  <ColorPicker label="Texte pied page" value={config.footerTextColor} onChange={v => handleChange('footerTextColor', v)} />
+                </div>
               </div>
+              {/* Preview bande couleurs */}
+              <div className="mt-5 rounded-xl overflow-hidden border border-gray-200 text-xs">
+                <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.headerColor, color: config.headerTextColor }}>En-tête — texte exemple</div>
+                <div className="h-8 flex items-center px-4 text-gray-500 font-medium" style={{ backgroundColor: config.bodyColor }}>Contenu de la page</div>
+                <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.footerColor, color: config.footerTextColor }}>Pied de page — texte exemple</div>
+              </div>
+            </div>
+
+            {/* Typographie */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base">
+                <span className="text-[#00BFA6] font-black text-lg">Aa</span> Typographie
+              </h2>
+              <p className="text-xs text-gray-500 mb-4">Choisissez une police Google Fonts pour votre boutique</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { name: "", label: "Par défaut" },
+                  { name: "Inter", label: "Inter" },
+                  { name: "Poppins", label: "Poppins" },
+                  { name: "Montserrat", label: "Montserrat" },
+                  { name: "Raleway", label: "Raleway" },
+                  { name: "Nunito", label: "Nunito" },
+                  { name: "Lato", label: "Lato" },
+                  { name: "Open Sans", label: "Open Sans" },
+                  { name: "Playfair Display", label: "Playfair" },
+                  { name: "Roboto Slab", label: "Roboto Slab" },
+                  { name: "Cairo", label: "Cairo (Arabe)" },
+                  { name: "Tajawal", label: "Tajawal (Arabe)" },
+                ].map(f => (
+                  <button
+                    key={f.name}
+                    onClick={() => handleChange('fontFamily', f.name)}
+                    className={`px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all text-left ${config.fontFamily === f.name ? 'border-[#00BFA6] bg-[#00BFA6]/5 text-[#00BFA6]' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
+                    style={{ fontFamily: f.name || undefined }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              {config.fontFamily && (
+                <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
+                  <p className="text-lg font-bold text-gray-900" style={{ fontFamily: config.fontFamily }}>Agence Immobilière Horizon</p>
+                  <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: config.fontFamily }}>Votre bien, notre passion — Patrimoine.dz</p>
+                </div>
+              )}
             </div>
 
             {/* Coordonnées & Réseaux */}
@@ -466,6 +665,115 @@ export default function BoutiqueConfigPage() {
               </button>
             </div>
 
+            {/* Menu de navigation */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base">
+                <span className="text-[#00BFA6] font-black">≡</span> Menu de navigation
+              </h2>
+              <p className="text-xs text-gray-500 mb-4">Ajoutez des liens dans la barre de navigation de votre boutique</p>
+              <div className="space-y-2 mb-3">
+                {config.menuItems.map((item, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input
+                      value={item.label}
+                      onChange={e => {
+                        const next = [...config.menuItems]
+                        next[idx] = { ...next[idx], label: e.target.value }
+                        handleChange('menuItems', next)
+                      }}
+                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
+                      placeholder="Libellé (ex: À propos)"
+                    />
+                    <input
+                      value={item.href}
+                      onChange={e => {
+                        const next = [...config.menuItems]
+                        next[idx] = { ...next[idx], href: e.target.value }
+                        handleChange('menuItems', next)
+                      }}
+                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
+                      placeholder="Lien (ex: /boutique/123/about)"
+                    />
+                    <button onClick={() => handleChange('menuItems', config.menuItems.filter((_, i) => i !== idx))} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => handleChange('menuItems', [...config.menuItems, { label: '', href: '' }])}
+                className="flex items-center gap-2 text-sm font-bold text-[#00BFA6] hover:underline"
+              >
+                <Plus className="h-4 w-4" /> Ajouter un lien
+              </button>
+            </div>
+
+            {/* Page À propos */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base">
+                <Building2 className="h-5 w-5 text-[#00BFA6]" /> Page À propos
+              </h2>
+              <p className="text-xs text-gray-500 mb-4">
+                Disponible sur <span className="font-mono">/boutique/{user.id}/about</span> — ajoutez un lien dans votre menu
+              </p>
+              <input ref={aboutImageInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadAboutImage(e.target.files[0]) }} />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Image de présentation</label>
+                  {config.aboutImage ? (
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-50">
+                      <img src={getImageUrl(config.aboutImage)} alt="À propos" className="w-full h-full object-cover" />
+                      <button onClick={() => handleChange('aboutImage', '')} className="absolute top-2 right-2 p-1.5 bg-white border border-gray-200 rounded-full shadow hover:bg-red-50">
+                        <X className="h-3.5 w-3.5 text-gray-600" />
+                      </button>
+                      <button onClick={() => aboutImageInputRef.current?.click()} className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 shadow hover:bg-white">
+                        <Upload className="h-3 w-3 inline mr-1" />Changer
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => aboutImageInputRef.current?.click()}
+                      className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors"
+                    >
+                      <Upload className="h-7 w-7" />
+                      <span className="text-sm font-medium">Cliquer pour télécharger une image</span>
+                      <span className="text-xs">JPG, PNG, WebP — max 10 Mo</span>
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Description de l'entreprise</label>
+                  <textarea
+                    value={config.aboutDescription || ''}
+                    onChange={e => handleChange('aboutDescription', e.target.value)}
+                    rows={5}
+                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm resize-none"
+                    placeholder="Présentez votre entreprise, votre histoire, vos valeurs..."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">Libellé du bouton</label>
+                    <input
+                      value={config.aboutButtonLabel || ''}
+                      onChange={e => handleChange('aboutButtonLabel', e.target.value)}
+                      className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
+                      placeholder="Nous contacter"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">URL du bouton</label>
+                    <input
+                      value={config.aboutButtonUrl || ''}
+                      onChange={e => handleChange('aboutButtonUrl', e.target.value)}
+                      className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
+                      placeholder="https://... ou /boutique/..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Link to boutique */}
             <div className="p-5 bg-[#00BFA6]/5 border border-[#00BFA6]/20 rounded-2xl flex items-center justify-between">
               <div>
@@ -497,7 +805,7 @@ export default function BoutiqueConfigPage() {
               <div className="overflow-hidden rounded-b-2xl" style={{ background: config.bodyColor }}>
 
                 {/* Hero */}
-                <HeroPreview config={config} logoShape={logoShape} />
+                <HeroPreview config={config} logoShape={logoShape} secondLogoShape={secondLogoShape} logoAlignment={logoAlignment} />
 
                 {/* Mini filter bar */}
                 <div className="bg-white shadow-sm border-b border-gray-200 px-3 py-2.5 flex gap-2">

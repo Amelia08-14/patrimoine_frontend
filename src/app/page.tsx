@@ -71,7 +71,7 @@ const getCategoryHeroImageById = (categoryId: string) => {
 }
 
 // Section Carousel avec flèches de navigation et auto-scroll
-const CarouselSection = ({ title, categoryId, items }: { title: string, categoryId: string, items: any[] }) => {
+const CarouselSection = ({ title, categoryId, items }: { title: string, categoryId: string, items: any[], maxItems?: number }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isHovered, setIsHovered] = useState(false)
 
@@ -122,14 +122,14 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-gray-900 capitalize">{title}</h2>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={() => scroll('left')}
                 className="p-2 rounded-full border border-gray-200 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] text-gray-600 transition-all shadow-sm"
                 aria-label="Défiler à gauche"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <button 
+              <button
                 onClick={() => scroll('right')}
                 className="p-2 rounded-full border border-gray-200 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] text-gray-600 transition-all shadow-sm"
                 aria-label="Défiler à droite"
@@ -138,6 +138,9 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
               </button>
             </div>
           </div>
+          <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
+            Voir toutes les annonces <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
         <div className={cn("w-16 h-1 rounded-full mb-6", getCategoryColorById(categoryId))}></div>
 
@@ -319,14 +322,9 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [announces, setAnnounces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchType, setSearchType] = useState<'all' | 'rent' | 'buy'>('all');
 
   const handleCategoryClick = (categoryId: string) => {
-    const params = new URLSearchParams()
-    if (searchType === 'rent') params.append('transactionType', 'RENTAL')
-    if (searchType === 'buy') params.append('transactionType', 'SALE')
-    params.append('realEstateCategory', categoryId)
-    router.push(`/announces?${params.toString()}`)
+    router.push(`/announces?realEstateCategory=${categoryId}`)
   }
 
   useEffect(() => {
@@ -354,11 +352,11 @@ export default function HomePage() {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % REAL_ESTATE_CATEGORIES.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + REAL_ESTATE_CATEGORIES.length) % REAL_ESTATE_CATEGORIES.length);
 
-  const filteredAnnounces = announces.filter(a => {
-    return searchType === 'all' ? true :
-           searchType === 'rent' ? a.type === 'RENTAL' :
-           a.type === 'SALE';
-  });
+  const now = new Date();
+  const filteredAnnounces = announces.filter(a =>
+    a.featuredFrom && a.featuredUntil &&
+    new Date(a.featuredFrom) <= now && new Date(a.featuredUntil) >= now
+  );
 
   const CROSS_TYPE_MAP: Record<string, string> = {
     'APPARTEMENT_COMMERCIAL': 'APPARTEMENT',
@@ -478,32 +476,25 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* FILTER BAR */}
-      <div className="relative py-6 px-4 z-40 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          
-          {/* Transaction Type Tabs */}
-          <div className="flex justify-center items-center mb-6">
-            <div className="bg-white p-1.5 rounded-full shadow-sm border border-gray-200 flex gap-1">
-              {['all','rent','buy'].map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setSearchType(type as 'all'|'rent'|'buy')}
-                  className={cn(
-                    "px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
-                    type === 'all' 
-                      ? searchType === 'all' 
-                        ? "bg-green-600 text-white shadow-md" 
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                      : searchType === type 
-                        ? "bg-[#003B4A] text-white shadow-md" 
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                  )}
+      {/* CATÉGORIES EN BULLES — navigation fixe */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm py-3">
+        <div className="max-w-7xl mx-auto px-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2 items-center min-w-max">
+            {orderedCategoryIds.map(catId => {
+              const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
+              if (!catDef) return null
+              const Icon = getIcon(catDef.iconName)
+              return (
+                <a
+                  key={catId}
+                  href={`/announces?realEstateCategory=${catId}`}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] whitespace-nowrap transition-colors shrink-0"
                 >
-                  {type === 'all' ? 'VOIR TOUT' : type === 'rent' ? 'LOUER' : 'ACHETER'}
-                </button>
-              ))}
-            </div>
+                  <Icon className={`h-4 w-4 ${getIconColorById(catId)}`} />
+                  {catDef.label}
+                </a>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -514,7 +505,11 @@ export default function HomePage() {
       ) : (
         <>
           {Object.keys(groupedAnnounces).length === 0 ? (
-            <div className="py-12 text-center text-gray-500">Aucune annonce validée pour le moment.</div>
+            <div className="py-16 text-center">
+              <div className="text-5xl mb-4">🏙️</div>
+              <p className="text-gray-500 font-medium">Aucune annonce en vedette pour le moment.</p>
+              <p className="text-gray-400 text-sm mt-1">Parcourez toutes les annonces par catégorie ci-dessus.</p>
+            </div>
           ) : (
             orderedCategoryIds.map((catId) => {
               const catData = groupedAnnounces[catId];

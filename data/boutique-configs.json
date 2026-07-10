@@ -1,17 +1,21 @@
 {
   "3": {
     "headerColor": "#00BFA6",
+    "headerTextColor": "#374151",
     "footerColor": "#16A34A",
-    "bodyColor": "#00BFA6",
+    "footerTextColor": "#374151",
+    "bodyColor": "#bee4df",
     "filterColor": "#00BFA6",
     "storyColor": "#00BFA6",
+    "fontFamily": "Lato",
     "primaryColor": "#00BFA6",
     "companyName": "Promotion Immobiliere ",
     "slogan": "Votre Partenaire de luxe ",
     "description": "Un promoteur immobilier existant depuis plus de 10 ans à alger, oran et constantine ",
     "bannerUrl": "",
     "bannerUrls": [],
-    "logoUrl": "blob:http://localhost:3001/552ff427-794f-4af4-a743-e8bf3d1cd46f",
+    "logoUrl": "/uploads/documents/e49b2c1d4f4c87c0655c47ed2c522e8d.png",
+    "secondLogoUrl": "",
     "phone": "+213553746921",
     "email": "amel.benlatreche@gmail.com",
     "whatsapp": "213553746921",
@@ -20,8 +24,20 @@
     "linkedin": "linkedin.com",
     "website": "",
     "stories": [],
+    "menuItems": [
+      {
+        "label": "A propos de nous ",
+        "href": " /boutique/3/about"
+      }
+    ],
+    "aboutImage": "",
+    "aboutDescription": "Depuis 20 ans, Aymen Promotion façonne l'immobilier de demain en Algérie avec plus de 30 projets dans 15 communes. Nous concevons des résidences de Haut Standing où la qualité où le confort et la qualité se rencontrent pour offrir un cadre de vie luxueux",
+    "aboutButtonLabel": "Découvrir notre site web ",
+    "aboutButtonUrl": "https://aymenpromotion-dz.com/",
     "userId": "3",
-    "updatedAt": "2026-07-07T10:55:34.602Z",
-    "logoShape": "none"
+    "updatedAt": "2026-07-10T12:07:19.823Z",
+    "logoShape": "rectangle",
+    "secondLogoShape": "round",
+    "logoAlignment": "center"
   }
 }
