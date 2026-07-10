@@ -45,6 +45,78 @@ const BOUTIQUE_PACKS = [
   },
 ]
 
+const POINT_PACKS = [
+  { id: "PACK_50",  label: "Starter",  points: 50,  price: 1500, color: "#6B7280" },
+  { id: "PACK_100", label: "Pro",      points: 100, price: 2500, color: "#1E40AF", popular: true },
+  { id: "PACK_200", label: "Premium",  points: 200, price: 3500, color: "#D97706" },
+]
+
+// Modal achat de points seuls
+function PointPackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [ordering, setOrdering] = useState<string | null>(null)
+  const [error, setError] = useState("")
+
+  const order = async (packId: string) => {
+    setOrdering(packId); setError("")
+    try {
+      const token = localStorage.getItem('token')
+      await axios.post(`${API_URL}/points/purchase`, { pack: packId }, { headers: { Authorization: `Bearer ${token}` } })
+      onSuccess()
+      onClose()
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Erreur lors de la commande.")
+    } finally {
+      setOrdering(null)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="font-black text-gray-900 text-xl flex items-center gap-2">
+              <Coins className="h-6 w-6 text-[#00BFA6]" /> Acheter des points
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">Points crédités après validation par l'administrateur</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="h-5 w-5" /></button>
+        </div>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-4">
+          {POINT_PACKS.map(pack => (
+            <div key={pack.id} className={`relative bg-white rounded-2xl border-2 overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : 'border-gray-200'}`}>
+              {pack.popular && (
+                <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">⭐ LE PLUS POPULAIRE</div>
+              )}
+              <div className={`p-5 text-center ${pack.popular ? '' : ''}`}>
+                <div className="text-3xl font-black mb-1" style={{ color: pack.color }}>{pack.points}</div>
+                <div className="text-sm font-bold text-gray-500 mb-3">points</div>
+                <div className="text-xl font-black text-gray-900 mb-1">{pack.price.toLocaleString()}</div>
+                <div className="text-xs text-gray-400 mb-4">DA (paiement unique)</div>
+                <button
+                  onClick={() => order(pack.id)}
+                  disabled={ordering === pack.id}
+                  className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
+                  style={{ backgroundColor: pack.color }}
+                >
+                  {ordering === pack.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
+                  Commander
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 text-center mt-4">Les points sont valables 1 mois à compter de la validation</p>
+      </div>
+    </div>
+  )
+}
+
 // Modal pour choisir le pack boutique
 function PackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [ordering, setOrdering] = useState<string | null>(null)
@@ -197,6 +269,7 @@ export default function EspacePublicitairePage() {
   const [boosting, setBoosting] = useState<number | null>(null)
   const [featureTarget, setFeatureTarget] = useState<any>(null)
   const [showPackModal, setShowPackModal] = useState(false)
+  const [showPointPackModal, setShowPointPackModal] = useState(false)
   const [toast, setToast] = useState("")
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
@@ -256,6 +329,7 @@ export default function EspacePublicitairePage() {
         <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
       )}
       {showPackModal && <PackModal onClose={() => setShowPackModal(false)} onSuccess={() => { showToast("✅ Demande envoyée — en attente de validation admin"); load() }} />}
+      {showPointPackModal && <PointPackModal onClose={() => setShowPointPackModal(false)} onSuccess={() => { showToast("✅ Commande envoyée — points crédités après validation"); load() }} />}
       {featureTarget && <FeatureModal announce={featureTarget} onClose={() => setFeatureTarget(null)} onSuccess={() => { load(); showToast("⭐ Publicité activée !") }} />}
 
       <div className="max-w-5xl mx-auto space-y-6">
@@ -268,15 +342,20 @@ export default function EspacePublicitairePage() {
             </h1>
             <p className="text-gray-500 mt-1 text-sm">Gérez votre boutique, boostez vos annonces</p>
           </div>
-          <div className="text-right">
-            <div className={`text-4xl font-black ${expired ? 'text-red-400' : 'text-[#00BFA6]'}`}>{balance}</div>
-            <div className="text-sm text-gray-500 font-medium">points disponibles</div>
-            {expirationDate && !expired && (
-              <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 justify-end">
-                <CalendarDays className="h-3 w-3" /> expire le {new Date(expirationDate).toLocaleDateString('fr-FR')}
-              </div>
-            )}
-            {expired && <div className="text-xs text-red-500 font-bold mt-0.5">Points expirés — renouvelez votre boutique</div>}
+          <div className="text-right flex flex-col items-end gap-2">
+            <div>
+              <div className={`text-4xl font-black ${expired ? 'text-red-400' : 'text-[#00BFA6]'}`}>{balance}</div>
+              <div className="text-sm text-gray-500 font-medium">points disponibles</div>
+              {expirationDate && !expired && (
+                <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 justify-end">
+                  <CalendarDays className="h-3 w-3" /> expire le {new Date(expirationDate).toLocaleDateString('fr-FR')}
+                </div>
+              )}
+              {expired && <div className="text-xs text-red-500 font-bold mt-0.5">Points expirés — renouvelez votre boutique</div>}
+            </div>
+            <button onClick={() => setShowPointPackModal(true)} className="flex items-center gap-2 px-4 py-2 bg-[#00BFA6] text-white rounded-xl text-sm font-bold hover:bg-[#009e88] transition-colors">
+              <Coins className="h-4 w-4" /> Acheter des points
+            </button>
           </div>
         </div>
 
