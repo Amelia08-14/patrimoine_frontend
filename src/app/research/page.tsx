@@ -214,6 +214,8 @@ export default function ResearchPage() {
   const [loading, setLoading] = useState(false);
   const [cities, setCities] = useState<any[]>([]);
   const [towns, setTowns] = useState<any[]>([]);
+  const [loggedInUser, setLoggedInUser] = useState<any>(null);
+  const [useMyInfo, setUseMyInfo] = useState(true);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ResearchFormInput, any, ResearchFormValues>({
     resolver: zodResolver(researchSchema),
@@ -246,6 +248,15 @@ export default function ResearchPage() {
 
   useEffect(() => {
     axios.get(`${apiUrl}/cities`).then((res) => setCities(res.data)).catch(() => {});
+
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        if (userData.userType !== 'ADMIN') setLoggedInUser(userData);
+      } catch {}
+    }
   }, []);
 
   const selectedCityId = watch('cityId');
@@ -339,6 +350,27 @@ export default function ResearchPage() {
           break;
       }
 
+      const useProfile = !!loggedInUser && useMyInfo;
+      const contact = useProfile
+        ? {
+            firstName: loggedInUser.firstName,
+            lastName: loggedInUser.lastName,
+            email: loggedInUser.email,
+            phone: loggedInUser.phone,
+            address: loggedInUser.address,
+            companyName: loggedInUser.companyName,
+            activity: loggedInUser.activity,
+          }
+        : {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            companyName: data.companyName,
+            activity: data.activity,
+          };
+
       const payload = {
         transaction: data.transaction,
         minSurface: data.minSurface,
@@ -351,13 +383,8 @@ export default function ResearchPage() {
         cityId: data.cityId,
         towns: JSON.stringify(data.towns || []),
         comment: data.comment,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        companyName: data.companyName,
-        activity: data.activity,
+        ...contact,
+        userId: loggedInUser?.id,
         realEstateType: data.branch,
         propertyType: data.propertyType,
         amenities: JSON.stringify(amenities),
@@ -372,6 +399,25 @@ export default function ResearchPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Le bouton "Confier ma recherche" ne se contentait de rien faire quand la validation
+  // échouait silencieusement (ex: commentaire manquant sur une étape déjà quittée) — on
+  // ramène désormais l'utilisateur à l'étape concernée avec un message explicite.
+  const onInvalid = (formErrors: any) => {
+    console.error('Erreurs de validation:', formErrors);
+    if (formErrors.branch) {
+      setCurrentStepIndex(steps.indexOf('BRANCH'));
+      alert("Merci de choisir une branche immobilière.");
+      return;
+    }
+    if (formErrors.comment) {
+      const idx = steps.indexOf('BUDGET');
+      if (idx !== -1) setCurrentStepIndex(idx);
+      alert("Merci de renseigner un commentaire d'au moins 10 caractères (étape Budget & Localisation) avant de confier votre recherche.");
+      return;
+    }
+    alert("Merci de vérifier les informations saisies avant de confier votre recherche.");
   };
 
   const renderResidentielAchatCriteria = () => {
@@ -619,7 +665,7 @@ export default function ResearchPage() {
         return (
           <Section title="Critères principaux" icon={Hotel}>
             <p className="text-sm text-gray-500 -mt-2">
-              Fiche simplifiée en attendant le formulaire détaillé dédié à l'Hôtelier.
+              Fiche simplifiée en attendant le formulaire détaillé dédié à l'Hébergement & Séjour.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Field label="Surface min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
@@ -773,33 +819,61 @@ export default function ResearchPage() {
         );
       }
 
-      case 'CONTACT':
+      case 'CONTACT': {
+        const showManualForm = !loggedInUser || !useMyInfo;
         return (
           <div className="w-full max-w-4xl animate-fade-in space-y-10">
             <Section title="Vos coordonnées" icon={MapPin}>
-              <div className="flex justify-center gap-4 mb-2">
-                <label className="flex items-center gap-2 font-bold text-gray-900">
-                  <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#00BFA6]" /> Particulier
-                </label>
-                <label className="flex items-center gap-2 font-bold text-gray-900">
-                  <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#00BFA6]" /> Société
-                </label>
-              </div>
+              {loggedInUser && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUseMyInfo(true)}
+                    className={cn('p-4 rounded-xl border-2 text-left transition-all', useMyInfo ? 'border-[#00BFA6] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
+                  >
+                    <div className="font-bold text-gray-900 text-sm">Utiliser mes informations</div>
+                    <div className="text-xs text-gray-500 mt-1 truncate">
+                      {loggedInUser.userType === 'SOCIETE' ? loggedInUser.companyName : `${loggedInUser.firstName || ''} ${loggedInUser.lastName || ''}`.trim()} · {loggedInUser.email}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseMyInfo(false)}
+                    className={cn('p-4 rounded-xl border-2 text-left transition-all', !useMyInfo ? 'border-[#00BFA6] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
+                  >
+                    <div className="font-bold text-gray-900 text-sm">Saisir d'autres informations</div>
+                    <div className="text-xs text-gray-500 mt-1">Pour une autre personne ou société</div>
+                  </button>
+                </div>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="Nom"><input type="text" {...register('lastName')} className={inputCls} /></Field>
-                <Field label="Prénom"><input type="text" {...register('firstName')} className={inputCls} /></Field>
-                <Field label="E-mail"><input type="email" {...register('email')} className={inputCls} /></Field>
-                <Field label="Téléphone"><input type="tel" {...register('phone')} className={inputCls} /></Field>
-                <Field label="Adresse" full><input type="text" {...register('address')} className={inputCls} /></Field>
+              {showManualForm && (
+                <>
+                  <div className="flex justify-center gap-4 mb-2">
+                    <label className="flex items-center gap-2 font-bold text-gray-900">
+                      <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#00BFA6]" /> Particulier
+                    </label>
+                    <label className="flex items-center gap-2 font-bold text-gray-900">
+                      <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#00BFA6]" /> Société
+                    </label>
+                  </div>
 
-                {watch('userType') === 'SOCIETE' && (
-                  <>
-                    <Field label="Nom de la société"><input type="text" {...register('companyName')} className={inputCls} /></Field>
-                    <Field label="Activité"><input type="text" {...register('activity')} className={inputCls} /></Field>
-                  </>
-                )}
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Field label="Nom"><input type="text" {...register('lastName')} className={inputCls} /></Field>
+                    <Field label="Prénom"><input type="text" {...register('firstName')} className={inputCls} /></Field>
+                    <Field label="E-mail"><input type="email" {...register('email')} className={inputCls} /></Field>
+                    <Field label="Téléphone"><input type="tel" {...register('phone')} className={inputCls} /></Field>
+                    <Field label="Adresse" full><input type="text" {...register('address')} className={inputCls} /></Field>
+
+                    {watch('userType') === 'SOCIETE' && (
+                      <>
+                        <Field label="Nom de la société"><input type="text" {...register('companyName')} className={inputCls} /></Field>
+                        <Field label="Activité"><input type="text" {...register('activity')} className={inputCls} /></Field>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
 
               <div className="space-y-3 mt-2">
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
@@ -814,6 +888,7 @@ export default function ResearchPage() {
             </Section>
           </div>
         );
+      }
     }
   };
 
@@ -850,7 +925,19 @@ export default function ResearchPage() {
         </div>
 
         {/* Main Card */}
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col">
+        <form
+          onSubmit={handleSubmit(onSubmit, onInvalid)}
+          onKeyDown={(e) => {
+            // Empêche la touche Entrée dans un champ de soumettre le formulaire (et donc de
+            // sauter les étapes suivantes) : le seul bouton de soumission réel n'existe que
+            // sur la toute dernière étape, mais un <form> HTML soumet quand même implicitement
+            // sur Entrée si aucun bouton "submit" n'est actuellement monté.
+            if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+              e.preventDefault();
+            }
+          }}
+          className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col"
+        >
           <div className="p-4 md:p-8 border-b border-gray-100 flex items-center">
             {currentStepIndex > 0 && (
               <button

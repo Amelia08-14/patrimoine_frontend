@@ -141,7 +141,7 @@ const IconMap: Record<string, React.ElementType> = {
 const BASE_REAL_ESTATE_CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
-  { id: "HOTELIER", label: "Hôtelier", iconName: "Hotel" },
+  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Briefcase" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "TerrainFoncier" },
 ]

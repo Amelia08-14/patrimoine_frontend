@@ -2,7 +2,7 @@
 export const REAL_ESTATE_CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
-  { id: "HOTELIER", label: "Hôtelier", iconName: "Hotel" },
+  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Building2" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "Trees" },
 ];

@@ -3,7 +3,7 @@
 export const RESEARCH_BRANCHES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
-  { id: "HOTELIER", label: "Hôtelier", iconName: "Hotel" },
+  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Briefcase" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "Trees" },
 ] as const;
@@ -108,7 +108,7 @@ export const VIABILISATION_OPTIONS = [
   { id: "INTERNET", label: "Internet" },
 ];
 
-// Équipements génériques pour l'Hôtelier (en attendant le formulaire détaillé dédié)
+// Équipements génériques pour l'Hébergement & Séjour (en attendant le formulaire détaillé dédié)
 export const HOTELIER_EQUIPMENT_OPTIONS = [
   { id: "PISCINE", label: "Piscine" },
   { id: "RESTAURANT", label: "Restaurant" },
