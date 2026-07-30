@@ -219,7 +219,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
       setLoading(false)
     }
     fetchAll()
-  }, [userId])
+  }, [rawParam])
 
   const availableCategories = useMemo(() => {
     const catIds = new Set<string>()
@@ -588,7 +588,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
           {/* Boutons action visiteur */}
           <div className="mt-5 flex items-center gap-2.5 flex-wrap justify-center">
             <a
-              href={`/messages?to=${userId}`}
+              href={`/messages?to=${resolvedUserId || rawParam}`}
               className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all"
               style={{ color: headerTextColor }}
             >
