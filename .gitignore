@@ -43,3 +43,7 @@ next-env.d.ts
 /src/generated/prisma
 package.json
 package-lock.json
+
+# runtime data written by the app in production (boutique configs store) — must not be
+# committed, or every deploy conflicts with live edits made on the server
+/data/boutique-configs.json
