@@ -137,14 +137,12 @@ const IconMap: Record<string, React.ElementType> = {
   Parapluie: Umbrella
 }
 
-// Types d'immobilier de base
+// Types d'immobilier de base — 5 catégories actives pour le moment (Événementiel et Hébergement mis en pause)
 const BASE_REAL_ESTATE_CATEGORIES = [
-  { id: "RESIDENTIEL", label: "Immobilier Résidentiel", iconName: "Home" },
-  { id: "INDUSTRIEL", label: "Immobilier Industriel", iconName: "Factory" },
-  { id: "EVENEMENTIEL", label: "Immobilier Évènementiel", iconName: "PartyPopper" },
-  { id: "HOTELIER", label: "Immobilier Hôtelier", iconName: "Hotel" },
+  { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
+  { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
+  { id: "HOTELIER", label: "Hôtelier", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Briefcase" },
-  { id: "HEBERGEMENT", label: "Hébergement et Séjours", iconName: "BedDouble" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "TerrainFoncier" },
 ]
 

@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 60)
+}
+
 const CONFIG_FILE = path.join(process.cwd(), 'data', 'boutique-configs.json')
 
 function readConfigs(): Record<string, any> {
@@ -35,9 +46,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
     const { userId } = await params
     const body = await req.json()
     const configs = readConfigs()
+
+    // Générer slug depuis companyName
+    const rawSlug = slugify(body.companyName || `boutique-${userId}`)
+    // Garantir unicité : si un autre userId utilise déjà ce slug, ajouter le userId
+    const existingOwner = Object.entries(configs).find(
+      ([id, c]: [string, any]) => c.slug === rawSlug && id !== userId
+    )
+    const slug = existingOwner ? `${rawSlug}-${userId}` : rawSlug
+
     configs[userId] = {
       ...body,
       userId,
+      slug,
       updatedAt: new Date().toISOString(),
     }
     writeConfigs(configs)

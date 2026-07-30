@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { Camera, Eye, Heart, Square, BedDouble, MapPin, Building2 } from "lucide-react";
+import { Camera, Eye, Heart, Square, BedDouble, MapPin, Building2, ArrowUpDown, Thermometer, Factory } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Helper for Image URLs
@@ -15,6 +15,66 @@ const getImageUrl = (url: string) => {
     return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${cleanUrl}`;
 }
 
+const INDUSTRIAL_TYPES = ["HANGAR", "USINE", "CHAMBRE_FROIDE", "CO_STOCKAGE", "DEPOT"];
+const HOTEL_TYPES = ["HOTEL", "COMPLEXE_TOURISTIQUE", "BUNGALOW", "TERRAIN_HOTELIER", "AUTRE_HOTEL"];
+
+// Extrait les critères d'affichage adaptés à la catégorie du bien (résidentiel / industriel / hôtelier)
+const getCategorySpecs = (announce: any) => {
+    const property = announce.property || {};
+    const pType = (property._displayPropertyType || property.propertyType || "").toUpperCase();
+
+    let amenities: any = {};
+    try {
+        amenities = property.amenities ? JSON.parse(property.amenities) : {};
+    } catch {
+        amenities = {};
+    }
+
+    if (INDUSTRIAL_TYPES.includes(pType)) {
+        const factory = amenities.industrialFactory;
+        const coldRoom = amenities.coldRoom;
+        const hangar = amenities.hangar;
+
+        let height: number | undefined;
+        let width: number | undefined;
+        let typeLabel: string | undefined;
+
+        if (coldRoom) {
+            height = coldRoom.dimensions?.height;
+            width = coldRoom.dimensions?.width;
+            typeLabel = coldRoom.typeFroid?.[0] || coldRoom.techniqueFroid?.[0];
+        } else if (factory) {
+            height = factory.structure?.hspMeters;
+            typeLabel = factory.sector?.[0];
+        } else if (hangar) {
+            height = hangar.dimensions?.height;
+            width = hangar.dimensions?.width;
+        }
+
+        return {
+            kind: "industrial" as const,
+            area: property.area,
+            height,
+            width,
+            typeLabel,
+        };
+    }
+
+    if (HOTEL_TYPES.includes(pType)) {
+        return {
+            kind: "hotel" as const,
+            area: property.area,
+            nbSuites: property.nbSuites || property.nbRooms,
+        };
+    }
+
+    return {
+        kind: "residential" as const,
+        area: property.area,
+        nbRooms: property.nbRooms,
+    };
+};
+
 export const PropertyCard = ({ announce }: { announce: any }) => {
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
   const locationName = announce.property?.address?.town?.nameFr || announce.property?.address?.town?.city?.nameFr || "Algérie";
@@ -23,6 +83,7 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
   const pType = announce.property?._displayPropertyType || announce.property?.propertyType;
   const typeObj = require("@/data/propertyTypes").PROPERTY_TYPES.find((t: any) => t.id === pType?.toUpperCase() || t.label === pType);
   const categoryName = typeObj ? typeObj.label : (pType || "Immobilier");
+  const specs = getCategorySpecs(announce);
 
   // Get main image (first image with isMain = true, fallback to first image)
   const images = announce.property?.images || [];
@@ -69,7 +130,7 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
           )}
           
           {/* Gradient for text readability */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
 
           {/* Top Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
@@ -85,7 +146,7 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
 
           {/* Favorite Button */}
           <div className="absolute top-4 right-4 z-10">
-              <button 
+              <button
                   onClick={toggleFavorite}
                   className={cn(
                       "p-2.5 rounded-full transition-colors shadow-lg hover:scale-110 duration-200",
@@ -96,21 +157,8 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
               </button>
           </div>
 
-          {/* Bottom Info Overlay */}
-          <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-              <div className="flex items-center gap-4 text-white font-bold drop-shadow-md">
-                   <div className="flex items-center gap-1.5">
-                        <Square className="h-4 w-4 text-[#00BFA6]"/> 
-                        <span className="text-sm">{announce.property?.area} m²</span>
-                   </div>
-                   {announce.property?.nbRooms && (
-                    <div className="flex items-center gap-1.5">
-                            <BedDouble className="h-4 w-4 text-[#00BFA6]"/> 
-                            <span className="text-sm">{announce.property?.nbRooms} p.</span>
-                    </div>
-                   )}
-              </div>
-              
+          {/* Transaction Badge */}
+          <div className="absolute bottom-4 left-4">
               <span className={cn(
                   "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg",
                   announce.type === "SALE" ? "bg-red-600 text-white" : "bg-blue-600 text-white"
@@ -121,19 +169,59 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
         </div>
 
         {/* Content Section */}
-        <div className="p-6 flex flex-col justify-between flex-1 relative min-h-[140px]">
+        <div className="p-6 flex flex-col justify-between flex-1 relative min-h-[160px]">
             <div className="flex flex-col gap-2">
                 {/* Category */}
-                <span className="text-[#00BFA6] font-extrabold text-[11px] uppercase tracking-widest">
-                    {categoryName}
-                </span>
-                
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[#00BFA6] font-extrabold text-[11px] uppercase tracking-widest">
+                        {categoryName}
+                    </span>
+                    {specs.kind === "industrial" && specs.typeLabel && (
+                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">
+                            {pType === "CHAMBRE_FROIDE" ? <Thermometer className="h-3 w-3" /> : <Factory className="h-3 w-3" />}
+                            {specs.typeLabel}
+                        </span>
+                    )}
+                </div>
+
                 {/* Title */}
                 <h3 className="text-gray-900 font-bold text-lg leading-tight line-clamp-1 group-hover:text-[#00BFA6] transition-colors" title={announce.title || `${categoryName} à ${locationName}`}>
                     {announce.title ? announce.title : `${categoryName} à ${locationName}`}
                 </h3>
+
+                {/* Specs Row */}
+                <div className="flex items-center gap-2 flex-wrap mt-1">
+                    <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
+                        <Square className="h-3.5 w-3.5 text-[#00BFA6]" />
+                        {specs.area} m²
+                    </div>
+                    {specs.kind === "residential" && specs.nbRooms && (
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
+                            <BedDouble className="h-3.5 w-3.5 text-[#00BFA6]" />
+                            {specs.nbRooms} pièces
+                        </div>
+                    )}
+                    {specs.kind === "hotel" && specs.nbSuites && (
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
+                            <BedDouble className="h-3.5 w-3.5 text-[#00BFA6]" />
+                            {specs.nbSuites} chambres
+                        </div>
+                    )}
+                    {specs.kind === "industrial" && specs.height && (
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
+                            <ArrowUpDown className="h-3.5 w-3.5 text-[#00BFA6]" />
+                            {specs.height} m
+                        </div>
+                    )}
+                    {specs.kind === "industrial" && specs.width && (
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
+                            <ArrowUpDown className="h-3.5 w-3.5 text-[#00BFA6] rotate-90" />
+                            {specs.width} m
+                        </div>
+                    )}
+                </div>
             </div>
-            
+
             {/* Price & Location & Agency */}
             <div className="flex items-end justify-between mt-auto pt-2">
                 <div className="flex flex-col">

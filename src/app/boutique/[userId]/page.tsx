@@ -111,8 +111,11 @@ function StoryCircle({ story, color }: { story: { url: string; type: 'image' | '
 }
 
 export default function BoutiquePage({ params }: { params: Promise<{ userId: string }> }) {
-  const { userId } = use(params)
+  const { userId: rawParam } = use(params)
 
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(
+    /^\d+$/.test(rawParam) ? rawParam : null
+  )
   const [config, setConfig] = useState<BoutiqueConfig>(DEFAULT_CONFIG)
   const [announces, setAnnounces] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -160,6 +163,21 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     const fetchAll = async () => {
       let hasConfig = false
 
+      // Résoudre slug → userId si le param n'est pas numérique
+      let userId = rawParam
+      if (!/^\d+$/.test(rawParam)) {
+        try {
+          const slugRes = await fetch(`/api/boutique/slug/${rawParam}`)
+          if (!slugRes.ok) { setNotFound(true); setLoading(false); return }
+          const slugData = await slugRes.json()
+          if (!slugData?.userId) { setNotFound(true); setLoading(false); return }
+          userId = String(slugData.userId)
+          setResolvedUserId(userId)
+          setConfig({ ...DEFAULT_CONFIG, ...slugData })
+          hasConfig = true
+        } catch { setNotFound(true); setLoading(false); return }
+      }
+
       // Vérifier que la boutique est active (abonnement validé)
       try {
         const subRes = await fetch(`${API_URL}/boutique-sub/public/${userId}/active`)
@@ -167,17 +185,19 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         if (!subData) { setBoutiqueInactive(true); setLoading(false); return }
       } catch { setBoutiqueInactive(true); setLoading(false); return }
 
-      // Boutique config (non bloquant)
-      try {
-        const cfgRes = await fetch(`/api/boutique/${userId}`)
-        if (cfgRes.ok) {
-          const cfgData = await cfgRes.json()
-          if (cfgData && typeof cfgData === 'object') {
-            setConfig({ ...DEFAULT_CONFIG, ...cfgData })
-            hasConfig = true
+      // Boutique config (seulement si pas déjà chargée via slug)
+      if (!hasConfig) {
+        try {
+          const cfgRes = await fetch(`/api/boutique/${userId}`)
+          if (cfgRes.ok) {
+            const cfgData = await cfgRes.json()
+            if (cfgData && typeof cfgData === 'object') {
+              setConfig({ ...DEFAULT_CONFIG, ...cfgData })
+              hasConfig = true
+            }
           }
-        }
-      } catch { /* config optionnelle */ }
+        } catch { /* config optionnelle */ }
+      }
 
       // Announces — endpoint public dédié
       let data: any[] = []
@@ -185,7 +205,6 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         const res = await axios.get(`${API_URL}/announces/user/${userId}`)
         data = Array.isArray(res.data) ? res.data : (res.data?.data || [])
       } catch {
-        // Fallback: get all and filter client-side
         try {
           const res = await axios.get(`${API_URL}/announces`)
           const all = Array.isArray(res.data) ? res.data : (res.data?.data || [])

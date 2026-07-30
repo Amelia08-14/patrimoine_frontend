@@ -89,6 +89,7 @@ function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { co
 export default function BoutiqueConfigPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
+  const [boutiqueSlug, setBoutiqueSlug] = useState<string | null>(null)
   const [activeSub, setActiveSub] = useState<any | null | 'loading'>('loading')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -178,6 +179,7 @@ export default function BoutiqueConfigPage() {
             menuItems: data.menuItems || [],
             secondLogoUrl: data.secondLogoUrl || "",
           }))
+          if (data.slug) setBoutiqueSlug(data.slug)
           if (data.logoShape) setLogoShape(data.logoShape)
           if (data.secondLogoShape) setSecondLogoShape(data.secondLogoShape)
           if (data.logoAlignment) setLogoAlignment(data.logoAlignment)
@@ -271,11 +273,13 @@ export default function BoutiqueConfigPage() {
         stories: config.stories.filter(s => !s.url.startsWith('blob:')),
         aboutImage: stripBlob(config.aboutImage),
       }
-      await fetch(`/api/boutique/${user.id}`, {
+      const saveRes = await fetch(`/api/boutique/${user.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
+      const saved = await saveRes.json()
+      if (saved?.slug) setBoutiqueSlug(saved.slug)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch {
@@ -315,7 +319,7 @@ export default function BoutiqueConfigPage() {
 
   const SaveBar = () => (
     <div className="flex gap-3">
-      <a href={`/boutique/${user?.id}`} target="_blank" className="flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors">
+      <a href={`/boutique/${boutiqueSlug || user?.id}`} target="_blank" className="flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors">
         <Eye className="h-4 w-4" /> Prévisualiser
       </a>
       <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2 bg-[#00BFA6] text-white rounded-xl font-bold text-sm hover:bg-[#009e88] transition-colors disabled:opacity-60">
@@ -672,33 +676,47 @@ export default function BoutiqueConfigPage() {
               </h2>
               <p className="text-xs text-gray-500 mb-4">Ajoutez des liens dans la barre de navigation de votre boutique</p>
               <div className="space-y-2 mb-3">
-                {config.menuItems.map((item, idx) => (
-                  <div key={idx} className="flex gap-2 items-center">
-                    <input
-                      value={item.label}
-                      onChange={e => {
-                        const next = [...config.menuItems]
-                        next[idx] = { ...next[idx], label: e.target.value }
-                        handleChange('menuItems', next)
-                      }}
-                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
-                      placeholder="Libellé (ex: À propos)"
-                    />
-                    <input
-                      value={item.href}
-                      onChange={e => {
-                        const next = [...config.menuItems]
-                        next[idx] = { ...next[idx], href: e.target.value }
-                        handleChange('menuItems', next)
-                      }}
-                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
-                      placeholder="Lien (ex: /boutique/123/about)"
-                    />
-                    <button onClick={() => handleChange('menuItems', config.menuItems.filter((_, i) => i !== idx))} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                {config.menuItems.map((item, idx) => {
+                  const slug = boutiqueSlug || user?.id
+                  const BOUTIQUE_PAGES = [
+                    { label: "Accueil boutique", href: `/boutique/${slug}` },
+                    { label: "À propos", href: `/boutique/${slug}/about` },
+                  ]
+                  const isCustom = item.href && !BOUTIQUE_PAGES.some(p => p.href === item.href)
+                  return (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        value={item.label}
+                        onChange={e => {
+                          const next = [...config.menuItems]
+                          next[idx] = { ...next[idx], label: e.target.value }
+                          handleChange('menuItems', next)
+                        }}
+                        className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
+                        placeholder="Libellé (ex: À propos)"
+                      />
+                      <select
+                        value={isCustom ? '__custom__' : (item.href || '')}
+                        onChange={e => {
+                          const next = [...config.menuItems]
+                          const val = e.target.value
+                          const page = BOUTIQUE_PAGES.find(p => p.href === val)
+                          next[idx] = { ...next[idx], href: val === '__custom__' ? '' : val, label: next[idx].label || (page?.label || '') }
+                          handleChange('menuItems', next)
+                        }}
+                        className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white"
+                      >
+                        <option value="">-- Choisir une page --</option>
+                        {BOUTIQUE_PAGES.map(p => (
+                          <option key={p.href} value={p.href}>{p.label}</option>
+                        ))}
+                      </select>
+                      <button onClick={() => handleChange('menuItems', config.menuItems.filter((_, i) => i !== idx))} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
               <button
                 onClick={() => handleChange('menuItems', [...config.menuItems, { label: '', href: '' }])}
@@ -714,7 +732,7 @@ export default function BoutiqueConfigPage() {
                 <Building2 className="h-5 w-5 text-[#00BFA6]" /> Page À propos
               </h2>
               <p className="text-xs text-gray-500 mb-4">
-                Disponible sur <span className="font-mono">/boutique/{user.id}/about</span> — ajoutez un lien dans votre menu
+                Disponible sur <span className="font-mono">/boutique/{boutiqueSlug || user.id}/about</span> — ajoutez un lien dans votre menu
               </p>
               <input ref={aboutImageInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadAboutImage(e.target.files[0]) }} />
               <div className="space-y-4">
@@ -778,9 +796,10 @@ export default function BoutiqueConfigPage() {
             <div className="p-5 bg-[#00BFA6]/5 border border-[#00BFA6]/20 rounded-2xl flex items-center justify-between">
               <div>
                 <p className="font-bold text-gray-900">Lien de votre boutique publique</p>
-                <p className="text-sm text-gray-500 mt-0.5 font-mono">/boutique/{user.id}</p>
+                <p className="text-sm text-[#00BFA6] mt-0.5 font-mono font-bold">/boutique/{boutiqueSlug || user.id}</p>
+                {!boutiqueSlug && <p className="text-xs text-gray-400 mt-0.5">Sauvegardez pour générer l'URL avec votre nom</p>}
               </div>
-              <a href={`/boutique/${user.id}`} target="_blank" className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white" style={{ backgroundColor: config.headerColor }}>
+              <a href={`/boutique/${boutiqueSlug || user.id}`} target="_blank" className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white" style={{ backgroundColor: config.headerColor }}>
                 <ExternalLink className="h-4 w-4" /> Voir ma vitrine
               </a>
             </div>
@@ -796,7 +815,7 @@ export default function BoutiqueConfigPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <span className="text-sm font-black text-gray-700">Aperçu en direct</span>
-                <a href={`/boutique/${user.id}`} target="_blank" className="text-xs text-[#00BFA6] font-bold flex items-center gap-1 hover:underline">
+                <a href={`/boutique/${boutiqueSlug || user.id}`} target="_blank" className="text-xs text-[#00BFA6] font-bold flex items-center gap-1 hover:underline">
                   <ExternalLink className="h-3 w-3" /> Ouvrir
                 </a>
               </div>

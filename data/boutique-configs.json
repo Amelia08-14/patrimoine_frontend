@@ -15,7 +15,7 @@
     "bannerUrl": "",
     "bannerUrls": [],
     "logoUrl": "/uploads/documents/e49b2c1d4f4c87c0655c47ed2c522e8d.png",
-    "secondLogoUrl": "",
+    "secondLogoUrl": "/uploads/documents/upload-1784370477727-642676608.jpeg",
     "phone": "+213553746921",
     "email": "amel.benlatreche@gmail.com",
     "whatsapp": "213553746921",
@@ -23,7 +23,13 @@
     "instagram": "instagram.com",
     "linkedin": "linkedin.com",
     "website": "",
-    "stories": [],
+    "stories": [
+      {
+        "url": "/uploads/documents/upload-1784370455282-543718756.jpeg",
+        "type": "image",
+        "label": "lancement "
+      }
+    ],
     "menuItems": [
       {
         "label": "A propos de nous ",
@@ -35,9 +41,10 @@
     "aboutButtonLabel": "Découvrir notre site web ",
     "aboutButtonUrl": "https://aymenpromotion-dz.com/",
     "userId": "3",
-    "updatedAt": "2026-07-10T12:07:19.823Z",
+    "updatedAt": "2026-07-18T10:28:08.112Z",
     "logoShape": "rectangle",
     "secondLogoShape": "round",
-    "logoAlignment": "center"
+    "logoAlignment": "sides",
+    "slug": "promotion-immobiliere"
   }
 }

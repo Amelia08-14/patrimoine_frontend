@@ -4,26 +4,8 @@ import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AnnounceFilter } from "@/components/AnnounceFilter"
 import { Button } from "@/components/ui/button"
-import { Heart, MapPin, BedDouble, Bath, Square, Building2, Camera, Eye, ArrowRight } from "lucide-react"
-import Link from "next/link"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
-import { cn } from "@/lib/utils"
-
-// Helper for Image URLs
-const getImageUrl = (url: string) => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    
-    // Fix Windows backslashes to forward slashes
-    let cleanUrl = url.replace(/\\/g, '/');
-    
-    // Remove leading slash if present to avoid double slashes with base URL
-    if (cleanUrl.startsWith('/')) {
-        cleanUrl = cleanUrl.substring(1);
-    }
-    
-    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${cleanUrl}`;
-}
+import { PropertyCard } from "@/components/PropertyCard"
 
 function AnnouncesContent() {
   const searchParams = useSearchParams()
@@ -275,119 +257,9 @@ function AnnouncesContent() {
                 <div className="text-center py-12 text-gray-500">Aucune annonce trouvée correspondant à vos critères.</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {announces.map((announce) => {
-                    const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
-                    return (
-                    <Link href={`/announces/${announce.id}`} key={announce.id} className="block group">
-                        <div className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 relative h-full flex flex-col">
-                            <div className="relative h-[280px] overflow-hidden">
-                                {/* Image */}
-                                {announce.property?.images?.[0] ? (
-                                    <img 
-                                    src={getImageUrl(announce.property.images[0].url) || ''} 
-                                    alt={announce.property.propertyType} 
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                                        <Building2 className="h-12 w-12 opacity-20" />
-                                    </div>
-                                )}
-                                
-                                {/* Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-
-                                {/* Top Actions */}
-                                <div className="absolute top-4 right-4 flex gap-2 z-10">
-                                    <button 
-                                        className="p-2.5 bg-white/20 backdrop-blur-md hover:bg-white rounded-full text-white hover:text-red-500 transition-all shadow-sm active:scale-95"
-                                        onClick={(e) => { e.preventDefault(); /* Add fav logic */ }}
-                                    >
-                                        <Heart className="h-5 w-5 fill-transparent hover:fill-current transition-colors" />
-                                    </button>
-                                </div>
-
-                                {/* Top Left Badges */}
-                                <div className="absolute top-4 left-4 flex gap-2 z-10">
-                                    <div className="bg-black/50 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-white/10">
-                                        <Camera className="h-3.5 w-3.5" />
-                                        {announce.property?.images?.length || 0}
-                                    </div>
-                                    <div className="bg-black/50 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-white/10">
-                                        <Eye className="h-3.5 w-3.5" />
-                                        {announce.nbViews || 0}
-                                    </div>
-                                    {announce.exclusive && (
-                                        <div className="bg-green-600/90 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg border border-white/10">
-                                            Exclusivité
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Bottom Content Overlay */}
-                                <div className="absolute bottom-0 left-0 right-0 p-5 text-white z-10">
-                                    
-                                    {/* Company Info (If applicable) */}
-                                    {isCompany && (
-                                        <div className="flex items-center gap-2 mb-3 bg-white/10 backdrop-blur-md p-1.5 rounded-full w-fit border border-white/20">
-                                            {announce.user?.imageUrl ? (
-                                                <img 
-                                                    src={getImageUrl(announce.user.imageUrl) || ''} 
-                                                    alt={announce.user.companyName}
-                                                    className="w-6 h-6 rounded-full object-cover bg-white"
-                                                />
-                                            ) : (
-                                                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                                                    <Building2 className="w-3 h-3 text-white" />
-                                                </div>
-                                            )}
-                                            <span className="text-xs font-bold pr-2 truncate max-w-[150px]">
-                                                {announce.user.companyName}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className={cn(
-                                        "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg",
-                                        announce.type === "SALE" ? "bg-red-500 text-white" : "bg-[#00BFA6] text-white"
-                                        )}>
-                                        {announce.type === 'SALE' ? 'Vente' : 'Location'}
-                                        </span>
-                                        <span className="font-bold text-xl drop-shadow-md">{new Intl.NumberFormat('fr-DZ').format(announce.price)} DA</span>
-                                    </div>
-                                    
-                                    <h3 className="font-bold text-lg leading-tight truncate mb-1 drop-shadow-sm">
-                                        {announce.property?.propertyType} <span className="font-normal text-gray-300 text-sm">à</span> {announce.property?.address?.town?.nameFr}
-                                    </h3>
-                                    
-                                    <div className="flex items-center text-gray-300 text-xs font-medium">
-                                    <MapPin className="h-3.5 w-3.5 mr-1 text-[#00BFA6]" />
-                                    {announce.property?.address?.town?.nameFr}, {announce.property?.address?.town?.city?.nameFr}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="p-4 flex justify-between items-center bg-white mt-auto">
-                                <div className="flex gap-4 text-gray-500 text-sm font-bold">
-                                    <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
-                                            <Square className="h-4 w-4 text-gray-400"/> 
-                                            {announce.property?.area} m²
-                                    </div>
-                                    {announce.property?.nbRooms && (
-                                        <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
-                                                <BedDouble className="h-4 w-4 text-gray-400"/> 
-                                                {announce.property?.nbRooms} p.
-                                        </div>
-                                    )}
-                                </div>
-                                <Button variant="ghost" className="text-[#00BFA6] hover:text-[#00908A] hover:bg-green-50 p-0 h-auto font-bold text-sm group-hover:translate-x-1 transition-transform">
-                                    Détails <ArrowRight className="h-4 w-4 ml-1" />
-                                </Button>
-                            </div>
-                        </div>
-                    </Link>
-                )})}
+                {announces.map((announce) => (
+                    <PropertyCard key={announce.id} announce={announce} />
+                ))}
                 </div>
             )}
             

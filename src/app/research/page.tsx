@@ -1,397 +1,896 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from '@/data/propertyTypes';
+import { cn } from '@/lib/utils';
+import {
+  Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
+  Ruler, MapPin, Handshake, Compass, ShieldCheck, Sparkles,
+} from 'lucide-react';
+import {
+  RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
+  OUTDOOR_SPACE_OPTIONS, PROXIMITY_OPTIONS, BUREAUX_EQUIPMENT_OPTIONS, VIABILISATION_OPTIONS,
+  HOTELIER_EQUIPMENT_OPTIONS, ResearchBranchId,
+  SITUATION_OPTIONS, ACHAT_INTERLOCUTOR_OPTIONS, REALISATION_STAGE_OPTIONS, DELIVERY_STATE_OPTIONS,
+  ACHAT_DESTINATION_OPTIONS, FLOOR_APPLICABLE_TYPES, FLOOR_PREFERENCE_OPTIONS, APARTMENTS_PER_FLOOR_OPTIONS,
+  ORIENTATION_OPTIONS, VIEW_OPTIONS, AIRPORT_PROXIMITY_OPTIONS, CURRENCY_OPTIONS, FINANCING_OPTIONS,
+  ENVIRONMENT_OPTIONS, RESIDENCE_AMENITIES_OPTIONS, PARENTAL_SUITE_OPTIONS, KITCHEN_TYPE_OPTIONS,
+  KITCHEN_EQUIPMENT_OPTIONS, HEATING_OPTIONS, AC_OPTIONS, SECURITY_OPTIONS, CONNECTIVITY_OPTIONS,
+} from '@/data/researchConfig';
 
-// Enums (matching Prisma/Backend)
+const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
+
 enum TransactionType {
   RENTAL = 'RENTAL',
-  SALE = 'SALE', // Legacy used PURCHASE/RENTAL, but backend enum is RENTAL/SALE/HOLIDAY_RENTAL
+  SALE = 'SALE',
 }
 
-// Zod Schema
 const researchSchema = z.object({
-  transaction: z.nativeEnum(TransactionType),
-  
-  // Property Criteria
-  realEstateType: z.string().optional(),
+  branch: z.string().min(1, 'Choisissez une branche'),
+  transaction: z.nativeEnum(TransactionType).optional(),
   propertyType: z.string().optional(),
-  
-  minSurface: z.coerce.number().min(1, 'Surface min requise'),
-  maxSurface: z.coerce.number().min(1, 'Surface max requise'),
-  nbPieces: z.coerce.number().min(1).optional(),
-  nbRooms: z.coerce.number().min(0).optional(),
-  nbFloors: z.coerce.number().min(0).optional(),
-  
-  // Options (Amenities) - stored as IDs in an array, converted to JSON string for backend
-  amenities: z.array(z.number()).optional(),
 
-  // Location & Budget
-  cityId: z.coerce.number().min(1, 'Ville requise'),
-  towns: z.array(z.string()).min(1, 'Au moins une commune requise'), // Assuming Select multiple returns strings
-  
-  minBudget: z.coerce.number().min(1, 'Budget min requis'),
-  maxBudget: z.coerce.number().min(1, 'Budget max requis'),
-  installationDate: z.string().min(1, 'Date requise'),
-  comment: z.string().min(10, 'Commentaire requis (min 10 car.)'),
+  minSurface: z.coerce.number().optional(),
+  maxSurface: z.coerce.number().optional(),
+  surfaceUnit: z.enum(['M2', 'HA']).optional(),
+  nbPieces: z.coerce.number().optional(),
+  nbRooms: z.coerce.number().optional(),
 
-  // User Info (if not logged in)
+  outdoorSpaces: z.array(z.string()).optional(),
+  proximity: z.array(z.string()).optional(),
+
+  storageSurfaceMin: z.coerce.number().optional(),
+  storageSurfaceMax: z.coerce.number().optional(),
+  ceilingHeight: z.coerce.number().optional(),
+  truckAccess: z.boolean().optional(),
+  technicalSpecs: z.string().optional(),
+
+  nbOffices: z.coerce.number().optional(),
+  streetWindow: z.boolean().optional(),
+  floorLevel: z.enum(['RDC', 'ETAGE']).optional(),
+  bureauxEquipments: z.array(z.string()).optional(),
+  footfall: z.enum(['FAIBLE', 'MOYEN', 'ELEVE']).optional(),
+
+  constructibility: z.string().optional(),
+  viabilisation: z.array(z.string()).optional(),
+  topography: z.enum(['PLAT', 'PENTE']).optional(),
+
+  hotelierEquipments: z.array(z.string()).optional(),
+  classification: z.string().optional(),
+
+  interlocutors: z.array(z.string()).optional(),
+
+  cityId: z.coerce.number().optional(),
+  towns: z.array(z.string()).optional(),
+
+  minBudget: z.coerce.number().optional(),
+  maxBudget: z.coerce.number().optional(),
+  currency: z.enum(['DA', 'EUR', 'USD']).optional(),
+  installationDate: z.string().optional(),
+  comment: z.string().min(10, 'Commentaire requis (min 10 caractères)'),
+
+  // Fiche détaillée Résidentiel — Achat / Habitation
+  situation: z.enum(['RESIDENT_NATIONAL', 'DIASPORA']).optional(),
+  realisationStage: z.enum(['FINI', 'EN_FINALISATION', 'SUR_PLAN']).optional(),
+  deliveryState: z.enum(['VIDE', 'MEUBLE', 'PEU_IMPORTE']).optional(),
+  achatDestination: z.enum(['HABITATION', 'COMMERCIAL', 'MIXTE']).optional(),
+  floorPreference: z.string().optional(),
+  apartmentsPerFloor: z.string().optional(),
+  orientation: z.string().optional(),
+  views: z.array(z.string()).optional(),
+  airportProximity: z.string().optional(),
+  financingMode: z.enum(['CASH', 'CREDIT', 'MIXTE']).optional(),
+  environment: z.array(z.string()).optional(),
+  residenceAmenities: z.array(z.string()).optional(),
+  parentalSuite: z.string().optional(),
+  kitchenType: z.string().optional(),
+  kitchenEquipment: z.string().optional(),
+  heating: z.string().optional(),
+  ac: z.string().optional(),
+  security: z.array(z.string()).optional(),
+  connectivity: z.array(z.string()).optional(),
+  outdoorPrivate: z.boolean().optional(),
+
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
   companyName: z.string().optional(),
   activity: z.string().optional(),
-  
-  // Meta
   userType: z.enum(['PARTICULIER', 'SOCIETE']).optional(),
-  isDelegate: z.boolean().optional(), // "Je confie ma recherche..."
+  isDelegate: z.boolean().optional(),
   receiveAlert: z.boolean().optional(),
 });
 
 type ResearchFormInput = z.input<typeof researchSchema>;
-type ResearchFormOutput = z.output<typeof researchSchema>;
+type ResearchFormValues = z.output<typeof researchSchema>;
 
-// Steps
-const STEPS = ['Transaction', 'Type de Bien', 'Critères', 'Budget & Lieu', 'Vos Coordonnées'];
+const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
+type StepKey = typeof STEP_KEYS[number];
+
+const STEP_LABELS: Record<StepKey, string> = {
+  BRANCH: "Type d'immobilier",
+  TRANSACTION: 'Type de transaction',
+  CRITERIA: 'Fiche descriptive',
+  BUDGET: 'Budget & Localisation',
+  INTERLOCUTOR: 'Interlocuteur souhaité',
+  CONTACT: 'Informations et Contact',
+};
+
+const inputCls = 'w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-800';
+
+// Pastille ronde sélectionnable (charte du dépôt d'annonce) — pour choix uniques (branche, type, transaction)
+const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md' }: { active: boolean; onClick: () => void; icon: any; label: string; size?: 'lg' | 'md' | 'sm' }) => {
+  const outer = size === 'lg' ? 'w-28 h-28 md:w-40 md:h-40' : size === 'md' ? 'w-32 h-32' : 'w-24 h-24';
+  const inner = size === 'lg' ? 'w-20 h-20 md:w-32 md:h-32' : size === 'md' ? 'w-24 h-24' : 'w-16 h-16';
+  const iconSize = size === 'lg' ? 'h-10 w-10 md:h-16 md:w-16' : size === 'md' ? 'h-10 w-10' : 'h-8 w-8';
+  return (
+    <div onClick={onClick} className="flex flex-col items-center gap-3 cursor-pointer group w-full">
+      <div className={cn(
+        outer, 'rounded-full flex items-center justify-center transition-all duration-300 border-4 relative',
+        active
+          ? 'bg-white border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.3)] transform -translate-y-2'
+          : 'bg-white border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1'
+      )}>
+        <div className={cn(inner, 'rounded-full flex items-center justify-center transition-colors duration-300', active ? 'bg-[#00BFA6] text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]')}>
+          <Icon className={iconSize} />
+        </div>
+      </div>
+      <span className={cn('font-bold text-center max-w-[160px] transition-colors', size === 'sm' ? 'text-sm' : 'text-base md:text-lg', active ? 'text-[#00BFA6]' : 'text-gray-500 group-hover:text-[#00BFA6]')}>
+        {label}
+      </span>
+    </div>
+  );
+};
+
+// Pastille rectangulaire à cocher (charte du dépôt d'annonce) — pour choix multiples (critères, équipements, interlocuteurs)
+const PillOption = ({ checked, onChange, label, icon: Icon }: { checked: boolean; onChange: () => void; label: string; icon?: any }) => (
+  <label className="cursor-pointer block">
+    <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
+    <div className={cn(
+      'w-full min-h-[52px] flex items-center gap-3 px-4 py-3 border-2 rounded-xl font-bold transition-all bg-white shadow-sm',
+      checked ? 'border-[#00BFA6] bg-green-50/50 text-[#00BFA6]' : 'border-gray-300 text-gray-900 hover:border-gray-400'
+    )}>
+      {Icon && <Icon className="h-4 w-4 shrink-0" />}
+      <span className="text-sm leading-snug">{label}</span>
+      {checked && <Check className="h-4 w-4 ml-auto shrink-0" />}
+    </div>
+  </label>
+);
+
+function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+  return (
+    <div className={full ? 'md:col-span-2' : ''}>
+      <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Section({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
+  return (
+    <section className="space-y-6">
+      <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+        <Icon className="h-5 w-5 text-[#00BFA6]" />
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function OptionGroup({
+  label, options, field, watch, toggle, icons = {},
+}: {
+  label: string;
+  options: { id: string; label: string }[];
+  field: any;
+  watch: any;
+  toggle: (field: any, value: string) => void;
+  icons?: Record<string, any>;
+}) {
+  const selected: string[] = watch(field) || [];
+  return (
+    <div>
+      <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {options.map((opt) => (
+          <PillOption key={opt.id} checked={selected.includes(opt.id)} label={opt.label} icon={icons[opt.id]} onChange={() => toggle(field, opt.id)} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ResearchPage() {
   const router = useRouter();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-  const [currentStep, setCurrentStep] = useState(0);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [refData, setRefData] = useState<{
-    realEstateTypes: any[];
-    propertyTypes: any[];
-    cities: any[];
-    towns: any[];
-    amenities: any[]; // kitchen, heater, etc. combined or separate?
-  }>({
-    realEstateTypes: [],
-    propertyTypes: [],
-    cities: [],
-    towns: [],
-    amenities: [],
-  });
+  const [cities, setCities] = useState<any[]>([]);
+  const [towns, setTowns] = useState<any[]>([]);
 
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<ResearchFormInput, any, ResearchFormOutput>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ResearchFormInput, any, ResearchFormValues>({
     resolver: zodResolver(researchSchema),
     defaultValues: {
-      transaction: TransactionType.SALE,
-      minSurface: 0,
-      maxSurface: 0,
-      minBudget: 0,
-      maxBudget: 0,
-      amenities: [],
+      branch: '',
+      outdoorSpaces: [],
+      proximity: [],
+      bureauxEquipments: [],
+      viabilisation: [],
+      hotelierEquipments: [],
+      interlocutors: [],
       towns: [],
       userType: 'PARTICULIER',
-    }
+      surfaceUnit: 'M2',
+      currency: 'DA',
+      views: [],
+      environment: [],
+      residenceAmenities: [],
+      security: [],
+      connectivity: [],
+    },
   });
 
-  // Fetch Reference Data
+  const branch = watch('branch') as ResearchBranchId | '';
+  const isResidentielAchat = branch === 'RESIDENTIEL' && watch('transaction') === TransactionType.SALE;
+  const selectedPropertyType = watch('propertyType');
+
+  const steps: StepKey[] = [...STEP_KEYS];
+  const currentStep = steps[currentStepIndex];
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const cityRes = await axios.get(`${apiUrl}/cities`);
-        setRefData(prev => ({ ...prev, realEstateTypes: REAL_ESTATE_CATEGORIES, cities: cityRes.data }));
-      } catch (err) {
-        console.error("Error fetching ref data", err);
-        // Fallback or mock if endpoints fail
-      }
-    };
-    fetchData();
+    axios.get(`${apiUrl}/cities`).then((res) => setCities(res.data)).catch(() => {});
   }, []);
 
-  // Fetch Towns when City changes
   const selectedCityId = watch('cityId');
   useEffect(() => {
     if (selectedCityId) {
-      axios.get(`${apiUrl}/cities/${selectedCityId}/towns`) // Adjust endpoint
-        .then(res => setRefData(prev => ({ ...prev, towns: res.data })))
-        .catch(err => console.error(err));
+      axios.get(`${apiUrl}/cities/${selectedCityId}/towns`).then((res) => setTowns(res.data)).catch(() => {});
     }
   }, [selectedCityId]);
 
-  // Fetch Property Types when Real Estate Type changes
-  const selectedRetId = watch('realEstateType');
-  useEffect(() => {
-    if (selectedRetId) {
-      setRefData(prev => ({ ...prev, propertyTypes: PROPERTY_TYPES.filter(p => p.categoryId === selectedRetId) }));
-    }
-  }, [selectedRetId]);
+  const toggleArrayValue = (field: keyof ResearchFormValues, value: string) => {
+    const current = (watch(field) as string[]) || [];
+    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+    setValue(field as any, next as any);
+  };
 
-  const onSubmit = async (data: ResearchFormOutput) => {
+  const nextStep = () => setCurrentStepIndex((p) => Math.min(p + 1, steps.length - 1));
+  const prevStep = () => setCurrentStepIndex((p) => Math.max(p - 1, 0));
+  const goToStep = (index: number) => {
+    if (index <= currentStepIndex) setCurrentStepIndex(index);
+  };
+
+  const onSubmit = async (data: ResearchFormValues) => {
     setLoading(true);
     try {
-      // Transform data for backend
+      if (!data.installationDate) {
+        alert("Merci d'indiquer une date souhaitée.");
+        setLoading(false);
+        return;
+      }
+
+      const amenities: any = { interlocutors: data.interlocutors || [], currency: data.currency };
+      switch (data.branch) {
+        case 'RESIDENTIEL':
+          amenities.residentiel = { outdoorSpaces: data.outdoorSpaces, proximity: data.proximity };
+          if (data.transaction === TransactionType.SALE) {
+            amenities.residentiel.achatHabitation = {
+              situation: data.situation,
+              realisationStage: data.realisationStage,
+              deliveryState: data.deliveryState,
+              achatDestination: data.achatDestination,
+              floorPreference: data.floorPreference,
+              apartmentsPerFloor: data.apartmentsPerFloor,
+              orientation: data.orientation,
+              views: data.views,
+              airportProximity: data.airportProximity,
+              financingMode: data.financingMode,
+              environment: data.environment,
+              residenceAmenities: data.residenceAmenities,
+              parentalSuite: data.parentalSuite,
+              kitchenType: data.kitchenType,
+              kitchenEquipment: data.kitchenEquipment,
+              heating: data.heating,
+              ac: data.ac,
+              security: data.security,
+              connectivity: data.connectivity,
+              outdoorPrivate: !!data.outdoorPrivate,
+            };
+          }
+          break;
+        case 'INDUSTRIEL':
+          amenities.industriel = {
+            storageSurfaceMin: data.storageSurfaceMin,
+            storageSurfaceMax: data.storageSurfaceMax,
+            ceilingHeight: data.ceilingHeight,
+            truckAccess: !!data.truckAccess,
+            technicalSpecs: data.technicalSpecs,
+          };
+          break;
+        case 'BUREAUX_COMMERCES':
+          amenities.bureaux = {
+            nbOffices: data.nbOffices,
+            streetWindow: !!data.streetWindow,
+            floorLevel: data.floorLevel,
+            equipments: data.bureauxEquipments,
+            footfall: data.footfall,
+          };
+          break;
+        case 'TERRAIN_FONCIER':
+          amenities.terrain = {
+            surfaceUnit: data.surfaceUnit,
+            constructibility: data.constructibility,
+            viabilisation: data.viabilisation,
+            topography: data.topography,
+          };
+          break;
+        case 'HOTELIER':
+          amenities.hotelier = {
+            equipments: data.hotelierEquipments,
+            classification: data.classification,
+          };
+          break;
+      }
+
       const payload = {
-        ...data,
-        towns: JSON.stringify(data.towns),
-        amenities: JSON.stringify(data.amenities),
+        transaction: data.transaction,
+        minSurface: data.minSurface,
+        maxSurface: data.maxSurface,
+        nbPieces: data.nbPieces,
+        nbRooms: data.nbRooms,
+        minBudget: data.minBudget || 0,
+        maxBudget: data.maxBudget || 0,
+        installationDate: data.installationDate,
+        cityId: data.cityId,
+        towns: JSON.stringify(data.towns || []),
+        comment: data.comment,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        companyName: data.companyName,
+        activity: data.activity,
+        realEstateType: data.branch,
+        propertyType: data.propertyType,
+        amenities: JSON.stringify(amenities),
       };
+
       await axios.post(`${apiUrl}/entrusted-research`, payload);
       alert('Recherche confiée avec succès !');
-      router.push('/');
+      router.push('/demandes');
     } catch (err) {
       console.error(err);
-      alert("Une erreur est survenue.");
+      alert('Une erreur est survenue.');
     } finally {
       setLoading(false);
     }
   };
 
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
-
-  // Render Steps
-  const renderStep = () => {
-    switch(currentStep) {
-      case 0: // Transaction
-        return (
-          <div className="space-y-6 text-center">
-            <h2 className="text-2xl font-bold">Que recherchez-vous ?</h2>
-            <div className="flex justify-center gap-8">
-              <label className={`cursor-pointer p-6 border-2 rounded-xl transition ${watch('transaction') === TransactionType.RENTAL ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
-                <input type="radio" {...register('transaction')} value={TransactionType.RENTAL} className="hidden" />
-                <div className="text-4xl mb-2">🏠</div>
-                <div className="font-semibold">Location</div>
-              </label>
-              <label className={`cursor-pointer p-6 border-2 rounded-xl transition ${watch('transaction') === TransactionType.SALE ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
-                <input type="radio" {...register('transaction')} value={TransactionType.SALE} className="hidden" />
-                <div className="text-4xl mb-2">🔑</div>
-                <div className="font-semibold">Achat</div>
-              </label>
+  const renderResidentielAchatCriteria = () => {
+    const floorApplicable = FLOOR_APPLICABLE_TYPES.includes(selectedPropertyType || '');
+    return (
+      <>
+        <Section title="Nature, état & état de livraison du bien" icon={Sparkles}>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-3">Stade de réalisation souhaité</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {REALISATION_STAGE_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={`${opt.label} — ${opt.description}`} onChange={() => setValue('realisationStage', opt.id as any)} />
+              ))}
             </div>
           </div>
-        );
-      
-      case 1: // Type de Bien (Real Estate Type)
-        return (
-          <div className="space-y-6">
-             <h2 className="text-2xl font-bold text-center">Type de Bien</h2>
-             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-               {refData.realEstateTypes.map(type => (
-                  <label key={type.id} className={`cursor-pointer p-4 border rounded-lg text-center ${watch('realEstateType') === type.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                    <input 
-                      type="radio" 
-                      value={type.id} 
-                      {...register('realEstateType')}
-                      className="hidden" 
-                    />
-                    <span>{type.nameFr || type.name}</span>
-                  </label>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-3">État de livraison souhaité</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {DELIVERY_STATE_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('deliveryState') === opt.id} label={opt.description ? `${opt.label} — ${opt.description}` : opt.label} onChange={() => setValue('deliveryState', opt.id as any)} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-3">Destination de l'achat</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {ACHAT_DESTINATION_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('achatDestination') === opt.id} label={opt.label} onChange={() => setValue('achatDestination', opt.id as any)} />
+              ))}
+            </div>
+          </div>
+        </Section>
+
+        <Section title="Typologie, Configuration & Superficie du bien" icon={Ruler}>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-3">Type de patrimoine recherché</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.map((t) => (
+                <PillOption key={t.id} checked={watch('propertyType') === t.id} label={t.label} onChange={() => setValue('propertyType', watch('propertyType') === t.id ? '' : t.id)} />
+              ))}
+            </div>
+          </div>
+          {floorApplicable && (
+            <>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">Étage(s) préféré(s)</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {FLOOR_PREFERENCE_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={watch('floorPreference') === opt.id} label={opt.label} onChange={() => setValue('floorPreference', opt.id)} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">Nombre d'appartements maximum par palier</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {APARTMENTS_PER_FLOOR_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={watch('apartmentsPerFloor') === opt.id} label={opt.label} onChange={() => setValue('apartmentsPerFloor', opt.id)} />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Field label="Superficie habitable min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+            <Field label="Superficie habitable max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+          </div>
+        </Section>
+
+        <Section title="Orientation & Vue demandées" icon={Compass}>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-3">Orientation / Exposition privilégiée</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {ORIENTATION_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('orientation') === opt.id} label={opt.label} onChange={() => setValue('orientation', opt.id)} />
+              ))}
+            </div>
+          </div>
+          <OptionGroup label="Type de vue souhaité (plusieurs choix possibles)" options={VIEW_OPTIONS} field="views" watch={watch} toggle={toggleArrayValue} />
+        </Section>
+
+        <Section title="Critères non-négociables & équipements de la résidence" icon={ShieldCheck}>
+          <p className="text-sm text-gray-500 -mt-2">Cochez vos exigences absolues. Les éléments non cochés seront considérés comme facultatifs.</p>
+          <OptionGroup label="Type d'environnement & quartier" options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label="Commodités de l'immeuble / de la résidence" options={RESIDENCE_AMENITIES_OPTIONS} field="residenceAmenities" watch={watch} toggle={toggleArrayValue} />
+
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-3">Suite parentale</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {PARENTAL_SUITE_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('parentalSuite') === opt.id} label={opt.label} onChange={() => setValue('parentalSuite', opt.id)} />
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">Cuisine — Type</label>
+              <div className="grid grid-cols-1 gap-3">
+                {KITCHEN_TYPE_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={watch('kitchenType') === opt.id} label={opt.label} onChange={() => setValue('kitchenType', opt.id)} />
                 ))}
-             </div>
-             {refData.propertyTypes.length > 0 && (
-               <div className="mt-6">
-                 <h3 className="font-semibold mb-3">Type de Propriété</h3>
-                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                   {refData.propertyTypes.map(pt => (
-                     <label key={pt.id} className={`cursor-pointer p-4 border rounded-lg text-center ${watch('propertyType') === pt.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                       <input 
-                         type="radio" 
-                         value={pt.id} 
-                         {...register('propertyType')} 
-                         className="hidden" 
-                       />
-                       <span>{pt.nameFr || pt.name}</span>
-                     </label>
-                   ))}
-                 </div>
-               </div>
-             )}
-          </div>
-        );
-
-      case 2: // Critères (Surface, Pieces)
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Caractéristiques</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-1">Surface Min (m²)</label>
-                <input type="number" {...register('minSurface')} className="w-full border rounded p-2" />
-                {errors.minSurface && <span className="text-red-500 text-sm">{errors.minSurface.message}</span>}
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Surface Max (m²)</label>
-                <input type="number" {...register('maxSurface')} className="w-full border rounded p-2" />
-                {errors.maxSurface && <span className="text-red-500 text-sm">{errors.maxSurface.message}</span>}
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">Cuisine — Équipement</label>
+              <div className="grid grid-cols-1 gap-3">
+                {KITCHEN_EQUIPMENT_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={watch('kitchenEquipment') === opt.id} label={opt.label} onChange={() => setValue('kitchenEquipment', opt.id)} />
+                ))}
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Nombre de Pièces</label>
-                <input type="number" {...register('nbPieces')} className="w-full border rounded p-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">Chauffage</label>
+              <div className="grid grid-cols-1 gap-3">
+                {HEATING_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={watch('heating') === opt.id} label={opt.label} onChange={() => setValue('heating', opt.id)} />
+                ))}
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Nombre de Chambres</label>
-                <input type="number" {...register('nbRooms')} className="w-full border rounded p-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">Climatisation</label>
+              <div className="grid grid-cols-1 gap-3">
+                {AC_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={watch('ac') === opt.id} label={opt.label} onChange={() => setValue('ac', opt.id)} />
+                ))}
               </div>
             </div>
           </div>
+
+          <OptionGroup label="Sécurité & Accès" options={SECURITY_OPTIONS} field="security" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label="Connectivité" options={CONNECTIVITY_OPTIONS} field="connectivity" watch={watch} toggle={toggleArrayValue} />
+
+          <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
+            <input type="checkbox" {...register('outdoorPrivate')} className="h-4 w-4 accent-[#00BFA6]" />
+            Espace extérieur privatif (Balcon, Terrasse, Cour ou Jardin)
+          </label>
+        </Section>
+      </>
+    );
+  };
+
+  const renderCriteriaStep = () => {
+    switch (branch) {
+      case 'RESIDENTIEL':
+        if (isResidentielAchat) return renderResidentielAchatCriteria();
+        return (
+          <Section title="Critères principaux" icon={Home}>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">Type de bien recherché</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.map((t) => (
+                  <PillOption key={t.id} checked={watch('propertyType') === t.id} label={t.label} onChange={() => setValue('propertyType', watch('propertyType') === t.id ? '' : t.id)} />
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Field label="Nombre de pièces / chambres"><input type="number" {...register('nbPieces')} className={inputCls} /></Field>
+              <Field label="Surface habitable min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label="Surface habitable max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+            </div>
+            <OptionGroup label="Surface extérieure souhaitée" options={OUTDOOR_SPACE_OPTIONS} field="outdoorSpaces" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label="Proximité souhaitée" options={PROXIMITY_OPTIONS} field="proximity" watch={watch} toggle={toggleArrayValue} />
+          </Section>
         );
 
-      case 3: // Budget & Lieu
+      case 'INDUSTRIEL':
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Budget et Localisation</h2>
-            
+          <Section title="Critères principaux" icon={Factory}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-1">Ville (Wilaya)</label>
-                <select {...register('cityId', { valueAsNumber: true })} className="w-full border rounded p-2">
-                  <option value="">Sélectionner...</option>
-                  {refData.cities.map(c => <option key={c.id} value={c.id}>{c.nameFr || c.name}</option>)}
+              <Field label="Surface totale min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label="Surface totale max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label="Surface de stockage min (m²)"><input type="number" {...register('storageSurfaceMin')} className={inputCls} /></Field>
+              <Field label="Surface de stockage max (m²)"><input type="number" {...register('storageSurfaceMax')} className={inputCls} /></Field>
+              <Field label="Hauteur sous plafond (m)"><input type="number" step="0.1" {...register('ceilingHeight')} className={inputCls} /></Field>
+              <Field label="Spécificités techniques">
+                <input type="text" placeholder="Type d'usine, type de chambre froide, puissance électrique..." {...register('technicalSpecs')} className={inputCls} />
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
+              <input type="checkbox" {...register('truckAccess')} className="h-4 w-4 accent-[#00BFA6]" />
+              Accès poids lourds / quai de déchargement requis
+            </label>
+          </Section>
+        );
+
+      case 'BUREAUX_COMMERCES':
+        return (
+          <Section title="Critères principaux" icon={Briefcase}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="Surface min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label="Surface max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label="Nombre de bureaux souhaité"><input type="number" {...register('nbOffices')} className={inputCls} /></Field>
+              <Field label="Niveau souhaité">
+                <select {...register('floorLevel')} className={inputCls}>
+                  <option value="">Indifférent</option>
+                  <option value="RDC">Rez-de-chaussée</option>
+                  <option value="ETAGE">Étage</option>
                 </select>
-                {errors.cityId && <span className="text-red-500 text-sm">{errors.cityId.message}</span>}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Communes</label>
-                <select multiple {...register('towns')} className="w-full border rounded p-2 h-32">
-                  {refData.towns.map(t => <option key={t.id} value={t.id}>{t.nameFr || t.name}</option>)}
+              </Field>
+              <Field label="Flux de passage (pour les commerces)">
+                <select {...register('footfall')} className={inputCls}>
+                  <option value="">Indifférent</option>
+                  <option value="FAIBLE">Faible</option>
+                  <option value="MOYEN">Moyen</option>
+                  <option value="ELEVE">Élevé</option>
                 </select>
-                <p className="text-xs text-gray-500">Maintenez Ctrl pour sélectionner plusieurs</p>
-              </div>
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
+              <input type="checkbox" {...register('streetWindow')} className="h-4 w-4 accent-[#00BFA6]" />
+              Vitrine sur rue souhaitée
+            </label>
+            <OptionGroup label="Équipements souhaités" options={BUREAUX_EQUIPMENT_OPTIONS} field="bureauxEquipments" watch={watch} toggle={toggleArrayValue} />
+          </Section>
+        );
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Budget Min (DA)</label>
-                <input type="number" {...register('minBudget')} className="w-full border rounded p-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Budget Max (DA)</label>
-                <input type="number" {...register('maxBudget')} className="w-full border rounded p-2" />
-              </div>
+      case 'TERRAIN_FONCIER':
+        return (
+          <Section title="Critères principaux" icon={Trees}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="Unité de surface">
+                <select {...register('surfaceUnit')} className={inputCls}>
+                  <option value="M2">m²</option>
+                  <option value="HA">Hectares</option>
+                </select>
+              </Field>
+              <Field label="Topographie">
+                <select {...register('topography')} className={inputCls}>
+                  <option value="">Indifférent</option>
+                  <option value="PLAT">Plat</option>
+                  <option value="PENTE">En pente</option>
+                </select>
+              </Field>
+              <Field label="Surface min"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label="Surface max"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label="Constructibilité / COS / PLU" full>
+                <input type="text" placeholder="Précisions sur la constructibilité souhaitée" {...register('constructibility')} className={inputCls} />
+              </Field>
+            </div>
+            <OptionGroup label="Viabilisation souhaitée" options={VIABILISATION_OPTIONS} field="viabilisation" watch={watch} toggle={toggleArrayValue} />
+          </Section>
+        );
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Date d'installation souhaitée</label>
-                <input type="date" {...register('installationDate')} className="w-full border rounded p-2" />
-                {errors.installationDate && <span className="text-red-500 text-sm">{errors.installationDate.message}</span>}
-              </div>
+      case 'HOTELIER':
+        return (
+          <Section title="Critères principaux" icon={Hotel}>
+            <p className="text-sm text-gray-500 -mt-2">
+              Fiche simplifiée en attendant le formulaire détaillé dédié à l'Hôtelier.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Field label="Surface min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label="Surface max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label="Nombre de chambres / suites"><input type="number" {...register('nbRooms')} className={inputCls} /></Field>
+            </div>
+            <Field label="Classification (étoiles)">
+              <select {...register('classification')} className={inputCls}>
+                <option value="">Indifférent</option>
+                <option value="NON_CLASSE">Non classé</option>
+                <option value="1">1 étoile</option>
+                <option value="2">2 étoiles</option>
+                <option value="3">3 étoiles</option>
+                <option value="4">4 étoiles</option>
+                <option value="5">5 étoiles</option>
+              </select>
+            </Field>
+            <OptionGroup label="Équipements souhaités" options={HOTELIER_EQUIPMENT_OPTIONS} field="hotelierEquipments" watch={watch} toggle={toggleArrayValue} />
+          </Section>
+        );
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Commentaire</label>
-                <textarea {...register('comment')} rows={3} className="w-full border rounded p-2"></textarea>
-                {errors.comment && <span className="text-red-500 text-sm">{errors.comment.message}</span>}
-              </div>
+      default:
+        return null;
+    }
+  };
+
+  const renderBudgetStep = () => (
+    <Section title="Budget et Localisation" icon={Ruler}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Field label="Ville (Wilaya)">
+          <select {...register('cityId', { valueAsNumber: true })} className={inputCls}>
+            <option value="">Sélectionner...</option>
+            {cities.map((c) => <option key={c.id} value={c.id}>{c.nameFr || c.name}</option>)}
+          </select>
+        </Field>
+
+        <Field label="Communes">
+          <select multiple {...register('towns')} className={cn(inputCls, 'h-32')}>
+            {towns.map((t) => <option key={t.id} value={t.id}>{t.nameFr || t.name}</option>)}
+          </select>
+        </Field>
+
+        {isResidentielAchat && (
+          <Field label="Proximité avec l'aéroport" full>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {AIRPORT_PROXIMITY_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={opt.label} onChange={() => setValue('airportProximity', opt.id)} />
+              ))}
+            </div>
+          </Field>
+        )}
+
+        <Field label="Date souhaitée">
+          <input type="date" {...register('installationDate')} className={inputCls} />
+        </Field>
+
+        <Field label="Budget Min"><input type="number" {...register('minBudget')} className={inputCls} /></Field>
+        <Field label="Budget Max"><input type="number" {...register('maxBudget')} className={inputCls} /></Field>
+
+        <Field label="Devise">
+          <select {...register('currency')} className={inputCls}>
+            {CURRENCY_OPTIONS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+        </Field>
+
+        {isResidentielAchat && (
+          <Field label="Mode de financement">
+            <div className="grid grid-cols-1 gap-3">
+              {FINANCING_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('financingMode') === opt.id} label={opt.label} onChange={() => setValue('financingMode', opt.id as any)} />
+              ))}
+            </div>
+          </Field>
+        )}
+
+        <Field label="Commentaire" full>
+          <textarea {...register('comment')} rows={3} className={inputCls}></textarea>
+          {errors.comment && <span className="text-red-500 text-sm">{errors.comment.message}</span>}
+        </Field>
+      </div>
+    </Section>
+  );
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 'BRANCH':
+        return (
+          <div className="w-full max-w-5xl animate-fade-in py-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6 justify-items-center">
+              {RESEARCH_BRANCHES.map((b) => (
+                <CircleOption
+                  key={b.id}
+                  active={branch === b.id}
+                  icon={BRANCH_ICONS[b.iconName] || Home}
+                  label={b.label}
+                  onClick={() => {
+                    setValue('branch', b.id);
+                    setValue('propertyType', '');
+                    setValue('interlocutors', []);
+                  }}
+                />
+              ))}
+            </div>
+            {errors.branch && <p className="text-red-500 text-sm text-center mt-4">{errors.branch.message}</p>}
+          </div>
+        );
+
+      case 'TRANSACTION':
+        return (
+          <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
+            <div className="flex justify-center gap-8 md:gap-32">
+              <CircleOption active={watch('transaction') === TransactionType.RENTAL} icon={Home} label="Location" size="lg" onClick={() => setValue('transaction', TransactionType.RENTAL)} />
+              <CircleOption active={watch('transaction') === TransactionType.SALE} icon={Key} label="Achat" size="lg" onClick={() => setValue('transaction', TransactionType.SALE)} />
             </div>
           </div>
         );
 
-      case 4: // User Info
+      case 'CRITERIA':
+        return <div className="w-full max-w-4xl animate-fade-in space-y-10">{renderCriteriaStep()}</div>;
+
+      case 'BUDGET':
+        return <div className="w-full max-w-4xl animate-fade-in space-y-10">{renderBudgetStep()}</div>;
+
+      case 'INTERLOCUTOR': {
+        if (!branch) return null;
+        const options = isResidentielAchat ? ACHAT_INTERLOCUTOR_OPTIONS : (RESEARCH_INTERLOCUTORS[branch as ResearchBranchId] || []);
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Vos Coordonnées</h2>
-            
-            <div className="flex justify-center gap-4 mb-4">
-               <label className="flex items-center gap-2">
-                 <input type="radio" {...register('userType')} value="PARTICULIER" /> Particulier
-               </label>
-               <label className="flex items-center gap-2">
-                 <input type="radio" {...register('userType')} value="SOCIETE" /> Société
-               </label>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="w-full max-w-2xl animate-fade-in space-y-8">
+            {isResidentielAchat && (
               <div>
-                <label className="block text-sm font-medium mb-1">Nom</label>
-                <input type="text" {...register('lastName')} className="w-full border rounded p-2" />
+                <label className="block text-sm font-bold text-gray-900 mb-3">Votre situation</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {SITUATION_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={watch('situation') === opt.id} label={opt.label} onChange={() => setValue('situation', opt.id as any)} />
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Prénom</label>
-                <input type="text" {...register('firstName')} className="w-full border rounded p-2" />
+            )}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Handshake className="h-5 w-5 text-[#00BFA6]" />
+                <p className="text-gray-600 text-sm">
+                  {isResidentielAchat ? "Type d'interlocuteur privilégié" : 'Choisissez qui vous souhaitez voir répondre à cette demande.'}
+                </p>
               </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Adresse</label>
-                <input type="text" {...register('address')} className="w-full border rounded p-2" />
+              {options.map((opt) => (
+                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      case 'CONTACT':
+        return (
+          <div className="w-full max-w-4xl animate-fade-in space-y-10">
+            <Section title="Vos coordonnées" icon={MapPin}>
+              <div className="flex justify-center gap-4 mb-2">
+                <label className="flex items-center gap-2 font-bold text-gray-900">
+                  <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#00BFA6]" /> Particulier
+                </label>
+                <label className="flex items-center gap-2 font-bold text-gray-900">
+                  <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#00BFA6]" /> Société
+                </label>
               </div>
 
-              {watch('userType') === 'SOCIETE' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Nom de la société</label>
-                    <input type="text" {...register('companyName')} className="w-full border rounded p-2" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Activité</label>
-                    <input type="text" {...register('activity')} className="w-full border rounded p-2" />
-                  </div>
-                </>
-              )}
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Nom"><input type="text" {...register('lastName')} className={inputCls} /></Field>
+                <Field label="Prénom"><input type="text" {...register('firstName')} className={inputCls} /></Field>
+                <Field label="E-mail"><input type="email" {...register('email')} className={inputCls} /></Field>
+                <Field label="Téléphone"><input type="tel" {...register('phone')} className={inputCls} /></Field>
+                <Field label="Adresse" full><input type="text" {...register('address')} className={inputCls} /></Field>
 
-            <div className="space-y-2 mt-4">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" {...register('isDelegate')} />
-                <span className="text-sm">Je confie ma recherche au professionnel du patrimoine immobilier.</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" {...register('receiveAlert')} />
-                <span className="text-sm">Je souhaite créer une alerte mail pour cette recherche.</span>
-              </label>
-            </div>
+                {watch('userType') === 'SOCIETE' && (
+                  <>
+                    <Field label="Nom de la société"><input type="text" {...register('companyName')} className={inputCls} /></Field>
+                    <Field label="Activité"><input type="text" {...register('activity')} className={inputCls} /></Field>
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-3 mt-2">
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 accent-[#00BFA6]" />
+                  Je confie ma recherche au professionnel du patrimoine immobilier.
+                </label>
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  <input type="checkbox" {...register('receiveAlert')} className="h-4 w-4 accent-[#00BFA6]" />
+                  Je souhaite créer une alerte mail pour cette recherche.
+                </label>
+              </div>
+            </Section>
           </div>
         );
     }
   };
 
+  const isNextDisabled = currentStep === 'BRANCH' && !branch;
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold text-center mb-8">Confier une recherche</h1>
-      
-      {/* Stepper */}
-      <div className="flex justify-between mb-8 relative">
-        <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10 transform -translate-y-1/2"></div>
-        {STEPS.map((step, index) => (
-          <div key={index} className={`flex flex-col items-center bg-white px-2 ${index <= currentStep ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold mb-2 ${index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-              {index + 1}
-            </div>
-            <span className="text-xs hidden sm:block">{step}</span>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="bg-[#00908A] h-[200px] w-full absolute top-0 left-0 z-0"></div>
+
+      <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-[96px] md:pt-4">
+
+        {/* Progress Stepper */}
+        <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-5xl flex justify-center overflow-x-auto">
+          <div className="flex items-center w-full max-w-4xl">
+            {steps.map((key, idx) => (
+              <div key={key} className="flex items-center flex-1 min-w-0">
+                <div
+                  className={cn(
+                    'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all',
+                    idx <= currentStepIndex ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-50',
+                    currentStepIndex > idx ? 'bg-[#00BFA6] border-[#00BFA6] text-white' :
+                    currentStepIndex === idx ? 'border-[#00BFA6] text-[#00BFA6]' : 'border-gray-400 text-gray-600'
+                  )}
+                  onClick={() => goToStep(idx)}
+                >
+                  {currentStepIndex > idx ? <Check className="h-4 w-4" /> : idx + 1}
+                </div>
+                {idx < steps.length - 1 && (
+                  <div className={cn('flex-1 min-w-0 h-0.5 mx-2', currentStepIndex > idx ? 'bg-[#00BFA6]' : 'bg-gray-300')}></div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow-lg min-h-[400px]">
-        {renderStep()}
-
-        <div className="flex justify-between mt-8 pt-4 border-t">
-          <button
-            type="button"
-            onClick={prevStep}
-            disabled={currentStep === 0}
-            className="px-6 py-2 border rounded hover:bg-gray-50 disabled:opacity-50"
-          >
-            Retour
-          </button>
-          
-          {currentStep < STEPS.length - 1 ? (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Suivant
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              {loading ? 'Envoi...' : 'Confier ma recherche'}
-            </button>
-          )}
         </div>
-      </form>
+
+        {/* Main Card */}
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col">
+          <div className="p-4 md:p-8 border-b border-gray-100 flex items-center">
+            {currentStepIndex > 0 && (
+              <button
+                type="button"
+                onClick={prevStep}
+                className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium mr-4"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                Retour
+              </button>
+            )}
+            <h1 className="text-lg md:text-2xl font-bold text-gray-800">{STEP_LABELS[currentStep]}</h1>
+          </div>
+
+          <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-left">
+            {renderStep()}
+          </div>
+
+          <div className="p-6 md:p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50 rounded-b-2xl md:rounded-b-3xl">
+            {currentStepIndex < steps.length - 1 ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                disabled={isNextDisabled}
+                className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
+              >
+                Continuer
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Envoi...' : 'Confier ma recherche'}
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

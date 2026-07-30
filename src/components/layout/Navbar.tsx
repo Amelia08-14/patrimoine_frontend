@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { User, LogOut, Plus, ChevronDown, List, CreditCard, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2, Store } from 'lucide-react';
+import { User, LogOut, Plus, ChevronDown, List, CreditCard, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2, Store, ClipboardList, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Navbar() {
@@ -167,6 +167,10 @@ export function Navbar() {
                  Confier votre recherche
                </Button>
              </Link>
+             <Link href="/demandes" className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#00BFA6] transition-colors px-2">
+               <ClipboardList className="h-4 w-4" />
+               Demandes en cours
+             </Link>
           </div>
 
           {/* 3. Right Section (Auth & Language) */}
@@ -183,9 +187,21 @@ export function Navbar() {
                    <Link href="/research" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6] whitespace-nowrap" onClick={() => setIsActionsOpen(false)}>
                      <Plus className="h-4 w-4 mr-3" /> Confier votre recherche
                    </Link>
+                   <Link href="/demandes" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6] whitespace-nowrap" onClick={() => setIsActionsOpen(false)}>
+                     <ClipboardList className="h-4 w-4 mr-3" /> Demandes en cours
+                   </Link>
                  </div>
                )}
              </div>
+             {/* Quick access: Confier */}
+             <Link
+               href="/research"
+               title="Confier votre recherche"
+               className="hidden md:flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-600 hover:border-[#00BFA6] hover:text-[#00908A] transition-colors"
+             >
+               <Handshake className="h-3.5 w-3.5" />
+               Confier
+             </Link>
              {/* Auth Links */}
              {isLoggedIn ? (
                <div className="flex items-center gap-4 relative" ref={menuRef}>

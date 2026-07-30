@@ -403,11 +403,9 @@ export default function HomePage() {
   const orderedCategoryIds = [
     "RESIDENTIEL",
     "INDUSTRIEL",
-    "TERRAIN_FONCIER",
-    "BUREAUX_COMMERCES",
     "HOTELIER",
-    "EVENEMENTIEL",
-    "HEBERGEMENT"
+    "BUREAUX_COMMERCES",
+    "TERRAIN_FONCIER",
   ];
 
   return (
@@ -479,7 +477,7 @@ export default function HomePage() {
       {/* CATÉGORIES EN BULLES — navigation fixe */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm py-3">
         <div className="max-w-7xl mx-auto px-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          <div className="flex gap-2 items-center min-w-max">
+          <div className="flex gap-2 items-center justify-center min-w-max mx-auto w-fit">
             {orderedCategoryIds.map(catId => {
               const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
               if (!catDef) return null

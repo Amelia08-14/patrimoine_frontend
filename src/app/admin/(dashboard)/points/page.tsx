@@ -13,6 +13,12 @@ const BOUTIQUE_PACK_LABELS: Record<string, { label: string; pts: number }> = {
   ENTREPRISE: { label: "Boutique Entreprise",  pts: 200 },
 }
 
+const POINT_PACK_LABELS: Record<string, { label: string; pts: number }> = {
+  PACK_50:  { label: "Starter", pts: 50 },
+  PACK_100: { label: "Pro",     pts: 100 },
+  PACK_200: { label: "Premium", pts: 200 },
+}
+
 type BoutiqueSub = {
   id: number
   pack: string
@@ -25,9 +31,22 @@ type BoutiqueSub = {
   user: { id: number; firstName: string; lastName: string; email: string; companyName: string | null }
 }
 
+type PointPurchase = {
+  id: number
+  pack: string
+  price: number
+  points: number
+  status: 'PENDING' | 'VALIDATED' | 'REJECTED'
+  createdAt: string
+  validatedAt: string | null
+  user: { id: number; firstName: string; lastName: string; email: string; companyName: string | null }
+}
+
 export default function AdminPointsPage() {
   const router = useRouter()
+  const [tab, setTab] = useState<'BOUTIQUE' | 'POINTS'>('POINTS')
   const [subs, setSubs] = useState<BoutiqueSub[]>([])
+  const [purchases, setPurchases] = useState<PointPurchase[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'VALIDATED' | 'REJECTED'>('PENDING')
   const [processing, setProcessing] = useState<number | null>(null)
@@ -42,8 +61,13 @@ export default function AdminPointsPage() {
     setLoading(true); setError("")
     try {
       const params = filter !== 'ALL' ? `?status=${filter}` : ''
-      const res = await axios.get(`${API_URL}/boutique-sub/admin/all${params}`, { headers: getHeaders() })
-      setSubs(res.data)
+      if (tab === 'BOUTIQUE') {
+        const res = await axios.get(`${API_URL}/boutique-sub/admin/all${params}`, { headers: getHeaders() })
+        setSubs(res.data)
+      } else {
+        const res = await axios.get(`${API_URL}/points/admin/purchases${params}`, { headers: getHeaders() })
+        setPurchases(res.data)
+      }
     } catch (e: any) {
       if (e?.response?.status === 401) { router.push('/admin/login'); return }
       setError("Erreur lors du chargement.")
@@ -52,13 +76,14 @@ export default function AdminPointsPage() {
     }
   }
 
-  useEffect(() => { load() }, [filter])
+  useEffect(() => { load() }, [filter, tab])
 
   const validate = async (id: number) => {
     setProcessing(id)
     try {
-      await axios.put(`${API_URL}/boutique-sub/admin/${id}/validate`, {}, { headers: getHeaders() })
-      showToast("✅ Boutique activée et points crédités !")
+      const base = tab === 'BOUTIQUE' ? 'boutique-sub/admin' : 'points/admin/purchases'
+      await axios.put(`${API_URL}/${base}/${id}/validate`, {}, { headers: getHeaders() })
+      showToast(tab === 'BOUTIQUE' ? "✅ Boutique activée et points crédités !" : "✅ Points crédités !")
       await load()
     } catch (e: any) {
       showToast("❌ " + (e?.response?.data?.message || "Erreur"))
@@ -68,10 +93,11 @@ export default function AdminPointsPage() {
   }
 
   const reject = async (id: number) => {
-    if (!confirm("Rejeter cette demande d'activation boutique ?")) return
+    if (!confirm("Rejeter cette demande ?")) return
     setProcessing(id)
     try {
-      await axios.put(`${API_URL}/boutique-sub/admin/${id}/reject`, {}, { headers: getHeaders() })
+      const base = tab === 'BOUTIQUE' ? 'boutique-sub/admin' : 'points/admin/purchases'
+      await axios.put(`${API_URL}/${base}/${id}/reject`, {}, { headers: getHeaders() })
       showToast("Demande refusée.")
       await load()
     } catch (e: any) {
@@ -81,7 +107,8 @@ export default function AdminPointsPage() {
     }
   }
 
-  const pendingCount = subs.filter(s => s.status === 'PENDING').length
+  const rows = tab === 'BOUTIQUE' ? subs : purchases
+  const pendingCount = rows.filter(s => s.status === 'PENDING').length
 
   return (
     <div>
@@ -89,12 +116,12 @@ export default function AdminPointsPage() {
         <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
       )}
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Store className="h-7 w-7 text-[#00BFA6]" /> Boutiques & Points
+            <Coins className="h-7 w-7 text-[#00BFA6]" /> Boutiques & Points
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">Valider les demandes d'activation de boutique — les points sont crédités automatiquement</p>
+          <p className="text-gray-500 mt-1 text-sm">Demandes envoyées par tous les comptes (particuliers et professionnels)</p>
         </div>
         <div className="flex items-center gap-3">
           {pendingCount > 0 && (
@@ -108,50 +135,74 @@ export default function AdminPointsPage() {
         </div>
       </div>
 
+      {/* Onglets source de la demande */}
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setTab('POINTS')}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${tab === 'POINTS' ? 'bg-gray-900 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+          <Coins className="h-4 w-4" /> Achats de points (tous comptes)
+        </button>
+        <button onClick={() => setTab('BOUTIQUE')}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${tab === 'BOUTIQUE' ? 'bg-gray-900 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+          <Store className="h-4 w-4" /> Abonnements boutique
+        </button>
+      </div>
+
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-red-700 text-sm">
           <AlertCircle className="h-5 w-5 shrink-0" /> {error}
         </div>
       )}
 
-      {/* Filtres */}
+      {/* Filtres statut */}
       <div className="flex gap-2 mb-6">
         {(['PENDING', 'ALL', 'VALIDATED', 'REJECTED'] as const).map(s => (
           <button key={s} onClick={() => setFilter(s)}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === s ? 'bg-[#00BFA6] text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-[#00BFA6] hover:text-[#00BFA6]'}`}>
-            {s === 'ALL' ? 'Tous' : s === 'PENDING' ? '⏳ En attente' : s === 'VALIDATED' ? '✓ Activées' : '✗ Refusées'}
+            {s === 'ALL' ? 'Tous' : s === 'PENDING' ? '⏳ En attente' : s === 'VALIDATED' ? '✓ Validées' : '✗ Refusées'}
           </button>
         ))}
       </div>
 
       {/* Info packs */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        {Object.entries(BOUTIQUE_PACK_LABELS).map(([key, val]) => (
-          <div key={key} className="bg-white rounded-xl border border-gray-100 p-4 text-center">
-            <div className="font-black text-gray-900 text-sm">{val.label}</div>
-            <div className="text-[#00BFA6] font-bold">{val.pts} pts</div>
-            <div className="text-xs text-gray-400">{key === 'STANDARD' ? '5 000' : key === 'AVANCEE' ? '10 000' : '15 000'} DA/mois</div>
-          </div>
-        ))}
+        {tab === 'BOUTIQUE'
+          ? Object.entries(BOUTIQUE_PACK_LABELS).map(([key, val]) => (
+              <div key={key} className="bg-white rounded-xl border border-gray-100 p-4 text-center">
+                <div className="font-black text-gray-900 text-sm">{val.label}</div>
+                <div className="text-[#00BFA6] font-bold">{val.pts} pts</div>
+                <div className="text-xs text-gray-400">{key === 'STANDARD' ? '5 000' : key === 'AVANCEE' ? '10 000' : '15 000'} DA/mois</div>
+              </div>
+            ))
+          : Object.entries(POINT_PACK_LABELS).map(([key, val]) => (
+              <div key={key} className="bg-white rounded-xl border border-gray-100 p-4 text-center">
+                <div className="font-black text-gray-900 text-sm">{val.label}</div>
+                <div className="text-[#00BFA6] font-bold">{val.pts} pts</div>
+                <div className="text-xs text-gray-400">{key === 'PACK_50' ? '1 500' : key === 'PACK_100' ? '2 500' : '3 500'} DA</div>
+              </div>
+            ))
+        }
       </div>
 
       {/* Tableau */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16"><Loader2 className="animate-spin h-7 w-7 text-[#00BFA6]" /></div>
-        ) : subs.length === 0 ? (
+        ) : rows.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
-            <Store className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <Coins className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">Aucune demande {filter !== 'ALL' ? `"${filter}"` : ''}</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-              <span>#</span><span>Société</span><span>Pack</span><span>Prix</span><span>Date</span><span>Actions</span>
+              <span>#</span><span>Compte</span><span>Pack</span><span>Prix</span><span>Date</span><span>Actions</span>
             </div>
             <div className="divide-y divide-gray-50">
-              {subs.map(s => {
-                const packDef = BOUTIQUE_PACK_LABELS[s.pack]
+              {rows.map((s: any) => {
+                const isBoutique = tab === 'BOUTIQUE'
+                const packDef = isBoutique ? BOUTIQUE_PACK_LABELS[s.pack] : POINT_PACK_LABELS[s.pack]
+                const points = isBoutique ? s.pointsIncluded : s.points
+                const isCompany = !!s.user.companyName
                 return (
                   <div key={s.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-4 items-center hover:bg-gray-50">
                     <span className="text-xs text-gray-400 font-mono w-10">#{s.id}</span>
@@ -162,7 +213,12 @@ export default function AdminPointsPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-gray-900 text-sm truncate">{s.user.companyName || `${s.user.firstName} ${s.user.lastName}`}</p>
-                          <p className="text-xs text-gray-400 truncate">{s.user.email}</p>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${isCompany ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                              {isCompany ? 'Société' : 'Particulier'}
+                            </span>
+                            <p className="text-xs text-gray-400 truncate">{s.user.email}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -170,15 +226,15 @@ export default function AdminPointsPage() {
                       <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] rounded-full text-xs font-bold whitespace-nowrap">
                         {packDef?.label || s.pack}
                       </span>
-                      <div className="text-[10px] text-gray-400 mt-0.5">{s.pointsIncluded} pts inclus</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">{points} pts</div>
                     </div>
                     <div className="text-center">
                       <span className="font-black text-gray-900">{s.price.toLocaleString()}</span>
-                      <span className="text-xs text-gray-400 ml-1">DA/mois</span>
+                      <span className="text-xs text-gray-400 ml-1">DA{isBoutique ? '/mois' : ''}</span>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-500">{new Date(s.createdAt).toLocaleDateString('fr-FR')}</p>
-                      {s.validatedAt && s.expiresAt && (
+                      {isBoutique && s.validatedAt && s.expiresAt && (
                         <p className="text-[10px] text-green-600 mt-0.5">exp. {new Date(s.expiresAt).toLocaleDateString('fr-FR')}</p>
                       )}
                     </div>
@@ -188,7 +244,7 @@ export default function AdminPointsPage() {
                           <button onClick={() => validate(s.id)} disabled={processing === s.id}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 disabled:opacity-60 transition-colors">
                             {processing === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                            Activer
+                            Valider
                           </button>
                           <button onClick={() => reject(s.id)} disabled={processing === s.id}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs font-bold hover:bg-red-100 disabled:opacity-60 transition-colors">
@@ -198,7 +254,7 @@ export default function AdminPointsPage() {
                       ) : (
                         <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${s.status === 'VALIDATED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                           {s.status === 'VALIDATED' ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-                          {s.status === 'VALIDATED' ? 'Activée' : 'Refusée'}
+                          {s.status === 'VALIDATED' ? 'Validée' : 'Refusée'}
                         </span>
                       )}
                     </div>
@@ -209,14 +265,14 @@ export default function AdminPointsPage() {
           </>
         )}
       </div>
-      {!loading && subs.length > 0 && (
+      {!loading && rows.length > 0 && (
         <div className="mt-4 flex items-center gap-6 text-sm text-gray-500">
-          <span>{subs.length} demande{subs.length > 1 ? 's' : ''}</span>
+          <span>{rows.length} demande{rows.length > 1 ? 's' : ''}</span>
           {filter === 'ALL' && (
             <>
-              <span className="text-amber-600 font-bold">{subs.filter(s => s.status === 'PENDING').length} en attente</span>
-              <span className="text-green-600 font-bold">{subs.filter(s => s.status === 'VALIDATED').length} activées</span>
-              <span className="text-red-500 font-bold">{subs.filter(s => s.status === 'REJECTED').length} refusées</span>
+              <span className="text-amber-600 font-bold">{rows.filter(s => s.status === 'PENDING').length} en attente</span>
+              <span className="text-green-600 font-bold">{rows.filter(s => s.status === 'VALIDATED').length} validées</span>
+              <span className="text-red-500 font-bold">{rows.filter(s => s.status === 'REJECTED').length} refusées</span>
             </>
           )}
         </div>
