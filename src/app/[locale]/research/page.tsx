@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
+import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -28,99 +29,6 @@ enum TransactionType {
   RENTAL = 'RENTAL',
   SALE = 'SALE',
 }
-
-const researchSchema = z.object({
-  branch: z.string().min(1, 'Choisissez une branche'),
-  transaction: z.nativeEnum(TransactionType).optional(),
-  propertyType: z.string().optional(),
-
-  minSurface: z.coerce.number().optional(),
-  maxSurface: z.coerce.number().optional(),
-  surfaceUnit: z.enum(['M2', 'HA']).optional(),
-  nbPieces: z.coerce.number().optional(),
-  nbRooms: z.coerce.number().optional(),
-
-  outdoorSpaces: z.array(z.string()).optional(),
-  proximity: z.array(z.string()).optional(),
-
-  storageSurfaceMin: z.coerce.number().optional(),
-  storageSurfaceMax: z.coerce.number().optional(),
-  ceilingHeight: z.coerce.number().optional(),
-  truckAccess: z.boolean().optional(),
-  technicalSpecs: z.string().optional(),
-
-  nbOffices: z.coerce.number().optional(),
-  streetWindow: z.boolean().optional(),
-  floorLevel: z.enum(['RDC', 'ETAGE']).optional(),
-  bureauxEquipments: z.array(z.string()).optional(),
-  footfall: z.enum(['FAIBLE', 'MOYEN', 'ELEVE']).optional(),
-
-  constructibility: z.string().optional(),
-  viabilisation: z.array(z.string()).optional(),
-  topography: z.enum(['PLAT', 'PENTE']).optional(),
-
-  hotelierEquipments: z.array(z.string()).optional(),
-  classification: z.string().optional(),
-
-  interlocutors: z.array(z.string()).optional(),
-
-  cityId: z.coerce.number().optional(),
-  towns: z.array(z.string()).optional(),
-
-  minBudget: z.coerce.number().optional(),
-  maxBudget: z.coerce.number().optional(),
-  currency: z.enum(['DA', 'EUR', 'USD']).optional(),
-  installationDate: z.string().optional(),
-  comment: z.string().min(10, 'Commentaire requis (min 10 caractères)'),
-
-  // Fiche détaillée Résidentiel — Achat / Habitation
-  situation: z.enum(['RESIDENT_NATIONAL', 'DIASPORA']).optional(),
-  realisationStage: z.enum(['FINI', 'EN_FINALISATION', 'SUR_PLAN']).optional(),
-  deliveryState: z.enum(['VIDE', 'MEUBLE', 'PEU_IMPORTE']).optional(),
-  achatDestination: z.enum(['HABITATION', 'COMMERCIAL', 'MIXTE']).optional(),
-  floorPreference: z.string().optional(),
-  apartmentsPerFloor: z.string().optional(),
-  orientation: z.string().optional(),
-  views: z.array(z.string()).optional(),
-  airportProximity: z.string().optional(),
-  financingMode: z.enum(['CASH', 'CREDIT', 'MIXTE']).optional(),
-  environment: z.array(z.string()).optional(),
-  residenceAmenities: z.array(z.string()).optional(),
-  parentalSuite: z.string().optional(),
-  kitchenType: z.string().optional(),
-  kitchenEquipment: z.string().optional(),
-  heating: z.string().optional(),
-  ac: z.string().optional(),
-  security: z.array(z.string()).optional(),
-  connectivity: z.array(z.string()).optional(),
-  outdoorPrivate: z.boolean().optional(),
-
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  email: z.string().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  companyName: z.string().optional(),
-  activity: z.string().optional(),
-  userType: z.enum(['PARTICULIER', 'SOCIETE']).optional(),
-  isDelegate: z.boolean().optional(),
-  receiveAlert: z.boolean().optional(),
-});
-
-type ResearchFormInput = z.input<typeof researchSchema>;
-type ResearchFormValues = z.output<typeof researchSchema>;
-
-const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
-type StepKey = typeof STEP_KEYS[number];
-
-const STEP_LABELS: Record<StepKey, string> = {
-  BRANCH: "Type d'immobilier",
-  TRANSACTION: 'Type de transaction',
-  CRITERIA: 'Fiche descriptive',
-  BUDGET: 'Budget & Localisation',
-  INTERLOCUTOR: 'Interlocuteur souhaité',
-  CONTACT: 'Informations et Contact',
-};
 
 const inputCls = 'w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-800';
 
@@ -208,6 +116,7 @@ function OptionGroup({
 }
 
 export default function ResearchPage() {
+  const t = useTranslations('Research');
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -216,6 +125,99 @@ export default function ResearchPage() {
   const [towns, setTowns] = useState<any[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<any>(null);
   const [useMyInfo, setUseMyInfo] = useState(true);
+
+  const researchSchema = z.object({
+    branch: z.string().min(1, t('zodBranchRequired')),
+    transaction: z.nativeEnum(TransactionType).optional(),
+    propertyType: z.string().optional(),
+
+    minSurface: z.coerce.number().optional(),
+    maxSurface: z.coerce.number().optional(),
+    surfaceUnit: z.enum(['M2', 'HA']).optional(),
+    nbPieces: z.coerce.number().optional(),
+    nbRooms: z.coerce.number().optional(),
+
+    outdoorSpaces: z.array(z.string()).optional(),
+    proximity: z.array(z.string()).optional(),
+
+    storageSurfaceMin: z.coerce.number().optional(),
+    storageSurfaceMax: z.coerce.number().optional(),
+    ceilingHeight: z.coerce.number().optional(),
+    truckAccess: z.boolean().optional(),
+    technicalSpecs: z.string().optional(),
+
+    nbOffices: z.coerce.number().optional(),
+    streetWindow: z.boolean().optional(),
+    floorLevel: z.enum(['RDC', 'ETAGE']).optional(),
+    bureauxEquipments: z.array(z.string()).optional(),
+    footfall: z.enum(['FAIBLE', 'MOYEN', 'ELEVE']).optional(),
+
+    constructibility: z.string().optional(),
+    viabilisation: z.array(z.string()).optional(),
+    topography: z.enum(['PLAT', 'PENTE']).optional(),
+
+    hotelierEquipments: z.array(z.string()).optional(),
+    classification: z.string().optional(),
+
+    interlocutors: z.array(z.string()).optional(),
+
+    cityId: z.coerce.number().optional(),
+    towns: z.array(z.string()).optional(),
+
+    minBudget: z.coerce.number().optional(),
+    maxBudget: z.coerce.number().optional(),
+    currency: z.enum(['DA', 'EUR', 'USD']).optional(),
+    installationDate: z.string().optional(),
+    comment: z.string().min(10, t('zodCommentRequired')),
+
+    // Fiche détaillée Résidentiel — Achat / Habitation
+    situation: z.enum(['RESIDENT_NATIONAL', 'DIASPORA']).optional(),
+    realisationStage: z.enum(['FINI', 'EN_FINALISATION', 'SUR_PLAN']).optional(),
+    deliveryState: z.enum(['VIDE', 'MEUBLE', 'PEU_IMPORTE']).optional(),
+    achatDestination: z.enum(['HABITATION', 'COMMERCIAL', 'MIXTE']).optional(),
+    floorPreference: z.string().optional(),
+    apartmentsPerFloor: z.string().optional(),
+    orientation: z.string().optional(),
+    views: z.array(z.string()).optional(),
+    airportProximity: z.string().optional(),
+    financingMode: z.enum(['CASH', 'CREDIT', 'MIXTE']).optional(),
+    environment: z.array(z.string()).optional(),
+    residenceAmenities: z.array(z.string()).optional(),
+    parentalSuite: z.string().optional(),
+    kitchenType: z.string().optional(),
+    kitchenEquipment: z.string().optional(),
+    heating: z.string().optional(),
+    ac: z.string().optional(),
+    security: z.array(z.string()).optional(),
+    connectivity: z.array(z.string()).optional(),
+    outdoorPrivate: z.boolean().optional(),
+
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    email: z.string().optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    companyName: z.string().optional(),
+    activity: z.string().optional(),
+    userType: z.enum(['PARTICULIER', 'SOCIETE']).optional(),
+    isDelegate: z.boolean().optional(),
+    receiveAlert: z.boolean().optional(),
+  });
+
+  type ResearchFormInput = z.input<typeof researchSchema>;
+  type ResearchFormValues = z.output<typeof researchSchema>;
+
+  const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
+  type StepKey = typeof STEP_KEYS[number];
+
+  const STEP_LABELS: Record<StepKey, string> = {
+    BRANCH: t('stepBranch'),
+    TRANSACTION: t('stepTransaction'),
+    CRITERIA: t('stepCriteria'),
+    BUDGET: t('stepBudget'),
+    INTERLOCUTOR: t('stepInterlocutor'),
+    CONTACT: t('stepContact'),
+  };
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ResearchFormInput, any, ResearchFormValues>({
     resolver: zodResolver(researchSchema),
@@ -282,7 +284,7 @@ export default function ResearchPage() {
     setLoading(true);
     try {
       if (!data.installationDate) {
-        alert("Merci d'indiquer une date souhaitée.");
+        alert(t('alertDateRequired'));
         setLoading(false);
         return;
       }
@@ -391,11 +393,11 @@ export default function ResearchPage() {
       };
 
       await axios.post(`${apiUrl}/entrusted-research`, payload);
-      alert('Recherche confiée avec succès !');
+      alert(t('alertSuccess'));
       router.push('/demandes');
     } catch (err) {
       console.error(err);
-      alert('Une erreur est survenue.');
+      alert(t('alertGenericError'));
     } finally {
       setLoading(false);
     }
@@ -408,25 +410,25 @@ export default function ResearchPage() {
     console.error('Erreurs de validation:', formErrors);
     if (formErrors.branch) {
       setCurrentStepIndex(steps.indexOf('BRANCH'));
-      alert("Merci de choisir une branche immobilière.");
+      alert(t('alertChooseBranch'));
       return;
     }
     if (formErrors.comment) {
       const idx = steps.indexOf('BUDGET');
       if (idx !== -1) setCurrentStepIndex(idx);
-      alert("Merci de renseigner un commentaire d'au moins 10 caractères (étape Budget & Localisation) avant de confier votre recherche.");
+      alert(t('alertCommentRequired'));
       return;
     }
-    alert("Merci de vérifier les informations saisies avant de confier votre recherche.");
+    alert(t('alertCheckInfo'));
   };
 
   const renderResidentielAchatCriteria = () => {
     const floorApplicable = FLOOR_APPLICABLE_TYPES.includes(selectedPropertyType || '');
     return (
       <>
-        <Section title="Nature, état & état de livraison du bien" icon={Sparkles}>
+        <Section title={t('sqNatureTitle')} icon={Sparkles}>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">Stade de réalisation souhaité</label>
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqRealisationStage')}</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {REALISATION_STAGE_OPTIONS.map((opt) => (
                 <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={`${opt.label} — ${opt.description}`} onChange={() => setValue('realisationStage', opt.id as any)} />
@@ -434,7 +436,7 @@ export default function ResearchPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">État de livraison souhaité</label>
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqDeliveryState')}</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {DELIVERY_STATE_OPTIONS.map((opt) => (
                 <PillOption key={opt.id} checked={watch('deliveryState') === opt.id} label={opt.description ? `${opt.label} — ${opt.description}` : opt.label} onChange={() => setValue('deliveryState', opt.id as any)} />
@@ -442,7 +444,7 @@ export default function ResearchPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">Destination de l'achat</label>
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqAchatDestination')}</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {ACHAT_DESTINATION_OPTIONS.map((opt) => (
                 <PillOption key={opt.id} checked={watch('achatDestination') === opt.id} label={opt.label} onChange={() => setValue('achatDestination', opt.id as any)} />
@@ -451,9 +453,9 @@ export default function ResearchPage() {
           </div>
         </Section>
 
-        <Section title="Typologie, Configuration & Superficie du bien" icon={Ruler}>
+        <Section title={t('sqTypologyTitle')} icon={Ruler}>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">Type de patrimoine recherché</label>
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqPropertyTypeSought')}</label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.map((t) => (
                 <PillOption key={t.id} checked={watch('propertyType') === t.id} label={t.label} onChange={() => setValue('propertyType', watch('propertyType') === t.id ? '' : t.id)} />
@@ -463,7 +465,7 @@ export default function ResearchPage() {
           {floorApplicable && (
             <>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-3">Étage(s) préféré(s)</label>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqFloorPreference')}</label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {FLOOR_PREFERENCE_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={watch('floorPreference') === opt.id} label={opt.label} onChange={() => setValue('floorPreference', opt.id)} />
@@ -471,7 +473,7 @@ export default function ResearchPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-3">Nombre d'appartements maximum par palier</label>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqApartmentsPerFloor')}</label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {APARTMENTS_PER_FLOOR_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={watch('apartmentsPerFloor') === opt.id} label={opt.label} onChange={() => setValue('apartmentsPerFloor', opt.id)} />
@@ -481,30 +483,30 @@ export default function ResearchPage() {
             </>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Field label="Superficie habitable min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-            <Field label="Superficie habitable max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+            <Field label={t('sqHabitableSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+            <Field label={t('sqHabitableSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
           </div>
         </Section>
 
-        <Section title="Orientation & Vue demandées" icon={Compass}>
+        <Section title={t('sqOrientationTitle')} icon={Compass}>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">Orientation / Exposition privilégiée</label>
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqOrientationPref')}</label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {ORIENTATION_OPTIONS.map((opt) => (
                 <PillOption key={opt.id} checked={watch('orientation') === opt.id} label={opt.label} onChange={() => setValue('orientation', opt.id)} />
               ))}
             </div>
           </div>
-          <OptionGroup label="Type de vue souhaité (plusieurs choix possibles)" options={VIEW_OPTIONS} field="views" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label={t('sqViewType')} options={VIEW_OPTIONS} field="views" watch={watch} toggle={toggleArrayValue} />
         </Section>
 
-        <Section title="Critères non-négociables & équipements de la résidence" icon={ShieldCheck}>
-          <p className="text-sm text-gray-500 -mt-2">Cochez vos exigences absolues. Les éléments non cochés seront considérés comme facultatifs.</p>
-          <OptionGroup label="Type d'environnement & quartier" options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
-          <OptionGroup label="Commodités de l'immeuble / de la résidence" options={RESIDENCE_AMENITIES_OPTIONS} field="residenceAmenities" watch={watch} toggle={toggleArrayValue} />
+        <Section title={t('sqNonNegotiableTitle')} icon={ShieldCheck}>
+          <p className="text-sm text-gray-500 -mt-2">{t('sqNonNegotiableHint')}</p>
+          <OptionGroup label={t('sqEnvironment')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label={t('sqResidenceAmenities')} options={RESIDENCE_AMENITIES_OPTIONS} field="residenceAmenities" watch={watch} toggle={toggleArrayValue} />
 
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">Suite parentale</label>
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqParentalSuite')}</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {PARENTAL_SUITE_OPTIONS.map((opt) => (
                 <PillOption key={opt.id} checked={watch('parentalSuite') === opt.id} label={opt.label} onChange={() => setValue('parentalSuite', opt.id)} />
@@ -514,7 +516,7 @@ export default function ResearchPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">Cuisine — Type</label>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqKitchenType')}</label>
               <div className="grid grid-cols-1 gap-3">
                 {KITCHEN_TYPE_OPTIONS.map((opt) => (
                   <PillOption key={opt.id} checked={watch('kitchenType') === opt.id} label={opt.label} onChange={() => setValue('kitchenType', opt.id)} />
@@ -522,7 +524,7 @@ export default function ResearchPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">Cuisine — Équipement</label>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqKitchenEquipment')}</label>
               <div className="grid grid-cols-1 gap-3">
                 {KITCHEN_EQUIPMENT_OPTIONS.map((opt) => (
                   <PillOption key={opt.id} checked={watch('kitchenEquipment') === opt.id} label={opt.label} onChange={() => setValue('kitchenEquipment', opt.id)} />
@@ -530,7 +532,7 @@ export default function ResearchPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">Chauffage</label>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqHeating')}</label>
               <div className="grid grid-cols-1 gap-3">
                 {HEATING_OPTIONS.map((opt) => (
                   <PillOption key={opt.id} checked={watch('heating') === opt.id} label={opt.label} onChange={() => setValue('heating', opt.id)} />
@@ -538,7 +540,7 @@ export default function ResearchPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">Climatisation</label>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqAc')}</label>
               <div className="grid grid-cols-1 gap-3">
                 {AC_OPTIONS.map((opt) => (
                   <PillOption key={opt.id} checked={watch('ac') === opt.id} label={opt.label} onChange={() => setValue('ac', opt.id)} />
@@ -547,12 +549,12 @@ export default function ResearchPage() {
             </div>
           </div>
 
-          <OptionGroup label="Sécurité & Accès" options={SECURITY_OPTIONS} field="security" watch={watch} toggle={toggleArrayValue} />
-          <OptionGroup label="Connectivité" options={CONNECTIVITY_OPTIONS} field="connectivity" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label={t('sqSecurity')} options={SECURITY_OPTIONS} field="security" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label={t('sqConnectivity')} options={CONNECTIVITY_OPTIONS} field="connectivity" watch={watch} toggle={toggleArrayValue} />
 
           <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
             <input type="checkbox" {...register('outdoorPrivate')} className="h-4 w-4 accent-[#00BFA6]" />
-            Espace extérieur privatif (Balcon, Terrasse, Cour ou Jardin)
+            {t('sqOutdoorPrivate')}
           </label>
         </Section>
       </>
@@ -564,126 +566,126 @@ export default function ResearchPage() {
       case 'RESIDENTIEL':
         if (isResidentielAchat) return renderResidentielAchatCriteria();
         return (
-          <Section title="Critères principaux" icon={Home}>
+          <Section title={t('mainCriteria')} icon={Home}>
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">Type de bien recherché</label>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('resPropertyTypeSought')}</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.map((t) => (
-                  <PillOption key={t.id} checked={watch('propertyType') === t.id} label={t.label} onChange={() => setValue('propertyType', watch('propertyType') === t.id ? '' : t.id)} />
+                {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.map((rt) => (
+                  <PillOption key={rt.id} checked={watch('propertyType') === rt.id} label={rt.label} onChange={() => setValue('propertyType', watch('propertyType') === rt.id ? '' : rt.id)} />
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Field label="Nombre de pièces / chambres"><input type="number" {...register('nbPieces')} className={inputCls} /></Field>
-              <Field label="Surface habitable min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label="Surface habitable max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label={t('resNbPieces')}><input type="number" {...register('nbPieces')} className={inputCls} /></Field>
+              <Field label={t('resSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label={t('resSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
             </div>
-            <OptionGroup label="Surface extérieure souhaitée" options={OUTDOOR_SPACE_OPTIONS} field="outdoorSpaces" watch={watch} toggle={toggleArrayValue} />
-            <OptionGroup label="Proximité souhaitée" options={PROXIMITY_OPTIONS} field="proximity" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('resOutdoorSpaces')} options={OUTDOOR_SPACE_OPTIONS} field="outdoorSpaces" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('resProximity')} options={PROXIMITY_OPTIONS} field="proximity" watch={watch} toggle={toggleArrayValue} />
           </Section>
         );
 
       case 'INDUSTRIEL':
         return (
-          <Section title="Critères principaux" icon={Factory}>
+          <Section title={t('mainCriteria')} icon={Factory}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Surface totale min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label="Surface totale max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-              <Field label="Surface de stockage min (m²)"><input type="number" {...register('storageSurfaceMin')} className={inputCls} /></Field>
-              <Field label="Surface de stockage max (m²)"><input type="number" {...register('storageSurfaceMax')} className={inputCls} /></Field>
-              <Field label="Hauteur sous plafond (m)"><input type="number" step="0.1" {...register('ceilingHeight')} className={inputCls} /></Field>
-              <Field label="Spécificités techniques">
-                <input type="text" placeholder="Type d'usine, type de chambre froide, puissance électrique..." {...register('technicalSpecs')} className={inputCls} />
+              <Field label={t('indTotalSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label={t('indTotalSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label={t('indStorageSurfaceMin')}><input type="number" {...register('storageSurfaceMin')} className={inputCls} /></Field>
+              <Field label={t('indStorageSurfaceMax')}><input type="number" {...register('storageSurfaceMax')} className={inputCls} /></Field>
+              <Field label={t('indCeilingHeight')}><input type="number" step="0.1" {...register('ceilingHeight')} className={inputCls} /></Field>
+              <Field label={t('indTechnicalSpecs')}>
+                <input type="text" placeholder={t('indTechnicalSpecsPlaceholder')} {...register('technicalSpecs')} className={inputCls} />
               </Field>
             </div>
             <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
               <input type="checkbox" {...register('truckAccess')} className="h-4 w-4 accent-[#00BFA6]" />
-              Accès poids lourds / quai de déchargement requis
+              {t('indTruckAccess')}
             </label>
           </Section>
         );
 
       case 'BUREAUX_COMMERCES':
         return (
-          <Section title="Critères principaux" icon={Briefcase}>
+          <Section title={t('mainCriteria')} icon={Briefcase}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Surface min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label="Surface max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-              <Field label="Nombre de bureaux souhaité"><input type="number" {...register('nbOffices')} className={inputCls} /></Field>
-              <Field label="Niveau souhaité">
+              <Field label={t('burSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label={t('burSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label={t('burNbOffices')}><input type="number" {...register('nbOffices')} className={inputCls} /></Field>
+              <Field label={t('burFloorLevel')}>
                 <select {...register('floorLevel')} className={inputCls}>
-                  <option value="">Indifférent</option>
-                  <option value="RDC">Rez-de-chaussée</option>
-                  <option value="ETAGE">Étage</option>
+                  <option value="">{t('optIndifferent')}</option>
+                  <option value="RDC">{t('optGroundFloor')}</option>
+                  <option value="ETAGE">{t('optFloor')}</option>
                 </select>
               </Field>
-              <Field label="Flux de passage (pour les commerces)">
+              <Field label={t('burFootfall')}>
                 <select {...register('footfall')} className={inputCls}>
-                  <option value="">Indifférent</option>
-                  <option value="FAIBLE">Faible</option>
-                  <option value="MOYEN">Moyen</option>
-                  <option value="ELEVE">Élevé</option>
+                  <option value="">{t('optIndifferent')}</option>
+                  <option value="FAIBLE">{t('optLow')}</option>
+                  <option value="MOYEN">{t('optMedium')}</option>
+                  <option value="ELEVE">{t('optHigh')}</option>
                 </select>
               </Field>
             </div>
             <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
               <input type="checkbox" {...register('streetWindow')} className="h-4 w-4 accent-[#00BFA6]" />
-              Vitrine sur rue souhaitée
+              {t('burStreetWindow')}
             </label>
-            <OptionGroup label="Équipements souhaités" options={BUREAUX_EQUIPMENT_OPTIONS} field="bureauxEquipments" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('optDesiredEquipment')} options={BUREAUX_EQUIPMENT_OPTIONS} field="bureauxEquipments" watch={watch} toggle={toggleArrayValue} />
           </Section>
         );
 
       case 'TERRAIN_FONCIER':
         return (
-          <Section title="Critères principaux" icon={Trees}>
+          <Section title={t('mainCriteria')} icon={Trees}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Unité de surface">
+              <Field label={t('terSurfaceUnit')}>
                 <select {...register('surfaceUnit')} className={inputCls}>
                   <option value="M2">m²</option>
-                  <option value="HA">Hectares</option>
+                  <option value="HA">{t('optHectares')}</option>
                 </select>
               </Field>
-              <Field label="Topographie">
+              <Field label={t('terTopography')}>
                 <select {...register('topography')} className={inputCls}>
-                  <option value="">Indifférent</option>
-                  <option value="PLAT">Plat</option>
-                  <option value="PENTE">En pente</option>
+                  <option value="">{t('optIndifferent')}</option>
+                  <option value="PLAT">{t('optFlat')}</option>
+                  <option value="PENTE">{t('optSlope')}</option>
                 </select>
               </Field>
-              <Field label="Surface min"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label="Surface max"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-              <Field label="Constructibilité / COS / PLU" full>
-                <input type="text" placeholder="Précisions sur la constructibilité souhaitée" {...register('constructibility')} className={inputCls} />
+              <Field label={t('terSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label={t('terSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label={t('terConstructibility')} full>
+                <input type="text" placeholder={t('terConstructibilityPlaceholder')} {...register('constructibility')} className={inputCls} />
               </Field>
             </div>
-            <OptionGroup label="Viabilisation souhaitée" options={VIABILISATION_OPTIONS} field="viabilisation" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('terViabilisation')} options={VIABILISATION_OPTIONS} field="viabilisation" watch={watch} toggle={toggleArrayValue} />
           </Section>
         );
 
       case 'HOTELIER':
         return (
-          <Section title="Critères principaux" icon={Hotel}>
+          <Section title={t('mainCriteria')} icon={Hotel}>
             <p className="text-sm text-gray-500 -mt-2">
-              Fiche simplifiée en attendant le formulaire détaillé dédié à l'Hébergement & Séjour.
+              {t('hotHint')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Field label="Surface min (m²)"><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label="Surface max (m²)"><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-              <Field label="Nombre de chambres / suites"><input type="number" {...register('nbRooms')} className={inputCls} /></Field>
+              <Field label={t('burSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
+              <Field label={t('burSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
+              <Field label={t('hotNbRooms')}><input type="number" {...register('nbRooms')} className={inputCls} /></Field>
             </div>
-            <Field label="Classification (étoiles)">
+            <Field label={t('hotClassification')}>
               <select {...register('classification')} className={inputCls}>
-                <option value="">Indifférent</option>
-                <option value="NON_CLASSE">Non classé</option>
-                <option value="1">1 étoile</option>
-                <option value="2">2 étoiles</option>
-                <option value="3">3 étoiles</option>
-                <option value="4">4 étoiles</option>
-                <option value="5">5 étoiles</option>
+                <option value="">{t('optIndifferent')}</option>
+                <option value="NON_CLASSE">{t('optUnclassified')}</option>
+                <option value="1">{t('optStar1')}</option>
+                <option value="2">{t('optStar2')}</option>
+                <option value="3">{t('optStar3')}</option>
+                <option value="4">{t('optStar4')}</option>
+                <option value="5">{t('optStar5')}</option>
               </select>
             </Field>
-            <OptionGroup label="Équipements souhaités" options={HOTELIER_EQUIPMENT_OPTIONS} field="hotelierEquipments" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('optDesiredEquipment')} options={HOTELIER_EQUIPMENT_OPTIONS} field="hotelierEquipments" watch={watch} toggle={toggleArrayValue} />
           </Section>
         );
 
@@ -693,23 +695,23 @@ export default function ResearchPage() {
   };
 
   const renderBudgetStep = () => (
-    <Section title="Budget et Localisation" icon={Ruler}>
+    <Section title={t('budgetTitle')} icon={Ruler}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Field label="Ville (Wilaya)">
+        <Field label={t('budgetCity')}>
           <select {...register('cityId', { valueAsNumber: true })} className={inputCls}>
-            <option value="">Sélectionner...</option>
+            <option value="">{t('optSelect')}</option>
             {cities.map((c) => <option key={c.id} value={c.id}>{c.nameFr || c.name}</option>)}
           </select>
         </Field>
 
-        <Field label="Communes">
+        <Field label={t('budgetTowns')}>
           <select multiple {...register('towns')} className={cn(inputCls, 'h-32')}>
-            {towns.map((t) => <option key={t.id} value={t.id}>{t.nameFr || t.name}</option>)}
+            {towns.map((tw) => <option key={tw.id} value={tw.id}>{tw.nameFr || tw.name}</option>)}
           </select>
         </Field>
 
         {isResidentielAchat && (
-          <Field label="Proximité avec l'aéroport" full>
+          <Field label={t('budgetAirportProximity')} full>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {AIRPORT_PROXIMITY_OPTIONS.map((opt) => (
                 <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={opt.label} onChange={() => setValue('airportProximity', opt.id)} />
@@ -718,21 +720,21 @@ export default function ResearchPage() {
           </Field>
         )}
 
-        <Field label="Date souhaitée">
+        <Field label={t('budgetDesiredDate')}>
           <input type="date" {...register('installationDate')} className={inputCls} />
         </Field>
 
-        <Field label="Budget Min"><input type="number" {...register('minBudget')} className={inputCls} /></Field>
-        <Field label="Budget Max"><input type="number" {...register('maxBudget')} className={inputCls} /></Field>
+        <Field label={t('budgetMin')}><input type="number" {...register('minBudget')} className={inputCls} /></Field>
+        <Field label={t('budgetMax')}><input type="number" {...register('maxBudget')} className={inputCls} /></Field>
 
-        <Field label="Devise">
+        <Field label={t('budgetCurrency')}>
           <select {...register('currency')} className={inputCls}>
             {CURRENCY_OPTIONS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
         </Field>
 
         {isResidentielAchat && (
-          <Field label="Mode de financement">
+          <Field label={t('budgetFinancingMode')}>
             <div className="grid grid-cols-1 gap-3">
               {FINANCING_OPTIONS.map((opt) => (
                 <PillOption key={opt.id} checked={watch('financingMode') === opt.id} label={opt.label} onChange={() => setValue('financingMode', opt.id as any)} />
@@ -741,7 +743,7 @@ export default function ResearchPage() {
           </Field>
         )}
 
-        <Field label="Commentaire" full>
+        <Field label={t('budgetComment')} full>
           <textarea {...register('comment')} rows={3} className={inputCls}></textarea>
           {errors.comment && <span className="text-red-500 text-sm">{errors.comment.message}</span>}
         </Field>
@@ -777,8 +779,8 @@ export default function ResearchPage() {
         return (
           <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
             <div className="flex justify-center gap-8 md:gap-32">
-              <CircleOption active={watch('transaction') === TransactionType.RENTAL} icon={Home} label="Location" size="lg" onClick={() => setValue('transaction', TransactionType.RENTAL)} />
-              <CircleOption active={watch('transaction') === TransactionType.SALE} icon={Key} label="Achat" size="lg" onClick={() => setValue('transaction', TransactionType.SALE)} />
+              <CircleOption active={watch('transaction') === TransactionType.RENTAL} icon={Home} label={t('transactionRental')} size="lg" onClick={() => setValue('transaction', TransactionType.RENTAL)} />
+              <CircleOption active={watch('transaction') === TransactionType.SALE} icon={Key} label={t('transactionSale')} size="lg" onClick={() => setValue('transaction', TransactionType.SALE)} />
             </div>
           </div>
         );
@@ -796,7 +798,7 @@ export default function ResearchPage() {
           <div className="w-full max-w-2xl animate-fade-in space-y-8">
             {isResidentielAchat && (
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-3">Votre situation</label>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('interlocutorSituation')}</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {SITUATION_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={watch('situation') === opt.id} label={opt.label} onChange={() => setValue('situation', opt.id as any)} />
@@ -808,7 +810,7 @@ export default function ResearchPage() {
               <div className="flex items-center gap-2 mb-2">
                 <Handshake className="h-5 w-5 text-[#00BFA6]" />
                 <p className="text-gray-600 text-sm">
-                  {isResidentielAchat ? "Type d'interlocuteur privilégié" : 'Choisissez qui vous souhaitez voir répondre à cette demande.'}
+                  {isResidentielAchat ? t('interlocutorPreferredType') : t('interlocutorChooseWho')}
                 </p>
               </div>
               {options.map((opt) => (
@@ -823,7 +825,7 @@ export default function ResearchPage() {
         const showManualForm = !loggedInUser || !useMyInfo;
         return (
           <div className="w-full max-w-4xl animate-fade-in space-y-10">
-            <Section title="Vos coordonnées" icon={MapPin}>
+            <Section title={t('contactTitle')} icon={MapPin}>
               {loggedInUser && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
@@ -831,7 +833,7 @@ export default function ResearchPage() {
                     onClick={() => setUseMyInfo(true)}
                     className={cn('p-4 rounded-xl border-2 text-left transition-all', useMyInfo ? 'border-[#00BFA6] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
                   >
-                    <div className="font-bold text-gray-900 text-sm">Utiliser mes informations</div>
+                    <div className="font-bold text-gray-900 text-sm">{t('contactUseMyInfo')}</div>
                     <div className="text-xs text-gray-500 mt-1 truncate">
                       {loggedInUser.userType === 'SOCIETE' ? loggedInUser.companyName : `${loggedInUser.firstName || ''} ${loggedInUser.lastName || ''}`.trim()} · {loggedInUser.email}
                     </div>
@@ -841,8 +843,8 @@ export default function ResearchPage() {
                     onClick={() => setUseMyInfo(false)}
                     className={cn('p-4 rounded-xl border-2 text-left transition-all', !useMyInfo ? 'border-[#00BFA6] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
                   >
-                    <div className="font-bold text-gray-900 text-sm">Saisir d'autres informations</div>
-                    <div className="text-xs text-gray-500 mt-1">Pour une autre personne ou société</div>
+                    <div className="font-bold text-gray-900 text-sm">{t('contactEnterOtherInfo')}</div>
+                    <div className="text-xs text-gray-500 mt-1">{t('contactForOtherPersonOrCompany')}</div>
                   </button>
                 </div>
               )}
@@ -851,24 +853,24 @@ export default function ResearchPage() {
                 <>
                   <div className="flex justify-center gap-4 mb-2">
                     <label className="flex items-center gap-2 font-bold text-gray-900">
-                      <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#00BFA6]" /> Particulier
+                      <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#00BFA6]" /> {t('contactParticulier')}
                     </label>
                     <label className="flex items-center gap-2 font-bold text-gray-900">
-                      <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#00BFA6]" /> Société
+                      <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#00BFA6]" /> {t('contactSociete')}
                     </label>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Field label="Nom"><input type="text" {...register('lastName')} className={inputCls} /></Field>
-                    <Field label="Prénom"><input type="text" {...register('firstName')} className={inputCls} /></Field>
-                    <Field label="E-mail"><input type="email" {...register('email')} className={inputCls} /></Field>
-                    <Field label="Téléphone"><input type="tel" {...register('phone')} className={inputCls} /></Field>
-                    <Field label="Adresse" full><input type="text" {...register('address')} className={inputCls} /></Field>
+                    <Field label={t('contactLastName')}><input type="text" {...register('lastName')} className={inputCls} /></Field>
+                    <Field label={t('contactFirstName')}><input type="text" {...register('firstName')} className={inputCls} /></Field>
+                    <Field label={t('contactEmail')}><input type="email" {...register('email')} className={inputCls} /></Field>
+                    <Field label={t('contactPhone')}><input type="tel" {...register('phone')} className={inputCls} /></Field>
+                    <Field label={t('contactAddress')} full><input type="text" {...register('address')} className={inputCls} /></Field>
 
                     {watch('userType') === 'SOCIETE' && (
                       <>
-                        <Field label="Nom de la société"><input type="text" {...register('companyName')} className={inputCls} /></Field>
-                        <Field label="Activité"><input type="text" {...register('activity')} className={inputCls} /></Field>
+                        <Field label={t('contactCompanyName')}><input type="text" {...register('companyName')} className={inputCls} /></Field>
+                        <Field label={t('contactActivity')}><input type="text" {...register('activity')} className={inputCls} /></Field>
                       </>
                     )}
                   </div>
@@ -878,11 +880,11 @@ export default function ResearchPage() {
               <div className="space-y-3 mt-2">
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
                   <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 accent-[#00BFA6]" />
-                  Je confie ma recherche au professionnel du patrimoine immobilier.
+                  {t('contactIsDelegate')}
                 </label>
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
                   <input type="checkbox" {...register('receiveAlert')} className="h-4 w-4 accent-[#00BFA6]" />
-                  Je souhaite créer une alerte mail pour cette recherche.
+                  {t('contactReceiveAlert')}
                 </label>
               </div>
             </Section>
@@ -946,7 +948,7 @@ export default function ResearchPage() {
                 className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium mr-4"
               >
                 <ArrowLeft className="h-5 w-5" />
-                Retour
+                {t('back')}
               </button>
             )}
             <h1 className="text-lg md:text-2xl font-bold text-gray-800">{STEP_LABELS[currentStep]}</h1>
@@ -964,7 +966,7 @@ export default function ResearchPage() {
                 disabled={isNextDisabled}
                 className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
               >
-                Continuer
+                {t('continueBtn')}
               </button>
             ) : (
               <button
@@ -972,7 +974,7 @@ export default function ResearchPage() {
                 disabled={loading}
                 className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
               >
-                {loading ? 'Envoi...' : 'Confier ma recherche'}
+                {loading ? t('sending') : t('submit')}
               </button>
             )}
           </div>

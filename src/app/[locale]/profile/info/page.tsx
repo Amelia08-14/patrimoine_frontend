@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User, Lock, Save, Loader2, Building2, Upload, Check } from "lucide-react";
 
 export default function ProfileInfoPage() {
+  const t = useTranslations("ProfileInfo");
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -120,30 +122,30 @@ export default function ProfileInfoPage() {
 
             localStorage.setItem('user', JSON.stringify({ ...user, ...updatedUser }));
             setUser({ ...user, ...updatedUser });
-            alert("Profil mis à jour avec succès !");
-            
+            alert(t("updateSuccess"));
+
             // Si le mot de passe a été changé, on peut réinitialiser les champs
             if (formData.newPassword) {
                 setFormData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
             }
         } else {
             const text = await response.text().catch(() => "");
-            alert(text || "Erreur lors de la mise à jour");
+            alert(text || t("updateError"));
         }
     } catch (error) {
         console.error(error);
-        alert("Erreur lors de la mise à jour");
+        alert(t("updateError"));
     } finally {
         setSaving(false);
     }
   };
 
-  if (loading) return <div className="p-10 text-center">Chargement...</div>;
+  if (loading) return <div className="p-10 text-center">{t("loading")}</div>;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
-            <User className="text-[#00BFA6] fill-current" /> Mon Profil
+            <User className="text-[#00BFA6] fill-current" /> {t("title")}
         </h1>
         
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -151,11 +153,11 @@ export default function ProfileInfoPage() {
                 
                 {/* Personal Info */}
                 <div>
-                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Informations Personnelles</h2>
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">{t("personalInfoTitle")}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Prénom</label>
-                            <Input 
+                            <label className="text-sm font-medium text-gray-700">{t("firstName")}</label>
+                            <Input
                                 name="firstName" 
                                 value={formData.firstName} 
                                 onChange={handleChange} 
@@ -163,16 +165,16 @@ export default function ProfileInfoPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Nom</label>
-                            <Input 
-                                name="lastName" 
+                            <label className="text-sm font-medium text-gray-700">{t("lastName")}</label>
+                            <Input
+                                name="lastName"
                                 value={formData.lastName} 
                                 onChange={handleChange} 
                                 className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Email</label>
+                            <label className="text-sm font-medium text-gray-700">{t("email")}</label>
                             <Input 
                                 name="email" 
                                 value={formData.email} 
@@ -181,7 +183,7 @@ export default function ProfileInfoPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Téléphone</label>
+                            <label className="text-sm font-medium text-gray-700">{t("phone")}</label>
                             <Input 
                                 name="phone" 
                                 value={formData.phone} 
@@ -190,7 +192,7 @@ export default function ProfileInfoPage() {
                             />
                         </div>
                         <div className="col-span-1 md:col-span-2 space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Adresse</label>
+                            <label className="text-sm font-medium text-gray-700">{t("address")}</label>
                             <Input 
                                 name="address" 
                                 value={formData.address} 
@@ -205,21 +207,21 @@ export default function ProfileInfoPage() {
                 {user.userType === 'SOCIETE' && (
                     <div>
                         <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
-                            <Building2 className="w-5 h-5 text-gray-400" /> Informations Société
+                            <Building2 className="w-5 h-5 text-gray-400" /> {t("companyInfoTitle")}
                         </h2>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Raison Sociale</label>
-                                <Input 
-                                    name="companyName" 
-                                    value={formData.companyName} 
-                                    onChange={handleChange} 
-                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
+                                <label className="text-sm font-medium text-gray-700">{t("companyName")}</label>
+                                <Input
+                                    name="companyName"
+                                    value={formData.companyName}
+                                    onChange={handleChange}
+                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Poste du représentant</label>
+                                <label className="text-sm font-medium text-gray-700">{t("position")}</label>
                                 <Input 
                                     name="position" 
                                     value={formData.position} 
@@ -231,7 +233,7 @@ export default function ProfileInfoPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">NIF (Numéro d'Identification Fiscale)</label>
+                                <label className="text-sm font-medium text-gray-700">{t("nifLabel")}</label>
                                 <Input
                                     name="nif"
                                     value={formData.nif}
@@ -240,7 +242,7 @@ export default function ProfileInfoPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">NIS (Numéro d'Identification Statistique)</label>
+                                <label className="text-sm font-medium text-gray-700">{t("nisLabel")}</label>
                                 <Input
                                     name="nis"
                                     value={formData.nis}
@@ -249,7 +251,7 @@ export default function ProfileInfoPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Date d'expiration de l'agrément</label>
+                                <label className="text-sm font-medium text-gray-700">{t("agreementExpiryLabel")}</label>
                                 <Input
                                     type="date"
                                     name="agreementExpiryDate"
@@ -257,19 +259,19 @@ export default function ProfileInfoPage() {
                                     onChange={handleChange}
                                     className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
                                 />
-                                <p className="text-xs text-gray-400">Vos services professionnels sont désactivés automatiquement à cette date si elle n&apos;est pas renouvelée.</p>
+                                <p className="text-xs text-gray-400">{t("agreementExpiryHint")}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Registre Commerce</label>
+                                <label className="text-sm font-medium text-gray-700">{t("rcLabel")}</label>
                                 <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.rcDocument || user.rcDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.rcDocument || user.rcDocumentUrl ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.rcDocument ? files.rcDocument.name : 'Document existant'}</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.rcDocument ? files.rcDocument.name : t("existingDocument")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                            <><Upload className="w-4 h-4" /> {t("updateFile")}</>
                                         )}
                                     </span>
                                     <input type="file" name="rcDocument" onChange={handleFileChange} className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
@@ -277,13 +279,13 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Agrément</label>
+                                <label className="text-sm font-medium text-gray-700">{t("agreementLabel")}</label>
                                 <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agreementDocument || user.agreementDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.agreementDocument || user.agreementDocumentUrl ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agreementDocument ? files.agreementDocument.name : 'Document existant'}</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agreementDocument ? files.agreementDocument.name : t("existingDocument")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                            <><Upload className="w-4 h-4" /> {t("updateFile")}</>
                                         )}
                                     </span>
                                     <input type="file" name="agreementDocument" onChange={handleFileChange} className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
@@ -291,13 +293,13 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Logo de l'agence</label>
+                                <label className="text-sm font-medium text-gray-700">{t("logoLabel")}</label>
                                 <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agencyLogo || user.agencyLogoUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.agencyLogo || user.agencyLogoUrl ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agencyLogo ? files.agencyLogo.name : 'Logo existant'}</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agencyLogo ? files.agencyLogo.name : t("existingLogo")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                            <><Upload className="w-4 h-4" /> {t("updateFile")}</>
                                         )}
                                     </span>
                                     <input type="file" name="agencyLogo" onChange={handleFileChange} className="hidden" accept=".jpg,.jpeg,.png,.svg,.webp" />
@@ -307,13 +309,13 @@ export default function ProfileInfoPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Justificatif NIF</label>
+                                <label className="text-sm font-medium text-gray-700">{t("nifDocLabel")}</label>
                                 <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.nifDocument || user.nifDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.nifDocument || user.nifDocumentUrl ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.nifDocument ? files.nifDocument.name : 'Document existant'}</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.nifDocument ? files.nifDocument.name : t("existingDocument")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                            <><Upload className="w-4 h-4" /> {t("updateFile")}</>
                                         )}
                                     </span>
                                     <input type="file" name="nifDocument" onChange={handleFileChange} className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
@@ -321,13 +323,13 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Justificatif NIS</label>
+                                <label className="text-sm font-medium text-gray-700">{t("nisDocLabel")}</label>
                                 <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.nisDocument || user.nisDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.nisDocument || user.nisDocumentUrl ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.nisDocument ? files.nisDocument.name : 'Document existant'}</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.nisDocument ? files.nisDocument.name : t("existingDocument")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                            <><Upload className="w-4 h-4" /> {t("updateFile")}</>
                                         )}
                                     </span>
                                     <input type="file" name="nisDocument" onChange={handleFileChange} className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
@@ -335,13 +337,13 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Justificatif INAPI <span className="text-gray-400 font-normal">(si nom de marque absent du RC)</span></label>
+                                <label className="text-sm font-medium text-gray-700">{t("inapiDocLabel")} <span className="text-gray-400 font-normal">{t("inapiDocHint")}</span></label>
                                 <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.inapiDocument || user.inapiDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.inapiDocument || user.inapiDocumentUrl ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.inapiDocument ? files.inapiDocument.name : 'Document existant'}</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.inapiDocument ? files.inapiDocument.name : t("existingDocument")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Mettre à jour</>
+                                            <><Upload className="w-4 h-4" /> {t("updateFile")}</>
                                         )}
                                     </span>
                                     <input type="file" name="inapiDocument" onChange={handleFileChange} className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
@@ -354,23 +356,23 @@ export default function ProfileInfoPage() {
                 {/* Password Change */}
                 <div>
                     <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
-                        <Lock className="w-5 h-5 text-gray-400" /> Sécurité
+                        <Lock className="w-5 h-5 text-gray-400" /> {t("securityTitle")}
                     </h2>
                     <div className="grid grid-cols-1 gap-6 max-w-md">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Nouveau mot de passe</label>
-                            <Input 
+                            <label className="text-sm font-medium text-gray-700">{t("newPassword")}</label>
+                            <Input
                                 type="password"
-                                name="newPassword" 
-                                value={formData.newPassword} 
-                                onChange={handleChange} 
-                                placeholder="Laisser vide pour ne pas changer"
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
+                                name="newPassword"
+                                value={formData.newPassword}
+                                onChange={handleChange}
+                                placeholder={t("newPasswordPlaceholder")}
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
                             />
                         </div>
                         {formData.newPassword && (
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
+                                <label className="text-sm font-medium text-gray-700">{t("confirmPassword")}</label>
                                 <Input 
                                     type="password"
                                     name="confirmPassword" 
@@ -390,9 +392,9 @@ export default function ProfileInfoPage() {
                         className="bg-[#00BFA6] hover:bg-[#00908A] text-white font-bold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all min-w-[200px]"
                     >
                         {saving ? (
-                            <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Enregistrement...</>
+                            <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> {t("saving")}</>
                         ) : (
-                            <><Save className="w-5 h-5 mr-2" /> Enregistrer les modifications</>
+                            <><Save className="w-5 h-5 mr-2" /> {t("saveChanges")}</>
                         )}
                     </Button>
                 </div>

@@ -4,6 +4,7 @@ import { useEffect, useState, type ComponentType } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Link } from "@/i18n/navigation"
 import { Lock, Mail, Phone, Building2, User, Building, Hotel, PartyPopper, Warehouse, Loader2 } from "lucide-react"
@@ -17,117 +18,73 @@ const numberFromForm = z.preprocess((v) => {
   return v
 }, z.number().optional())
 
-const registerSchema = z.object({
-  userType: z.enum(["PARTICULIER", "SOCIETE"]),
-  email: z.string().email("Email invalide"),
-  password: z.string().min(6, "Mot de passe trop court"),
-  confirmPassword: z.string(),
-  phone: z.string().min(9, "Numéro de téléphone invalide"),
-  
-  // Particulier
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-
-  // Société
-  companyName: z.string().optional(),
-  activityType: z.string().optional(),
-  commercialRegister: z.string().optional(),
-  cityCode: numberFromForm,
-  townCode: numberFromForm,
-}).superRefine((data, ctx) => {
-  if (data.password !== data.confirmPassword) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Les mots de passe ne correspondent pas",
-      path: ["confirmPassword"],
-    });
-  }
-  if (data.userType === "PARTICULIER") {
-    if (!data.firstName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Prénom requis", path: ["firstName"] });
-    if (!data.lastName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nom requis", path: ["lastName"] });
-  }
-  if (data.userType === "SOCIETE") {
-    if (!data.companyName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Raison sociale requise", path: ["companyName"] });
-    if (!data.activityType) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type d'activité requis", path: ["activityType"] });
-    if (!data.commercialRegister) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Registre de commerce requis", path: ["commercialRegister"] });
-    if (!data.cityCode) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Wilaya requise", path: ["cityCode"] });
-    if (!data.townCode) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Commune requise", path: ["townCode"] });
-  }
-});
-
-type RegisterFormInput = z.input<typeof registerSchema>
-type RegisterFormOutput = z.output<typeof registerSchema>
-
 type ActivityFamilyId = "IMMOBILIER" | "HOTELLERIE" | "EVENEMENTIEL" | "ENTREPOSAGE"
 
 const ACTIVITY_FAMILIES: Array<{
   id: ActivityFamilyId
-  label: string
   image: string
   icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
   accent: string
-  items: Array<{ id: string; label: string }>
+  items: Array<{ id: string }>
 }> = [
   {
     id: "IMMOBILIER",
-    label: "Activités Immobilières",
     image: "/immobilier.jpg",
     icon: Building,
     accent: "text-[#00BFA6]",
     items: [
-      { id: "AGENCE_IMMOBILIERE", label: "Agence Immobilière" },
-      { id: "PROMOTEUR_IMMOBILIER", label: "Promoteur Immobilier" },
-      { id: "ADMINISTRATEUR_BIENS", label: "Administrateur de biens" },
-      { id: "AUTRES_PROFESSIONNELS", label: "Autres Professionnels" },
+      { id: "AGENCE_IMMOBILIERE" },
+      { id: "PROMOTEUR_IMMOBILIER" },
+      { id: "ADMINISTRATEUR_BIENS" },
+      { id: "AUTRES_PROFESSIONNELS" },
     ],
   },
   {
     id: "HOTELLERIE",
-    label: "Activité Hôtelière et\nHébergement",
     image: "/hotel.jpg",
     icon: Hotel,
     accent: "text-orange-500",
     items: [
-      { id: "HOTEL", label: "Hôtel" },
-      { id: "COMPLEXE_TOURISTIQUE", label: "Complexe Touristiques" },
-      { id: "VILLAGE_VACANCES", label: "Village de vacances" },
-      { id: "APPART_HOTEL", label: "Appart Hôtel" },
-      { id: "RESIDENCE_HOTELIERE", label: "Résidence Hôtelière" },
-      { id: "MOTEL", label: "Motel" },
-      { id: "RELAIS_ROUTIER", label: "Relais routier" },
-      { id: "CAMPING_TOURISTIQUE", label: "Camping Touristique" },
-      { id: "AUTRES_STRUCTURES", label: "Autres Structures" },
+      { id: "HOTEL" },
+      { id: "COMPLEXE_TOURISTIQUE" },
+      { id: "VILLAGE_VACANCES" },
+      { id: "APPART_HOTEL" },
+      { id: "RESIDENCE_HOTELIERE" },
+      { id: "MOTEL" },
+      { id: "RELAIS_ROUTIER" },
+      { id: "CAMPING_TOURISTIQUE" },
+      { id: "AUTRES_STRUCTURES" },
     ],
   },
   {
     id: "EVENEMENTIEL",
-    label: "Activité évènementiel",
     image: "/event.jpg",
     icon: PartyPopper,
     accent: "text-red-500",
     items: [
-      { id: "SALLE_DES_FETES", label: "Salle Des fêtes" },
-      { id: "SALLES_DINATOIRES", label: "Salles Dinatoires" },
-      { id: "SALLE_FORMATION", label: "Salle de formation" },
-      { id: "SALLE_CONFERENCE", label: "Salle de conférence" },
-      { id: "AUTRES_EVENEMENTIEL", label: "Autres" },
+      { id: "SALLE_DES_FETES" },
+      { id: "SALLES_DINATOIRES" },
+      { id: "SALLE_FORMATION" },
+      { id: "SALLE_CONFERENCE" },
+      { id: "AUTRES_EVENEMENTIEL" },
     ],
   },
   {
     id: "ENTREPOSAGE",
-    label: "Activités d'entreposage et de stockage",
     image: "/stockage.jpg",
     icon: Warehouse,
     accent: "text-slate-600",
     items: [
-      { id: "ENTREPOSAGE_FRIGORIFIQUE", label: "Entreposage et stockage frigorifiques" },
-      { id: "ENTREPOSAGE_NON_FRIGORIFIQUE", label: "Entreposage et stockage non frigorifiques" },
-      { id: "AUTRES_ENTREPOSAGE_STOCKAGE", label: "Autres" },
+      { id: "ENTREPOSAGE_FRIGORIFIQUE" },
+      { id: "ENTREPOSAGE_NON_FRIGORIFIQUE" },
+      { id: "AUTRES_ENTREPOSAGE_STOCKAGE" },
     ],
   },
 ]
 
 export default function RegisterPage() {
+  const t = useTranslations("Auth.register")
+  const tActivities = useTranslations("RegisterActivities")
   const [isLoading, setIsLoading] = useState(false)
   const [userType, setUserType] = useState<"PARTICULIER" | "SOCIETE">("PARTICULIER")
   const [activityFamily, setActivityFamily] = useState<ActivityFamilyId | null>(null)
@@ -135,6 +92,43 @@ export default function RegisterPage() {
   const [towns, setTowns] = useState<Array<{ id: number; nameFr?: string; name?: string }>>([])
   const [isLoadingCities, setIsLoadingCities] = useState(false)
   const [isLoadingTowns, setIsLoadingTowns] = useState(false)
+
+  const registerSchema = z.object({
+    userType: z.enum(["PARTICULIER", "SOCIETE"]),
+    email: z.string().email(t("invalidEmail")),
+    password: z.string().min(6, t("passwordTooShort")),
+    confirmPassword: z.string(),
+    phone: z.string().min(9, t("invalidPhone")),
+
+    // Particulier
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+
+    // Société
+    companyName: z.string().optional(),
+    activityType: z.string().optional(),
+    commercialRegister: z.string().optional(),
+    cityCode: numberFromForm,
+    townCode: numberFromForm,
+  }).superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("passwordMismatch"), path: ["confirmPassword"] });
+    }
+    if (data.userType === "PARTICULIER") {
+      if (!data.firstName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("firstNameRequired"), path: ["firstName"] });
+      if (!data.lastName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("lastNameRequired"), path: ["lastName"] });
+    }
+    if (data.userType === "SOCIETE") {
+      if (!data.companyName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("companyNameRequired"), path: ["companyName"] });
+      if (!data.activityType) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("activityTypeRequired"), path: ["activityType"] });
+      if (!data.commercialRegister) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("commercialRegisterRequired"), path: ["commercialRegister"] });
+      if (!data.cityCode) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("wilayaRequired"), path: ["cityCode"] });
+      if (!data.townCode) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("communeRequired"), path: ["townCode"] });
+    }
+  });
+
+  type RegisterFormInput = z.input<typeof registerSchema>
+  type RegisterFormOutput = z.output<typeof registerSchema>
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<RegisterFormInput, any, RegisterFormOutput>({
     resolver: zodResolver(registerSchema),
@@ -230,18 +224,18 @@ export default function RegisterPage() {
 
       if (response.ok) {
         // Rediriger vers une page de succès ou afficher un message modal
-        alert("Inscription réussie ! Veuillez vérifier la console du serveur pour le lien d'activation (Simulation Locale).")
+        alert(t("successMessage"))
         // Optionnel: window.location.href = '/auth/check-email'
       } else {
         const errorData = await response.json()
         if (response.status === 409) {
-          alert("Cet email est déjà utilisé. Veuillez vous connecter.")
+          alert(t("emailAlreadyUsed"))
         } else {
-          alert(`Erreur: ${errorData.message}`)
+          alert(t("genericError", { message: errorData.message }))
         }
       }
     } catch (error) {
-      alert("Une erreur est survenue lors de l'inscription.")
+      alert(t("catchError"))
     } finally {
       setIsLoading(false)
     }
@@ -287,27 +281,20 @@ export default function RegisterPage() {
                   userType === 'PARTICULIER' ? "bg-[#00BFA6]/20 text-[#00BFA6]" : "bg-blue-500/20 text-blue-400"
                 )}>
                   {userType === 'PARTICULIER' ? <User size={16} /> : <Building2 size={16} />}
-                  {userType === 'PARTICULIER' ? "Espace Particulier" : (selectedFamily?.label || "Espace Professionnel")}
+                  {userType === 'PARTICULIER' ? t("particulierSpaceBadge") : (selectedFamily ? tActivities(`families.${selectedFamily.id}`) : t("professionalSpaceBadge"))}
                 </div>
 
                 <h1 className="text-5xl font-bold text-white leading-tight">
-                  {userType === 'PARTICULIER' ? (
-                    <>
-                      Trouvez le bien<br/>
-                      de vos <span className="text-[#00BFA6]">rêves.</span>
-                    </>
-                  ) : (
-                    <>
-                      Développez votre<br/>
-                      <span className="text-blue-400">Patrimoine.</span>
-                    </>
-                  )}
+                  {userType === 'PARTICULIER'
+                    ? t.rich("heroParticulier", { hl: (chunks) => <span className="text-[#00BFA6]">{chunks}</span> })
+                    : t.rich("heroSociete", { hl: (chunks) => <span className="text-blue-400">{chunks}</span> })
+                  }
                 </h1>
-                
+
                 <p className="text-gray-300 text-lg leading-relaxed max-w-md">
-                  {userType === 'PARTICULIER' 
-                    ? "Accédez à des milliers d'annonces exclusives et gérez vos favoris en toute simplicité."
-                    : "Une suite d'outils puissants pour les agences, promoteurs et professionnels de l'immobilier."
+                  {userType === 'PARTICULIER'
+                    ? t("particulierDescription")
+                    : t("societeDescription")
                   }
                 </p>
              </div>
@@ -328,7 +315,7 @@ export default function RegisterPage() {
            </div>
 
            <div className="text-sm text-gray-400 font-medium">
-             © 2026 Patrimoine Immobilier.
+             © {new Date().getFullYear()} Patrimoine Immobilier.
            </div>
          </div>
       </div>
@@ -336,11 +323,11 @@ export default function RegisterPage() {
       {/* Right Side - Form (Full height, 55% width, Scrollable) */}
       <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 overflow-y-auto bg-white">
         <div className="w-full max-w-2xl space-y-6 sm:space-y-8 pb-16 md:pb-0">
-          
+
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Créer un compte</h2>
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t("title")}</h2>
             <p className="mt-2 text-gray-500">
-              Sélectionnez votre type de compte pour commencer.
+              {t("subtitle")}
             </p>
           </div>
 
@@ -371,9 +358,9 @@ export default function RegisterPage() {
                   "block text-sm font-extrabold transition-colors",
                   userType === "PARTICULIER" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                 )}>
-                  Particulier
+                  {t("particulierLabel")}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium">Pour usage personnel</span>
+                <span className="text-[10px] text-gray-400 font-medium">{t("particulierHint")}</span>
               </div>
             </button>
 
@@ -402,9 +389,9 @@ export default function RegisterPage() {
                   "block text-sm font-extrabold transition-colors",
                   userType === "SOCIETE" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                 )}>
-                  Société
+                  {t("societeLabel")}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium">Pour les professionnels</span>
+                <span className="text-[10px] text-gray-400 font-medium">{t("societeHint")}</span>
               </div>
             </button>
           </div>
@@ -420,7 +407,7 @@ export default function RegisterPage() {
                   <input
                     {...register("firstName")}
                     className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                    placeholder="Prénom *"
+                    placeholder={t("firstNamePlaceholder")}
                   />
                   {errors.firstName && <p className="text-red-500 text-xs pl-1">{errors.firstName.message}</p>}
                 </div>
@@ -428,7 +415,7 @@ export default function RegisterPage() {
                   <input
                     {...register("lastName")}
                     className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                    placeholder="Nom *"
+                    placeholder={t("lastNamePlaceholder")}
                   />
                   {errors.lastName && <p className="text-red-500 text-xs pl-1">{errors.lastName.message}</p>}
                 </div>
@@ -479,7 +466,7 @@ export default function RegisterPage() {
                                 isActive ? "text-[#00BFA6]" : "text-gray-600 group-hover:text-[#00BFA6]"
                               )}
                             >
-                              {family.label}
+                              {tActivities(`families.${family.id}`)}
                             </span>
                           </button>
                         )
@@ -503,7 +490,7 @@ export default function RegisterPage() {
                                 : "border-[#00BFA6]/35 text-gray-700 bg-white hover:bg-gray-50 hover:border-[#00BFA6]"
                             )}
                           >
-                            {item.label}
+                            {tActivities(`items.${item.id}`)}
                           </button>
                         ))}
                       </div>
@@ -515,7 +502,7 @@ export default function RegisterPage() {
                    <input
                       {...register("companyName")}
                       className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                      placeholder="Raison sociale (Nom de la société) *"
+                      placeholder={t("companyNamePlaceholder")}
                    />
                    {errors.companyName && <p className="text-red-500 text-xs pl-1">{errors.companyName.message}</p>}
                  </div>
@@ -524,7 +511,7 @@ export default function RegisterPage() {
                    <input
                      {...register("commercialRegister")}
                      className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                     placeholder="Registre de commerce *"
+                     placeholder={t("commercialRegisterPlaceholder")}
                    />
                    {errors.commercialRegister && <p className="text-red-500 text-xs pl-1">{errors.commercialRegister.message}</p>}
                  </div>
@@ -537,7 +524,7 @@ export default function RegisterPage() {
                          className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900"
                          disabled={isLoadingCities}
                        >
-                         <option value="">Wilaya *</option>
+                         <option value="">{t("wilayaPlaceholder")}</option>
                          {cities.map((c) => (
                            <option key={c.id} value={c.id}>
                              {c.nameFr || c.name || `Wilaya ${c.id}`}
@@ -560,7 +547,7 @@ export default function RegisterPage() {
                          className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900"
                          disabled={!selectedCityCode || isLoadingTowns}
                        >
-                         <option value="">Commune *</option>
+                         <option value="">{t("communePlaceholder")}</option>
                          {towns.map((t) => (
                            <option key={t.id} value={t.id}>
                              {t.nameFr || t.name || `Commune ${t.id}`}
@@ -589,7 +576,7 @@ export default function RegisterPage() {
                   {...register("email")}
                   type="email"
                   className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                  placeholder="Adresse email *"
+                  placeholder={t("emailPlaceholder")}
                 />
               </div>
               {errors.email && <p className="text-red-500 text-xs pl-1">{errors.email.message}</p>}
@@ -602,7 +589,7 @@ export default function RegisterPage() {
                   {...register("phone")}
                   type="tel"
                   className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                  placeholder="Numéro de téléphone *"
+                  placeholder={t("phonePlaceholder")}
                 />
               </div>
               {errors.phone && <p className="text-red-500 text-xs pl-1">{errors.phone.message}</p>}
@@ -616,7 +603,7 @@ export default function RegisterPage() {
                       {...register("password")}
                       type="password"
                       className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                      placeholder="Mot de passe *"
+                      placeholder={t("passwordPlaceholder")}
                     />
                   </div>
                   <div className="relative group">
@@ -627,7 +614,7 @@ export default function RegisterPage() {
                       {...register("confirmPassword")}
                       type="password"
                       className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                      placeholder="Confirmer *"
+                      placeholder={t("confirmPasswordPlaceholder")}
                     />
                   </div>
               </div>
@@ -640,16 +627,16 @@ export default function RegisterPage() {
 
             <div className="pt-4">
               <Button type="submit" disabled={isLoading} className="w-full py-4 h-auto rounded-xl bg-[#00BFA6] hover:bg-[#00908A] text-white font-bold text-lg shadow-lg shadow-[#00BFA6]/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
-                {isLoading ? "Création en cours..." : "Créer mon compte"}
+                {isLoading ? t("submitting") : t("submit")}
               </Button>
             </div>
           </form>
 
           <div className="text-center">
             <p className="text-sm text-gray-500">
-              Déjà un compte ?{' '}
+              {t("alreadyAccount")}{' '}
               <Link href="/auth/login" className="font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
-                Se connecter
+                {t("login")}
               </Link>
             </p>
           </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { 
   ChevronDown, Search, MapPin, Building2, Home, Hotel, Tent, Factory, BedDouble, 
@@ -44,6 +45,7 @@ interface AnnounceFilterProps {
 }
 
 export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFilterProps) {
+  const t = useTranslations("AnnounceFilter")
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -88,8 +90,8 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
 
   const selectedWilayaName = filters.wilaya ? WILAYAS.find(w => w.code === filters.wilaya)?.name : ""
   const selectedCommuneName = filters.commune ? filteredCommunes.find(c => c.id === filters.commune)?.name : ""
-  const selectedCategoryLabel = filters.realEstateCategory ? REAL_ESTATE_CATEGORIES.find(c => c.id === filters.realEstateCategory)?.label : "Tout"
-  const selectedPropertyTypeLabel = filters.propertyType ? PROPERTY_TYPES.find(t => t.id === filters.propertyType)?.label : "Tout"
+  const selectedCategoryLabel = filters.realEstateCategory ? REAL_ESTATE_CATEGORIES.find(c => c.id === filters.realEstateCategory)?.label : t("all")
+  const selectedPropertyTypeLabel = filters.propertyType ? PROPERTY_TYPES.find(pt => pt.id === filters.propertyType)?.label : t("all")
 
   return (
     <div className="w-full" ref={dropdownRef}>
@@ -103,22 +105,22 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                   className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'sortBy' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tri par</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("sortBy")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'sortBy' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className="font-bold text-sm text-gray-700 truncate">
-                        {filters.sortBy === 'LAST_MODIFIED_DATE_DESC' && 'Plus récents'}
-                        {filters.sortBy === 'PRICE_ASC' && 'Prix croissant'}
-                        {filters.sortBy === 'PRICE_DESC' && 'Prix décroissant'}
+                        {filters.sortBy === 'LAST_MODIFIED_DATE_DESC' && t("sortRecent")}
+                        {filters.sortBy === 'PRICE_ASC' && t("sortPriceAsc")}
+                        {filters.sortBy === 'PRICE_DESC' && t("sortPriceDesc")}
                     </div>
                 </div>
-                
+
                 {openDropdown === 'sortBy' && (
                     <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
                         {[
-                            { value: 'LAST_MODIFIED_DATE_DESC', label: 'Plus récents' },
-                            { value: 'PRICE_ASC', label: 'Prix croissant' },
-                            { value: 'PRICE_DESC', label: 'Prix décroissant' }
+                            { value: 'LAST_MODIFIED_DATE_DESC', label: t("sortRecent") },
+                            { value: 'PRICE_ASC', label: t("sortPriceAsc") },
+                            { value: 'PRICE_DESC', label: t("sortPriceDesc") }
                         ].map((option) => (
                             <div 
                                 key={option.value}
@@ -143,22 +145,22 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                   className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'transactionType' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Transaction</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("transaction")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'transactionType' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className="font-bold text-sm text-gray-700 truncate">
-                        {filters.transactionType === 'RENTAL' && 'Location'}
-                        {filters.transactionType === 'SALE' && 'Vente'}
-                        {filters.transactionType === 'HOLIDAY_RENTAL' && 'Vacances'}
+                        {filters.transactionType === 'RENTAL' && t("transactionRental")}
+                        {filters.transactionType === 'SALE' && t("transactionSale")}
+                        {filters.transactionType === 'HOLIDAY_RENTAL' && t("transactionHoliday")}
                     </div>
                 </div>
 
                 {openDropdown === 'transactionType' && (
                     <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
                          {[
-                            { value: 'RENTAL', label: 'Location' },
-                            { value: 'SALE', label: 'Vente' },
-                            { value: 'HOLIDAY_RENTAL', label: 'Vacances' }
+                            { value: 'RENTAL', label: t("transactionRental") },
+                            { value: 'SALE', label: t("transactionSale") },
+                            { value: 'HOLIDAY_RENTAL', label: t("transactionHoliday") }
                         ].map((option) => (
                             <div 
                                 key={option.value}
@@ -183,7 +185,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                   className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'realEstateCategory' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Immobilier</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("realEstateCategory")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'realEstateCategory' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className="font-bold text-sm text-gray-700 truncate">
@@ -202,7 +204,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                             className={`p-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer flex flex-col items-center justify-center gap-2 border ${!filters.realEstateCategory ? 'border-[#00BFA6] bg-teal-50 text-[#00BFA6]' : 'border-gray-100 text-gray-600'}`}
                         >
                             <LayoutGrid className="h-5 w-5" />
-                            <span className="font-medium text-center">Tout</span>
+                            <span className="font-medium text-center">{t("all")}</span>
                         </div>
                         {REAL_ESTATE_CATEGORIES.map((cat) => {
                             const Icon = getIcon(cat.iconName)
@@ -232,7 +234,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                   className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'propertyType' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Type de bien</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("propertyType")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'propertyType' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className={`font-bold text-sm truncate ${!filters.realEstateCategory ? 'text-gray-400' : 'text-gray-700'}`}>
@@ -244,11 +246,11 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                     <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden p-3">
                         {!filters.realEstateCategory ? (
                             <div className="text-center py-4 text-gray-500 text-sm">
-                                Veuillez choisir le type d'immobilier d'abord
+                                {t("chooseCategoryFirst")}
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                                <div 
+                                <div
                                     onClick={() => {
                                         onFilterChange('propertyType', '')
                                         setOpenDropdown(null)
@@ -256,7 +258,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                                     className={`p-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer flex flex-col items-center justify-center gap-1 border ${!filters.propertyType ? 'border-[#00BFA6] bg-teal-50 text-[#00BFA6]' : 'border-gray-100 text-gray-600'}`}
                                 >
                                     <LayoutGrid className="h-4 w-4" />
-                                    <span className="font-medium">Tout</span>
+                                    <span className="font-medium">{t("all")}</span>
                                 </div>
                                 {filteredPropertyTypes.map((type) => {
                                     const Icon = getIcon(type.iconName || 'Home')
@@ -287,27 +289,27 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                   className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'wilaya' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Wilaya</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("wilaya")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'wilaya' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className="font-bold text-sm text-gray-700 truncate">
-                        {filters.wilaya ? `${filters.wilaya} - ${selectedWilayaName}` : 'Toutes'}
+                        {filters.wilaya ? `${filters.wilaya} - ${selectedWilayaName}` : t("allFeminine")}
                     </div>
                 </div>
 
                 {openDropdown === 'wilaya' && (
                     <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden flex flex-col max-h-80">
                          <div className="p-2 border-b border-gray-100 sticky top-0 bg-white">
-                             <input 
-                                type="text" 
-                                placeholder="Rechercher..." 
+                             <input
+                                type="text"
+                                placeholder={t("searchPlaceholder")}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-50 rounded-lg text-sm outline-none focus:ring-1 focus:ring-[#00BFA6]" 
+                                className="w-full px-3 py-2 bg-gray-50 rounded-lg text-sm outline-none focus:ring-1 focus:ring-[#00BFA6]"
                              />
                          </div>
                          <div className="overflow-y-auto flex-1">
-                            <div 
+                            <div
                                 onClick={() => {
                                     onFilterChange('wilaya', '')
                                     onFilterChange('commune', '') // Reset commune
@@ -315,7 +317,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                                 }}
                                 className={`px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer ${!filters.wilaya ? 'text-[#00BFA6] font-bold bg-teal-50' : 'text-gray-700'}`}
                             >
-                                Toutes les wilayas
+                                {t("allWilayas")}
                             </div>
                             {displayedWilayas.map((w) => (
                                 <div 
@@ -343,38 +345,38 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                   className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'commune' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Commune</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("commune")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'commune' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className={`font-bold text-sm truncate ${!filters.wilaya ? 'text-gray-400' : 'text-gray-700'}`}>
-                        {selectedCommuneName || 'Toutes'}
+                        {selectedCommuneName || t("allFeminine")}
                     </div>
                 </div>
 
                 {openDropdown === 'commune' && (
                     <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden flex flex-col max-h-80">
                          {!filters.wilaya ? (
-                             <div className="p-4 text-center text-gray-500 text-sm">Veuillez choisir une wilaya d'abord</div>
+                             <div className="p-4 text-center text-gray-500 text-sm">{t("chooseWilayaFirst")}</div>
                          ) : (
                              <>
                                 <div className="p-2 border-b border-gray-100 sticky top-0 bg-white">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Rechercher..." 
+                                    <input
+                                        type="text"
+                                        placeholder={t("searchPlaceholder")}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full px-3 py-2 bg-gray-50 rounded-lg text-sm outline-none focus:ring-1 focus:ring-[#00BFA6]" 
+                                        className="w-full px-3 py-2 bg-gray-50 rounded-lg text-sm outline-none focus:ring-1 focus:ring-[#00BFA6]"
                                     />
                                 </div>
                                 <div className="overflow-y-auto flex-1">
-                                    <div 
+                                    <div
                                         onClick={() => {
                                             onFilterChange('commune', '')
                                             setOpenDropdown(null)
                                         }}
                                         className={`px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer ${!filters.commune ? 'text-[#00BFA6] font-bold bg-teal-50' : 'text-gray-700'}`}
                                     >
-                                        Toutes les communes
+                                        {t("allCommunes")}
                                     </div>
                                     {displayedCommunes.map((c) => (
                                         <div 
@@ -403,11 +405,11 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                    className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'budget' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Budget Max</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("budgetMax")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'budget' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className="font-bold text-sm text-gray-700 truncate">
-                        {filters.maxPrice ? `${Number(filters.maxPrice).toLocaleString()} DA` : 'Max'}
+                        {filters.maxPrice ? `${Number(filters.maxPrice).toLocaleString()} DA` : t("max")}
                     </div>
                 </div>
 
@@ -415,13 +417,13 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                     <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-4">
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-bold text-gray-500 mb-1 block">Budget Maximum (DA)</label>
-                                <input 
-                                    type="number" 
+                                <label className="text-xs font-bold text-gray-500 mb-1 block">{t("budgetMaxLabel")}</label>
+                                <input
+                                    type="number"
                                     value={filters.maxPrice}
                                     onChange={(e) => onFilterChange('maxPrice', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00BFA6] outline-none"
-                                    placeholder="Ex: 50000"
+                                    placeholder={t("budgetPlaceholder")}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -447,11 +449,11 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                    className={`border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 h-full flex flex-col justify-center transition-all ${openDropdown === 'surface' ? 'ring-2 ring-[#00BFA6] border-transparent' : ''}`}
                 >
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Surface Min</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("surfaceMin")}</span>
                         <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${openDropdown === 'surface' ? 'rotate-180' : ''}`} />
                     </div>
                     <div className="font-bold text-sm text-gray-700 truncate">
-                        {filters.minArea ? `${filters.minArea} m²` : 'Min'}
+                        {filters.minArea ? `${filters.minArea} m²` : t("min")}
                     </div>
                 </div>
 
@@ -459,13 +461,13 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                     <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-4">
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-bold text-gray-500 mb-1 block">Surface Minimum (m²)</label>
-                                <input 
-                                    type="number" 
+                                <label className="text-xs font-bold text-gray-500 mb-1 block">{t("surfaceMinLabel")}</label>
+                                <input
+                                    type="number"
                                     value={filters.minArea}
                                     onChange={(e) => onFilterChange('minArea', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00BFA6] outline-none"
-                                    placeholder="Ex: 50"
+                                    placeholder={t("surfacePlaceholder")}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -492,7 +494,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch }: AnnounceFi
                 onClick={onSearch}
               >
                  <Search className="h-5 w-5 mr-2" />
-                 Rechercher
+                 {t("search")}
               </Button>
           </div>
       </div>

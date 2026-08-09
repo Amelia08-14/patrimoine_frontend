@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { User, MapPin, Calendar, CreditCard, Plus } from "lucide-react"
@@ -18,6 +19,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const t = useTranslations("ProfileHome")
   const router = useRouter()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -49,7 +51,7 @@ export default function ProfilePage() {
   }, [router])
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Chargement...</div>
+    return <div className="flex justify-center items-center min-h-screen">{t("loading")}</div>
   }
 
   if (!user) return null
@@ -69,8 +71,7 @@ export default function ProfilePage() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700">
-                  <span className="font-bold">Compte en attente de validation.</span> Votre dossier est en cours d'examen par nos administrateurs. 
-                  Vous ne pouvez pas encore publier d'annonces ni contacter les annonceurs.
+                  <span className="font-bold">{t("pendingBanner")}</span> {t("pendingBannerText")}
                 </p>
               </div>
             </div>
@@ -93,7 +94,7 @@ export default function ProfilePage() {
                   localStorage.removeItem('token')
                   router.push('/')
                 }}>
-                  Se déconnecter
+                  {t("logout")}
                 </Button>
               </div>
             </div>
@@ -104,7 +105,7 @@ export default function ProfilePage() {
                   <CreditCard className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Crédits disponibles</p>
+                  <p className="text-sm text-gray-500">{t("availableCredits")}</p>
                   <p className="text-xl font-bold">{user.points?.currentPoints || 0} pts</p>
                 </div>
               </div>
@@ -114,7 +115,7 @@ export default function ProfilePage() {
                   <Calendar className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Annonces publiées</p>
+                  <p className="text-sm text-gray-500">{t("publishedAds")}</p>
                   <p className="text-xl font-bold">{user.announces?.length || 0}</p>
                 </div>
               </div>
@@ -123,15 +124,15 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Mes Annonces</h2>
-          <Button 
-            onClick={() => router.push('/deposit')} 
+          <h2 className="text-2xl font-bold text-gray-900">{t("myAnnounces")}</h2>
+          <Button
+            onClick={() => router.push('/deposit')}
             disabled={!user.adminVerified}
             className={!user.adminVerified ? "opacity-50 cursor-not-allowed" : ""}
-            title={!user.adminVerified ? "Compte non validé" : ""}
+            title={!user.adminVerified ? t("accountNotValidated") : ""}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Déposer une annonce
+            {t("depositAd")}
           </Button>
         </div>
 
@@ -149,15 +150,15 @@ export default function ProfilePage() {
                    </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-bold text-lg mb-1 truncate">Réf: {announce.reference}</h3>
+                  <h3 className="font-bold text-lg mb-1 truncate">{t("reference", { reference: announce.reference })}</h3>
                   <p className="text-green-600 font-bold text-xl mb-2">{announce.price.toLocaleString()} DA</p>
                   <div className="text-sm text-gray-500 flex items-center mb-4">
                     <Calendar className="h-4 w-4 mr-1" />
                     {new Date(announce.createdAt).toLocaleDateString()}
                   </div>
                   <div className="flex justify-end space-x-2">
-                    <Button variant="outline" size="sm">Modifier</Button>
-                    <Button variant="destructive" size="sm">Supprimer</Button>
+                    <Button variant="outline" size="sm">{t("edit")}</Button>
+                    <Button variant="destructive" size="sm">{t("delete")}</Button>
                   </div>
                 </div>
               </div>
@@ -168,15 +169,15 @@ export default function ProfilePage() {
             <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
               <Plus className="h-12 w-12" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">Aucune annonce</h3>
-            <p className="mt-2 text-gray-500">Commencez par déposer votre première annonce.</p>
+            <h3 className="text-lg font-medium text-gray-900">{t("noAnnounces")}</h3>
+            <p className="mt-2 text-gray-500">{t("startByDepositing")}</p>
             <div className="mt-6">
-              <Button 
+              <Button
                 onClick={() => router.push('/deposit')}
                 disabled={!user.adminVerified}
                 className={!user.adminVerified ? "opacity-50 cursor-not-allowed" : ""}
               >
-                Créer une annonce
+                {t("createAd")}
               </Button>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay, isBefore, startOfDay } from "date-fns"
 import { fr } from "date-fns/locale"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { 
   Check, Upload, Building2, Warehouse, Home, Key, Building, Store, Hotel, 
@@ -1604,6 +1605,7 @@ const InlineCalendar = ({ value, onChange }: { value?: Date, onChange: (date: Da
 }
 
 function DepositPageComponent() {
+  const t = useTranslations("Deposit")
   const router = useRouter()
   const pathname = usePathname()
   const forcedUserType: "PARTICULIER" | "SOCIETE" | undefined =
@@ -3089,7 +3091,7 @@ function DepositPageComponent() {
         console.error("Erreur création annonce:", response.status, errorData)
         
         if (response.status === 401) {
-            alert("Votre session a expiré. Veuillez vous reconnecter.")
+            alert(t("sessionExpired"))
             // router.push('/auth/login') // Impossible d'utiliser router ici si non déclaré ou hors contexte, mais on peut utiliser window.location
             window.location.href = '/auth/login'
             return
@@ -3099,7 +3101,7 @@ function DepositPageComponent() {
       }
     } catch (error) {
       console.error("Erreur réseau:", error)
-      alert("Erreur réseau lors de la soumission du formulaire")
+      alert(t("networkError"))
     } finally {
       setIsSubmitting(false)
     }
@@ -3112,12 +3114,12 @@ function DepositPageComponent() {
           <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="h-10 w-10" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Annonce créée !</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{t("successTitle")}</h2>
           <p className="text-gray-600 mb-8">
-            Votre annonce a été soumise avec succès. Elle sera visible après validation par notre équipe.
+            {t("successText")}
           </p>
           <Button className="w-full py-6 text-lg bg-[#00BFA6] hover:bg-[#00908A]" onClick={() => window.location.href = '/'}>
-            Retour à l&apos;accueil
+            {t("backHome")}
           </Button>
         </div>
       </div>
@@ -3129,9 +3131,9 @@ function DepositPageComponent() {
 
   const getStepTitle = () => {
     switch(currentStep) {
-      case 1: return "Choisissez votre type de transaction"
-      case 2: return "Type d'immobilier"
-      case 3: return "Décrivez-nous votre bien"
+      case 1: return t("stepTransactionType")
+      case 2: return t("stepRealEstateType")
+      case 3: return t("stepDescribeProperty")
       case 4:
           if (propertyType === "VILLA") return "Fiche descriptive - Villa"
           if (propertyType === "NIVEAU_VILLA") return "Fiche descriptive - Niveau de villa"
@@ -3155,10 +3157,10 @@ function DepositPageComponent() {
           if (propertyType === "SHOWROOM") return "Fiche descriptive - Showroom"
           if (propertyType === "LOCAL_COMMERCIAL") return "Fiche descriptive - Local commercial"
           if (propertyType === "BLOC_ADMINISTRATIF") return "Fiche descriptive - Bloc administratif"
-          return "Fiche descriptive"
-      case 5: return (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? "Disponibilité" : "Prix & Modalités"
-      case 6: return "Informations et Contact"
-      case 7: return "Médias du bien"
+          return t("stepDescriptiveSheet")
+      case 5: return (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? t("stepAvailability") : t("stepPriceModalities")
+      case 6: return t("stepContactInfo")
+      case 7: return t("stepMedia")
       default: return ""
     }
   }
@@ -3241,7 +3243,7 @@ function DepositPageComponent() {
                             className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium mr-4"
                         >
                             <ArrowLeft className="h-5 w-5" />
-                            Retour
+                            {t("back")}
                         </button>
                     )}
                     <h1 className="text-lg md:text-2xl font-bold text-gray-800">{getStepTitle()}</h1>
@@ -3252,20 +3254,22 @@ function DepositPageComponent() {
                         <div className="w-full max-w-2xl text-center space-y-6 py-12">
                             <div className="bg-orange-50 text-orange-600 p-8 rounded-2xl border border-orange-200">
                                 <Info className="h-12 w-12 mx-auto mb-4 opacity-80" />
-                                <h3 className="text-xl font-bold mb-2">Formulaire en cours de création</h3>
+                                <h3 className="text-xl font-bold mb-2">{t("formInProgressTitle")}</h3>
                                 <p className="text-orange-700/80">
-                                    Le formulaire détaillé pour ce type de bien ({(filteredPropertyTypes.find(t => t.id === propertyType) || {}).label || propertyType}) 
-                                    et votre profil ({userType === "SOCIETE" ? "Société" : "Particulier"}) sera bientôt disponible.
+                                    {t("formInProgressText", {
+                                        type: (filteredPropertyTypes.find(pt => pt.id === propertyType) || {}).label || propertyType,
+                                        profile: userType === "SOCIETE" ? t("societeLabel") : t("particulierLabel"),
+                                    })}
                                 </p>
                                 <p className="text-sm mt-4 text-orange-600/60">
-                                    Actuellement, seuls les formulaires Villa, Niveau de villa, Appartement, Duplex, Triplex, Studio et Immeuble (Location - Particulier) sont actifs.
+                                    {t("formInProgressHint")}
                                 </p>
                             </div>
-                            <Button 
+                            <Button
                                 onClick={() => setCurrentStep(1)}
                                 className="bg-gray-900 text-white rounded-full px-8"
                             >
-                                Recommencer
+                                {t("restart")}
                             </Button>
                         </div>
                     ) : (
@@ -3296,7 +3300,7 @@ function DepositPageComponent() {
                                         "text-lg md:text-2xl font-bold transition-colors",
                                         transactionType === "RENTAL" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                     )}>
-                                        Location
+                                        {t("rentalOption")}
                                     </span>
                                 </div>
 
@@ -3322,7 +3326,7 @@ function DepositPageComponent() {
                                         "text-lg md:text-2xl font-bold transition-colors",
                                         transactionType === "SALE" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                     )}>
-                                        Vente
+                                        {t("saleOption")}
                                     </span>
                                 </div>
                             </div>
@@ -8589,17 +8593,17 @@ function DepositPageComponent() {
                                             variant="outline"
                                             className="px-8 py-3 border-gray-300 text-gray-600 hover:bg-gray-50"
                                         >
-                                            Retour à l&apos;upload
+                                            {t("backToUpload")}
                                         </Button>
-                                        <Button 
+                                        <Button
                                             onClick={handleSubmit(onSubmit as any, (errors) => {
                                                 console.error("Erreurs de validation:", errors);
-                                                alert(`Veuillez corriger les erreurs suivantes:\n${Object.keys(errors).map(key => `- ${key}: ${(errors as any)[key]?.message}`).join('\n')}`);
-                                            })} 
+                                                alert(`${t("fixErrorsPrefix")}\n${Object.keys(errors).map(key => `- ${key}: ${(errors as any)[key]?.message}`).join('\n')}`);
+                                            })}
                                             disabled={isSubmitting}
                                             className="bg-[#00BFA6] hover:bg-[#00908A] text-white px-8 py-3 text-lg font-bold"
                                         >
-                                            {isSubmitting ? "Publication..." : "Publier l'annonce"}
+                                            {isSubmitting ? t("publishing") : t("publishListing")}
                                         </Button>
                                     </div>
                                 </div>
@@ -8615,17 +8619,17 @@ function DepositPageComponent() {
                     <div className="p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50">
                         {currentStep === 4 && (
                         <Button onClick={handleDescriptiveSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
-                            Continuer
+                            {t("continueBtn")}
                         </Button>
                     )}
                     {currentStep === 5 && (
                         <Button onClick={handlePriceSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
-                            Continuer
+                            {t("continueBtn")}
                         </Button>
                     )}
                     {currentStep === 6 && (
                         <Button onClick={handleLocationAndContactsSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
-                            Continuer
+                            {t("continueBtn")}
                         </Button>
                     )}
                     </div>

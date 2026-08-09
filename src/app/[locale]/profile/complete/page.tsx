@@ -4,42 +4,43 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Building2, User, MapPin, Phone, Upload, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 
-// Schéma de validation
-const profileSchema = z.object({
-  civility: z.enum(["M", "MME"], { message: "Civilité requise" }),
-  lastName: z.string().min(2, "Nom requis"),
-  firstName: z.string().min(2, "Prénom requis"),
-  dateOfBirth: z.string().optional(),
-  
-  phone: z.string().min(9, "Téléphone requis"),
-  landline: z.string().optional(),
-  address: z.string().min(5, "Adresse requise"),
-  wilaya: z.string().min(1, "Wilaya requise"),
-  commune: z.string().min(1, "Commune requise"),
-
-  // Société Specific
-  commercialRegister: z.string().optional(),
-  agreementNumber: z.string().optional(),
-  companyName: z.string().optional(),
-  position: z.string().optional(),
-  
-  // Files
-  rcDocument: z.any().optional(),
-  agreementDocument: z.any().optional(),
-  agencyLogo: z.any().optional(),
-})
-
-type ProfileForm = z.infer<typeof profileSchema>
-
 export default function CompleteProfilePage() {
+  const t = useTranslations("ProfileComplete")
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  const profileSchema = z.object({
+    civility: z.enum(["M", "MME"], { message: t("civilityRequired") }),
+    lastName: z.string().min(2, t("lastNameRequired")),
+    firstName: z.string().min(2, t("firstNameRequired")),
+    dateOfBirth: z.string().optional(),
+
+    phone: z.string().min(9, t("phoneRequired")),
+    landline: z.string().optional(),
+    address: z.string().min(5, t("addressRequired")),
+    wilaya: z.string().min(1, t("wilayaRequired")),
+    commune: z.string().min(1, t("communeRequired")),
+
+    // Société Specific
+    commercialRegister: z.string().optional(),
+    agreementNumber: z.string().optional(),
+    companyName: z.string().optional(),
+    position: z.string().optional(),
+
+    // Files
+    rcDocument: z.any().optional(),
+    agreementDocument: z.any().optional(),
+    agencyLogo: z.any().optional(),
+  })
+
+  type ProfileForm = z.infer<typeof profileSchema>
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -83,7 +84,7 @@ export default function CompleteProfilePage() {
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/profile`, {
             method: 'PUT',
-            headers: { 
+            headers: {
                 'Authorization': `Bearer ${token}`
             },
             body: formData,
@@ -93,15 +94,15 @@ export default function CompleteProfilePage() {
             const updatedUser = await response.json()
             // Mettre à jour le localStorage
             localStorage.setItem('user', JSON.stringify({ ...user, ...updatedUser, isProfileComplete: true }))
-            alert("Profil mis à jour avec succès !")
+            alert(t("updateSuccess"))
             window.location.href = '/'
         } else {
             const text = await response.text().catch(() => "")
-            alert(text || "Erreur lors de la mise à jour")
+            alert(text || t("updateError"))
         }
     } catch (error) {
         console.error(error)
-        alert("Erreur technique")
+        alert(t("technicalError"))
     } finally {
         setIsLoading(false)
     }
@@ -111,17 +112,17 @@ export default function CompleteProfilePage() {
 
   return (
     <div className="min-h-screen w-full flex bg-white">
-      
+
       {/* Left Side - Visual (Full height, 45% width) */}
       <div className="hidden lg:flex w-[45%] relative overflow-hidden flex-col justify-between transition-all duration-700">
          {/* Background Image */}
-         <div 
+         <div
             className="absolute inset-0 bg-cover bg-center transition-all duration-700 transform hover:scale-105"
-            style={{ 
+            style={{
               backgroundImage: user?.userType === 'PARTICULIER' ? "url('/particulier.jpg')" : "url('/société.jpg')",
             }}
          />
-         
+
          {/* Overlay */}
          <div className="absolute inset-0 bg-[#003B4A]/80 backdrop-blur-[2px]"></div>
 
@@ -133,33 +134,33 @@ export default function CompleteProfilePage() {
                     {user.userType === 'PARTICULIER' ? <User className="h-6 w-6 text-[#00BFA6]" /> : <Building2 className="h-6 w-6 text-[#00BFA6]" />}
                  </div>
                  <span className="text-xl font-bold text-white tracking-tight">
-                    {user.userType === 'PARTICULIER' ? 'Espace Particulier' : 'Espace Professionnel'}
+                    {user.userType === 'PARTICULIER' ? t("particulierSpace") : t("professionalSpace")}
                  </span>
                </div>
-               
+
                <h1 className="text-4xl font-bold text-white leading-tight mb-6">
-                 Finalisons votre<br/>
-                 <span className="text-[#00BFA6]">Inscription.</span>
+                 {t("finalizeTitle")}<br/>
+                 <span className="text-[#00BFA6]">{t("registrationHighlight")}</span>
                </h1>
                <p className="text-gray-300 text-lg leading-relaxed max-w-md mb-8">
-                 Ces informations sont nécessaires pour vérifier votre identité et garantir la sécurité des transactions sur notre plateforme.
+                 {t("finalizeSubtitle")}
                </p>
 
                {user.userType === 'SOCIETE' && (
                   <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6">
-                      <p className="font-bold text-[#00BFA6] mb-4 text-sm uppercase tracking-wider">Documents requis :</p>
+                      <p className="font-bold text-[#00BFA6] mb-4 text-sm uppercase tracking-wider">{t("requiredDocsTitle")}</p>
                       <ul className="space-y-3">
                           <li className="flex items-center gap-3 text-gray-200 text-sm">
                               <div className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]"></div>
-                              Registre de commerce
+                              {t("docCommercialRegister")}
                           </li>
                           <li className="flex items-center gap-3 text-gray-200 text-sm">
                               <div className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]"></div>
-                              Agrément
+                              {t("docAgreement")}
                           </li>
                           <li className="flex items-center gap-3 text-gray-200 text-sm">
                               <div className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]"></div>
-                              Logo de l'agence (optionnel)
+                              {t("docLogoOptional")}
                           </li>
                       </ul>
                   </div>
@@ -174,67 +175,67 @@ export default function CompleteProfilePage() {
       {/* Right Side - Form (Full height, 55% width, Scrollable) */}
       <div className="flex-1 flex flex-col items-center p-4 sm:p-8 lg:p-12 overflow-y-auto bg-white">
         <div className="w-full max-w-2xl space-y-10 py-8">
-          
+
           <div className="text-center lg:text-left border-b border-gray-100 pb-8">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Informations Complémentaires</h2>
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">{t("formTitle")}</h2>
             <p className="text-gray-500">
-              Veuillez compléter les informations ci-dessous pour valider votre compte.
+              {t("formSubtitle")}
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
-             
+
              {/* --- SECTION 1: IDENTITÉ --- */}
              <div className="space-y-6">
                 <h3 className="text-lg font-bold text-[#003B4A] flex items-center gap-2">
-                    <User className="text-[#00BFA6] h-5 w-5" /> 
-                    {user.userType === 'PARTICULIER' ? 'Mes coordonnées' : 'Représentant légal'}
+                    <User className="text-[#00BFA6] h-5 w-5" />
+                    {user.userType === 'PARTICULIER' ? t("section1TitleParticulier") : t("section1TitleSociete")}
                 </h3>
-                
+
                 <div className={cn("grid grid-cols-1 gap-6 items-start", user.userType === 'SOCIETE' ? "md:grid-cols-4" : "md:grid-cols-3")}>
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">Civilité *</label>
+                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("civilityLabel")}</label>
                         <div className="flex gap-4">
                             <label className={cn(
                                 "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
                                 watch("civility") === "M" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:border-gray-300 bg-gray-50"
                             )}>
                                 <input type="radio" value="M" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold text-gray-700">Mr</span>
+                                <span className="text-sm font-bold text-gray-700">{t("mr")}</span>
                             </label>
                             <label className={cn(
                                 "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
                                 watch("civility") === "MME" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:border-gray-300 bg-gray-50"
                             )}>
                                 <input type="radio" value="MME" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold text-gray-700">Mme</span>
+                                <span className="text-sm font-bold text-gray-700">{t("mrs")}</span>
                             </label>
                         </div>
                         {errors.civility && <p className="text-red-500 text-xs pl-1 mt-1">{errors.civility.message}</p>}
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">Nom *</label>
+                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("lastNameLabel")}</label>
                         <input {...register("lastName")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                         {errors.lastName && <p className="text-red-500 text-xs pl-1">{errors.lastName.message}</p>}
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">Prénom *</label>
+                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("firstNameLabel")}</label>
                         <input {...register("firstName")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                         {errors.firstName && <p className="text-red-500 text-xs pl-1">{errors.firstName.message}</p>}
                     </div>
-                    
+
                     {user.userType === 'SOCIETE' && (
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">Poste *</label>
-                            <input {...register("position")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" placeholder="Ex: Gérant, Directeur..." />
+                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("positionLabel")}</label>
+                            <input {...register("position")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" placeholder={t("positionPlaceholder")} />
                             {errors.position && <p className="text-red-500 text-xs pl-1">{errors.position.message}</p>}
                         </div>
                     )}
-                    
+
                     {user.userType === 'PARTICULIER' && (
                         <div className="col-span-1 md:col-span-3 space-y-1 mt-2">
-                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">Date de naissance *</label>
+                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("dobLabel")}</label>
                             <input type="date" {...register("dateOfBirth")} className="w-full md:w-1/3 px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                         </div>
                     )}
@@ -246,14 +247,14 @@ export default function CompleteProfilePage() {
              {/* --- SECTION 2: ADRESSE & CONTACT --- */}
              <div className="space-y-6">
                 <h3 className="text-lg font-bold text-[#003B4A] flex items-center gap-2">
-                    <MapPin className="text-[#00BFA6] h-5 w-5" /> 
-                    Mon adresse
+                    <MapPin className="text-[#00BFA6] h-5 w-5" />
+                    {t("section2Title")}
                 </h3>
-                
+
                 <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-1">
-                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">Wilaya *</label>
+                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("wilayaLabel")}</label>
                                  <select
                                    {...wilayaRegister}
                                    onChange={(e) => {
@@ -262,7 +263,7 @@ export default function CompleteProfilePage() {
                                    }}
                                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]"
                                  >
-                                     <option value="">Sélectionner</option>
+                                     <option value="">{t("selectOption")}</option>
                                      {WILAYAS.map((wilaya) => (
                                          <option key={wilaya.id} value={wilaya.code}>{wilaya.code} - {wilaya.name}</option>
                                      ))}
@@ -270,9 +271,9 @@ export default function CompleteProfilePage() {
                                  {errors.wilaya && <p className="text-red-500 text-xs pl-1">{errors.wilaya.message}</p>}
                              </div>
                              <div className="space-y-1">
-                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">Commune *</label>
+                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("communeLabel")}</label>
                                  <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px] disabled:opacity-60">
-                                     <option value="">Sélectionner</option>
+                                     <option value="">{t("selectOption")}</option>
                                      {COMMUNES.filter((c) => c.wilayaCode === watch("wilaya")).map((c) => (
                                        <option key={c.id} value={c.name}>
                                          {c.name}
@@ -282,20 +283,20 @@ export default function CompleteProfilePage() {
                                  {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
                              </div>
                              <div className="space-y-1">
-                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">Quartier / Adresse *</label>
-                                 <input {...register("address")} placeholder="Cité, Rue, Bâtiment..." className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
+                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("addressLabel")}</label>
+                                 <input {...register("address")} placeholder={t("addressPlaceholder")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                                  {errors.address && <p className="text-red-500 text-xs pl-1">{errors.address.message}</p>}
                              </div>
                         </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Téléphone Mobile *</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">{t("mobilePhoneLabel")}</label>
                             <input type="tel" {...register("phone")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
                             {errors.phone && <p className="text-red-500 text-xs pl-1">{errors.phone.message}</p>}
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Téléphone Fixe</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">{t("landlinePhoneLabel")}</label>
                             <input type="tel" {...register("landline")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
                         </div>
                     </div>
@@ -308,59 +309,59 @@ export default function CompleteProfilePage() {
                  <div className="h-px bg-gray-100"></div>
                  <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#003B4A] flex items-center gap-2">
-                        <Building2 className="text-[#00BFA6] h-5 w-5" /> 
-                        Informations Société
+                        <Building2 className="text-[#00BFA6] h-5 w-5" />
+                        {t("section3Title")}
                     </h3>
-                    
+
                     <div className="space-y-6">
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Raison Sociale *</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">{t("companyNameLabel")}</label>
                             <input {...register("companyName")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">Registre Commerce</label>
+                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("rcLabel")}</label>
                                 <label className={cn(
                                     "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
                                     watch("rcDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
                                 )}>
                                     <span className="flex items-center gap-2">
                                         {watch("rcDocument")?.[0] ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> Document importé</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {t("documentImported")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Uploader</>
+                                            <><Upload className="w-4 h-4" /> {t("uploadBtn")}</>
                                         )}
                                     </span>
                                     <input type="file" className="hidden" {...register("rcDocument")} accept=".pdf,.jpg,.jpeg,.png" />
                                 </label>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">Agrément</label>
+                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("agreementLabel")}</label>
                                 <label className={cn(
                                     "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
                                     watch("agreementDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
                                 )}>
                                     <span className="flex items-center gap-2">
                                         {watch("agreementDocument")?.[0] ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> Document importé</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {t("documentImported")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Uploader</>
+                                            <><Upload className="w-4 h-4" /> {t("uploadBtn")}</>
                                         )}
                                     </span>
                                     <input type="file" className="hidden" {...register("agreementDocument")} accept=".pdf,.jpg,.jpeg,.png" />
                                 </label>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">Logo de l'agence</label>
+                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("logoLabel")}</label>
                                 <label className={cn(
                                     "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
                                     watch("agencyLogo")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
                                 )}>
                                     <span className="flex items-center gap-2">
                                         {watch("agencyLogo")?.[0] ? (
-                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> Logo importé</>
+                                            <><Check className="w-4 h-4 text-[#00BFA6]" /> {t("logoImported")}</>
                                         ) : (
-                                            <><Upload className="w-4 h-4" /> Uploader le logo</>
+                                            <><Upload className="w-4 h-4" /> {t("uploadLogoBtn")}</>
                                         )}
                                     </span>
                                     <input type="file" className="hidden" {...register("agencyLogo")} accept=".jpg,.jpeg,.png,.svg,.webp" />
@@ -374,7 +375,7 @@ export default function CompleteProfilePage() {
 
              <div className="pt-6">
                 <Button type="submit" disabled={isLoading} className="w-full py-4 h-auto rounded-xl bg-[#00BFA6] hover:bg-[#00908A] text-white font-bold text-lg shadow-lg shadow-[#00BFA6]/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
-                    {isLoading ? "Enregistrement en cours..." : "Enregistrer et Continuer"}
+                    {isLoading ? t("saving") : t("submit")}
                 </Button>
              </div>
 

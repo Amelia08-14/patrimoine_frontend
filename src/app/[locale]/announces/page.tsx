@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import { AnnounceFilter } from "@/components/AnnounceFilter"
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,7 @@ import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
 
 function AnnouncesContent() {
+  const t = useTranslations("AnnouncesPage")
   const searchParams = useSearchParams()
   const router = useRouter()
   const [announces, setAnnounces] = useState<any[]>([])
@@ -201,7 +203,7 @@ function AnnouncesContent() {
       {/* Header Search */}
       <div className="bg-gray-900 py-8 px-4 sm:px-6 lg:px-8 shadow-md">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-white mb-8 text-center">Trouvez votre futur chez-vous</h1>
+          <h1 className="text-3xl font-bold text-white mb-8 text-center">{t("heroTitle")}</h1>
           <div className="bg-white rounded-xl shadow-lg p-2">
             <AnnounceFilter 
                 filters={filters}
@@ -216,9 +218,9 @@ function AnnouncesContent() {
       <div className="bg-white border-b border-gray-100 shadow-sm py-3 px-4">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
           {[
-            { value: '', label: 'Tout voir' },
-            { value: 'RENTAL', label: 'Louer' },
-            { value: 'SALE', label: 'Acheter' },
+            { value: '', label: t("viewAll") },
+            { value: 'RENTAL', label: t("rent") },
+            { value: 'SALE', label: t("buy") },
           ].map(opt => (
             <button
               key={opt.value}
@@ -248,14 +250,14 @@ function AnnouncesContent() {
           <div className="flex-grow">
             <div className="flex justify-between items-center mb-6">
               <p className="text-gray-600">
-                <span className="font-bold text-gray-900">{announces.length}</span> résultats trouvés
+                <span className="font-bold text-gray-900">{announces.length}</span> {t("resultsFound")}
               </p>
             </div>
 
             {loading ? (
-                <div className="text-center py-12 text-gray-500">Chargement des annonces...</div>
+                <div className="text-center py-12 text-gray-500">{t("loading")}</div>
             ) : announces.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">Aucune annonce trouvée correspondant à vos critères.</div>
+                <div className="text-center py-12 text-gray-500">{t("noResults")}</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {announces.map((announce) => (
@@ -265,7 +267,7 @@ function AnnouncesContent() {
             )}
             
             <div className="mt-12 flex justify-center">
-              <Button variant="outline" size="lg">Voir plus d'annonces</Button>
+              <Button variant="outline" size="lg">{t("viewMore")}</Button>
             </div>
           </div>
         </div>
@@ -274,9 +276,14 @@ function AnnouncesContent() {
   )
 }
 
+function AnnouncesFallback() {
+  const t = useTranslations("AnnouncesPage")
+  return <div className="min-h-screen flex items-center justify-center">{t("loading")}</div>
+}
+
 export default function AnnouncesPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+    <Suspense fallback={<AnnouncesFallback />}>
       <AnnouncesContent />
     </Suspense>
   )

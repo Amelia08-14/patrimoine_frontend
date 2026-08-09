@@ -2,11 +2,17 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useTranslations, useLocale } from "next-intl";
 import { MessageSquare, User, Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import type { Locale } from "date-fns";
+import { fr, enUS, ar } from "date-fns/locale";
+
+const DATE_FNS_LOCALES: Record<string, Locale> = { fr, en: enUS, ar };
 
 export default function MessagesPage() {
+    const t = useTranslations("ProfileMessages");
+    const locale = useLocale();
     const [messages, setMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -33,12 +39,12 @@ export default function MessagesPage() {
         fetchMessages();
     }, []);
 
-    if (loading) return <div className="p-10 text-center">Chargement...</div>;
+    if (loading) return <div className="p-10 text-center">{t("loading")}</div>;
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-10">
             <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
-                <MessageSquare className="text-[#00BFA6] fill-current" /> Ma Messagerie
+                <MessageSquare className="text-[#00BFA6] fill-current" /> {t("title")}
             </h1>
 
             {messages.length === 0 ? (
@@ -46,7 +52,7 @@ export default function MessagesPage() {
                     <div className="h-14 w-14 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center">
                         <MessageSquare className="h-6 w-6 text-[#00BFA6]" />
                     </div>
-                    <p className="text-gray-500 font-medium">Vous n'avez pas encore de messages.</p>
+                    <p className="text-gray-500 font-medium">{t("noMessages")}</p>
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
@@ -63,13 +69,13 @@ export default function MessagesPage() {
                                             {msg.sender.companyName && <span className="text-gray-500 text-xs ml-2">({msg.sender.companyName})</span>}
                                         </h3>
                                         <p className="text-xs text-gray-400">
-                                            {format(new Date(msg.createdAt), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
+                                            {format(new Date(msg.createdAt), "d MMMM yyyy HH:mm", { locale: DATE_FNS_LOCALES[locale] || fr })}
                                         </p>
                                     </div>
                                 </div>
                                 {msg.announce && (
                                     <span className="text-xs bg-teal-50 text-[#00BFA6] px-2 py-1 rounded-md font-bold">
-                                        Ref: {msg.announce.reference}
+                                        {t("reference", { reference: msg.announce.reference })}
                                     </span>
                                 )}
                             </div>

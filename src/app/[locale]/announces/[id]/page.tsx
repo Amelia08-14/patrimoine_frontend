@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   ArrowLeft, MapPin, BedDouble, Square, Heart, Share2,
@@ -240,6 +241,7 @@ const LABELS: any = {
 };
 
 export default function AnnounceDetailsPage() {
+  const t = useTranslations("AnnounceDetail")
   const params = useParams()
   const router = useRouter()
   const [announce, setAnnounce] = useState<any>(null)
@@ -353,8 +355,8 @@ export default function AnnounceDetailsPage() {
     }
   }, [params.id])
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>
-  if (!announce) return <div className="min-h-screen flex items-center justify-center">Annonce introuvable</div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center">{t("loading")}</div>
+  if (!announce) return <div className="min-h-screen flex items-center justify-center">{t("notFound")}</div>
 
   const property = announce.property
   const images = property.images || []
@@ -641,7 +643,7 @@ export default function AnnounceDetailsPage() {
                     <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <ArrowLeft className="h-6 w-6 text-gray-700" />
                     </button>
-                    <h2 className="text-2xl font-bold text-gray-900">{announce?.title || 'Galerie Photos'}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{announce?.title || t("galleryFallbackTitle")}</h2>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm">
@@ -669,7 +671,7 @@ export default function AnnounceDetailsPage() {
                         onClick={() => setActiveTab('VIDEO')}
                         className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm border-2 animate-pulse ${activeTab === 'VIDEO' ? 'border-blue-600 bg-blue-600 text-white shadow-blue-500/50' : 'border-blue-500 bg-blue-500 text-white shadow-blue-500/50'}`}
                     >
-                        Vidéo ({videosList.length})
+                        {t("videoLabel")} ({videosList.length})
                     </button>
                 )}
             </div>
@@ -677,14 +679,14 @@ export default function AnnounceDetailsPage() {
             <div className="h-[360px] md:h-[440px] lg:h-[500px] rounded-2xl overflow-hidden relative bg-gray-50">
                 {activeTab === 'VIDEO' && videosList.length > 0 ? (
                     <div className="w-full h-full flex items-center justify-center bg-black">
-                        <video 
-                            src={getImageUrl(videosList[0]) || ''} 
-                            controls 
+                        <video
+                            src={getImageUrl(videosList[0]) || ''}
+                            controls
                             className="w-full h-full object-contain"
                         />
                     </div>
                 ) : displayImages.length === 0 ? (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">Aucune image disponible</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">{t("noImageAvailable")}</div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-2 h-full">
                         {/* Main Image (Left Half) */}
@@ -788,7 +790,7 @@ export default function AnnounceDetailsPage() {
                                         className="bg-white/90 text-gray-900 font-bold hover:bg-white gap-2 shadow-lg pointer-events-none"
                                     >
                                         <Square className="h-4 w-4" />
-                                        Voir la galerie
+                                        {t("seeGallery")}
                                     </Button>
                                 </div>
                             </div>
@@ -888,7 +890,7 @@ export default function AnnounceDetailsPage() {
                     {property.mapsLink && (
                       <a href={property.mapsLink} target="_blank" rel="noopener noreferrer" className="ml-3 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-700 font-medium">
                         <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                        Voir sur Maps
+                        {t("viewOnMaps")}
                       </a>
                     )}
                   </div>
@@ -899,7 +901,7 @@ export default function AnnounceDetailsPage() {
                         return (
                           <div className="flex items-center gap-2 mt-1">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-full">
-                              🕐 Disponible à partir du {d.toLocaleDateString('fr-FR')}
+                              🕐 {t("availableFrom", { date: d.toLocaleDateString('fr-FR') })}
                             </span>
                           </div>
                         )
@@ -913,17 +915,17 @@ export default function AnnounceDetailsPage() {
                       {isSpecialRental
                           ? (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0
                               ? `${Number(announce.price).toLocaleString()} DZD`
-                              : "Prix après visite")
+                              : t("priceAfterVisit"))
                           : (announce.price !== undefined && announce.price !== null
                               ? `${announce.price.toLocaleString()} DZD`
-                              : "Non spécifié")}
+                              : t("priceNotSpecified"))}
                   </div>
                   <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
-                      <span className="uppercase">{isRental ? 'Location' : isSale ? 'Vente' : announce.type}</span>
+                      <span className="uppercase">{isRental ? t("rentalLabel") : isSale ? t("saleLabel") : announce.type}</span>
                       {(!isSpecialRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
                           <>
                               <span className="text-gray-300">|</span>
-                              <span className="text-gray-600">{announce.priceType === 'FIXED' ? 'Prix Fixe' : announce.priceType === 'NEGOTIABLE' ? 'Prix Négociable' : 'Offert'}</span>
+                              <span className="text-gray-600">{announce.priceType === 'FIXED' ? t("priceFixed") : announce.priceType === 'NEGOTIABLE' ? t("priceNegotiable") : t("priceOffered")}</span>
                           </>
                       )}
                   </div>
@@ -1390,11 +1392,11 @@ export default function AnnounceDetailsPage() {
                               {/* Hover Icons Dropdown */}
                               {(contact.hasWhatsapp || contact.hasViber || contact.hasTelegram) && (
                                   <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-xl border border-gray-100 flex gap-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 w-max">
-                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title="Appeler">
+                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title={t("callTitle")}>
                                           <Phone className="h-5 w-5" />
                                       </a>
                                       {contact.email && (
-                                          <a href={`mailto:${contact.email}`} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title="Email">
+                                          <a href={`mailto:${contact.email}`} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title={t("emailTitle")}>
                                               <Mail className="h-5 w-5" />
                                           </a>
                                       )}
@@ -1439,10 +1441,10 @@ export default function AnnounceDetailsPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-white font-black text-base leading-tight truncate">{announce.user?.companyName}</div>
-                    <div className="text-white/70 text-xs mt-0.5 truncate">{announce.user?.activity || 'Professionnel immobilier'}</div>
+                    <div className="text-white/70 text-xs mt-0.5 truncate">{announce.user?.activity || t("realEstateProfessional")}</div>
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <span className="h-1.5 w-1.5 bg-green-400 rounded-full"></span>
-                      <span className="text-white/60 text-xs">{boutiqueAnnounces.length + 1} annonce{boutiqueAnnounces.length > 0 ? 's' : ''} active{boutiqueAnnounces.length > 0 ? 's' : ''}</span>
+                      <span className="text-white/60 text-xs">{t("activeListingsCount", { count: boutiqueAnnounces.length + 1 })}</span>
                     </div>
                   </div>
                 </div>
@@ -1456,8 +1458,8 @@ export default function AnnounceDetailsPage() {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Annonceur particulier</h3>
-                    <p className="text-sm text-gray-500">Particulier</p>
+                    <h3 className="font-bold text-gray-900">{t("individualAdvertiser")}</h3>
+                    <p className="text-sm text-gray-500">{t("individualLabel")}</p>
                   </div>
                 </div>
               )}
@@ -1468,14 +1470,14 @@ export default function AnnounceDetailsPage() {
                   onClick={() => setIsContactModalOpen(true)}
                   className="w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold"
                 >
-                  <Mail className="h-4 w-4" /> Envoyer un message
+                  <Mail className="h-4 w-4" /> {t("sendMessage")}
                 </Button>
                 {announce.user?.email && (
                   <a
                     href={`mailto:${announce.user.email}`}
                     className="flex items-center justify-center gap-2 w-full py-3.5 text-sm bg-white hover:bg-gray-50 text-gray-900 rounded-xl border-2 border-gray-200 font-bold transition-colors"
                   >
-                    <Mail className="h-4 w-4 text-red-500" /> Envoyer un email
+                    <Mail className="h-4 w-4 text-red-500" /> {t("sendEmail")}
                   </a>
                 )}
               </div>
@@ -1489,7 +1491,7 @@ export default function AnnounceDetailsPage() {
                     className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#00BFA6]/8 hover:bg-[#00BFA6]/15 text-[#00BFA6] rounded-xl text-sm font-bold transition-colors"
                     style={{ backgroundColor: 'rgb(0 191 166 / 0.08)' }}
                   >
-                    <Store className="h-3.5 w-3.5" /> Voir la boutique complète
+                    <Store className="h-3.5 w-3.5" /> {t("viewFullShop")}
                   </a>
                 </div>
               )}
@@ -1501,7 +1503,7 @@ export default function AnnounceDetailsPage() {
                   className="w-full text-xs text-gray-400 hover:text-red-500 flex items-center justify-center gap-1.5 transition-colors py-1"
                 >
                   <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                  Signaler un problème
+                  {t("reportProblem")}
                 </button>
               </div>
             </div>
@@ -3092,7 +3094,7 @@ export default function AnnounceDetailsPage() {
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
                     <h3 className="font-bold text-gray-900 text-xl flex items-center gap-2">
                         <Mail className="h-5 w-5 text-[#00BFA6]" />
-                        Contacter l'annonceur
+                        {t("contactAdvertiser")}
                     </h3>
                     <button 
                         onClick={() => setIsContactModalOpen(false)}
@@ -3103,11 +3105,11 @@ export default function AnnounceDetailsPage() {
                 </div>
                 <div className="p-6">
                     <form className="space-y-4">
-                        <input type="text" placeholder="Nom et Prénom" className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors" />
-                        <input type="tel" placeholder="Téléphone" className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors" />
-                        <textarea rows={4} placeholder="Bonjour, je suis intéressé par ce bien. J'aimerais avoir plus de détails..." className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors resize-none"></textarea>
-                        
-                        <Button 
+                        <input type="text" placeholder={t("namePlaceholder")} className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors" />
+                        <input type="tel" placeholder={t("phonePlaceholder")} className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors" />
+                        <textarea rows={4} placeholder={t("messagePlaceholder")} className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors resize-none"></textarea>
+
+                        <Button
                             className="w-full py-6 text-lg bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 mt-4 font-bold"
                             onClick={(e) => {
                                 e.preventDefault();
@@ -3115,7 +3117,7 @@ export default function AnnounceDetailsPage() {
                                 setIsContactModalOpen(false);
                             }}
                         >
-                            Envoyer
+                            {t("send")}
                         </Button>
                     </form>
                 </div>
@@ -3130,7 +3132,7 @@ export default function AnnounceDetailsPage() {
             <div className="flex justify-between items-center p-6 border-b border-gray-100">
               <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-red-500 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                Signaler un problème
+                {t("reportProblem")}
               </h3>
               <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
                 <X className="h-5 w-5" />
@@ -3142,15 +3144,15 @@ export default function AnnounceDetailsPage() {
                   <div className="h-14 w-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check className="h-7 w-7 text-green-600" />
                   </div>
-                  <h4 className="font-bold text-gray-900 text-lg">Signalement envoyé</h4>
-                  <p className="text-gray-500 text-sm mt-2">Notre équipe examinera cette annonce. Merci pour votre contribution.</p>
-                  <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }} className="mt-5 px-6 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">Fermer</button>
+                  <h4 className="font-bold text-gray-900 text-lg">{t("reportSentTitle")}</h4>
+                  <p className="text-gray-500 text-sm mt-2">{t("reportSentText")}</p>
+                  <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }} className="mt-5 px-6 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">{t("close")}</button>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600">Pourquoi signalez-vous cette annonce ?</p>
+                  <p className="text-sm text-gray-600">{t("reportWhy")}</p>
                   <div className="space-y-2">
-                    {["Annonce frauduleuse", "Prix incorrect / trompeur", "Photos non conformes", "Bien déjà vendu / loué", "Informations incorrectes", "Autre raison"].map(r => (
+                    {[t("reportReasonFraud"), t("reportReasonPrice"), t("reportReasonPhotos"), t("reportReasonSold"), t("reportReasonWrongInfo"), t("reportReasonOther")].map(r => (
                       <label key={r} className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors hover:border-gray-300" style={reportReason === r ? { borderColor: '#ef4444', backgroundColor: '#fef2f2' } : { borderColor: '#f3f4f6' }}>
                         <input type="radio" name="reportReason" value={r} checked={reportReason === r} onChange={() => setReportReason(r)} className="sr-only" />
                         <div className={`h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center ${reportReason === r ? 'border-red-500 bg-red-500' : 'border-gray-300'}`}>
@@ -3165,7 +3167,7 @@ export default function AnnounceDetailsPage() {
                     className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold disabled:opacity-40"
                     onClick={() => { if (reportReason) setReportSent(true) }}
                   >
-                    Envoyer le signalement
+                    {t("sendReport")}
                   </Button>
                 </div>
               )}

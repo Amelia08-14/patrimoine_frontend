@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Search, MapPin, Calendar, Wallet, Ruler, ArrowRight, Home, Handshake, User, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,7 @@ Object.values(RESEARCH_INTERLOCUTORS).forEach((list) => list.forEach((o) => { IN
 ACHAT_INTERLOCUTOR_OPTIONS.forEach((o) => { INTERLOCUTOR_LABELS[o.id] ||= o.label })
 
 export default function DemandesPage() {
+  const t = useTranslations("Demandes")
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -57,13 +59,13 @@ export default function DemandesPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-[#003B4A] text-white py-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold">Demandes en cours de recherche</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold">{t("title")}</h1>
           <p className="mt-3 text-white/80 max-w-2xl mx-auto">
-            Parcourez les recherches confiées par nos clients et proposez-leur le bien qui correspond à leurs critères.
+            {t("subtitle")}
           </p>
           <Link href="/research">
             <Button className="mt-6 bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-6 py-5 font-bold">
-              Confier ma propre recherche
+              {t("entrustMySearch")}
             </Button>
           </Link>
         </div>
@@ -71,11 +73,11 @@ export default function DemandesPage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Chargement des demandes...</div>
+          <div className="text-center py-12 text-gray-500">{t("loading")}</div>
         ) : requests.length === 0 ? (
           <div className="text-center py-16">
             <Search className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">Aucune demande en cours pour le moment.</p>
+            <p className="text-gray-500 font-medium">{t("noResults")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -91,7 +93,7 @@ export default function DemandesPage() {
                 <div key={r.id} className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 p-6 flex flex-col gap-4">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#00BFA6]/10 text-[#00908A]">
-                      {r.transaction === 'SALE' ? 'Achat' : r.transaction === 'RENTAL' ? 'Location' : 'Vacances'}
+                      {r.transaction === 'SALE' ? t("sale") : r.transaction === 'RENTAL' ? t("rental") : t("holiday")}
                     </span>
                     {r.realEstateType && (
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
@@ -153,7 +155,7 @@ export default function DemandesPage() {
                   )}
 
                   <Link href="/contact" className="mt-auto pt-2 flex items-center gap-1.5 text-[#00BFA6] font-bold text-sm hover:underline">
-                    Contacter pour répondre à cette demande <ArrowRight className="h-4 w-4" />
+                    {t("contactToRespond")} <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
               )

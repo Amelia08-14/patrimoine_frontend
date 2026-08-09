@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "@/i18n/navigation"
+import { useTranslations } from "next-intl"
 import axios from "axios"
 import {
   Store, Save, Eye, Palette, Image as ImageIcon, Phone, Mail,
@@ -48,6 +49,7 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
 
 // Mini aperçu du hero pour le panel de droite
 function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { config: any; logoShape: string; secondLogoShape?: string; logoAlignment?: string }) {
+  const t = useTranslations("ProfileBoutique")
   const hc = config.headerColor || config.primaryColor || '#00BFA6'
   const htc = config.headerTextColor || '#ffffff'
   const sc1 = logoShape === 'round' ? 'rounded-full' : logoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'
@@ -70,13 +72,13 @@ function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { co
             {config.secondLogoUrl && <img src={getImageUrl(config.secondLogoUrl)} alt="logo2" className={`h-10 w-10 object-contain ${sc2} ${(secondLogoShape || 'round') !== 'none' ? border : ''}`} />}
           </div>
         )}
-        <div className="font-black text-base leading-tight" style={{ color: htc }}>{config.companyName || 'Ma Boutique'}</div>
+        <div className="font-black text-base leading-tight" style={{ color: htc }}>{config.companyName || t("defaultShopName")}</div>
         {config.slogan && <div className="text-xs mt-1" style={{ color: htc, opacity: 0.8 }}>{config.slogan}</div>}
         {config.description && <div className="text-[10px] mt-1 line-clamp-2" style={{ color: htc, opacity: 0.6 }}>{config.description}</div>}
         <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
           {config.phone && <span className="text-[10px] bg-white text-gray-800 px-2 py-0.5 rounded-full font-bold">{config.phone}</span>}
           {config.whatsapp && <span className="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-bold">WhatsApp</span>}
-          {config.email && <span className="text-[10px] bg-white/20 border border-white/40 px-2 py-0.5 rounded-full font-bold" style={{ color: htc }}>Email</span>}
+          {config.email && <span className="text-[10px] bg-white/20 border border-white/40 px-2 py-0.5 rounded-full font-bold" style={{ color: htc }}>{t("fieldEmail")}</span>}
           {config.facebook && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>f</span>}
           {config.instagram && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>ig</span>}
           {config.linkedin && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>in</span>}
@@ -87,6 +89,7 @@ function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { co
 }
 
 export default function BoutiqueConfigPage() {
+  const t = useTranslations("ProfileBoutique")
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [boutiqueSlug, setBoutiqueSlug] = useState<string | null>(null)
@@ -224,7 +227,7 @@ export default function BoutiqueConfigPage() {
   const removeBannerSlide = (idx: number) => setConfig(prev => ({ ...prev, bannerUrls: prev.bannerUrls.filter((_, i) => i !== idx) }))
 
   const addStory = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) { alert('Fichier trop lourd (max 10 Mo)'); return }
+    if (file.size > 10 * 1024 * 1024) { alert(t("fileTooLarge")); return }
     const type: 'image' | 'video' = file.type.startsWith('video/') ? 'video' : 'image'
     const previewUrl = URL.createObjectURL(file)
     const tempStory = { url: previewUrl, type, label: file.name.replace(/\.[^.]+$/, '') }
@@ -250,7 +253,7 @@ export default function BoutiqueConfigPage() {
       const res = await axios.post(`${API_URL}/uploads`, form, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } })
       handleChange('aboutImage', res.data?.url || res.data?.path || res.data)
     } catch {
-      setError("Erreur lors de l'upload de l'image à propos.")
+      setError(t("aboutImageUploadError"))
     }
   }
 
@@ -283,48 +286,48 @@ export default function BoutiqueConfigPage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch {
-      setError("Erreur lors de la sauvegarde.")
+      setError(t("saveError"))
     } finally {
       setSaving(false)
     }
   }
 
   const COMPANY_NAME_LABELS: Record<string, string> = {
-    AGENCE_IMMOBILIERE:            "Nom de l'agence immobilière",
-    PROMOTEUR_IMMOBILIER:          "Nom du promoteur immobilier",
-    ADMINISTRATEUR_BIENS:          "Nom de la société d'administration de biens",
-    AUTRES_PROFESSIONNELS:         "Nom de la société",
-    HOTEL:                         "Nom de l'hôtel",
-    COMPLEXE_TOURISTIQUE:          "Nom du complexe touristique",
-    VILLAGE_VACANCES:              "Nom du village de vacances",
-    APPART_HOTEL:                  "Nom de l'appart hôtel",
-    RESIDENCE_HOTELIERE:           "Nom de la résidence hôtelière",
-    MOTEL:                         "Nom du motel",
-    RELAIS_ROUTIER:                "Nom du relais routier",
-    CAMPING_TOURISTIQUE:           "Nom du camping touristique",
-    AUTRES_STRUCTURES:             "Nom de la structure",
-    SALLE_DES_FETES:               "Nom de la salle des fêtes",
-    SALLES_DINATOIRES:             "Nom de la salle dinatoire",
-    SALLE_FORMATION:               "Nom de la salle de formation",
-    SALLE_CONFERENCE:              "Nom de la salle de conférence",
-    AUTRES_EVENEMENTIEL:           "Nom de la structure",
-    ENTREPOSAGE_FRIGORIFIQUE:      "Nom de l'entrepôt",
-    ENTREPOSAGE_NON_FRIGORIFIQUE:  "Nom de l'entrepôt",
-    AUTRES_ENTREPOSAGE_STOCKAGE:   "Nom de la structure",
+    AGENCE_IMMOBILIERE:            t("companyNameAgence"),
+    PROMOTEUR_IMMOBILIER:          t("companyNamePromoteur"),
+    ADMINISTRATEUR_BIENS:          t("companyNameAdminBiens"),
+    AUTRES_PROFESSIONNELS:         t("companyNameAutresPro"),
+    HOTEL:                         t("companyNameHotel"),
+    COMPLEXE_TOURISTIQUE:          t("companyNameComplexe"),
+    VILLAGE_VACANCES:              t("companyNameVillage"),
+    APPART_HOTEL:                  t("companyNameAppartHotel"),
+    RESIDENCE_HOTELIERE:           t("companyNameResidence"),
+    MOTEL:                         t("companyNameMotel"),
+    RELAIS_ROUTIER:                t("companyNameRelais"),
+    CAMPING_TOURISTIQUE:           t("companyNameCamping"),
+    AUTRES_STRUCTURES:             t("companyNameStructure"),
+    SALLE_DES_FETES:               t("companyNameSalleFetes"),
+    SALLES_DINATOIRES:             t("companyNameSalleDinatoire"),
+    SALLE_FORMATION:               t("companyNameSalleFormation"),
+    SALLE_CONFERENCE:              t("companyNameSalleConference"),
+    AUTRES_EVENEMENTIEL:           t("companyNameStructure"),
+    ENTREPOSAGE_FRIGORIFIQUE:      t("companyNameEntrepot"),
+    ENTREPOSAGE_NON_FRIGORIFIQUE:  t("companyNameEntrepot"),
+    AUTRES_ENTREPOSAGE_STOCKAGE:   t("companyNameStructure"),
   }
   const activityType = user?.activityType || user?.activity || ""
-  const companyNameLabel = COMPANY_NAME_LABELS[activityType] || "Nom de la société"
+  const companyNameLabel = COMPANY_NAME_LABELS[activityType] || t("companyNameDefault")
 
   const accountLogo = user?.agencyLogoUrl || user?.imageUrl || ""
 
   const SaveBar = () => (
     <div className="flex gap-3">
       <a href={`/boutique/${boutiqueSlug || user?.id}`} target="_blank" className="flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors">
-        <Eye className="h-4 w-4" /> Prévisualiser
+        <Eye className="h-4 w-4" /> {t("preview")}
       </a>
       <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2 bg-[#00BFA6] text-white rounded-xl font-bold text-sm hover:bg-[#009e88] transition-colors disabled:opacity-60">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-        {saved ? "Sauvegardé !" : "Enregistrer"}
+        {saved ? t("saved") : t("save")}
       </button>
     </div>
   )
@@ -338,20 +341,20 @@ export default function BoutiqueConfigPage() {
         <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
           <Store className="h-8 w-8 text-amber-500" />
         </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-2">Boutique non activée</h2>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">{t("notActivatedTitle")}</h2>
         <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-          Votre vitrine publique n&apos;est pas encore active. Achetez un pack boutique — après validation par l&apos;administrateur, vous pourrez personnaliser et publier votre boutique.
+          {t("notActivatedText")}
         </p>
         <div className="grid grid-cols-3 gap-3 mb-6 text-left">
           {[
-            { pack: 'Standard', price: '5 000 DA', pts: '50 pts' },
-            { pack: 'Avancée', price: '10 000 DA', pts: '100 pts', hot: true },
-            { pack: 'Entreprise', price: '15 000 DA', pts: '200 pts' },
+            { pack: t("packStandard"), price: '5 000 DA', pts: '50 pts' },
+            { pack: t("packAvancee"), price: '10 000 DA', pts: '100 pts', hot: true },
+            { pack: t("packEntreprise"), price: '15 000 DA', pts: '200 pts' },
           ].map(p => (
             <div key={p.pack} className={`p-3 rounded-xl border-2 text-center ${p.hot ? 'border-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200'}`}>
               <div className="font-black text-gray-900 text-xs">{p.pack}</div>
               <div className="font-bold text-[#00BFA6] text-sm mt-0.5">{p.pts}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{p.price}/mois</div>
+              <div className="text-xs text-gray-500 mt-0.5">{p.price}{t("perMonth")}</div>
             </div>
           ))}
         </div>
@@ -359,7 +362,7 @@ export default function BoutiqueConfigPage() {
           onClick={() => router.push('/profile/points')}
           className="w-full py-3 bg-[#00BFA6] text-white rounded-xl font-bold hover:bg-[#009e88] transition-colors flex items-center justify-center gap-2"
         >
-          <Store className="h-5 w-5" /> Activer ma boutique
+          <Store className="h-5 w-5" /> {t("activateBtn")}
         </button>
       </div>
     </div>
@@ -372,8 +375,8 @@ export default function BoutiqueConfigPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3"><Store className="h-7 w-7 text-[#00BFA6]" /> Ma Vitrine</h1>
-            <p className="text-gray-500 mt-1 text-sm">Personnalisez votre vitrine professionnelle publique</p>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3"><Store className="h-7 w-7 text-[#00BFA6]" /> {t("pageTitle")}</h1>
+            <p className="text-gray-500 mt-1 text-sm">{t("pageSubtitle")}</p>
           </div>
           <SaveBar />
         </div>
@@ -395,30 +398,30 @@ export default function BoutiqueConfigPage() {
 
               {/* Identité */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Building2 className="h-5 w-5 text-[#00BFA6]" /> Identité</h2>
+                <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Building2 className="h-5 w-5 text-[#00BFA6]" /> {t("identityTitle")}</h2>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">{companyNameLabel}</label>
-                    <input value={config.companyName} onChange={e => handleChange('companyName', e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder="Ex: Agence Horizon Immobilier" />
+                    <input value={config.companyName} onChange={e => handleChange('companyName', e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder={t("companyNamePlaceholder")} />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Slogan</label>
-                    <input value={config.slogan} onChange={e => handleChange('slogan', e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder="Votre bien, notre passion" />
+                    <label className="block text-sm font-bold text-gray-700 mb-1">{t("sloganLabel")}</label>
+                    <input value={config.slogan} onChange={e => handleChange('slogan', e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder={t("sloganPlaceholder")} />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                    <textarea value={config.description} onChange={e => handleChange('description', e.target.value)} rows={3} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium resize-none text-sm" placeholder="Quelques mots sur votre agence..." />
+                    <label className="block text-sm font-bold text-gray-700 mb-1">{t("descriptionLabel")}</label>
+                    <textarea value={config.description} onChange={e => handleChange('description', e.target.value)} rows={3} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium resize-none text-sm" placeholder={t("descriptionPlaceholder")} />
                   </div>
                 </div>
               </div>
 
               {/* Visuels */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><ImageIcon className="h-5 w-5 text-[#00BFA6]" /> Visuels</h2>
+                <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><ImageIcon className="h-5 w-5 text-[#00BFA6]" /> {t("visualsTitle")}</h2>
 
                 {/* Logo */}
                 <div className="mb-5">
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Logo</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-3">{t("logoLabel")}</label>
 
                   {/* Source: compte ou custom */}
                   <div className="flex gap-2 mb-3">
@@ -426,13 +429,13 @@ export default function BoutiqueConfigPage() {
                       onClick={() => { setLogoSource('account'); handleChange('logoUrl', accountLogo) }}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${logoSource === 'account' ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-600'}`}
                     >
-                      <User className="h-3.5 w-3.5" /> Photo du compte
+                      <User className="h-3.5 w-3.5" /> {t("accountPhoto")}
                     </button>
                     <button
                       onClick={() => { setLogoSource('custom'); logoInputRef.current?.click() }}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${logoSource === 'custom' ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-600'}`}
                     >
-                      <Upload className="h-3.5 w-3.5" /> Logo personnalisé
+                      <Upload className="h-3.5 w-3.5" /> {t("customLogo")}
                     </button>
                   </div>
 
@@ -461,12 +464,12 @@ export default function BoutiqueConfigPage() {
 
                     {/* Forme du logo */}
                     <div>
-                      <p className="text-xs font-bold text-gray-500 mb-2">Forme</p>
+                      <p className="text-xs font-bold text-gray-500 mb-2">{t("shapeLabel")}</p>
                       <div className="flex gap-2">
                         {([
-                          { v: 'round', icon: Circle, label: 'Rond' },
-                          { v: 'rectangle', icon: Square, label: 'Rectangle' },
-                          { v: 'none', icon: Minus, label: 'Sans' },
+                          { v: 'round', icon: Circle, label: t("shapeRound") },
+                          { v: 'rectangle', icon: Square, label: t("shapeRectangle") },
+                          { v: 'none', icon: Minus, label: t("shapeNone") },
                         ] as { v: 'round' | 'rectangle' | 'none'; icon: any; label: string }[]).map(({ v, icon: Icon, label }) => (
                           <button key={v} onClick={() => setLogoShape(v)} className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-all text-xs ${logoShape === v ? 'border-[#00BFA6] bg-[#00BFA6]/5 text-[#00BFA6]' : 'border-gray-200 text-gray-500'}`}>
                             <Icon className="h-4 w-4" />
@@ -481,7 +484,7 @@ export default function BoutiqueConfigPage() {
                 {/* Second logo / Commercial */}
                 <div className="mb-5 pb-5 border-b border-gray-100">
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Logo secondaire <span className="text-gray-400 font-normal text-xs">(commercial, partenaire…)</span>
+                    {t("secondLogoLabel")} <span className="text-gray-400 font-normal text-xs">{t("secondLogoHint")}</span>
                   </label>
                   <input ref={secondLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'secondLogoUrl') }} />
                   <div className="flex items-center gap-4">
@@ -496,17 +499,17 @@ export default function BoutiqueConfigPage() {
                       </button>
                     )}
                     <div>
-                      <p className="text-xs font-bold text-gray-500 mb-1.5">Forme</p>
+                      <p className="text-xs font-bold text-gray-500 mb-1.5">{t("shapeLabel")}</p>
                       <div className="flex gap-1.5">
-                        {([{ v: 'round', label: 'Rond' }, { v: 'rectangle', label: 'Rect' }, { v: 'none', label: 'Sans' }] as { v: 'round'|'rectangle'|'none'; label: string }[]).map(({ v, label }) => (
+                        {([{ v: 'round', label: t("shapeRound") }, { v: 'rectangle', label: t("shapeRect") }, { v: 'none', label: t("shapeNone") }] as { v: 'round'|'rectangle'|'none'; label: string }[]).map(({ v, label }) => (
                           <button key={v} onClick={() => setSecondLogoShape(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${secondLogoShape === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-500'}`}>{label}</button>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-gray-500 mb-1.5">Alignement</p>
+                      <p className="text-xs font-bold text-gray-500 mb-1.5">{t("alignmentLabel")}</p>
                       <div className="flex gap-1.5">
-                        {([{ v: 'center', label: 'Centré' }, { v: 'sides', label: 'Côte à côte' }] as { v: 'center'|'sides'; label: string }[]).map(({ v, label }) => (
+                        {([{ v: 'center', label: t("alignCenter") }, { v: 'sides', label: t("alignSides") }] as { v: 'center'|'sides'; label: string }[]).map(({ v, label }) => (
                           <button key={v} onClick={() => setLogoAlignment(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${logoAlignment === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-500'}`}>{label}</button>
                         ))}
                       </div>
@@ -517,7 +520,7 @@ export default function BoutiqueConfigPage() {
                 {/* Bannière slider */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Bannière(s) <span className="text-gray-400 font-normal text-xs">1920×400 px recommandé · slider auto si plusieurs</span>
+                    {t("bannerLabel")} <span className="text-gray-400 font-normal text-xs">{t("bannerHint")}</span>
                   </label>
                   <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && addBannerSlide(e.target.files[0])} />
                   {config.bannerUrls.length > 0 ? (
@@ -530,13 +533,13 @@ export default function BoutiqueConfigPage() {
                         </div>
                       ))}
                       <button onClick={() => bannerInputRef.current?.click()} className="w-full py-2 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 text-sm transition-colors">
-                        <Plus className="h-4 w-4" /> Ajouter une slide
+                        <Plus className="h-4 w-4" /> {t("addSlide")}
                       </button>
                     </div>
                   ) : (
                     <button onClick={() => bannerInputRef.current?.click()} className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 transition-colors">
                       <Upload className="h-5 w-5" />
-                      <span className="text-sm font-medium">Uploader une bannière</span>
+                      <span className="text-sm font-medium">{t("uploadBanner")}</span>
                     </button>
                   )}
                 </div>
@@ -545,41 +548,41 @@ export default function BoutiqueConfigPage() {
 
             {/* Couleurs */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Palette className="h-5 w-5 text-[#00BFA6]" /> Couleurs</h2>
+              <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Palette className="h-5 w-5 text-[#00BFA6]" /> {t("colorsTitle")}</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Couleurs de fond */}
                 <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Fonds</p>
-                  <ColorPicker label="En-tête" value={config.headerColor} onChange={v => handleChange('headerColor', v)} />
-                  <ColorPicker label="Pied de page" value={config.footerColor} onChange={v => handleChange('footerColor', v)} />
-                  <ColorPicker label="Fond de page" value={config.bodyColor} onChange={v => handleChange('bodyColor', v)} />
-                  <ColorPicker label="Barre filtres" value={config.filterColor} onChange={v => handleChange('filterColor', v)} />
-                  <ColorPicker label="Bordure stories" value={config.storyColor} onChange={v => handleChange('storyColor', v)} />
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">{t("backgroundsLabel")}</p>
+                  <ColorPicker label={t("colorHeader")} value={config.headerColor} onChange={v => handleChange('headerColor', v)} />
+                  <ColorPicker label={t("colorFooter")} value={config.footerColor} onChange={v => handleChange('footerColor', v)} />
+                  <ColorPicker label={t("colorBody")} value={config.bodyColor} onChange={v => handleChange('bodyColor', v)} />
+                  <ColorPicker label={t("colorFilterBar")} value={config.filterColor} onChange={v => handleChange('filterColor', v)} />
+                  <ColorPicker label={t("colorStoryBorder")} value={config.storyColor} onChange={v => handleChange('storyColor', v)} />
                 </div>
                 {/* Couleurs de texte */}
                 <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Textes</p>
-                  <ColorPicker label="Texte en-tête" value={config.headerTextColor} onChange={v => handleChange('headerTextColor', v)} />
-                  <ColorPicker label="Texte pied page" value={config.footerTextColor} onChange={v => handleChange('footerTextColor', v)} />
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">{t("textsLabel")}</p>
+                  <ColorPicker label={t("colorHeaderText")} value={config.headerTextColor} onChange={v => handleChange('headerTextColor', v)} />
+                  <ColorPicker label={t("colorFooterText")} value={config.footerTextColor} onChange={v => handleChange('footerTextColor', v)} />
                 </div>
               </div>
               {/* Preview bande couleurs */}
               <div className="mt-5 rounded-xl overflow-hidden border border-gray-200 text-xs">
-                <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.headerColor, color: config.headerTextColor }}>En-tête — texte exemple</div>
-                <div className="h-8 flex items-center px-4 text-gray-500 font-medium" style={{ backgroundColor: config.bodyColor }}>Contenu de la page</div>
-                <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.footerColor, color: config.footerTextColor }}>Pied de page — texte exemple</div>
+                <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.headerColor, color: config.headerTextColor }}>{t("previewHeaderSample")}</div>
+                <div className="h-8 flex items-center px-4 text-gray-500 font-medium" style={{ backgroundColor: config.bodyColor }}>{t("previewBodySample")}</div>
+                <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.footerColor, color: config.footerTextColor }}>{t("previewFooterSample")}</div>
               </div>
             </div>
 
             {/* Typographie */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base">
-                <span className="text-[#00BFA6] font-black text-lg">Aa</span> Typographie
+                <span className="text-[#00BFA6] font-black text-lg">Aa</span> {t("typographyTitle")}
               </h2>
-              <p className="text-xs text-gray-500 mb-4">Choisissez une police Google Fonts pour votre boutique</p>
+              <p className="text-xs text-gray-500 mb-4">{t("typographySubtitle")}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
-                  { name: "", label: "Par défaut" },
+                  { name: "", label: t("fontDefault") },
                   { name: "Inter", label: "Inter" },
                   { name: "Poppins", label: "Poppins" },
                   { name: "Montserrat", label: "Montserrat" },
@@ -589,8 +592,8 @@ export default function BoutiqueConfigPage() {
                   { name: "Open Sans", label: "Open Sans" },
                   { name: "Playfair Display", label: "Playfair" },
                   { name: "Roboto Slab", label: "Roboto Slab" },
-                  { name: "Cairo", label: "Cairo (Arabe)" },
-                  { name: "Tajawal", label: "Tajawal (Arabe)" },
+                  { name: "Cairo", label: "Cairo (Arabic)" },
+                  { name: "Tajawal", label: "Tajawal (Arabic)" },
                 ].map(f => (
                   <button
                     key={f.name}
@@ -604,24 +607,24 @@ export default function BoutiqueConfigPage() {
               </div>
               {config.fontFamily && (
                 <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
-                  <p className="text-lg font-bold text-gray-900" style={{ fontFamily: config.fontFamily }}>Agence Immobilière Horizon</p>
-                  <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: config.fontFamily }}>Votre bien, notre passion — Patrimoine.dz</p>
+                  <p className="text-lg font-bold text-gray-900" style={{ fontFamily: config.fontFamily }}>{t("fontPreviewTitle")}</p>
+                  <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: config.fontFamily }}>{t("fontPreviewSubtitle")}</p>
                 </div>
               )}
             </div>
 
             {/* Coordonnées & Réseaux */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Phone className="h-5 w-5 text-[#00BFA6]" /> Coordonnées &amp; Réseaux sociaux</h2>
+              <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Phone className="h-5 w-5 text-[#00BFA6]" /> {t("contactSocialTitle")}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { key: 'phone', label: 'Téléphone', icon: Phone, placeholder: '+213 555 123 456', type: 'tel' },
-                  { key: 'email', label: 'Email', icon: Mail, placeholder: 'contact@agence.dz', type: 'email' },
-                  { key: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, placeholder: '+213 555 123 456', type: 'tel' },
-                  { key: 'website', label: 'Site web', icon: Globe, placeholder: 'https://www.monagence.dz', type: 'url' },
-                  { key: 'facebook', label: 'Facebook', icon: Facebook, placeholder: 'https://facebook.com/...', type: 'url' },
-                  { key: 'instagram', label: 'Instagram', icon: Instagram, placeholder: '@monagence', type: 'text' },
-                  { key: 'linkedin', label: 'LinkedIn', icon: Linkedin, placeholder: 'https://linkedin.com/...', type: 'url' },
+                  { key: 'phone', label: t("fieldPhone"), icon: Phone, placeholder: '+213 555 123 456', type: 'tel' },
+                  { key: 'email', label: t("fieldEmail"), icon: Mail, placeholder: 'contact@agence.dz', type: 'email' },
+                  { key: 'whatsapp', label: t("fieldWhatsapp"), icon: MessageCircle, placeholder: '+213 555 123 456', type: 'tel' },
+                  { key: 'website', label: t("fieldWebsite"), icon: Globe, placeholder: 'https://www.monagence.dz', type: 'url' },
+                  { key: 'facebook', label: t("fieldFacebook"), icon: Facebook, placeholder: 'https://facebook.com/...', type: 'url' },
+                  { key: 'instagram', label: t("fieldInstagram"), icon: Instagram, placeholder: '@monagence', type: 'text' },
+                  { key: 'linkedin', label: t("fieldLinkedin"), icon: Linkedin, placeholder: 'https://linkedin.com/...', type: 'url' },
                 ].map(({ key, label, icon: Icon, placeholder, type }) => (
                   <div key={key} className="flex items-center gap-3 p-3 border-2 border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
                     <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-gray-400" /></div>
@@ -633,8 +636,8 @@ export default function BoutiqueConfigPage() {
 
             {/* Stories */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base"><Play className="h-5 w-5 text-[#00BFA6]" /> Stories</h2>
-              <p className="text-xs text-gray-500 mb-5">Format mobile 9:16 · Images ou vidéos · Max 10 Mo par fichier</p>
+              <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base"><Play className="h-5 w-5 text-[#00BFA6]" /> {t("storiesTitle")}</h2>
+              <p className="text-xs text-gray-500 mb-5">{t("storiesHint")}</p>
 
               <input ref={storyInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={e => { if (e.target.files?.[0]) { addStory(e.target.files[0]); e.target.value = '' } }} />
 
@@ -652,7 +655,7 @@ export default function BoutiqueConfigPage() {
                           value={s.label}
                           onChange={e => updateStoryLabel(idx, e.target.value)}
                           className="w-full bg-transparent text-white text-xs outline-none placeholder-white/60 font-medium"
-                          placeholder="Titre..."
+                          placeholder={t("storyTitlePlaceholder")}
                         />
                       </div>
                       <button onClick={() => removeStory(idx)} className="absolute top-1.5 right-1.5 h-6 w-6 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors">
@@ -665,22 +668,22 @@ export default function BoutiqueConfigPage() {
               ) : null}
 
               <button onClick={() => storyInputRef.current?.click()} className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 transition-colors text-sm font-medium">
-                <Plus className="h-4 w-4" /> Ajouter une story (image ou vidéo 9:16)
+                <Plus className="h-4 w-4" /> {t("addStory")}
               </button>
             </div>
 
             {/* Menu de navigation */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base">
-                <span className="text-[#00BFA6] font-black">≡</span> Menu de navigation
+                <span className="text-[#00BFA6] font-black">≡</span> {t("menuTitle")}
               </h2>
-              <p className="text-xs text-gray-500 mb-4">Ajoutez des liens dans la barre de navigation de votre boutique</p>
+              <p className="text-xs text-gray-500 mb-4">{t("menuHint")}</p>
               <div className="space-y-2 mb-3">
                 {config.menuItems.map((item, idx) => {
                   const slug = boutiqueSlug || user?.id
                   const BOUTIQUE_PAGES = [
-                    { label: "Accueil boutique", href: `/boutique/${slug}` },
-                    { label: "À propos", href: `/boutique/${slug}/about` },
+                    { label: t("menuHomePage"), href: `/boutique/${slug}` },
+                    { label: t("menuAboutPage"), href: `/boutique/${slug}/about` },
                   ]
                   const isCustom = item.href && !BOUTIQUE_PAGES.some(p => p.href === item.href)
                   return (
@@ -693,7 +696,7 @@ export default function BoutiqueConfigPage() {
                           handleChange('menuItems', next)
                         }}
                         className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
-                        placeholder="Libellé (ex: À propos)"
+                        placeholder={t("menuLabelPlaceholder")}
                       />
                       <select
                         value={isCustom ? '__custom__' : (item.href || '')}
@@ -706,7 +709,7 @@ export default function BoutiqueConfigPage() {
                         }}
                         className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white"
                       >
-                        <option value="">-- Choisir une page --</option>
+                        <option value="">{t("menuChoosePage")}</option>
                         {BOUTIQUE_PAGES.map(p => (
                           <option key={p.href} value={p.href}>{p.label}</option>
                         ))}
@@ -722,30 +725,30 @@ export default function BoutiqueConfigPage() {
                 onClick={() => handleChange('menuItems', [...config.menuItems, { label: '', href: '' }])}
                 className="flex items-center gap-2 text-sm font-bold text-[#00BFA6] hover:underline"
               >
-                <Plus className="h-4 w-4" /> Ajouter un lien
+                <Plus className="h-4 w-4" /> {t("addLink")}
               </button>
             </div>
 
             {/* Page À propos */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base">
-                <Building2 className="h-5 w-5 text-[#00BFA6]" /> Page À propos
+                <Building2 className="h-5 w-5 text-[#00BFA6]" /> {t("aboutPageTitle")}
               </h2>
               <p className="text-xs text-gray-500 mb-4">
-                Disponible sur <span className="font-mono">/boutique/{boutiqueSlug || user.id}/about</span> — ajoutez un lien dans votre menu
+                {t("aboutPageHint")} <span className="font-mono">/boutique/{boutiqueSlug || user.id}/about</span> {t("aboutPageHintSuffix")}
               </p>
               <input ref={aboutImageInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadAboutImage(e.target.files[0]) }} />
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Image de présentation</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("presentationImage")}</label>
                   {config.aboutImage ? (
                     <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-50">
-                      <img src={getImageUrl(config.aboutImage)} alt="À propos" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(config.aboutImage)} alt={t("aboutPageTitle")} className="w-full h-full object-cover" />
                       <button onClick={() => handleChange('aboutImage', '')} className="absolute top-2 right-2 p-1.5 bg-white border border-gray-200 rounded-full shadow hover:bg-red-50">
                         <X className="h-3.5 w-3.5 text-gray-600" />
                       </button>
                       <button onClick={() => aboutImageInputRef.current?.click()} className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 shadow hover:bg-white">
-                        <Upload className="h-3 w-3 inline mr-1" />Changer
+                        <Upload className="h-3 w-3 inline mr-1" />{t("changeImage")}
                       </button>
                     </div>
                   ) : (
@@ -754,38 +757,38 @@ export default function BoutiqueConfigPage() {
                       className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors"
                     >
                       <Upload className="h-7 w-7" />
-                      <span className="text-sm font-medium">Cliquer pour télécharger une image</span>
-                      <span className="text-xs">JPG, PNG, WebP — max 10 Mo</span>
+                      <span className="text-sm font-medium">{t("clickToUpload")}</span>
+                      <span className="text-xs">{t("imageFormats")}</span>
                     </button>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Description de l'entreprise</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("companyDescriptionLabel")}</label>
                   <textarea
                     value={config.aboutDescription || ''}
                     onChange={e => handleChange('aboutDescription', e.target.value)}
                     rows={5}
                     className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm resize-none"
-                    placeholder="Présentez votre entreprise, votre histoire, vos valeurs..."
+                    placeholder={t("companyDescriptionPlaceholder")}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">Libellé du bouton</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("buttonLabelField")}</label>
                     <input
                       value={config.aboutButtonLabel || ''}
                       onChange={e => handleChange('aboutButtonLabel', e.target.value)}
                       className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
-                      placeholder="Nous contacter"
+                      placeholder={t("buttonLabelPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">URL du bouton</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("buttonUrlField")}</label>
                     <input
                       value={config.aboutButtonUrl || ''}
                       onChange={e => handleChange('aboutButtonUrl', e.target.value)}
                       className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
-                      placeholder="https://... ou /boutique/..."
+                      placeholder={t("buttonUrlPlaceholder")}
                     />
                   </div>
                 </div>
@@ -795,12 +798,12 @@ export default function BoutiqueConfigPage() {
             {/* Link to boutique */}
             <div className="p-5 bg-[#00BFA6]/5 border border-[#00BFA6]/20 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="font-bold text-gray-900">Lien de votre boutique publique</p>
+                <p className="font-bold text-gray-900">{t("boutiqueLinkTitle")}</p>
                 <p className="text-sm text-[#00BFA6] mt-0.5 font-mono font-bold">/boutique/{boutiqueSlug || user.id}</p>
-                {!boutiqueSlug && <p className="text-xs text-gray-400 mt-0.5">Sauvegardez pour générer l'URL avec votre nom</p>}
+                {!boutiqueSlug && <p className="text-xs text-gray-400 mt-0.5">{t("boutiqueLinkHint")}</p>}
               </div>
               <a href={`/boutique/${boutiqueSlug || user.id}`} target="_blank" className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white" style={{ backgroundColor: config.headerColor }}>
-                <ExternalLink className="h-4 w-4" /> Voir ma vitrine
+                <ExternalLink className="h-4 w-4" /> {t("viewMyShop")}
               </a>
             </div>
 
@@ -814,9 +817,9 @@ export default function BoutiqueConfigPage() {
           <div className="xl:sticky xl:top-8">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <span className="text-sm font-black text-gray-700">Aperçu en direct</span>
+                <span className="text-sm font-black text-gray-700">{t("livePreview")}</span>
                 <a href={`/boutique/${boutiqueSlug || user.id}`} target="_blank" className="text-xs text-[#00BFA6] font-bold flex items-center gap-1 hover:underline">
-                  <ExternalLink className="h-3 w-3" /> Ouvrir
+                  <ExternalLink className="h-3 w-3" /> {t("open")}
                 </a>
               </div>
 
@@ -828,15 +831,15 @@ export default function BoutiqueConfigPage() {
 
                 {/* Mini filter bar */}
                 <div className="bg-white shadow-sm border-b border-gray-200 px-3 py-2.5 flex gap-2">
-                  {["Tout", "Vente", "Location"].map((t, i) => (
+                  {[t("filterAll"), t("filterSale"), t("filterRental")].map((label, i) => (
                     <span
-                      key={t}
+                      key={label}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold"
                       style={i === 0
                         ? { backgroundColor: config.filterColor, color: 'white' }
                         : { backgroundColor: '#f3f4f6', color: '#6b7280' }
                       }
-                    >{t}</span>
+                    >{label}</span>
                   ))}
                 </div>
 
@@ -850,7 +853,7 @@ export default function BoutiqueConfigPage() {
                             ? <video src={getImageUrl(s.url)} className="h-full w-full object-cover" muted />
                             : <img src={getImageUrl(s.url)} alt="" className="h-full w-full object-cover" />}
                         </div>
-                        <span className="text-[9px] text-gray-500 truncate max-w-[44px] font-medium">{s.label || 'Story'}</span>
+                        <span className="text-[9px] text-gray-500 truncate max-w-[44px] font-medium">{s.label || t("defaultStoryLabel")}</span>
                       </div>
                     ))}
                   </div>
@@ -872,7 +875,7 @@ export default function BoutiqueConfigPage() {
 
                 {/* Footer */}
                 <div className="py-4 text-center text-xs text-white font-bold" style={{ backgroundColor: config.footerColor }}>
-                  {config.companyName || 'Ma Boutique'}
+                  {config.companyName || t("defaultShopName")}
                 </div>
               </div>
             </div>

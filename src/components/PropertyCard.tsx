@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import axios from "axios";
+import { useTranslations } from "next-intl";
 import { Camera, Eye, Heart, Square, BedDouble, MapPin, Building2, ArrowUpDown, Thermometer, Factory } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -76,13 +77,14 @@ const getCategorySpecs = (announce: any) => {
 };
 
 export const PropertyCard = ({ announce }: { announce: any }) => {
+  const t = useTranslations("PropertyCard");
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
-  const locationName = announce.property?.address?.town?.nameFr || announce.property?.address?.town?.city?.nameFr || "Algérie";
-  
+  const locationName = announce.property?.address?.town?.nameFr || announce.property?.address?.town?.city?.nameFr || t("defaultCountry");
+
   // Normalize Property Type for Display — use cross-display type if available (cross-category context)
   const pType = announce.property?._displayPropertyType || announce.property?.propertyType;
   const typeObj = require("@/data/propertyTypes").PROPERTY_TYPES.find((t: any) => t.id === pType?.toUpperCase() || t.label === pType);
-  const categoryName = typeObj ? typeObj.label : (pType || "Immobilier");
+  const categoryName = typeObj ? typeObj.label : (pType || t("defaultCategory"));
   const specs = getCategorySpecs(announce);
 
   // Get main image (first image with isMain = true, fallback to first image)
@@ -97,7 +99,7 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
     
     const token = localStorage.getItem('token');
     if (!token) {
-        alert("Veuillez vous connecter pour ajouter aux favoris");
+        alert(t("loginToFavorite"));
         return;
     }
 
@@ -163,7 +165,7 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
                   "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg",
                   announce.type === "SALE" ? "bg-red-600 text-white" : "bg-blue-600 text-white"
                 )}>
-                  {announce.type === 'SALE' ? 'VENTE' : 'LOCATION'}
+                  {announce.type === 'SALE' ? t("sale") : t("rental")}
               </span>
           </div>
         </div>
@@ -185,8 +187,8 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
                 </div>
 
                 {/* Title */}
-                <h3 className="text-gray-900 font-bold text-lg leading-tight line-clamp-1 group-hover:text-[#00BFA6] transition-colors" title={announce.title || `${categoryName} à ${locationName}`}>
-                    {announce.title ? announce.title : `${categoryName} à ${locationName}`}
+                <h3 className="text-gray-900 font-bold text-lg leading-tight line-clamp-1 group-hover:text-[#00BFA6] transition-colors" title={announce.title || t("titleFallback", { category: categoryName, location: locationName })}>
+                    {announce.title ? announce.title : t("titleFallback", { category: categoryName, location: locationName })}
                 </h3>
 
                 {/* Specs Row */}
@@ -198,13 +200,13 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
                     {specs.kind === "residential" && specs.nbRooms && (
                         <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
                             <BedDouble className="h-3.5 w-3.5 text-[#00BFA6]" />
-                            {specs.nbRooms} pièces
+                            {t("rooms", { count: specs.nbRooms })}
                         </div>
                     )}
                     {specs.kind === "hotel" && specs.nbSuites && (
                         <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
                             <BedDouble className="h-3.5 w-3.5 text-[#00BFA6]" />
-                            {specs.nbSuites} chambres
+                            {t("bedrooms", { count: specs.nbSuites })}
                         </div>
                     )}
                     {specs.kind === "industrial" && specs.height && (

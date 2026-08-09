@@ -1,37 +1,38 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
 
 export default function PacksPage() {
+  const t = useTranslations("ProfilePacks")
   const packs = [
     {
-      name: "Découverte",
+      name: t("packDecouverteName"),
       points: 50,
       price: "1 000 DA",
-      features: ["Publication de 2 annonces", "Validité 30 jours", "Support standard"]
+      features: [t("packDecouverteFeature1"), t("packDecouverteFeature2"), t("packDecouverteFeature3")]
     },
     {
-      name: "Pro",
+      name: t("packProName"),
       points: 200,
       price: "3 500 DA",
-      features: ["Publication de 10 annonces", "Validité 90 jours", "Mise en avant (3 jours)", "Support prioritaire"],
+      features: [t("packProFeature1"), t("packProFeature2"), t("packProFeature3"), t("packProFeature4")],
       popular: true
     },
     {
-      name: "Agence",
+      name: t("packAgenceName"),
       points: 1000,
       price: "15 000 DA",
-      features: ["Annonces illimitées", "Validité 1 an", "Mise en avant illimitée", "Badge Agence Certifiée"]
+      features: [t("packAgenceFeature1"), t("packAgenceFeature2"), t("packAgenceFeature3"), t("packAgenceFeature4")]
     }
   ]
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">Nos Packs de Points</h1>
+      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">{t("title")}</h1>
       <p className="text-center text-gray-500 mb-12 max-w-2xl mx-auto">
-        Achetez des points pour publier plus d'annonces et augmenter votre visibilité. 
-        Contactez-nous pour les offres entreprises sur mesure.
+        {t("subtitle")}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -41,7 +42,7 @@ export default function PacksPage() {
                 
                 {pack.popular && (
                     <div className="absolute top-0 right-0 bg-[#00BFA6] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                        POPULAIRE
+                        {t("popular")}
                     </div>
                 )}
 
@@ -62,7 +63,7 @@ export default function PacksPage() {
                     </ul>
                     <Button className={`w-full py-6 text-lg rounded-xl font-bold
                         ${pack.popular ? 'bg-[#00BFA6] hover:bg-[#00908A]' : 'bg-gray-800 hover:bg-gray-900'}`}>
-                        Choisir ce pack
+                        {t("choosePlan")}
                     </Button>
                 </div>
             </div>
@@ -70,10 +71,10 @@ export default function PacksPage() {
       </div>
 
       <div className="mt-12 bg-blue-50 p-8 rounded-xl text-center">
-        <h3 className="text-lg font-bold text-blue-900 mb-2">Besoin d'aide ?</h3>
-        <p className="text-blue-700 mb-4">Notre équipe commerciale est à votre disposition pour vous conseiller.</p>
+        <h3 className="text-lg font-bold text-blue-900 mb-2">{t("needHelp")}</h3>
+        <p className="text-blue-700 mb-4">{t("needHelpText")}</p>
         <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
-            Contacter le service commercial
+            {t("contactSales")}
         </Button>
       </div>
     </div>
