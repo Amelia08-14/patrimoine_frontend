@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import axios from "axios";
 import { Camera, Eye, Heart, Square, BedDouble, MapPin, Building2, ArrowUpDown, Thermometer, Factory } from "lucide-react";
 import { cn } from "@/lib/utils";

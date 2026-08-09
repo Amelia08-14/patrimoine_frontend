@@ -1,18 +1,41 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw } from "lucide-react"
 
-export default function AdminAnnouncesPage() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+function AdminAnnouncesContent() {
+  const searchParams = useSearchParams()
   const [announces, setAnnounces] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [search, setSearch] = useState(searchParams.get('search') || "")
+  const [wilaya, setWilaya] = useState("")
+  const [commune, setCommune] = useState("")
+  const [cities, setCities] = useState<any[]>([])
+  const [towns, setTowns] = useState<any[]>([])
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "WAITING_VALIDATION" | "VALIDATED" | "REJECTED">("WAITING_VALIDATION")
+
+  useEffect(() => {
+    fetch(`${API_URL}/cities`).then((r) => r.json()).then(setCities).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!wilaya) { setTowns([]); return }
+    fetch(`${API_URL}/cities/${wilaya}/towns`).then((r) => r.json()).then(setTowns).catch(() => {})
+  }, [wilaya])
 
   const fetchAnnounces = useCallback(async () => {
     try {
       const token = localStorage.getItem('admin_token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/admin/announces`, {
-        headers: { 
+      const params = new URLSearchParams()
+      if (search) params.set('search', search)
+      if (wilaya) params.set('wilaya', wilaya)
+      if (commune) params.set('commune', commune)
+      const response = await fetch(`${API_URL}/admin/announces?${params.toString()}`, {
+        headers: {
             'Authorization': `Bearer ${token}`,
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache'
@@ -28,11 +51,10 @@ export default function AdminAnnouncesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [search, wilaya, commune])
 
   useEffect(() => {
     fetchAnnounces()
-    // Poll every 10 seconds
     const interval = setInterval(fetchAnnounces, 10000)
     return () => clearInterval(interval)
   }, [fetchAnnounces])
@@ -42,18 +64,17 @@ export default function AdminAnnouncesPage() {
 
     try {
       const token = localStorage.getItem('admin_token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/admin/announces/${id}/status`, {
+      const response = await fetch(`${API_URL}/admin/announces/${id}/status`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status })
       })
 
       if (response.ok) {
         setAnnounces(announces.map(a => a.id === id ? { ...a, status } : a))
-        alert("Statut mis à jour avec succès")
       } else {
         alert("Erreur lors de la mise à jour")
       }
@@ -62,21 +83,57 @@ export default function AdminAnnouncesPage() {
     }
   }
 
+  const filtered = statusFilter === "ALL" ? announces : announces.filter(a => a.status === statusFilter)
+  const pendingCount = announces.filter(a => a.status === 'WAITING_VALIDATION').length
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Validation des Annonces</h1>
-          <p className="text-gray-500">Examinez et validez les nouvelles annonces.</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            Validation des Annonces
+            {pendingCount > 0 && (
+              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">{pendingCount} en attente</span>
+            )}
+          </h1>
+          <p className="text-gray-500">Examinez, validez ou rejetez les annonces publiées.</p>
         </div>
-        <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={fetchAnnounces} title="Actualiser">
-                <RefreshCw className="h-4 w-4" />
-            </Button>
-            <div className="bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2">
-                <Search className="h-4 w-4 text-gray-400" />
-                <input placeholder="Rechercher..." className="outline-none text-sm" />
-            </div>
+        <Button variant="outline" size="sm" onClick={fetchAnnounces} title="Actualiser">
+            <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Filtres */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-0.5">
+          {([
+            { id: "WAITING_VALIDATION", label: "En attente" },
+            { id: "ALL", label: "Toutes" },
+            { id: "VALIDATED", label: "Validées" },
+            { id: "REJECTED", label: "Rejetées" },
+          ] as const).map(s => (
+            <button key={s.id} onClick={() => setStatusFilter(s.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === s.id ? 'bg-[#00BFA6] text-white' : 'text-gray-500 hover:text-gray-800'}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <select value={wilaya} onChange={(e) => { setWilaya(e.target.value); setCommune("") }} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
+          <option value="">Toutes wilayas</option>
+          {cities.map((c: any) => <option key={c.id} value={c.id}>{c.nameFr}</option>)}
+        </select>
+
+        {wilaya && (
+          <select value={commune} onChange={(e) => setCommune(e.target.value)} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
+            <option value="">Toutes communes</option>
+            {towns.map((t: any) => <option key={t.id} value={t.id}>{t.nameFr}</option>)}
+          </select>
+        )}
+
+        <div className="bg-white px-3 py-2 rounded-xl border-2 border-gray-200 flex items-center gap-2 flex-1 min-w-[220px]">
+            <Search className="h-4 w-4 text-gray-400" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Référence, titre..." className="outline-none text-sm w-full" />
         </div>
       </div>
 
@@ -96,17 +153,17 @@ export default function AdminAnnouncesPage() {
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
-              ) : announces.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Aucune annonce.</td></tr>
               ) : (
-                announces.map((announce) => (
+                filtered.map((announce) => (
                   <tr key={announce.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900 flex items-center gap-2">
                         <Building className="h-4 w-4 text-gray-400" />
-                        {announce.property?.propertyType || 'Bien immobilier'}
+                        {announce.title || announce.property?.propertyType || 'Bien immobilier'}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 line-clamp-1">{announce.property?.description}</div>
+                      <div className="text-xs text-gray-500 mt-1">Réf. {announce.reference}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-1">
@@ -148,17 +205,19 @@ export default function AdminAnnouncesPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="text-gray-600 border-gray-200"
-                            title="Voir les détails"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <a href={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001'}/announces/${announce.id}`} target="_blank" rel="noopener noreferrer">
+                          <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-gray-600 border-gray-200"
+                              title="Voir l'annonce"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </a>
                         {announce.status !== 'VALIDATED' && (
-                            <Button 
-                                size="sm" 
+                            <Button
+                                size="sm"
                                 className="bg-green-600 hover:bg-green-700 text-white"
                                 onClick={() => handleUpdateStatus(announce.id, 'VALIDATED')}
                             >
@@ -166,9 +225,9 @@ export default function AdminAnnouncesPage() {
                             </Button>
                         )}
                         {announce.status !== 'REJECTED' && (
-                            <Button 
-                                size="sm" 
-                                variant="outline" 
+                            <Button
+                                size="sm"
+                                variant="outline"
                                 className="text-red-600 hover:bg-red-50 border-red-200"
                                 onClick={() => handleUpdateStatus(announce.id, 'REJECTED')}
                             >
@@ -185,5 +244,13 @@ export default function AdminAnnouncesPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AdminAnnouncesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Chargement...</div>}>
+      <AdminAnnouncesContent />
+    </Suspense>
   )
 }

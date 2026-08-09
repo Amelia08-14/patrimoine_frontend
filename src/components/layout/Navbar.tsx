@@ -1,14 +1,19 @@
 "use client"
 
-import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { User, LogOut, Plus, ChevronDown, List, CreditCard, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2, Store, ClipboardList, Handshake } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { Link, useRouter, usePathname } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
+import { User, LogOut, Plus, ChevronDown, List, Coins, Megaphone, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2, Store, ClipboardList, Handshake, LifeBuoy, LayoutTemplate, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const LOCALE_LABELS: Record<string, string> = { fr: 'Français', en: 'English', ar: 'العربية' };
 
 export function Navbar() {
   const router = useRouter();
-  const pathname = usePathname(); // Get current path
+  const pathname = usePathname(); // Get current path (locale-agnostic)
+  const locale = useLocale();
+  const t = useTranslations('Navbar');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInitials, setUserInitials] = useState("");
   const [user, setUser] = useState<any>(null);
@@ -18,6 +23,7 @@ export function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const desktopLangRef = useRef<HTMLDivElement>(null);
 
   const getCompanyActivityLabel = (companyActivity?: string) => {
     if (!companyActivity) return null
@@ -58,13 +64,13 @@ export function Navbar() {
   const getUserTypeLabel = (userType: string) => {
     switch(userType) {
       case 'PARTICULIER':
-        return 'Compte Particulier';
+        return t('particulierAccount');
       case 'SOCIETE':
-        return 'Compte Société';
+        return t('societeAccount');
       case 'ADMIN':
-        return 'Administrateur';
+        return t('administrator');
       default:
-        return 'Espace Client';
+        return t('clientSpace');
     }
   };
 
@@ -93,7 +99,10 @@ export function Navbar() {
       if (actionsRef.current && !actionsRef.current.contains(event.target as Node)) {
         setIsActionsOpen(false);
       }
-      if (langRef.current && !langRef.current.contains(event.target as Node)) {
+      if (
+        langRef.current && !langRef.current.contains(event.target as Node) &&
+        desktopLangRef.current && !desktopLangRef.current.contains(event.target as Node)
+      ) {
         setIsLangOpen(false);
       }
     }
@@ -129,10 +138,12 @@ export function Navbar() {
     }
   }, []);
 
-  // Don't render Navbar on admin pages
-  if (pathname?.startsWith('/admin')) {
-    return null;
-  }
+  const isCompanyAccount = user?.userType === 'SOCIETE';
+
+  const switchLocale = (newLocale: string) => {
+    setIsLangOpen(false);
+    router.replace(pathname, { locale: newLocale });
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -158,18 +169,18 @@ export function Navbar() {
              <Link href="/deposit">
                <Button className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-5 py-4 text-sm font-bold shadow-md hover:shadow-lg transition-all duration-300">
                  <Plus className="h-4 w-4 mr-2 stroke-[3]" />
-                 Déposer votre annonce
+                 {t('depositAd')}
                </Button>
              </Link>
              <Link href="/research">
                <Button variant="outline" className="border-[#00BFA6] text-[#00BFA6] hover:bg-[#E6F8F6] hover:text-[#00908A] rounded-full px-5 py-4 text-sm font-bold border-2 transition-all duration-300">
                  <Plus className="h-4 w-4 mr-2 stroke-[3]" />
-                 Confier votre recherche
+                 {t('entrustSearch')}
                </Button>
              </Link>
              <Link href="/demandes" className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#00BFA6] transition-colors px-2">
                <ClipboardList className="h-4 w-4" />
-               Demandes en cours
+               {t('pendingRequests')}
              </Link>
           </div>
 
@@ -182,13 +193,13 @@ export function Navbar() {
                {isActionsOpen && (
                  <div className="fixed top-[76px] left-3 right-3 w-auto bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
                    <Link href="/deposit" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6] whitespace-nowrap" onClick={() => setIsActionsOpen(false)}>
-                     <Plus className="h-4 w-4 mr-3" /> Déposer votre annonce
+                     <Plus className="h-4 w-4 mr-3" /> {t('depositAd')}
                    </Link>
                    <Link href="/research" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6] whitespace-nowrap" onClick={() => setIsActionsOpen(false)}>
-                     <Plus className="h-4 w-4 mr-3" /> Confier votre recherche
+                     <Plus className="h-4 w-4 mr-3" /> {t('entrustSearch')}
                    </Link>
                    <Link href="/demandes" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6] whitespace-nowrap" onClick={() => setIsActionsOpen(false)}>
-                     <ClipboardList className="h-4 w-4 mr-3" /> Demandes en cours
+                     <ClipboardList className="h-4 w-4 mr-3" /> {t('pendingRequests')}
                    </Link>
                  </div>
                )}
@@ -196,11 +207,11 @@ export function Navbar() {
              {/* Quick access: Confier */}
              <Link
                href="/research"
-               title="Confier votre recherche"
+               title={t('entrustSearch')}
                className="hidden md:flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-600 hover:border-[#00BFA6] hover:text-[#00908A] transition-colors"
              >
                <Handshake className="h-3.5 w-3.5" />
-               Confier
+               {t('entrustQuick')}
              </Link>
              {/* Auth Links */}
              {isLoggedIn ? (
@@ -250,47 +261,84 @@ export function Navbar() {
                             <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
                         </div>
                         
-                        <div className="py-2">
-                            {user?.userType === 'SOCIETE' && (
-                              <Link href="/profile/boutique" className="flex items-center px-4 py-2 text-sm font-bold text-[#00BFA6] hover:bg-[#00BFA6]/5 hover:text-[#009e88]">
-                                  <Store className="h-4 w-4 mr-3" /> Ma Boutique
-                              </Link>
-                            )}
-                            <Link href="/profile/announces" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <List className="h-4 w-4 mr-3" /> Annonces déposées
-                            </Link>
-                            <Link href="/profile/favorites" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <Heart className="h-4 w-4 mr-3" /> Mes favoris
-                            </Link>
-                            <Link href="/profile/messages" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <MessageSquare className="h-4 w-4 mr-3" /> Ma messagerie
-                            </Link>
-                            <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <CreditCard className="h-4 w-4 mr-3" /> Espace Publicitaire et Points
-                            </Link>
-                            <Link href="/profile/researches" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <Search className="h-4 w-4 mr-3" /> Recherches confiées
-                            </Link>
-                            <Link href="/profile/stats" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <PieChart className="h-4 w-4 mr-3" /> Statistiques
-                            </Link>
-                        </div>
+                        <div className="max-h-[70vh] overflow-y-auto">
+                            {/* 1. Mon Espace Personnel / Professionnel */}
+                            <div className="py-2 border-b border-gray-100">
+                                <p className="px-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    {isCompanyAccount ? t('professionalSpace') : t('personalSpace')}
+                                </p>
+                                <Link href="/profile/info" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <User className="h-4 w-4 mr-3" /> {t('myProfile')}
+                                </Link>
+                                <Link href="/profile/notifications" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <Bell className="h-4 w-4 mr-3" /> {t('notification')}
+                                </Link>
+                                <div className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6] cursor-pointer">
+                                    <Globe className="h-4 w-4 mr-3" /> {t('languageItem')}
+                                </div>
+                            </div>
 
-                        <div className="border-t border-gray-100 py-2">
-                            <Link href="/profile/info" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <User className="h-4 w-4 mr-3" /> Mon profil
-                            </Link>
-                            <Link href="/profile/notifications" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
-                                <Bell className="h-4 w-4 mr-3" /> Mes notifications
-                            </Link>
-                            <div className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6] cursor-pointer">
-                                <Globe className="h-4 w-4 mr-3" /> Langue
+                            {/* 2. Annonces & Favoris */}
+                            <div className="py-2 border-b border-gray-100">
+                                <p className="px-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('adsAndFavorites')}</p>
+                                <Link href="/profile/announces" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <List className="h-4 w-4 mr-3" /> {t('ads')}
+                                </Link>
+                                <Link href="/profile/favorites" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <Heart className="h-4 w-4 mr-3" /> {t('favorites')}
+                                </Link>
+                                <Link href="/profile/researches" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <Search className="h-4 w-4 mr-3" /> {isCompanyAccount ? t('entrustedShort') : t('entrustedSearches')}
+                                </Link>
+                            </div>
+
+                            {/* 3. Ma Boutique & Type de Vitrine — Société uniquement */}
+                            {isCompanyAccount && (
+                              <div className="py-2 border-b border-gray-100">
+                                <p className="px-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('myShopAndShowcase')}</p>
+                                <Link href="/profile/boutique" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <Store className="h-4 w-4 mr-3" /> {t('myShopItem')}
+                                </Link>
+                                <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <LayoutTemplate className="h-4 w-4 mr-3" /> {t('showcaseType')}
+                                </Link>
+                              </div>
+                            )}
+
+                            {/* 4. Communication & Actions */}
+                            <div className="py-2 border-b border-gray-100">
+                                <p className="px-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('communicationAndActions')}</p>
+                                <Link href="/profile/messages" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <MessageSquare className="h-4 w-4 mr-3" /> {t('messaging')}
+                                </Link>
+                            </div>
+
+                            {/* 4. Fidélité, Visibilité & Performances */}
+                            <div className="py-2 border-b border-gray-100">
+                                <p className="px-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('loyaltyVisibilityPerformance')}</p>
+                                <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <Coins className="h-4 w-4 mr-3" /> {t('myPoints')}
+                                </Link>
+                                <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <Megaphone className="h-4 w-4 mr-3" /> {t('adSpace')}
+                                </Link>
+                                <Link href="/profile/stats" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <PieChart className="h-4 w-4 mr-3" /> {t('statistics')}
+                                </Link>
+                            </div>
+
+                            {/* 5. Assistance */}
+                            <div className="py-2">
+                                <p className="px-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('assistance')}</p>
+                                <Link href="/faq" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                    <LifeBuoy className="h-4 w-4 mr-3" /> {t('technicalAssistance')}
+                                </Link>
                             </div>
                         </div>
 
                         <div className="border-t border-gray-100 pt-2 pb-1">
                             <button onClick={handleLogout} className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                <LogOut className="h-4 w-4 mr-3" /> Déconnexion
+                                <LogOut className="h-4 w-4 mr-3" /> {t('logout')}
                             </button>
                         </div>
                     </div>
@@ -300,21 +348,41 @@ export function Navbar() {
                <div className="flex items-center gap-2">
                  <Link href="/auth/login">
                    <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-4 py-2 h-auto text-xs md:text-sm font-bold">
-                     Se connecter
+                     {t('login')}
                    </Button>
                  </Link>
                  <Link href="/auth/register">
                    <Button className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-4 py-2 h-auto text-xs md:text-sm font-bold shadow-md hover:shadow-lg transition-all duration-300">
-                     Créer un compte
+                     {t('register')}
                    </Button>
                  </Link>
                </div>
              )}
 
              {/* Language Selector */}
-             <div className="hidden md:flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1.5 cursor-pointer hover:border-[#00BFA6] transition-colors group">
-                <span className="text-xs font-bold text-gray-600 group-hover:text-[#00908A]">Français</span>
-                <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-[#00908A]" />
+             <div className="relative hidden md:block" ref={desktopLangRef}>
+               <div
+                 className="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1.5 cursor-pointer hover:border-[#00BFA6] transition-colors group"
+                 onClick={() => setIsLangOpen(!isLangOpen)}
+               >
+                  <span className="text-xs font-bold text-gray-600 group-hover:text-[#00908A]">{LOCALE_LABELS[locale]}</span>
+                  <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-[#00908A]" />
+               </div>
+               {isLangOpen && (
+                 <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
+                   {routing.locales.map((l) => (
+                     <button
+                       key={l}
+                       type="button"
+                       className="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]"
+                       onClick={() => switchLocale(l)}
+                     >
+                       {LOCALE_LABELS[l]}
+                       {locale === l && <Check className="h-3.5 w-3.5 text-[#00BFA6]" />}
+                     </button>
+                   ))}
+                 </div>
+               )}
              </div>
           </div>
 
@@ -330,12 +398,17 @@ export function Navbar() {
         </button>
         {isLangOpen && (
           <div className="fixed bottom-16 right-3 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[60]">
-            <button type="button" className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]" onClick={() => setIsLangOpen(false)}>
-              Français
-            </button>
-            <button type="button" className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]" onClick={() => setIsLangOpen(false)}>
-              العربية
-            </button>
+            {routing.locales.map((l) => (
+              <button
+                key={l}
+                type="button"
+                className="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]"
+                onClick={() => switchLocale(l)}
+              >
+                {LOCALE_LABELS[l]}
+                {locale === l && <Check className="h-3.5 w-3.5 text-[#00BFA6]" />}
+              </button>
+            ))}
           </div>
         )}
       </div>

@@ -1,14 +1,10 @@
 "use client"
 
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 export function Footer() {
-  const pathname = usePathname();
-
-  // Don't render Footer on admin pages
-  if (pathname?.startsWith('/admin')) {
-    return null;
-  }
+  const t = useTranslations("Footer");
 
   return (
     <footer className="bg-gray-800 text-white">
@@ -17,71 +13,76 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <span className="text-2xl font-bold text-white">Patrimoine</span>
             <p className="mt-2 text-gray-300 text-sm">
-              Votre partenaire de confiance pour l'immobilier. Trouvez le bien de vos rêves ou vendez au meilleur prix.
+              {t("tagline")}
             </p>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Rechercher</h3>
+            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">{t("searchTitle")}</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <a href="/announces" className="text-base text-gray-300 hover:text-white">
-                  Recherche de biens
-                </a>
+                <Link href="/announces" className="text-base text-gray-300 hover:text-white">
+                  {t("browseProperties")}
+                </Link>
               </li>
               <li>
-                <a href="/demandes" className="text-base text-gray-300 hover:text-white">
-                  Demandes en cours
-                </a>
+                <Link href="/demandes" className="text-base text-gray-300 hover:text-white">
+                  {t("pendingRequests")}
+                </Link>
               </li>
               <li>
-                <a href="/research" className="text-base text-gray-300 hover:text-white">
-                  Confier ma recherche
-                </a>
+                <Link href="/research" className="text-base text-gray-300 hover:text-white">
+                  {t("entrustSearch")}
+                </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Support</h3>
+            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">{t("supportTitle")}</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <a href="/contact" className="text-base text-gray-300 hover:text-white">
-                  Contact
-                </a>
+                <Link href="/contact" className="text-base text-gray-300 hover:text-white">
+                  {t("contact")}
+                </Link>
               </li>
               <li>
-                <a href="/faq" className="text-base text-gray-300 hover:text-white">
-                  Foire Aux Questions
-                </a>
+                <Link href="/faq" className="text-base text-gray-300 hover:text-white">
+                  {t("faq")}
+                </Link>
               </li>
               <li>
-                <a href="/partenaires" className="text-base text-gray-300 hover:text-white">
-                  Nos Partenaires
-                </a>
+                <Link href="/partenaires" className="text-base text-gray-300 hover:text-white">
+                  {t("partners")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/support" className="text-base text-gray-300 hover:text-white">
+                  {t("supportService")}
+                </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Légal</h3>
+            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">{t("legalTitle")}</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <a href="/cgu" className="text-base text-gray-300 hover:text-white">
-                  Conditions Générales d'Utilisation
-                </a>
+                <Link href="/cgu" className="text-base text-gray-300 hover:text-white">
+                  {t("cgu")}
+                </Link>
               </li>
               <li>
-                <a href="/confidentialite" className="text-base text-gray-300 hover:text-white">
-                  Politique de Confidentialité
-                </a>
+                <Link href="/confidentialite" className="text-base text-gray-300 hover:text-white">
+                  {t("privacy")}
+                </Link>
               </li>
             </ul>
           </div>
         </div>
         <div className="mt-8 border-t border-gray-700 pt-8">
           <p className="text-base text-gray-400 text-center">
-            &copy; 2026 Patrimoine Immobilier. Tous droits réservés.
+            {t("copyright", { year: new Date().getFullYear() })}
           </p>
         </div>
       </div>
