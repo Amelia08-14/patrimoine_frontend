@@ -812,6 +812,12 @@ const APARTMENT_LIFESTYLE_TYPES = [
     }
 ]
 
+const CADRE_MODE_VIE_TYPES = [
+    { id: "RESIDENCE_FERMEE_PROMOTION", label: "Résidence fermée / Promotion immobilière" },
+    { id: "QUARTIER_RESIDENTIEL_STANDING", label: "Quartier résidentiel / Standing" },
+    { id: "QUARTIER_CLASSIQUE", label: "Quartier classique" },
+]
+
 const BUILDING_TYPOLOGY_MODES = [
     { id: "SIMILAIRES", label: "Immeuble avec Appartements de typologies similaires" },
     { id: "DIFFERENTES", label: "Immeuble avec Appartements de typologies différentes" }
@@ -1017,6 +1023,11 @@ const formSchema = z.object({
       "QUARTIER_OUVERT",
       "RESIDENCE_CLOTUREE",
       "PROMOTION_IMMOBILIERE"
+  ]).optional(),
+  cadreModeVie: z.enum([
+      "RESIDENCE_FERMEE_PROMOTION",
+      "QUARTIER_RESIDENTIEL_STANDING",
+      "QUARTIER_CLASSIQUE"
   ]).optional(),
   kitchenType: z.enum(["AMERICAINE", "FERMEE", "SEMI_OUVERTE"]).optional(),
   kitchenState: z.enum(["EQUIPEE", "AMENAGEE", "VIDE"]).optional(),
@@ -6247,6 +6258,36 @@ function DepositPageComponent() {
                                         </div>
                                         {errors.usageType && <p className="text-red-500 text-sm mt-1">{errors.usageType.message as any}</p>}
                                     </div>
+                                </section>
+                            )}
+
+                            {/* Cadre et mode de vie + Usage bureau/commercial — biens d'habitation uniquement */}
+                            {!isVillaDemolition && !isBuildingDemolition && !isCommercialPropertyType && (
+                                <section className="space-y-6">
+                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                        <MapPin className="text-[#00BFA6]" /> Cadre et mode de vie
+                                    </h2>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Environnement / type d'habitat du bien</label>
+                                        <select
+                                            {...register("cadreModeVie")}
+                                            className="w-full sm:w-96 p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                        >
+                                            <option value="">Sélectionner...</option>
+                                            {CADRE_MODE_VIE_TYPES.map((c) => (
+                                                <option key={c.id} value={c.id}>{c.label}</option>
+                                            ))}
+                                        </select>
+                                        {errors.cadreModeVie && <p className="text-red-500 text-sm mt-1">{errors.cadreModeVie.message as any}</p>}
+                                    </div>
+
+                                    <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white max-w-xl">
+                                        <input type="checkbox" {...register("acceptsCrossUsage")} className="accent-[#00BFA6] w-5 h-5 mt-0.5 shrink-0" />
+                                        <span>
+                                            <span className="font-bold text-gray-900 text-sm block">Acceptez-vous bureau ou commercial ?</span>
+                                            <span className="text-xs text-gray-500">Indique si ce bien d'habitation peut aussi convenir à un usage professionnel (évite les doublons dans la catégorie Bureaux ou Commerciaux).</span>
+                                        </span>
+                                    </label>
                                 </section>
                             )}
 

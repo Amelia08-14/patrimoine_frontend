@@ -34,7 +34,10 @@ export default function ConfidentialitePage() {
             sections.map((s) => (
               <section key={s.id} className="mb-8 last:mb-0">
                 <h2 className="text-xl font-bold mb-4 text-gray-900">{s.title}</h2>
-                <p className="whitespace-pre-line text-gray-600 leading-relaxed">{s.body}</p>
+                <div
+                  className="legal-rich-content text-gray-600 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: s.body }}
+                />
               </section>
             ))
           )}

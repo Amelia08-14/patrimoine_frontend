@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw } from "lucide-react"
+import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -82,6 +82,49 @@ function AdminAnnouncesContent() {
       alert("Erreur technique")
     }
   }
+
+  const handleFeature = async (id: number) => {
+    const input = prompt("Durée de mise en avant (en jours) :", "30")
+    if (input === null) return
+    const durationDays = Number(input) || 30
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/admin/announces/${id}/feature`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ durationDays }),
+      })
+      if (response.ok) {
+        const updated = await response.json()
+        setAnnounces(announces.map(a => a.id === id ? { ...a, ...updated } : a))
+      } else {
+        alert("Erreur lors de la mise en avant")
+      }
+    } catch {
+      alert("Erreur technique")
+    }
+  }
+
+  const handleUnfeature = async (id: number) => {
+    if (!confirm("Retirer cette annonce de la première page ?")) return
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/admin/announces/${id}/unfeature`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const updated = await response.json()
+        setAnnounces(announces.map(a => a.id === id ? { ...a, ...updated } : a))
+      } else {
+        alert("Erreur lors du retrait")
+      }
+    } catch {
+      alert("Erreur technique")
+    }
+  }
+
+  const isFeatured = (a: any) => a.featuredUntil && new Date(a.featuredUntil) > new Date()
 
   const filtered = statusFilter === "ALL" ? announces : announces.filter(a => a.status === statusFilter)
   const pendingCount = announces.filter(a => a.status === 'WAITING_VALIDATION').length
@@ -162,8 +205,13 @@ function AdminAnnouncesContent() {
                       <div className="font-medium text-gray-900 flex items-center gap-2">
                         <Building className="h-4 w-4 text-gray-400" />
                         {announce.title || announce.property?.propertyType || 'Bien immobilier'}
+                        {isFeatured(announce) && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                            <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> À la une
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Réf. {announce.reference}</div>
+                      <div className="text-xs text-gray-500 mt-1">ID #{announce.id} — Réf. {announce.reference}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-1">
@@ -232,6 +280,27 @@ function AdminAnnouncesContent() {
                                 onClick={() => handleUpdateStatus(announce.id, 'REJECTED')}
                             >
                             <XCircle className="h-4 w-4" />
+                            </Button>
+                        )}
+                        {isFeatured(announce) ? (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-amber-600 hover:bg-amber-50 border-amber-200"
+                                onClick={() => handleUnfeature(announce.id)}
+                                title="Retirer de la première page"
+                            >
+                              <StarOff className="h-4 w-4" />
+                            </Button>
+                        ) : (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-amber-600 hover:bg-amber-50 border-amber-200"
+                                onClick={() => handleFeature(announce.id)}
+                                title="Mettre en première page"
+                            >
+                              <Star className="h-4 w-4" />
                             </Button>
                         )}
                       </div>

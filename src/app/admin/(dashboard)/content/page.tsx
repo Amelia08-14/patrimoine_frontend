@@ -6,6 +6,7 @@ import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
   ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff
 } from "lucide-react"
+import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const getHeaders = (json = true) => {
@@ -135,11 +136,12 @@ function LegalTab() {
                   {saving === s.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
                 </div>
               </div>
-              <textarea
-                defaultValue={s.body}
-                onBlur={(e) => e.target.value !== s.body && updateSection(s.id, { body: e.target.value })}
-                rows={3}
-                className="w-full text-sm text-gray-600 outline-none border border-gray-200 rounded-xl p-3 focus:border-[#00BFA6]"
+              <LegalRichEditor
+                initialHtml={s.body}
+                published={s.published}
+                saving={saving === s.id}
+                onSave={(html) => updateSection(s.id, { body: html })}
+                onPublish={(html) => updateSection(s.id, { body: html, published: true })}
               />
             </div>
           ))}
@@ -363,6 +365,35 @@ function ContactTab() {
         <label className="text-sm font-bold text-gray-700 mb-1.5 block">Texte "Service Support"</label>
         <textarea value={settings.SUPPORT_CONTENT || ''} onChange={(e) => set('SUPPORT_CONTENT', e.target.value)} rows={4} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
       </div>
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">E-mails dédiés par département</p>
+      <div>
+        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🛠️ Support Technique</label>
+        <input value={settings.SUPPORT_TECHNIQUE_EMAIL || ''} onChange={(e) => set('SUPPORT_TECHNIQUE_EMAIL', e.target.value)} placeholder="technique@votreplateforme.com" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
+      </div>
+      <div>
+        <label className="text-sm font-bold text-gray-700 mb-1.5 block">💼 Service Commercial</label>
+        <input value={settings.SUPPORT_COMMERCIAL_EMAIL || ''} onChange={(e) => set('SUPPORT_COMMERCIAL_EMAIL', e.target.value)} placeholder="commercial@votreplateforme.com" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
+      </div>
+      <div>
+        <label className="text-sm font-bold text-gray-700 mb-1.5 block">⚖️ Service Légal & Juridique</label>
+        <input value={settings.SUPPORT_JURIDIQUE_EMAIL || ''} onChange={(e) => set('SUPPORT_JURIDIQUE_EMAIL', e.target.value)} placeholder="juridique@votreplateforme.com" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
+      </div>
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Canaux de messagerie instantanée</p>
+      <div>
+        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🟢 WhatsApp Pro</label>
+        <input value={settings.WHATSAPP_PRO_NUMBER || ''} onChange={(e) => set('WHATSAPP_PRO_NUMBER', e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
+      </div>
+      <div>
+        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🟣 Viber Business</label>
+        <input value={settings.VIBER_NUMBER || ''} onChange={(e) => set('VIBER_NUMBER', e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
+      </div>
+      <div>
+        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🔵 Telegram Support Bot</label>
+        <input value={settings.TELEGRAM_BOT_USERNAME || ''} onChange={(e) => set('TELEGRAM_BOT_USERNAME', e.target.value)} placeholder="@NomDuBot_Support" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
+      </div>
+
       <div className="flex items-center gap-3">
         <Button onClick={save} disabled={saving} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
           {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />} Enregistrer

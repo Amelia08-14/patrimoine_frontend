@@ -355,6 +355,14 @@ export default function AnnounceDetailsPage() {
     }
   }, [params.id])
 
+  const trackCall = () => {
+    if (!params.id) return
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces/${params.id}/call`, {
+      method: 'POST',
+      keepalive: true,
+    }).catch(() => {})
+  }
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">{t("loading")}</div>
   if (!announce) return <div className="min-h-screen flex items-center justify-center">{t("notFound")}</div>
 
@@ -1384,15 +1392,19 @@ export default function AnnounceDetailsPage() {
                       return contactsList.map((contact: any, index: number) => (
                           <div key={index} className="relative group">
                               {/* Phone Button */}
-                              <div className="flex items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900">
-                                  <Phone className="h-4 w-4 text-[#00BFA6]" /> 
+                              <a
+                                  href={`tel:+${toIntlDigits(contact.phone)}`}
+                                  onClick={trackCall}
+                                  className="flex items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900"
+                              >
+                                  <Phone className="h-4 w-4 text-[#00BFA6]" />
                                   {formatDisplayPhone(contact.phone)}
-                              </div>
+                              </a>
 
                               {/* Hover Icons Dropdown */}
                               {(contact.hasWhatsapp || contact.hasViber || contact.hasTelegram) && (
                                   <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-xl border border-gray-100 flex gap-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 w-max">
-                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title={t("callTitle")}>
+                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={trackCall} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title={t("callTitle")}>
                                           <Phone className="h-5 w-5" />
                                       </a>
                                       {contact.email && (

@@ -32,3 +32,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Contenu riche des pages légales (CGU / Confidentialité), produit par l'éditeur admin.
+   white-space: pre-line au niveau du conteneur préserve les sauts de ligne des anciens
+   textes en texte brut (avant l'éditeur riche) ; normal dans les blocs structurés pour
+   ne pas doubler l'espacement du HTML généré par le nouvel éditeur. */
+.legal-rich-content { white-space: pre-line; }
+.legal-rich-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; white-space: normal; }
+.legal-rich-content h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem; white-space: normal; }
+.legal-rich-content h3 { font-size: 1.1rem; font-weight: 700; margin: 0.75rem 0 0.5rem; white-space: normal; }
+.legal-rich-content p { margin: 0.5rem 0; white-space: normal; }
+.legal-rich-content ul, .legal-rich-content ol { margin: 0.5rem 0 0.5rem 1.5rem; white-space: normal; }
+.legal-rich-content ul { list-style: disc; }
+.legal-rich-content ol { list-style: decimal; }
+.legal-rich-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; white-space: normal; }
+.legal-rich-content table td, .legal-rich-content table th { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+.legal-rich-content table th { background: #f3f4f6; font-weight: 700; }

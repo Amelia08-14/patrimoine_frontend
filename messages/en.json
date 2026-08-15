@@ -237,7 +237,20 @@
     "invalidEmail": "Invalid email address",
     "subjectRequired": "Subject is required",
     "messageTooShort": "Message must be at least 3 characters",
-    "submitError": "Sending failed. Please try again later."
+    "submitError": "Sending failed. Please try again later.",
+    "motifTitle": "Select the reason for your request",
+    "motifCommercial": "Commercial Inquiry",
+    "motifCommercialDesc": "Subscription offers, space pricing, partnerships and custom quotes.",
+    "motifJuridique": "Legal Inquiry",
+    "motifJuridiqueDesc": "Legal compliance, GDPR, terms of use, document validation, contractual disputes.",
+    "motifTechnique": "Technical Inquiry",
+    "motifTechniqueDesc": "Platform malfunction, display bug, connection issue.",
+    "motifGeneral": "General Contact",
+    "motifGeneralDesc": "General question, guidance, platform information, press or other topic.",
+    "attachmentLabel": "Attachment (screenshot / photo)",
+    "attachmentHint": "PNG, JPG or PDF, 10 MB max.",
+    "channelEmail": "By email",
+    "channelCall": "By call / messaging"
   },
   "FAQ": {
     "title": "Frequently Asked Questions",

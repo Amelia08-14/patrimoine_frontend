@@ -6,7 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
 import { useTranslations } from 'next-intl';
-import { Phone, Mail, MapPin, Send, CheckCircle2, AlertCircle, Loader2, MessageSquare } from 'lucide-react';
+import {
+  Phone, Mail, MapPin, Send, CheckCircle2, AlertCircle, Loader2, MessageSquare,
+  Briefcase, Scale, Wrench, Globe, Paperclip, MessageCircle,
+} from 'lucide-react';
+
+type Motif = 'COMMERCIAL' | 'JURIDIQUE' | 'TECHNIQUE' | 'GENERAL';
 
 type ContactFormValues = {
   name: string;
@@ -16,6 +21,13 @@ type ContactFormValues = {
 };
 
 const inputCls = 'w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-800';
+
+const SUBJECT_PREFIX: Record<Motif, string> = {
+  COMMERCIAL: '[COMMERCIAL]',
+  JURIDIQUE: '[JURIDIQUE]',
+  TECHNIQUE: '[TECHNIQUE]',
+  GENERAL: '[CONTACT]',
+};
 
 export default function ContactPage() {
   const t = useTranslations('Contact');
@@ -32,6 +44,8 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [settings, setSettings] = useState<Record<string, string>>({});
+  const [motif, setMotif] = useState<Motif>('GENERAL');
+  const [attachment, setAttachment] = useState<File | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -62,13 +76,38 @@ export default function ContactPage() {
     }
   }, [user, setValue]);
 
+  const MOTIFS: Array<{ id: Motif; icon: typeof Briefcase; label: string; desc: string }> = [
+    { id: 'COMMERCIAL', icon: Briefcase, label: t('motifCommercial'), desc: t('motifCommercialDesc') },
+    { id: 'JURIDIQUE', icon: Scale, label: t('motifJuridique'), desc: t('motifJuridiqueDesc') },
+    { id: 'TECHNIQUE', icon: Wrench, label: t('motifTechnique'), desc: t('motifTechniqueDesc') },
+    { id: 'GENERAL', icon: Globe, label: t('motifGeneral'), desc: t('motifGeneralDesc') },
+  ];
+
+  const CHANNELS: Record<Motif, { email: string; call: string }> = {
+    COMMERCIAL: { email: settings.SUPPORT_COMMERCIAL_EMAIL || settings.CONTACT_EMAIL || '—', call: 'WhatsApp Pro / Viber / ligne commerciale dédiée' },
+    JURIDIQUE: { email: settings.SUPPORT_JURIDIQUE_EMAIL || settings.CONTACT_EMAIL || '—', call: 'Ligne sécurisée du service contentieux et juridique' },
+    TECHNIQUE: { email: settings.SUPPORT_TECHNIQUE_EMAIL || settings.CONTACT_EMAIL || '—', call: 'Telegram Support Bot / WhatsApp Support Technique' },
+    GENERAL: { email: settings.CONTACT_EMAIL || '—', call: 'Standard téléphonique général / WhatsApp Accueil' },
+  };
+
+  const activeMotif = MOTIFS.find((m) => m.id === motif)!;
+  const activeChannels = CHANNELS[motif];
+
   const onSubmit = async (data: ContactFormValues) => {
     setLoading(true);
     setError('');
     setSuccess(false);
     try {
-      await axios.post(`${apiUrl}/contacts`, data);
+      const fd = new FormData();
+      fd.append('name', data.name);
+      fd.append('email', data.email);
+      fd.append('subject', `${SUBJECT_PREFIX[motif]} ${data.subject}`);
+      fd.append('message', data.message);
+      fd.append('motif', motif);
+      if (attachment) fd.append('attachment', attachment);
+      await axios.post(`${apiUrl}/contacts`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setSuccess(true);
+      setAttachment(null);
     } catch (err) {
       console.error(err);
       setError(t('submitError'));
@@ -88,7 +127,43 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+        {/* Sélection du motif */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">{t('motifTitle')}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {MOTIFS.map((m) => {
+              const Icon = m.icon;
+              const isActive = motif === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setMotif(m.id)}
+                  className={`flex flex-col items-center text-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    isActive ? 'border-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-100 hover:border-gray-200'
+                  }`}
+                >
+                  <Icon className={`h-6 w-6 ${isActive ? 'text-[#00BFA6]' : 'text-gray-400'}`} />
+                  <span className={`text-sm font-bold ${isActive ? 'text-[#00BFA6]' : 'text-gray-700'}`}>{m.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-sm text-gray-500 mt-4">{activeMotif.desc}</p>
+
+          <div className="flex flex-wrap gap-4 mt-5 pt-5 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Mail className="h-4 w-4 text-[#00BFA6]" />
+              <span>{t('channelEmail')}: <strong className="text-gray-900">{activeChannels.email}</strong></span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <MessageCircle className="h-4 w-4 text-[#00BFA6]" />
+              <span>{t('channelCall')}: <strong className="text-gray-900">{activeChannels.call}</strong></span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Contact Form */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
@@ -124,7 +199,10 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">{t('subjectLabel')}</label>
-                  <input type="text" {...register('subject')} className={inputCls} placeholder={t('subjectPlaceholder')} />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-400 shrink-0">{SUBJECT_PREFIX[motif]}</span>
+                    <input type="text" {...register('subject')} className={inputCls} placeholder={t('subjectPlaceholder')} />
+                  </div>
                   {errors.subject && <p className="text-red-500 text-sm mt-1">{errors.subject.message}</p>}
                 </div>
 
@@ -132,6 +210,20 @@ export default function ContactPage() {
                   <label className="block text-sm font-bold text-gray-900 mb-2">{t('messageLabel')}</label>
                   <textarea {...register('message')} rows={5} className={inputCls} placeholder={t('messagePlaceholder')}></textarea>
                   {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">{t('attachmentLabel')}</label>
+                  <label className="flex items-center gap-2 w-full text-sm border border-gray-300 rounded-xl p-4 bg-white cursor-pointer text-gray-500 font-medium">
+                    <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+                    {attachment ? attachment.name : t('attachmentHint')}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,application/pdf"
+                      className="hidden"
+                      onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                    />
+                  </label>
                 </div>
 
                 <button
@@ -178,6 +270,17 @@ export default function ContactPage() {
                     <p className="text-gray-500 text-sm">{settings.CONTACT_ADDRESS || '—'}</p>
                   </div>
                 </div>
+                {settings.WHATSAPP_PRO_NUMBER && (
+                  <div className="flex items-center gap-4">
+                    <div className="h-11 w-11 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
+                      <MessageCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">WhatsApp Pro</p>
+                      <p className="text-gray-500 text-sm">{settings.WHATSAPP_PRO_NUMBER}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

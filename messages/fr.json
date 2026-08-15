@@ -237,7 +237,20 @@
     "invalidEmail": "Adresse e-mail invalide",
     "subjectRequired": "Le sujet est requis",
     "messageTooShort": "Le message doit contenir au moins 3 caractères",
-    "submitError": "L'envoi a échoué. Merci de réessayer plus tard."
+    "submitError": "L'envoi a échoué. Merci de réessayer plus tard.",
+    "motifTitle": "Sélectionnez le motif de votre demande",
+    "motifCommercial": "Besoin Commercial",
+    "motifCommercialDesc": "Offres d'abonnement, tarification des espaces, partenariats et devis sur-mesure.",
+    "motifJuridique": "Besoin Juridique & Légal",
+    "motifJuridiqueDesc": "Conformité légale, RGPD, CGU/CGV, validation de documents, litige contractuel.",
+    "motifTechnique": "Besoin Technique",
+    "motifTechniqueDesc": "Dysfonctionnement sur la plateforme, bug d'affichage, problème de connexion.",
+    "motifGeneral": "Contact Général",
+    "motifGeneralDesc": "Question générale, orientation, information globale, presse ou autre sujet.",
+    "attachmentLabel": "Pièce jointe (capture d'écran / photo)",
+    "attachmentHint": "PNG, JPG ou PDF, 10 Mo max.",
+    "channelEmail": "Par e-mail",
+    "channelCall": "Par appel / messagerie"
   },
   "FAQ": {
     "title": "Foire Aux Questions",
