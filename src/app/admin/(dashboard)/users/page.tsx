@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, FileText, ExternalLink, Search, RefreshCw, AlertTriangle, ShieldOff, ShieldCheck, ShieldAlert, ChevronDown } from "lucide-react"
+import { CheckCircle, XCircle, FileText, ExternalLink, Search, RefreshCw, AlertTriangle, ShieldOff, ShieldCheck, ShieldAlert, ChevronDown, KeyRound } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -127,6 +127,30 @@ function AdminUsersContent() {
         setUsers(users.map(u => u.id === userId ? { ...u, ...updated } : u))
       } else {
         alert("Erreur lors du changement de statut")
+      }
+    } catch {
+      alert("Erreur technique")
+    }
+  }
+
+  const handleResetPassword = async (userId: number) => {
+    const newPassword = prompt("Nouveau mot de passe pour cet utilisateur (min. 6 caractères)")
+    if (!newPassword) return
+    if (newPassword.length < 6) {
+      alert("Le mot de passe doit contenir au moins 6 caractères")
+      return
+    }
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/admin/users/${userId}/password`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      })
+      if (response.ok) {
+        alert("Mot de passe réinitialisé avec succès")
+      } else {
+        alert("Erreur lors de la réinitialisation du mot de passe")
       }
     } catch {
       alert("Erreur technique")
@@ -299,6 +323,15 @@ function AdminUsersContent() {
                             </div>
                           )}
                         </div>
+
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleResetPassword(user.id)}
+                            title="Changer le mot de passe"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
 
                         <Button
                             size="sm"
