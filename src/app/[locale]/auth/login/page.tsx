@@ -31,7 +31,10 @@ export default function LoginPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          email: data.email.trim().toLowerCase(),
+        }),
       })
 
       if (response.ok) {
@@ -48,7 +51,11 @@ export default function LoginPage() {
             window.location.href = '/'
         }
       } else {
-        alert(t("invalidCredentials"))
+        const error = await response.json().catch(() => null)
+        const message = Array.isArray(error?.message)
+          ? error.message.join("\n")
+          : error?.message
+        alert(message || t("invalidCredentials"))
       }
     } catch (error) {
       alert(t("connectionError"))
