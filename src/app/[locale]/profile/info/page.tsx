@@ -150,60 +150,8 @@ export default function ProfileInfoPage() {
         
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
             <form onSubmit={handleSubmit} className="space-y-8">
-                
-                {/* Personal Info */}
-                <div>
-                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">{t("personalInfoTitle")}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("firstName")}</label>
-                            <Input
-                                name="firstName" 
-                                value={formData.firstName} 
-                                onChange={handleChange} 
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("lastName")}</label>
-                            <Input
-                                name="lastName"
-                                value={formData.lastName} 
-                                onChange={handleChange} 
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("email")}</label>
-                            <Input 
-                                name="email" 
-                                value={formData.email} 
-                                disabled 
-                                className="bg-gray-100 border-2 border-gray-200 text-gray-500 cursor-not-allowed font-medium h-[42px]" 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("phone")}</label>
-                            <Input 
-                                name="phone" 
-                                value={formData.phone} 
-                                onChange={handleChange} 
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
-                            />
-                        </div>
-                        <div className="col-span-1 md:col-span-2 space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("address")}</label>
-                            <Input 
-                                name="address" 
-                                value={formData.address} 
-                                onChange={handleChange} 
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
-                            />
-                        </div>
-                    </div>
-                </div>
 
-                {/* Société Section */}
+                {/* Société Section (en premier) */}
                 {user.userType === 'SOCIETE' && (
                     <div>
                         <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
@@ -222,44 +170,12 @@ export default function ProfileInfoPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700">{t("position")}</label>
-                                <Input 
-                                    name="position" 
-                                    value={formData.position} 
-                                    onChange={handleChange} 
-                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("nifLabel")}</label>
                                 <Input
-                                    name="nif"
-                                    value={formData.nif}
+                                    name="position"
+                                    value={formData.position}
                                     onChange={handleChange}
                                     className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
                                 />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("nisLabel")}</label>
-                                <Input
-                                    name="nis"
-                                    value={formData.nis}
-                                    onChange={handleChange}
-                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("agreementExpiryLabel")}</label>
-                                <Input
-                                    type="date"
-                                    name="agreementExpiryDate"
-                                    value={formData.agreementExpiryDate}
-                                    onChange={handleChange}
-                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
-                                />
-                                <p className="text-xs text-gray-400">{t("agreementExpiryHint")}</p>
                             </div>
                         </div>
 
@@ -352,6 +268,65 @@ export default function ProfileInfoPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Responsable légal (en deuxième) */}
+                <div>
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
+                        <User className="w-5 h-5 text-gray-400" /> {t("legalRepresentativeTitle")}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">{t("firstName")}</label>
+                            <Input
+                                name="firstName"
+                                value={formData.firstName}
+                                onChange={handleChange}
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">{t("lastName")}</label>
+                            <Input
+                                name="lastName"
+                                value={formData.lastName}
+                                onChange={handleChange}
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">{t("email")}</label>
+                            <Input
+                                name="email"
+                                value={formData.email}
+                                disabled
+                                className="bg-gray-100 border-2 border-gray-200 text-gray-500 cursor-not-allowed font-medium h-[42px]"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">{t("phone")}</label>
+                            <Input
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Adresse (en troisième) */}
+                <div>
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">{t("addressSectionTitle")}</h2>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">{t("address")}</label>
+                        <Input
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                        />
+                    </div>
+                </div>
 
                 {/* Password Change */}
                 <div>
