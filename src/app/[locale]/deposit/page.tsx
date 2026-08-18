@@ -138,11 +138,13 @@ const IconMap: Record<string, React.ElementType> = {
   Parapluie: Umbrella
 }
 
-// Types d'immobilier de base — 5 catégories actives pour le moment (Événementiel et Hébergement mis en pause)
+// Catégories de dépôt. HOTELIER concerne les structures professionnelles,
+// HEBERGEMENT le parcours « chez l'habitant » destiné aux particuliers.
 const BASE_REAL_ESTATE_CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
   { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
+  { id: "HEBERGEMENT", label: "Hébergement & Séjour", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Briefcase" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "TerrainFoncier" },
 ]
@@ -2181,6 +2183,9 @@ function DepositPageComponent() {
     let categories = [...BASE_REAL_ESTATE_CATEGORIES]
     if (userType === "PARTICULIER") {
       categories = categories.filter(cat => cat.id !== "EVENEMENTIEL" && cat.id !== "HOTELIER")
+    } else {
+      // Évite deux cartes au même libellé pour les comptes professionnels.
+      categories = categories.filter(cat => cat.id !== "HEBERGEMENT")
     }
     if (transactionType === "SALE") {
       categories = categories.filter(cat => cat.id !== "HEBERGEMENT")
@@ -6284,8 +6289,8 @@ function DepositPageComponent() {
                                     <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white max-w-xl">
                                         <input type="checkbox" {...register("acceptsCrossUsage")} className="accent-[#00BFA6] w-5 h-5 mt-0.5 shrink-0" />
                                         <span>
-                                            <span className="font-bold text-gray-900 text-sm block">Acceptez-vous bureau ou commercial ?</span>
-                                            <span className="text-xs text-gray-500">Indique si ce bien d'habitation peut aussi convenir à un usage professionnel (évite les doublons dans la catégorie Bureaux ou Commerciaux).</span>
+                                            <span className="font-bold text-gray-900 text-sm block">Publier également dans Bureaux et Commerces</span>
+                                            <span className="text-xs text-gray-500">La même annonce sera visible dans les deux catégories, sans créer ni gérer de doublon.</span>
                                         </span>
                                     </label>
                                 </section>

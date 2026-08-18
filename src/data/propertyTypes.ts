@@ -1,8 +1,9 @@
-// Catégories actives sur le site pour le moment (5) — Événementiel et Hébergement sont mis en pause en attendant leurs formulaires dédiés.
+// Catégories disponibles sur le site.
 export const REAL_ESTATE_CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
   { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
+  { id: "HEBERGEMENT", label: "Hébergement & Séjour", iconName: "BedDouble" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Building2" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "Trees" },
 ];

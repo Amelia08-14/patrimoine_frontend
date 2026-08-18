@@ -107,7 +107,7 @@ export default function RegisterPage() {
     // Société
     companyName: z.string().optional(),
     activityType: z.string().optional(),
-    commercialRegister: z.string().optional(),
+    position: z.enum(["GERANT", "SERVICE_COMMERCIAL"]).optional(),
     cityCode: numberFromForm,
     townCode: numberFromForm,
   }).superRefine((data, ctx) => {
@@ -121,7 +121,7 @@ export default function RegisterPage() {
     if (data.userType === "SOCIETE") {
       if (!data.companyName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("companyNameRequired"), path: ["companyName"] });
       if (!data.activityType) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("activityTypeRequired"), path: ["activityType"] });
-      if (!data.commercialRegister) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("commercialRegisterRequired"), path: ["commercialRegister"] });
+      if (!data.position) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("companyRoleRequired"), path: ["position"] });
       if (!data.cityCode) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("wilayaRequired"), path: ["cityCode"] });
       if (!data.townCode) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("communeRequired"), path: ["townCode"] });
     }
@@ -150,7 +150,7 @@ export default function RegisterPage() {
       setActivityFamily(null)
       setValue("activityType", undefined)
       setValue("companyName", undefined)
-      setValue("commercialRegister", undefined)
+      setValue("position", undefined)
       setValue("cityCode", undefined)
       setValue("townCode", undefined)
     }
@@ -207,7 +207,7 @@ export default function RegisterPage() {
         ...(userType === "PARTICULIER" ? {
           companyName: undefined,
           activityType: undefined,
-          commercialRegister: undefined,
+          position: undefined,
           cityCode: undefined,
           townCode: undefined
         } : {
@@ -507,14 +507,25 @@ export default function RegisterPage() {
                    {errors.companyName && <p className="text-red-500 text-xs pl-1">{errors.companyName.message}</p>}
                  </div>
 
-                 <div className="space-y-1">
-                   <input
-                     {...register("commercialRegister")}
-                     className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
-                     placeholder={t("commercialRegisterPlaceholder")}
-                   />
-                   {errors.commercialRegister && <p className="text-red-500 text-xs pl-1">{errors.commercialRegister.message}</p>}
-                 </div>
+                 <fieldset className="space-y-3">
+                   <legend className="text-sm font-bold text-[#003B4A]">{t("companyRoleQuestion")}</legend>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                     {(["GERANT", "SERVICE_COMMERCIAL"] as const).map((role) => (
+                       <label key={role} className={cn(
+                         "flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all",
+                         watch("position") === role
+                           ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]"
+                           : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00BFA6]/50"
+                       )}>
+                         <input type="radio" value={role} {...register("position")} className="h-4 w-4 accent-[#00BFA6]" />
+                         <span className="text-sm font-bold">
+                           {t(role === "GERANT" ? "companyRoleManager" : "companyRoleSales")}
+                         </span>
+                       </label>
+                     ))}
+                   </div>
+                   {errors.position && <p className="text-red-500 text-xs pl-1">{errors.position.message}</p>}
+                 </fieldset>
 
                  <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-1">

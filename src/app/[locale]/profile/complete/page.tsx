@@ -38,6 +38,14 @@ export default function CompleteProfilePage() {
     rcDocument: z.any().optional(),
     agreementDocument: z.any().optional(),
     agencyLogo: z.any().optional(),
+  }).superRefine((data, ctx) => {
+    if (user?.userType === "PARTICULIER" && !data.dateOfBirth) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t("dobRequired"),
+        path: ["dateOfBirth"],
+      })
+    }
   })
 
   type ProfileForm = z.infer<typeof profileSchema>
@@ -58,6 +66,8 @@ export default function CompleteProfilePage() {
       setValue("firstName", parsedUser.firstName)
       setValue("lastName", parsedUser.lastName)
       setValue("companyName", parsedUser.companyName)
+      setValue("phone", parsedUser.phone || "")
+      setValue("civility", parsedUser.civility)
     } else {
       window.location.href = '/auth/login'
     }
@@ -173,26 +183,27 @@ export default function CompleteProfilePage() {
       </div>
 
       {/* Right Side - Form (Full height, 55% width, Scrollable) */}
-      <div className="flex-1 flex flex-col items-center p-4 sm:p-8 lg:p-12 overflow-y-auto bg-white">
-        <div className="w-full max-w-2xl space-y-10 py-8">
+      <div className="flex-1 flex flex-col items-center p-4 sm:p-8 lg:p-10 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-[#E6F8F6]/60">
+        <div className="w-full max-w-3xl my-auto rounded-[28px] border border-slate-200/80 bg-white shadow-[0_24px_70px_rgba(0,59,74,0.10)] p-5 sm:p-8 lg:p-10">
 
-          <div className="text-center lg:text-left border-b border-gray-100 pb-8">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">{t("formTitle")}</h2>
-            <p className="text-gray-500">
+          <div className="text-center lg:text-left mb-8">
+            <div className="inline-flex items-center rounded-full bg-[#E6F8F6] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#007F78] mb-3">Profil</div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#082A3A] tracking-tight mb-2">{t("formTitle")}</h2>
+            <p className="text-sm sm:text-base text-slate-500">
               {t("formSubtitle")}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
              {/* --- SECTION 1: IDENTITÉ --- */}
-             <div className="space-y-6">
-                <h3 className="text-lg font-bold text-[#003B4A] flex items-center gap-2">
-                    <User className="text-[#00BFA6] h-5 w-5" />
+             <div className="space-y-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
+                <h3 className="text-base font-extrabold text-[#003B4A] flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00BFA6]/10"><User className="text-[#00BFA6] h-5 w-5" /></span>
                     {user.userType === 'PARTICULIER' ? t("section1TitleParticulier") : t("section1TitleSociete")}
                 </h3>
 
-                <div className={cn("grid grid-cols-1 gap-6 items-start", user.userType === 'SOCIETE' ? "md:grid-cols-4" : "md:grid-cols-3")}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("civilityLabel")}</label>
                         <div className="flex gap-4">
@@ -234,25 +245,24 @@ export default function CompleteProfilePage() {
                     )}
 
                     {user.userType === 'PARTICULIER' && (
-                        <div className="col-span-1 md:col-span-3 space-y-1 mt-2">
+                        <div className="space-y-1">
                             <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("dobLabel")}</label>
-                            <input type="date" {...register("dateOfBirth")} className="w-full md:w-1/3 px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
+                            <input type="date" {...register("dateOfBirth")} className="w-full px-4 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 bg-white h-12" />
+                            {errors.dateOfBirth && <p className="text-red-500 text-xs pl-1">{errors.dateOfBirth.message}</p>}
                         </div>
                     )}
                 </div>
              </div>
 
-             <div className="h-px bg-gray-100"></div>
-
              {/* --- SECTION 2: ADRESSE & CONTACT --- */}
-             <div className="space-y-6">
-                <h3 className="text-lg font-bold text-[#003B4A] flex items-center gap-2">
-                    <MapPin className="text-[#00BFA6] h-5 w-5" />
+             <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+                <h3 className="text-base font-extrabold text-[#003B4A] flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00BFA6]/10"><MapPin className="text-[#00BFA6] h-5 w-5" /></span>
                     {t("section2Title")}
                 </h3>
 
                 <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                  <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("wilayaLabel")}</label>
                                  <select
@@ -282,14 +292,14 @@ export default function CompleteProfilePage() {
                                  </select>
                                  {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
                              </div>
-                             <div className="space-y-1">
+                             <div className="space-y-1 sm:col-span-2">
                                  <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("addressLabel")}</label>
                                  <input {...register("address")} placeholder={t("addressPlaceholder")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
                                  {errors.address && <p className="text-red-500 text-xs pl-1">{errors.address.message}</p>}
                              </div>
                         </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-gray-500 uppercase ml-1">{t("mobilePhoneLabel")}</label>
                             <input type="tel" {...register("phone")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
@@ -373,8 +383,8 @@ export default function CompleteProfilePage() {
                  </>
              )}
 
-             <div className="pt-6">
-                <Button type="submit" disabled={isLoading} className="w-full py-4 h-auto rounded-xl bg-[#00BFA6] hover:bg-[#00908A] text-white font-bold text-lg shadow-lg shadow-[#00BFA6]/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+             <div className="pt-2">
+                <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl bg-[#00BFA6] hover:bg-[#009B91] text-white font-extrabold text-base shadow-[0_12px_25px_rgba(0,191,166,0.25)] transition-all hover:-translate-y-0.5 active:translate-y-0">
                     {isLoading ? t("saving") : t("submit")}
                 </Button>
              </div>
