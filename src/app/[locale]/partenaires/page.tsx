@@ -6,10 +6,18 @@ import { Handshake, Mail } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+const PARTNER_CATEGORIES: { id: string; label: string }[] = [
+  { id: 'IMMOBILIER', label: 'Activité immobilière' },
+  { id: 'HOTELLERIE', label: 'Activité hôtelière et hébergement' },
+  { id: 'EVENEMENTIEL', label: 'Activité évènementiel' },
+  { id: 'ENTREPOSAGE', label: "Activité d'entreposage et stockage" },
+]
+
 export default function PartenairesPage() {
   const t = useTranslations("Partners")
   const [partners, setPartners] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [categoryFilter, setCategoryFilter] = useState("ALL")
 
   useEffect(() => {
     fetch(`${API_URL}/content/partners`)
@@ -18,6 +26,9 @@ export default function PartenairesPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  const filteredPartners = categoryFilter === "ALL" ? partners : partners.filter((p) => p.category === categoryFilter)
+  const availableCategories = PARTNER_CATEGORIES.filter((c) => partners.some((p) => p.category === c.id))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -33,8 +44,22 @@ export default function PartenairesPage() {
 
       {!loading && partners.length > 0 && (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          {availableCategories.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              <button onClick={() => setCategoryFilter("ALL")}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${categoryFilter === "ALL" ? 'bg-[#00BFA6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-[#00BFA6] hover:text-[#00BFA6]'}`}>
+                Tous
+              </button>
+              {availableCategories.map((c) => (
+                <button key={c.id} onClick={() => setCategoryFilter(c.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${categoryFilter === c.id ? 'bg-[#00BFA6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-[#00BFA6] hover:text-[#00BFA6]'}`}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-            {partners.map((p) => {
+            {filteredPartners.map((p) => {
               const card = (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center gap-3 h-full hover:shadow-md transition-shadow">
                   <div className="h-16 w-16 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden">

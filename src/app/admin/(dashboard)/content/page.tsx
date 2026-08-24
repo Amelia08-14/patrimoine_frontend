@@ -18,6 +18,13 @@ const getHeaders = (json = true) => {
 
 type Tab = 'LEGAL' | 'FAQ' | 'PARTNERS' | 'CONTACT'
 
+const PARTNER_CATEGORIES: { id: string; label: string }[] = [
+  { id: 'IMMOBILIER', label: 'Activité immobilière' },
+  { id: 'HOTELLERIE', label: 'Activité hôtelière et hébergement' },
+  { id: 'EVENEMENTIEL', label: 'Activité évènementiel' },
+  { id: 'ENTREPOSAGE', label: "Activité d'entreposage et stockage" },
+]
+
 export default function AdminContentPage() {
   const [tab, setTab] = useState<Tab>('LEGAL')
 
@@ -244,8 +251,10 @@ function PartnersTab() {
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState("")
   const [newUrl, setNewUrl] = useState("")
+  const [newCategory, setNewCategory] = useState("")
   const [newLogo, setNewLogo] = useState<File | null>(null)
   const [adding, setAdding] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -264,6 +273,13 @@ function PartnersTab() {
     await load()
   }
 
+  const changeCategory = async (p: any, category: string) => {
+    const fd = new FormData()
+    fd.append('category', category)
+    await fetch(`${API_URL}/admin/content/partners/${p.id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
+    await load()
+  }
+
   const remove = async (id: number) => {
     if (!confirm("Supprimer ce partenaire ?")) return
     await fetch(`${API_URL}/admin/content/partners/${id}`, { method: 'DELETE', headers: getHeaders(false) as any })
@@ -277,26 +293,51 @@ function PartnersTab() {
       const fd = new FormData()
       fd.append('name', newName)
       if (newUrl) fd.append('websiteUrl', newUrl)
+      if (newCategory) fd.append('category', newCategory)
       fd.append('order', String(items.length))
       if (newLogo) fd.append('logo', newLogo)
       await fetch(`${API_URL}/admin/content/partners`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
-      setNewName(""); setNewUrl(""); setNewLogo(null)
+      setNewName(""); setNewUrl(""); setNewCategory(""); setNewLogo(null)
       await load()
     } finally { setAdding(false) }
   }
 
   if (loading) return <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
 
+  const filteredItems = categoryFilter === "ALL" ? items : items.filter(p => p.category === categoryFilter)
+
   return (
     <div className="space-y-6">
+      {/* Filtre par sous-catégorie */}
+      <div className="flex gap-2 flex-wrap">
+        <button onClick={() => setCategoryFilter("ALL")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${categoryFilter === "ALL" ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+          Toutes catégories
+        </button>
+        {PARTNER_CATEGORIES.map(c => (
+          <button key={c.id} onClick={() => setCategoryFilter(c.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${categoryFilter === c.id ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((p) => (
+        {filteredItems.map((p) => (
           <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col items-center text-center gap-2">
             <div className="h-16 w-16 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100">
               {p.logoUrl ? <img src={`${API_URL}${p.logoUrl}`} alt={p.name} className="h-full w-full object-contain" /> : <Handshake className="h-6 w-6 text-gray-300" />}
             </div>
             <p className="font-bold text-gray-900 text-sm">{p.name}</p>
             {p.websiteUrl && <p className="text-xs text-gray-400 truncate max-w-full">{p.websiteUrl}</p>}
+            <select
+              value={p.category || ""}
+              onChange={(e) => changeCategory(p, e.target.value)}
+              className={`text-[11px] font-bold rounded-full px-2.5 py-1 outline-none border-none ${p.category ? 'bg-[#00BFA6]/10 text-[#00BFA6]' : 'bg-gray-100 text-gray-400'}`}
+            >
+              <option value="">Sans catégorie</option>
+              {PARTNER_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
             <div className="flex items-center gap-2 mt-2">
               <button onClick={() => togglePublished(p)} className="p-1.5 rounded-lg hover:bg-gray-100" title={p.published ? 'Publié' : 'Masqué'}>
                 {p.published ? <Eye className="h-4 w-4 text-green-600" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
@@ -305,12 +346,19 @@ function PartnersTab() {
             </div>
           </div>
         ))}
+        {filteredItems.length === 0 && (
+          <p className="col-span-full text-center text-gray-400 text-sm py-6">Aucun partenaire dans cette catégorie.</p>
+        )}
       </div>
 
       <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3 max-w-md">
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter un partenaire</p>
         <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du partenaire" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
         <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="Site web (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white">
+          <option value="">Sous-catégorie (optionnelle)</option>
+          {PARTNER_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
         <label className="flex items-center gap-2 w-full text-sm border border-gray-200 rounded-xl p-3 bg-white cursor-pointer">
           <Upload className="h-4 w-4 text-gray-400" /> {newLogo ? newLogo.name : "Logo (optionnel)"}
           <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewLogo(e.target.files?.[0] || null)} />

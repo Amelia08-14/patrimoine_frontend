@@ -1,11 +1,40 @@
 "use client"
 
-import { useState, useEffect, useCallback, Suspense } from "react"
+import { useState, useEffect, useCallback, Suspense, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff } from "lucide-react"
+import { PROPERTY_TYPES } from "@/data/propertyTypes"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+// Regroupement des catégories de biens pour le filtre "Type d'immobilier" du dashboard admin
+const PROPERTY_FILTER_CATEGORIES: { id: string; label: string; categoryIds: string[] }[] = [
+  { id: "RESIDENTIEL", label: "Résidentiel", categoryIds: ["RESIDENTIEL"] },
+  { id: "INDUSTRIEL", label: "Industriel", categoryIds: ["INDUSTRIEL"] },
+  { id: "HEBERGEMENT_SEJOUR", label: "Hébergement et séjours", categoryIds: ["HOTELIER", "HEBERGEMENT"] },
+  { id: "BUREAUX_COMMERCES", label: "Bureaux et commerce", categoryIds: ["BUREAUX_COMMERCES"] },
+  { id: "TERRAIN_FONCIER", label: "Terrain et foncier", categoryIds: ["TERRAIN_FONCIER"] },
+]
+
+const PROPERTY_TYPE_TO_CATEGORY: Record<string, string> = Object.fromEntries(
+  PROPERTY_TYPES.map((pt) => [pt.id, pt.categoryId])
+)
+
+const TRANSACTION_FILTERS: { id: string; label: string; types?: string[] }[] = [
+  { id: "ALL", label: "Tous" },
+  { id: "LOCATION", label: "Location", types: ["RENTAL", "HOLIDAY_RENTAL"] },
+  { id: "VENTE", label: "Vente", types: ["SALE"] },
+]
+
+// Pôles d'activité professionnels (annonceurs pro) — synchronisé avec ACTIVITY_POLES côté backend
+const ACTIVITY_POLE_FILTERS = [
+  { id: "ALL", label: "Toutes activités" },
+  { id: "IMMOBILIER", label: "Activité immobilière" },
+  { id: "HOTELLERIE", label: "Activité touristique et hébergement" },
+  { id: "EVENEMENTIEL", label: "Activité évènementiel" },
+  { id: "ENTREPOSAGE", label: "Activité de stockage" },
+] as const
 
 function AdminAnnouncesContent() {
   const searchParams = useSearchParams()
@@ -17,6 +46,10 @@ function AdminAnnouncesContent() {
   const [cities, setCities] = useState<any[]>([])
   const [towns, setTowns] = useState<any[]>([])
   const [statusFilter, setStatusFilter] = useState<"ALL" | "WAITING_VALIDATION" | "VALIDATED" | "REJECTED">("WAITING_VALIDATION")
+  const [propertyCategoryFilter, setPropertyCategoryFilter] = useState<string>("ALL")
+  const [transactionFilter, setTransactionFilter] = useState<string>("ALL")
+  const [accountTypeFilter, setAccountTypeFilter] = useState<"ALL" | "PARTICULIER" | "SOCIETE">("ALL")
+  const [activityPoleFilter, setActivityPoleFilter] = useState<string>("ALL")
 
   useEffect(() => {
     fetch(`${API_URL}/cities`).then((r) => r.json()).then(setCities).catch(() => {})
@@ -126,7 +159,33 @@ function AdminAnnouncesContent() {
 
   const isFeatured = (a: any) => a.featuredUntil && new Date(a.featuredUntil) > new Date()
 
-  const filtered = statusFilter === "ALL" ? announces : announces.filter(a => a.status === statusFilter)
+  // Réinitialise le sous-filtre "Type d'activité" quand l'annonceur n'est plus "Professionnel"
+  useEffect(() => {
+    if (accountTypeFilter !== "SOCIETE") setActivityPoleFilter("ALL")
+  }, [accountTypeFilter])
+
+  const filtered = useMemo(() => {
+    const transactionDef = TRANSACTION_FILTERS.find(t => t.id === transactionFilter)
+    const propertyCategoryDef = PROPERTY_FILTER_CATEGORIES.find(c => c.id === propertyCategoryFilter)
+
+    return announces.filter((a) => {
+      if (statusFilter !== "ALL" && a.status !== statusFilter) return false
+
+      if (propertyCategoryDef) {
+        const catId = PROPERTY_TYPE_TO_CATEGORY[a.property?.propertyType]
+        if (!catId || !propertyCategoryDef.categoryIds.includes(catId)) return false
+      }
+
+      if (transactionDef?.types && !transactionDef.types.includes(a.type)) return false
+
+      if (accountTypeFilter !== "ALL" && (a.user?.userType || "PARTICULIER") !== accountTypeFilter) return false
+
+      if (accountTypeFilter === "SOCIETE" && activityPoleFilter !== "ALL" && a.user?.pole !== activityPoleFilter) return false
+
+      return true
+    })
+  }, [announces, statusFilter, propertyCategoryFilter, transactionFilter, accountTypeFilter, activityPoleFilter])
+
   const pendingCount = announces.filter(a => a.status === 'WAITING_VALIDATION').length
 
   return (
@@ -178,6 +237,30 @@ function AdminAnnouncesContent() {
             <Search className="h-4 w-4 text-gray-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Référence, titre..." className="outline-none text-sm w-full" />
         </div>
+      </div>
+
+      {/* Filtres avancés : type d'immobilier, transaction, annonceur */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={propertyCategoryFilter} onChange={(e) => setPropertyCategoryFilter(e.target.value)} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
+          <option value="ALL">Type d&apos;immobilier : Tous</option>
+          {PROPERTY_FILTER_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
+
+        <select value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
+          {TRANSACTION_FILTERS.map((t) => <option key={t.id} value={t.id}>{t.id === "ALL" ? "Type & Prix : Tous" : t.label}</option>)}
+        </select>
+
+        <select value={accountTypeFilter} onChange={(e) => setAccountTypeFilter(e.target.value as "ALL" | "PARTICULIER" | "SOCIETE")} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
+          <option value="ALL">Annonceur : Tous</option>
+          <option value="PARTICULIER">Particulier</option>
+          <option value="SOCIETE">Professionnel</option>
+        </select>
+
+        {accountTypeFilter === "SOCIETE" && (
+          <select value={activityPoleFilter} onChange={(e) => setActivityPoleFilter(e.target.value)} className="px-3 py-2 border-2 border-[#00BFA6]/40 rounded-xl text-sm font-medium bg-[#E6F8F6] outline-none">
+            {ACTIVITY_POLE_FILTERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+          </select>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
