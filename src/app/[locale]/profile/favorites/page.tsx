@@ -1,65 +1,50 @@
 "use client"
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { useTranslations } from "next-intl";
-import { PropertyCard } from "@/components/PropertyCard";
-import { Heart } from "lucide-react";
+import { Bell, Bookmark, Inbox, Mail, SlidersHorizontal, Star } from "lucide-react"
 
 export default function FavoritesPage() {
-    const t = useTranslations("ProfileFavorites");
-    const [favorites, setFavorites] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+  return (
+    <div className="min-h-screen bg-[#f3f3f3] px-4 py-8 text-[#1f2937]">
+      <div className="mx-auto max-w-[1500px]">
+        <div className="rounded-[28px] border border-[#e7e7e7] bg-[#f9f9f9] p-4 shadow-[0_8px_30px_rgba(17,24,39,0.04)]">
+          <div className="mb-8 flex items-center justify-between gap-4 px-2">
+            <div className="flex items-center gap-3 text-[18px] font-medium text-[#1f2937]">
+              <span className="text-[38px] font-light leading-none">filtre favoris</span>
+              <div className="flex items-center gap-2 rounded-lg bg-[#e5e7eb] px-3 py-1 text-[14px] text-[#374151]">
+                <span>Boîte de réception</span>
+                <span className="text-lg">×</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-[#4b5563]">
+              <Mail className="h-5 w-5" />
+              <Inbox className="h-5 w-5" />
+            </div>
+          </div>
 
-    useEffect(() => {
-        const fetchFavorites = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setLoading(false);
-                return;
-            }
+          <div className="flex items-center gap-4 py-4">
+            <div className="flex h-[78px] w-[78px] items-center justify-center rounded-full bg-[#4b443f] text-[32px] font-bold text-white">
+              A
+            </div>
+            <div>
+              <h2 className="text-[28px] font-extrabold tracking-[-0.04em] text-[#1f2937]">AQUARIUS TECH WELCOME</h2>
+              <div className="mt-2 flex items-center gap-2 text-[18px] text-[#374151]">
+                <span>À moi</span>
+                <span className="text-sm">▼</span>
+              </div>
+            </div>
+          </div>
 
-            try {
-                const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/favorites/me`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                // The backend returns { announce: ... }. We need to extract announce.
-                const items = res.data.map((fav: any) => fav.announce);
-                setFavorites(items);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchFavorites();
-    }, []);
-
-    if (loading) return <div className="p-10 text-center">{t("loading")}</div>;
-
-    return (
-        <div className="max-w-7xl mx-auto px-4 py-10">
-            <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
-                <Heart className="text-[#00BFA6] fill-current" /> {t("title")}
-            </h1>
-
-            {favorites.length === 0 ? (
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 py-20 flex flex-col items-center gap-3">
-                    <div className="h-14 w-14 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center">
-                        <Heart className="h-6 w-6 text-[#00BFA6]" />
-                    </div>
-                    <p className="text-gray-500 font-medium">{t("noFavorites")}</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {favorites.map(announce => (
-                        <div key={announce.id} className="h-[400px]">
-                            <PropertyCard announce={announce} />
-                        </div>
-                    ))}
-                </div>
-            )}
+          <div className="mt-6 rounded-[22px] border border-[#e5e7eb] bg-white p-8 shadow-sm">
+            <h3 className="text-[28px] font-bold text-[#1f2937]">Structure des Filtres</h3>
+            <ul className="mt-8 space-y-5 text-[22px] text-[#1f2937]">
+              <li>• Type de transaction : Vente, Location</li>
+              <li>• type de bien :</li>
+              <li>• Wilaya :</li>
+              <li>• Commune :</li>
+            </ul>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  )
 }
