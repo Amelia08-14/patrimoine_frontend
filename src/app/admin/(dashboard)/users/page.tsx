@@ -3,15 +3,53 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, FileText, ExternalLink, Search, RefreshCw, AlertTriangle, ShieldOff, ShieldCheck, ShieldAlert, ChevronDown, KeyRound } from "lucide-react"
+import {
+  CheckCircle, XCircle, FileText, Search, RefreshCw, AlertTriangle, ShieldOff, ShieldCheck,
+  ShieldAlert, ChevronDown, KeyRound, LayoutGrid, Building, Hotel, PartyPopper, Warehouse, MapPin,
+} from "lucide-react"
+import { POLE_LABELS, SUB_CATEGORY_LABELS, type ActivityPole } from "@/data/activityPoles"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+type StatusFilter = "ALL" | "ACTIVE" | "PENDING" | "SUSPENDED"
+type AccountTypeFilter = "ALL" | "PRO" | "PARTICULIER"
+type PoleFilter = "ALL" | ActivityPole
+
+const STATUS_TABS: { id: StatusFilter; label: string }[] = [
+  { id: "ALL", label: "Tous les profils" },
+  { id: "ACTIVE", label: "Actifs" },
+  { id: "PENDING", label: "En attente de validation" },
+  { id: "SUSPENDED", label: "Suspendus / Inactifs" },
+]
+
+const ACCOUNT_TYPE_TABS: { id: AccountTypeFilter; label: string }[] = [
+  { id: "ALL", label: "Tous" },
+  { id: "PRO", label: "Professionnel (B2B)" },
+  { id: "PARTICULIER", label: "Particulier (B2C)" },
+]
+
+const POLE_TABS: { id: PoleFilter; label: string; icon: typeof Building }[] = [
+  { id: "ALL", label: "Tous les pôles", icon: LayoutGrid },
+  { id: "IMMOBILIER", label: POLE_LABELS.IMMOBILIER, icon: Building },
+  { id: "HOTELLERIE", label: POLE_LABELS.HOTELLERIE, icon: Hotel },
+  { id: "EVENEMENTIEL", label: POLE_LABELS.EVENEMENTIEL, icon: PartyPopper },
+  { id: "ENTREPOSAGE", label: POLE_LABELS.ENTREPOSAGE, icon: Warehouse },
+]
+
+const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   ACTIVE: { label: "Actif", className: "bg-green-100 text-green-800" },
   SUSPENDED: { label: "Suspendu", className: "bg-amber-100 text-amber-800" },
   BLOCKED: { label: "Bloqué", className: "bg-red-100 text-red-800" },
 }
+
+const DOCUMENT_DEFS = [
+  { key: "rcDocumentUrl", label: "RC", full: "Registre de Commerce" },
+  { key: "agreementDocumentUrl", label: "AGR", full: "Agrément" },
+  { key: "nifDocumentUrl", label: "NIF", full: "Justificatif NIF" },
+  { key: "nisDocumentUrl", label: "NIS", full: "Justificatif NIS" },
+  { key: "inapiDocumentUrl", label: "INAPI", full: "Justificatif INAPI" },
+  { key: "imageUrl", label: "LOGO", full: "Logo de l'agence" },
+] as const
 
 function agreementBadge(expiry?: string | null) {
   if (!expiry) return null
@@ -19,6 +57,45 @@ function agreementBadge(expiry?: string | null) {
   if (days < 0) return <span className="text-[10px] font-bold text-red-600">Expiré le {new Date(expiry).toLocaleDateString()}</span>
   if (days <= 30) return <span className="text-[10px] font-bold text-amber-600">Expire dans {days}j</span>
   return <span className="text-[10px] text-gray-400">Valide jusqu'au {new Date(expiry).toLocaleDateString()}</span>
+}
+
+// Vignettes documents : compactes, organisées, distinguent clairement fourni / manquant
+function DocumentsCell({ user }: { user: any }) {
+  if (!user.companyName) return <span className="text-gray-300 text-xs">—</span>
+
+  const provided = DOCUMENT_DEFS.filter((d) => user[d.key]).length
+
+  return (
+    <div className="flex flex-col gap-1.5 min-w-[160px]">
+      <span className={`text-[10px] font-bold ${provided === DOCUMENT_DEFS.length ? 'text-green-600' : 'text-gray-400'}`}>
+        {provided}/{DOCUMENT_DEFS.length} documents fournis
+      </span>
+      <div className="flex flex-wrap gap-1">
+        {DOCUMENT_DEFS.map((d) =>
+          user[d.key] ? (
+            <a
+              key={d.key}
+              href={`${API_URL}${user[d.key]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={d.full}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-[#00BFA6]/10 text-[#00BFA6] hover:bg-[#00BFA6]/20 transition-colors"
+            >
+              <FileText className="h-2.5 w-2.5" /> {d.label}
+            </a>
+          ) : (
+            <span
+              key={d.key}
+              title={`${d.full} — non fourni`}
+              className="px-1.5 py-0.5 rounded-md text-[9px] font-bold text-gray-300 border border-dashed border-gray-200"
+            >
+              {d.label}
+            </span>
+          )
+        )}
+      </div>
+    </div>
+  )
 }
 
 function AdminUsersContent() {
@@ -30,7 +107,9 @@ function AdminUsersContent() {
   const [commune, setCommune] = useState("")
   const [cities, setCities] = useState<any[]>([])
   const [towns, setTowns] = useState<any[]>([])
-  const [typeFilter, setTypeFilter] = useState<"ALL" | "PARTICULIER" | "SOCIETE">("ALL")
+  const [status, setStatus] = useState<StatusFilter>("ALL")
+  const [accountType, setAccountType] = useState<AccountTypeFilter>("ALL")
+  const [pole, setPole] = useState<PoleFilter>("ALL")
   const [statusMenuFor, setStatusMenuFor] = useState<number | null>(null)
 
   useEffect(() => {
@@ -49,6 +128,9 @@ function AdminUsersContent() {
       if (search) params.set('search', search)
       if (wilaya) params.set('wilaya', wilaya)
       if (commune) params.set('commune', commune)
+      if (status !== 'ALL') params.set('status', status)
+      if (accountType !== 'ALL') params.set('accountType', accountType)
+      if (pole !== 'ALL') params.set('pole', pole)
       const response = await fetch(`${API_URL}/admin/users?${params.toString()}`, {
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -65,7 +147,7 @@ function AdminUsersContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [search, wilaya, commune])
+  }, [search, wilaya, commune, status, accountType, pole])
 
   useEffect(() => {
     fetchUsers()
@@ -109,10 +191,10 @@ function AdminUsersContent() {
     }
   }
 
-  const handleStatusChange = async (userId: number, status: string) => {
+  const handleStatusChange = async (userId: number, newStatus: string) => {
     let reason: string | null = null
-    if (status !== 'ACTIVE') {
-      reason = prompt(`Motif (${status === 'SUSPENDED' ? 'suspension' : 'blocage'}) — optionnel`) || undefined as any
+    if (newStatus !== 'ACTIVE') {
+      reason = prompt(`Motif (${newStatus === 'SUSPENDED' ? 'suspension' : 'blocage'}) — optionnel`) || undefined as any
     }
     setStatusMenuFor(null)
     try {
@@ -120,7 +202,7 @@ function AdminUsersContent() {
       const response = await fetch(`${API_URL}/admin/users/${userId}/status`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, reason }),
+        body: JSON.stringify({ status: newStatus, reason }),
       })
       if (response.ok) {
         const updated = await response.json()
@@ -157,33 +239,44 @@ function AdminUsersContent() {
     }
   }
 
-  const filteredUsers = typeFilter === "ALL" ? users : users.filter(u => (typeFilter === "SOCIETE" ? !!u.companyName : !u.companyName))
-
-  const docLink = (url: string | null | undefined, label: string) => url ? (
-    <a href={`${API_URL}${url}`} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors" title={label}>
-        <FileText className="h-3.5 w-3.5" />
-    </a>
-  ) : null
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Utilisateurs & Conformité</h1>
-          <p className="text-gray-500">Annuaire global, validation documentaire et statuts de compte.</p>
+          <h1 className="text-2xl font-bold text-[#003B4A] font-brand">Utilisateurs</h1>
+          <p className="text-gray-500">Annuaire global — segmentation par pôle d'activité, conformité documentaire et statuts de compte.</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchUsers} title="Actualiser">
             <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Filtres */}
+      {/* Recherche */}
+      <div className="bg-white px-3 py-2 rounded-xl border-2 border-gray-200 flex items-center gap-2">
+        <Search className="h-4 w-4 text-gray-400 shrink-0" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Nom, prénom, raison sociale, email, téléphone ou numéro d'identification..."
+          className="outline-none text-sm w-full"
+        />
+      </div>
+
+      {/* Filtres transversaux : statut, type de compte, localisation */}
       <div className="flex flex-wrap items-center gap-2">
+        <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-0.5 flex-wrap">
+          {STATUS_TABS.map((t) => (
+            <button key={t.id} onClick={() => setStatus(t.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${status === t.id ? 'bg-[#00BFA6] text-white' : 'text-gray-500 hover:text-gray-800'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
         <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-0.5">
-          {(["ALL", "PARTICULIER", "SOCIETE"] as const).map(t => (
-            <button key={t} onClick={() => setTypeFilter(t)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${typeFilter === t ? 'bg-[#00BFA6] text-white' : 'text-gray-500 hover:text-gray-800'}`}>
-              {t === "ALL" ? "Tous" : t === "PARTICULIER" ? "Particuliers" : "Professionnels"}
+          {ACCOUNT_TYPE_TABS.map((t) => (
+            <button key={t.id} onClick={() => setAccountType(t.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${accountType === t.id ? 'bg-[#003B4A] text-white' : 'text-gray-500 hover:text-gray-800'}`}>
+              {t.label}
             </button>
           ))}
         </div>
@@ -199,11 +292,26 @@ function AdminUsersContent() {
             {towns.map((t: any) => <option key={t.id} value={t.id}>{t.nameFr}</option>)}
           </select>
         )}
+      </div>
 
-        <div className="bg-white px-3 py-2 rounded-xl border-2 border-gray-200 flex items-center gap-2 flex-1 min-w-[220px]">
-            <Search className="h-4 w-4 text-gray-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nom, email, société, téléphone..." className="outline-none text-sm w-full" />
-        </div>
+      {/* Segmentation par pôle d'activité */}
+      <div className="flex flex-wrap gap-2">
+        {POLE_TABS.map((t) => {
+          const Icon = t.icon
+          const isActive = pole === t.id
+          return (
+            <button
+              key={t.id}
+              onClick={() => setPole(t.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
+                isActive ? 'bg-[#00BFA6] border-[#00BFA6] text-white shadow-lg shadow-[#00BFA6]/20' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -211,43 +319,50 @@ function AdminUsersContent() {
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-4 font-semibold text-gray-900">Type</th>
-                <th className="px-4 py-4 font-semibold text-gray-900">Identité</th>
+                <th className="px-4 py-4 font-semibold text-gray-900">Compte</th>
+                <th className="px-4 py-4 font-semibold text-gray-900">Activité</th>
                 <th className="px-4 py-4 font-semibold text-gray-900">Conformité</th>
-                <th className="px-4 py-4 font-semibold text-gray-900">Inscription</th>
-                <th className="px-4 py-4 font-semibold text-gray-900 text-center">Documents</th>
-                <th className="px-4 py-4 font-semibold text-gray-900 text-center">Compte</th>
+                <th className="px-4 py-4 font-semibold text-gray-900">Documents</th>
+                <th className="px-4 py-4 font-semibold text-gray-900">Localisation</th>
+                <th className="px-4 py-4 font-semibold text-gray-900 text-center">Statut</th>
                 <th className="px-4 py-4 font-semibold text-gray-900 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">Aucun utilisateur.</td></tr>
               ) : (
-                filteredUsers.map((user) => {
-                  const status = user.accountStatus || 'ACTIVE'
-                  const statusDef = STATUS_LABELS[status] || STATUS_LABELS.ACTIVE
+                users.map((user) => {
+                  const accountStatus = user.accountStatus || 'ACTIVE'
+                  const statusDef = STATUS_BADGE[accountStatus] || STATUS_BADGE.ACTIVE
+                  const isCompany = !!user.companyName
+                  const poleDef = POLE_TABS.find((p) => p.id === user.pole)
                   return (
                   <tr key={user.id} className="hover:bg-gray-50/50 transition-colors align-top">
                     <td className="px-4 py-4">
-                      {user.companyName ? (
-                          <div>
-                              <div className="font-medium text-gray-900">{user.companyName}</div>
-                              <div className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full inline-block mt-1">Société</div>
-                          </div>
-                      ) : (
-                          <div className="text-xs text-gray-600 font-medium bg-gray-100 px-2 py-0.5 rounded-full inline-block">Particulier</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-gray-900 font-medium">{user.firstName} {user.lastName}</div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mb-1 ${isCompany ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                        {isCompany ? 'Professionnel' : 'Particulier'}
+                      </span>
+                      <div className="font-medium text-gray-900">{user.companyName || `${user.firstName || ''} ${user.lastName || ''}`.trim()}</div>
                       <div className="text-xs text-gray-500">{user.email}</div>
                       <div className="text-xs text-gray-500">{user.phone}</div>
+                      <div className="text-[10px] text-gray-400 mt-1">Inscrit le {new Date(user.createdAt).toLocaleDateString()}</div>
                     </td>
                     <td className="px-4 py-4">
-                      {user.companyName ? (
+                      {poleDef && poleDef.id !== 'ALL' ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-700">
+                          <poleDef.icon className="h-3.5 w-3.5 text-gray-400" /> {poleDef.label}
+                        </span>
+                      ) : <span className="text-gray-300 text-xs">—</span>}
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        {user.companyActivity ? (SUB_CATEGORY_LABELS[user.companyActivity] || user.companyActivity) : (isCompany ? '—' : 'Propriétaire')}
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">{user.announcesCount ?? 0} annonce{(user.announcesCount ?? 0) > 1 ? 's' : ''} active{(user.announcesCount ?? 0) > 1 ? 's' : ''}</div>
+                    </td>
+                    <td className="px-4 py-4">
+                      {isCompany ? (
                         <div className="space-y-0.5">
                           <div className="text-[10px] text-gray-400">RC: {user.commercialRegister || '—'}</div>
                           <div className="text-[10px] text-gray-400">NIF: {user.nif || '—'}</div>
@@ -256,22 +371,13 @@ function AdminUsersContent() {
                         </div>
                       ) : <span className="text-gray-300 text-xs">—</span>}
                     </td>
-                    <td className="px-4 py-4 text-gray-500 whitespace-nowrap">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
                     <td className="px-4 py-4">
-                      <div className="flex gap-1.5 justify-center flex-wrap max-w-[140px]">
-                        {docLink(user.rcDocumentUrl, "Registre de Commerce")}
-                        {docLink(user.agreementDocumentUrl, "Agrément")}
-                        {docLink(user.nifDocumentUrl, "NIF")}
-                        {docLink(user.nisDocumentUrl, "NIS")}
-                        {docLink(user.inapiDocumentUrl, "Justificatif INAPI")}
-                        {user.imageUrl && (
-                            <a href={`${API_URL}${user.imageUrl}`} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors" title="Logo">
-                                <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                        )}
-                      </div>
+                      <DocumentsCell user={user} />
+                    </td>
+                    <td className="px-4 py-4 text-gray-700 whitespace-nowrap">
+                      {user.location ? (
+                        <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 text-gray-400" /> {user.location}</span>
+                      ) : <span className="text-gray-300 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-4 text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -305,17 +411,17 @@ function AdminUsersContent() {
                           </Button>
                           {statusMenuFor === user.id && (
                             <div className="absolute top-full right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20">
-                              {status !== 'ACTIVE' && (
+                              {accountStatus !== 'ACTIVE' && (
                                 <button onClick={() => handleStatusChange(user.id, 'ACTIVE')} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-700 hover:bg-green-50">
                                   <ShieldCheck className="h-4 w-4" /> Réactiver
                                 </button>
                               )}
-                              {status !== 'SUSPENDED' && (
+                              {accountStatus !== 'SUSPENDED' && (
                                 <button onClick={() => handleStatusChange(user.id, 'SUSPENDED')} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50">
                                   <AlertTriangle className="h-4 w-4" /> Suspendre
                                 </button>
                               )}
-                              {status !== 'BLOCKED' && (
+                              {accountStatus !== 'BLOCKED' && (
                                 <button onClick={() => handleStatusChange(user.id, 'BLOCKED')} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-700 hover:bg-red-50">
                                   <ShieldOff className="h-4 w-4" /> Bloquer
                                 </button>

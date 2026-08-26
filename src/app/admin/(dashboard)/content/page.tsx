@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
-  ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff
+  ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff, Building, Hotel, PartyPopper, Warehouse, Pencil, ImageOff
 } from "lucide-react"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
+import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const getHeaders = (json = true) => {
@@ -18,12 +19,20 @@ const getHeaders = (json = true) => {
 
 type Tab = 'LEGAL' | 'FAQ' | 'PARTNERS' | 'CONTACT'
 
-const PARTNER_CATEGORIES: { id: string; label: string }[] = [
-  { id: 'IMMOBILIER', label: 'Activité immobilière' },
-  { id: 'HOTELLERIE', label: 'Activité hôtelière et hébergement' },
-  { id: 'EVENEMENTIEL', label: 'Activité évènementiel' },
-  { id: 'ENTREPOSAGE', label: "Activité d'entreposage et stockage" },
+const PARTNER_CATEGORIES: { id: ActivityPole; label: string; icon: typeof Building }[] = [
+  { id: 'IMMOBILIER', label: 'Activité immobilière', icon: Building },
+  { id: 'HOTELLERIE', label: 'Activité hôtelière et hébergement', icon: Hotel },
+  { id: 'EVENEMENTIEL', label: 'Activité évènementiel', icon: PartyPopper },
+  { id: 'ENTREPOSAGE', label: "Activité d'entreposage et stockage", icon: Warehouse },
 ]
+
+// Libellés courts pour l'affichage compact (badges, puces déjà annotées d'une icône)
+const POLE_SHORT_LABELS: Record<string, string> = {
+  IMMOBILIER: 'Immobilier',
+  HOTELLERIE: 'Hôtellerie',
+  EVENEMENTIEL: 'Événementiel',
+  ENTREPOSAGE: 'Entreposage',
+}
 
 export default function AdminContentPage() {
   const [tab, setTab] = useState<Tab>('LEGAL')
@@ -38,7 +47,7 @@ export default function AdminContentPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Contenu du site</h1>
+        <h1 className="text-2xl font-bold text-[#003B4A] font-brand">Contenu du site</h1>
         <p className="text-gray-500">CGU, Confidentialité, FAQ, Partenaires, Contact — modifiables sans intervention développeur.</p>
       </div>
 
@@ -246,15 +255,61 @@ function FaqTab() {
 
 // ───────────────────────── Partenaires ─────────────────────────
 
+// Ligne de puces cliquables : sélection unique parmi une liste d'options
+function ChipRow({ options, value, onChange, activeClassName }: {
+  options: { id: string; label: string; icon?: typeof Building }[]
+  value: string
+  onChange: (id: string) => void
+  activeClassName: string
+}) {
+  return (
+    <div className="flex gap-2 flex-wrap">
+      {options.map((o) => {
+        const Icon = o.icon
+        const isActive = value === o.id
+        return (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(isActive ? "" : o.id)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+              isActive ? activeClassName : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+            }`}
+          >
+            {Icon && <Icon className="h-3.5 w-3.5" />}
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function PartnerLogo({ logoUrl, name, size = "h-16 w-16" }: { logoUrl: string | null; name: string; size?: string }) {
+  return (
+    <div className={`${size} rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0`}>
+      {logoUrl ? (
+        <img src={`${API_URL}${logoUrl}`} alt={name} className="h-full w-full object-contain p-1.5" />
+      ) : (
+        <div className="flex flex-col items-center gap-1 text-gray-300">
+          <ImageOff className="h-5 w-5" />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PartnersTab() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState("")
   const [newUrl, setNewUrl] = useState("")
-  const [newCategory, setNewCategory] = useState("")
+  const [newCategory, setNewCategory] = useState<string>("")
+  const [newSubCategory, setNewSubCategory] = useState<string>("")
   const [newLogo, setNewLogo] = useState<File | null>(null)
   const [adding, setAdding] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL")
+  const [editingId, setEditingId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -276,6 +331,15 @@ function PartnersTab() {
   const changeCategory = async (p: any, category: string) => {
     const fd = new FormData()
     fd.append('category', category)
+    // Changer de pôle invalide la sous-catégorie précédente (elle appartenait à l'ancien pôle)
+    fd.append('subCategory', '')
+    await fetch(`${API_URL}/admin/content/partners/${p.id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
+    await load()
+  }
+
+  const changeSubCategory = async (p: any, subCategory: string) => {
+    const fd = new FormData()
+    fd.append('subCategory', subCategory)
     await fetch(`${API_URL}/admin/content/partners/${p.id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
     await load()
   }
@@ -294,10 +358,11 @@ function PartnersTab() {
       fd.append('name', newName)
       if (newUrl) fd.append('websiteUrl', newUrl)
       if (newCategory) fd.append('category', newCategory)
+      if (newSubCategory) fd.append('subCategory', newSubCategory)
       fd.append('order', String(items.length))
       if (newLogo) fd.append('logo', newLogo)
       await fetch(`${API_URL}/admin/content/partners`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
-      setNewName(""); setNewUrl(""); setNewCategory(""); setNewLogo(null)
+      setNewName(""); setNewUrl(""); setNewCategory(""); setNewSubCategory(""); setNewLogo(null)
       await load()
     } finally { setAdding(false) }
   }
@@ -308,57 +373,96 @@ function PartnersTab() {
 
   return (
     <div className="space-y-6">
-      {/* Filtre par sous-catégorie */}
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setCategoryFilter("ALL")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${categoryFilter === "ALL" ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'}`}>
-          Toutes catégories
-        </button>
-        {PARTNER_CATEGORIES.map(c => (
-          <button key={c.id} onClick={() => setCategoryFilter(c.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${categoryFilter === c.id ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'}`}>
-            {c.label}
-          </button>
-        ))}
-      </div>
+      {/* Filtre par catégorie — cliquable */}
+      <ChipRow
+        options={[{ id: "ALL", label: "Toutes catégories" }, ...PARTNER_CATEGORIES]}
+        value={categoryFilter}
+        onChange={(id) => setCategoryFilter(id || "ALL")}
+        activeClassName="bg-[#003B4A] border-[#003B4A] text-white"
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredItems.map((p) => (
-          <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col items-center text-center gap-2">
-            <div className="h-16 w-16 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100">
-              {p.logoUrl ? <img src={`${API_URL}${p.logoUrl}`} alt={p.name} className="h-full w-full object-contain" /> : <Handshake className="h-6 w-6 text-gray-300" />}
+        {filteredItems.map((p) => {
+          const catDef = PARTNER_CATEGORIES.find(c => c.id === p.category)
+          const isEditing = editingId === p.id
+          return (
+            <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col items-center text-center gap-2.5 hover:shadow-sm transition-shadow">
+              <PartnerLogo logoUrl={p.logoUrl} name={p.name} />
+              <p className="font-bold text-gray-900 text-sm">{p.name}</p>
+              {p.websiteUrl && <p className="text-xs text-gray-400 truncate max-w-full">{p.websiteUrl}</p>}
+
+              {!isEditing ? (
+                <div className="flex flex-col items-center gap-1">
+                  {catDef ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1 bg-[#00BFA6]/10 text-[#00BFA6]">
+                      <catDef.icon className="h-3 w-3" /> {POLE_SHORT_LABELS[p.category] || catDef.label}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold rounded-full px-2.5 py-1 bg-gray-100 text-gray-400">Sans catégorie</span>
+                  )}
+                  {p.subCategory && (
+                    <span className="text-[10px] text-gray-400">{SUB_CATEGORY_LABELS[p.subCategory] || p.subCategory}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="w-full space-y-2 text-left bg-gray-50 rounded-xl p-3">
+                  <ChipRow
+                    options={PARTNER_CATEGORIES.map(c => ({ id: c.id, label: POLE_SHORT_LABELS[c.id], icon: c.icon }))}
+                    value={p.category || ""}
+                    onChange={(id) => changeCategory(p, id)}
+                    activeClassName="bg-[#00BFA6] border-[#00BFA6] text-white"
+                  />
+                  {p.category && (
+                    <ChipRow
+                      options={subCategoriesForPole(p.category as ActivityPole)}
+                      value={p.subCategory || ""}
+                      onChange={(id) => changeSubCategory(p, id)}
+                      activeClassName="bg-[#003B4A] border-[#003B4A] text-white"
+                    />
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 mt-1">
+                <button onClick={() => setEditingId(isEditing ? null : p.id)} className="p-1.5 rounded-lg hover:bg-gray-100" title="Modifier la catégorie">
+                  <Pencil className={`h-4 w-4 ${isEditing ? 'text-[#00BFA6]' : 'text-gray-400'}`} />
+                </button>
+                <button onClick={() => togglePublished(p)} className="p-1.5 rounded-lg hover:bg-gray-100" title={p.published ? 'Publié' : 'Masqué'}>
+                  {p.published ? <Eye className="h-4 w-4 text-green-600" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
+                </button>
+                <button onClick={() => remove(p.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="h-4 w-4" /></button>
+              </div>
             </div>
-            <p className="font-bold text-gray-900 text-sm">{p.name}</p>
-            {p.websiteUrl && <p className="text-xs text-gray-400 truncate max-w-full">{p.websiteUrl}</p>}
-            <select
-              value={p.category || ""}
-              onChange={(e) => changeCategory(p, e.target.value)}
-              className={`text-[11px] font-bold rounded-full px-2.5 py-1 outline-none border-none ${p.category ? 'bg-[#00BFA6]/10 text-[#00BFA6]' : 'bg-gray-100 text-gray-400'}`}
-            >
-              <option value="">Sans catégorie</option>
-              {PARTNER_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
-            <div className="flex items-center gap-2 mt-2">
-              <button onClick={() => togglePublished(p)} className="p-1.5 rounded-lg hover:bg-gray-100" title={p.published ? 'Publié' : 'Masqué'}>
-                {p.published ? <Eye className="h-4 w-4 text-green-600" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
-              </button>
-              <button onClick={() => remove(p.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="h-4 w-4" /></button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
         {filteredItems.length === 0 && (
           <p className="col-span-full text-center text-gray-400 text-sm py-6">Aucun partenaire dans cette catégorie.</p>
         )}
       </div>
 
-      <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3 max-w-md">
+      <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3 max-w-lg">
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter un partenaire</p>
         <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du partenaire" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
         <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="Site web (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-        <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white">
-          <option value="">Sous-catégorie (optionnelle)</option>
-          {PARTNER_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-        </select>
+
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-gray-500">Sous-catégorie (optionnelle)</p>
+          <ChipRow
+            options={PARTNER_CATEGORIES}
+            value={newCategory}
+            onChange={(id) => { setNewCategory(id); setNewSubCategory("") }}
+            activeClassName="bg-[#00BFA6] border-[#00BFA6] text-white"
+          />
+          {newCategory && (
+            <ChipRow
+              options={subCategoriesForPole(newCategory as ActivityPole)}
+              value={newSubCategory}
+              onChange={setNewSubCategory}
+              activeClassName="bg-[#003B4A] border-[#003B4A] text-white"
+            />
+          )}
+        </div>
+
         <label className="flex items-center gap-2 w-full text-sm border border-gray-200 rounded-xl p-3 bg-white cursor-pointer">
           <Upload className="h-4 w-4 text-gray-400" /> {newLogo ? newLogo.name : "Logo (optionnel)"}
           <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewLogo(e.target.files?.[0] || null)} />

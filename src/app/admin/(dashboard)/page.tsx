@@ -59,97 +59,98 @@ export default function AdminDashboard() {
   const fmt = (n: number | undefined) => (isLoading || n === undefined ? "--" : n.toLocaleString())
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Administration</h1>
-          <Button variant="outline" size="sm" onClick={loadStats} title="Actualiser">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#003B4A] font-brand">Vue d'ensemble</h1>
+          <p className="text-gray-500">Activité de la plateforme en temps réel.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={loadStats} title="Actualiser">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Annonces */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-orange-100 p-3 rounded-xl text-orange-600">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <span className="text-sm font-medium text-gray-500">En attente</span>
+          </div>
+          <h3 className="text-2xl font-bold text-[#003B4A]">{fmt(stats?.pendingAnnounces)}</h3>
+          <p className="text-sm text-gray-500 mt-1">Annonces à valider</p>
         </div>
 
-        {/* Annonces */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-orange-100 p-3 rounded-lg text-orange-600">
-                <AlertCircle className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">En attente</span>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-green-100 p-3 rounded-xl text-green-600">
+              <FileText className="h-6 w-6" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{fmt(stats?.pendingAnnounces)}</h3>
-            <p className="text-sm text-gray-500 mt-1">Annonces à valider</p>
+            <span className="text-sm font-medium text-gray-500">Total Annonces</span>
           </div>
+          <h3 className="text-2xl font-bold text-[#003B4A]">{fmt(stats?.totalOnlineAnnounces)}</h3>
+          <p className="text-sm text-gray-500 mt-1">Annonces en ligne (validées)</p>
+        </div>
+      </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-green-100 p-3 rounded-lg text-green-600">
-                <FileText className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Total Annonces</span>
+      {/* Inscriptions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-blue-100 p-3 rounded-xl text-blue-600">
+              <User className="h-6 w-6" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{fmt(stats?.totalOnlineAnnounces)}</h3>
-            <p className="text-sm text-gray-500 mt-1">Annonces en ligne (validées)</p>
+            <span className="text-sm font-medium text-gray-500">Particuliers</span>
           </div>
+          <h3 className="text-2xl font-bold text-[#003B4A]">{fmt(stats?.totalParticuliers)}</h3>
+          <p className="text-sm text-gray-500 mt-1">Comptes particuliers inscrits</p>
         </div>
 
-        {/* Inscriptions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-blue-100 p-3 rounded-lg text-blue-600">
-                <User className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Particuliers</span>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-[#E6F8F6] p-3 rounded-xl text-[#00908A]">
+              <Briefcase className="h-6 w-6" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{fmt(stats?.totalParticuliers)}</h3>
-            <p className="text-sm text-gray-500 mt-1">Comptes particuliers inscrits</p>
+            <span className="text-sm font-medium text-gray-500">Professionnels</span>
           </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-[#E6F8F6] p-3 rounded-lg text-[#00908A]">
-                <Briefcase className="h-6 w-6" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Professionnels</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900">{fmt(stats?.totalProfessionnels)}</h3>
-            <p className="text-sm text-gray-500 mt-1">Comptes professionnels inscrits</p>
-          </div>
+          <h3 className="text-2xl font-bold text-[#003B4A]">{fmt(stats?.totalProfessionnels)}</h3>
+          <p className="text-sm text-gray-500 mt-1">Comptes professionnels inscrits</p>
         </div>
+      </div>
 
-        {/* Répartition des professionnels par type d'activité */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Type de professionnel</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(ACTIVITY_LABELS).filter(([id]) => id !== 'NON_CLASSE' || (stats?.professionnelsByActivity?.NON_CLASSE ?? 0) > 0).map(([id, def]) => {
-              const Icon = def.icon
-              return (
-                <div key={id} className="border border-gray-100 rounded-xl p-4 flex items-center gap-3">
-                  <div className="bg-gray-100 p-2.5 rounded-lg text-gray-600 shrink-0">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold text-gray-900">{fmt(stats?.professionnelsByActivity?.[id])}</div>
-                    <div className="text-xs text-gray-500">{def.label}</div>
-                  </div>
+      {/* Répartition des professionnels par type d'activité */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-bold text-[#003B4A] mb-4">Type de professionnel</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Object.entries(ACTIVITY_LABELS).filter(([id]) => id !== 'NON_CLASSE' || (stats?.professionnelsByActivity?.NON_CLASSE ?? 0) > 0).map(([id, def]) => {
+            const Icon = def.icon
+            return (
+              <div key={id} className="border border-gray-100 rounded-2xl p-4 flex items-center gap-3">
+                <div className="bg-gray-100 p-2.5 rounded-xl text-gray-600 shrink-0">
+                  <Icon className="h-5 w-5" />
                 </div>
-              )
-            })}
-          </div>
+                <div>
+                  <div className="text-xl font-bold text-[#003B4A]">{fmt(stats?.professionnelsByActivity?.[id])}</div>
+                  <div className="text-xs text-gray-500">{def.label}</div>
+                </div>
+              </div>
+            )
+          })}
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Actions Rapides</h2>
-            <div className="space-y-4">
-              <Button className="w-full justify-start text-left" variant="outline" onClick={() => router.push('/admin/announces')}>
-                <CheckCircle className="mr-2 h-4 w-4" /> Valider les annonces en attente
-              </Button>
-              <Button className="w-full justify-start text-left" variant="outline" onClick={() => router.push('/admin/users')}>
-                <Users className="mr-2 h-4 w-4" /> Gérer les utilisateurs
-              </Button>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-bold text-[#003B4A] mb-4">Actions Rapides</h2>
+          <div className="space-y-3">
+            <Button className="w-full justify-start text-left" variant="outline" onClick={() => router.push('/admin/announces')}>
+              <CheckCircle className="mr-2 h-4 w-4" /> Valider les annonces en attente
+            </Button>
+            <Button className="w-full justify-start text-left" variant="outline" onClick={() => router.push('/admin/users')}>
+              <Users className="mr-2 h-4 w-4" /> Gérer les utilisateurs
+            </Button>
           </div>
         </div>
       </div>

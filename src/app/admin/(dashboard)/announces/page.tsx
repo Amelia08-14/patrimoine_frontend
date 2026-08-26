@@ -192,7 +192,7 @@ function AdminAnnouncesContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-[#003B4A] font-brand flex items-center gap-3">
             Validation des Annonces
             {pendingCount > 0 && (
               <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">{pendingCount} en attente</span>

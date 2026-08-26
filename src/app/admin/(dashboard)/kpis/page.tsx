@@ -73,7 +73,7 @@ export default function AdminKpisPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">KPI — Annonces "Première Page"</h1>
+          <h1 className="text-2xl font-bold text-[#003B4A] font-brand">KPI — Annonces "Première Page"</h1>
           <p className="text-gray-500">Historique et performances des annonces mises en avant.</p>
         </div>
         <Button variant="outline" size="sm" onClick={load} title="Actualiser">

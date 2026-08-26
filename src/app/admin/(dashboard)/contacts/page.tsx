@@ -77,7 +77,7 @@ export default function AdminContactsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Requêtes "Nous Contacter"</h1>
+          <h1 className="text-2xl font-bold text-[#003B4A] font-brand">Requêtes "Nous Contacter"</h1>
           <p className="text-gray-500">Demandes soumises par motif — Commercial, Juridique, Technique, Général.</p>
         </div>
         <Button variant="outline" size="sm" onClick={load} title="Actualiser">

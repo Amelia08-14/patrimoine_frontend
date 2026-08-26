@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, LayoutGrid, Mail, Star } from "lucide-react"
+import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, Mail, Star, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -47,20 +47,20 @@ function GlobalSearch() {
 
   return (
     <div className="relative w-full max-w-md" ref={boxRef}>
-      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
+      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 focus-within:border-[#00BFA6]/40 transition-colors">
         <Search className="h-4 w-4 text-gray-400 shrink-0" />
         <input
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           placeholder="Rechercher un utilisateur, une annonce..."
-          className="w-full text-sm outline-none"
+          className="w-full text-sm outline-none bg-transparent"
         />
         {loading && <Loader2 className="h-4 w-4 text-gray-300 animate-spin shrink-0" />}
       </div>
 
       {open && query.trim().length >= 2 && (
-        <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 max-h-96 overflow-y-auto">
           {!loading && !hasResults ? (
             <p className="px-4 py-3 text-sm text-gray-400">Aucun résultat pour « {query} »</p>
           ) : (
@@ -109,18 +109,66 @@ function GlobalSearch() {
   )
 }
 
+function ProfileMenu({ adminUser }: { adminUser: { firstName?: string; lastName?: string; email?: string } | null }) {
+  const [open, setOpen] = useState(false)
+  const boxRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const name = adminUser?.firstName ? `${adminUser.firstName} ${adminUser.lastName || ''}`.trim() : (adminUser?.email || 'Admin')
+  const initial = (adminUser?.firstName || adminUser?.email || 'A').charAt(0).toUpperCase()
+
+  const logout = () => {
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('admin_user')
+    window.location.href = '/admin/login'
+  }
+
+  return (
+    <div className="relative shrink-0" ref={boxRef}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-2xl border border-gray-200 bg-white hover:border-gray-300 transition-colors"
+      >
+        <span className="h-8 w-8 rounded-full bg-[#00BFA6] text-white flex items-center justify-center text-sm font-bold shrink-0">
+          {initial}
+        </span>
+        <span className="text-sm font-semibold text-[#003B4A] max-w-[120px] truncate">{name}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 text-gray-400 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50">
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="h-4 w-4" /> Déconnexion
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const [adminUser, setAdminUser] = useState<any>(null)
 
   const navigation = [
-    { name: "Annonces", href: "/admin/announces", icon: FileText },
     { name: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
+    { name: "Annonces", href: "/admin/announces", icon: FileText },
     { name: "Utilisateurs", href: "/admin/users", icon: Users },
-    { name: "Partenaires", href: "/admin/partners", icon: LayoutGrid },
     { name: "Points & Achats", href: "/admin/points", icon: Coins },
     { name: "Contenu du site", href: "/admin/content", icon: BookOpen },
     { name: "Requêtes Contact", href: "/admin/contacts", icon: Mail },
@@ -144,7 +192,9 @@ export default function AdminLayout({
           localStorage.removeItem('admin_token')
           localStorage.removeItem('admin_user')
           window.location.href = '/admin/login'
+          return
         }
+        setAdminUser(user)
     } catch (e) {
         window.location.href = '/admin/login'
     }
@@ -153,11 +203,11 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-[#003B4A] text-white flex flex-col fixed h-full inset-y-0 z-50">
-        <div className="p-6 border-b border-white/10">
-          <h1 className="text-xl font-bold tracking-tight">Patrimoine<span className="text-[#00BFA6]">.Admin</span></h1>
+      <div className="w-64 bg-white border-r border-gray-100 flex flex-col fixed h-full inset-y-0 z-50">
+        <div className="p-6 border-b border-gray-100">
+          <img src="/logo.png" alt="Patrimoine Immobilier" className="h-11 w-auto object-contain" />
         </div>
-        
+
         <nav className="flex-1 p-4 space-y-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href
@@ -166,10 +216,10 @@ export default function AdminLayout({
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-colors",
-                  isActive 
-                    ? "bg-[#00BFA6] text-white shadow-lg shadow-[#00BFA6]/20" 
-                    : "text-gray-300 hover:bg-white/5 hover:text-white"
+                  "flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-2xl transition-colors",
+                  isActive
+                    ? "bg-[#00BFA6] text-white shadow-lg shadow-[#00BFA6]/25"
+                    : "text-[#003B4A]/70 hover:bg-[#00BFA6]/[0.06] hover:text-[#003B4A]"
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -179,10 +229,10 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
-          <button 
-            onClick={() => window.location.href = '/'} 
-            className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-xl w-full transition-colors"
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={() => window.location.href = '/'}
+            className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#003B4A]/60 hover:text-[#003B4A] hover:bg-gray-50 rounded-2xl w-full transition-colors"
           >
             <LogOut className="h-5 w-5" />
             Retour au site
@@ -192,19 +242,19 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <div className="flex-1 ml-64 p-8">
-        <header className="flex items-center justify-between mb-8 gap-4">
-            <GlobalSearch />
-            <button
-                onClick={() => {
-                    localStorage.removeItem('admin_token');
-                    localStorage.removeItem('admin_user');
-                    window.location.href = '/admin/login';
-                }}
-                className="text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-2"
-            >
-                <LogOut className="h-4 w-4" />
-                Déconnexion Admin
-            </button>
+        <header className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+            <div>
+              <p className="text-lg font-bold text-[#003B4A] font-brand">
+                Bonjour{adminUser?.firstName ? `, ${adminUser.firstName}` : ''}
+              </p>
+              <p className="text-xs text-gray-400">
+                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
+              <GlobalSearch />
+              <ProfileMenu adminUser={adminUser} />
+            </div>
         </header>
         {children}
       </div>

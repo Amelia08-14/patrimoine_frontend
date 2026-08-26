@@ -139,7 +139,7 @@ export default function AdminPointsPage() {
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-[#003B4A] font-brand flex items-center gap-3">
             <Coins className="h-7 w-7 text-[#00BFA6]" /> Points & Achats
           </h1>
           <p className="text-gray-500 mt-1 text-sm">Demandes envoyées par tous les comptes (particuliers et professionnels)</p>

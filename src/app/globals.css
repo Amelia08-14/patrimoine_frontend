@@ -11,7 +11,13 @@
   --secondary: #003B4A;
   --font-sans: "Montserrat";
   --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-serif);
+  --font-serif: var(--font-serif-brand), Georgia, serif;
+}
+
+/* Écho serif du logo (mot-symbole "Patrimoine") — réservé aux titres de page de
+   l'admin, jamais au texte courant. Se dégrade sur Georgia si non chargée. */
+.font-brand {
+  font-family: var(--font-serif);
 }
 
 @media (prefers-color-scheme: dark) {
