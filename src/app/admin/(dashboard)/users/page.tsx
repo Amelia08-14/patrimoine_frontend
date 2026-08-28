@@ -7,7 +7,7 @@ import {
   CheckCircle, XCircle, FileText, Search, RefreshCw, AlertTriangle, ShieldOff, ShieldCheck,
   ShieldAlert, ChevronDown, KeyRound, LayoutGrid, Building, Hotel, PartyPopper, Warehouse, MapPin,
 } from "lucide-react"
-import { POLE_LABELS, SUB_CATEGORY_LABELS, type ActivityPole } from "@/data/activityPoles"
+import { POLE_LABELS, SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -110,6 +110,7 @@ function AdminUsersContent() {
   const [status, setStatus] = useState<StatusFilter>("ALL")
   const [accountType, setAccountType] = useState<AccountTypeFilter>("ALL")
   const [pole, setPole] = useState<PoleFilter>("ALL")
+  const [subCategory, setSubCategory] = useState<string>("ALL")
   const [statusMenuFor, setStatusMenuFor] = useState<number | null>(null)
 
   useEffect(() => {
@@ -131,6 +132,7 @@ function AdminUsersContent() {
       if (status !== 'ALL') params.set('status', status)
       if (accountType !== 'ALL') params.set('accountType', accountType)
       if (pole !== 'ALL') params.set('pole', pole)
+      if (subCategory !== 'ALL') params.set('subCategory', subCategory)
       const response = await fetch(`${API_URL}/admin/users?${params.toString()}`, {
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -147,7 +149,7 @@ function AdminUsersContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [search, wilaya, commune, status, accountType, pole])
+  }, [search, wilaya, commune, status, accountType, pole, subCategory])
 
   useEffect(() => {
     fetchUsers()
@@ -302,7 +304,7 @@ function AdminUsersContent() {
           return (
             <button
               key={t.id}
-              onClick={() => setPole(t.id)}
+              onClick={() => { setPole(t.id); setSubCategory("ALL") }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
                 isActive ? 'bg-[#00BFA6] border-[#00BFA6] text-white shadow-lg shadow-[#00BFA6]/20' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
@@ -313,6 +315,27 @@ function AdminUsersContent() {
           )
         })}
       </div>
+
+      {/* Sous-catégories du pôle sélectionné, pour affiner le filtre */}
+      {pole !== "ALL" && (
+        <div className="flex flex-wrap gap-2 pl-1">
+          <button
+            onClick={() => setSubCategory("ALL")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${subCategory === "ALL" ? 'bg-[#003B4A] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+          >
+            Toutes sous-catégories
+          </button>
+          {subCategoriesForPole(pole).map((sub) => (
+            <button
+              key={sub.id}
+              onClick={() => setSubCategory(sub.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${subCategory === sub.id ? 'bg-[#003B4A] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+            >
+              {sub.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -376,7 +399,12 @@ function AdminUsersContent() {
                     </td>
                     <td className="px-4 py-4 text-gray-700 whitespace-nowrap">
                       {user.location ? (
-                        <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 text-gray-400" /> {user.location}</span>
+                        <div>
+                          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 text-gray-400" /> {user.location}</span>
+                          {user.locationIsApproximate && (
+                            <div className="text-[10px] text-amber-600 mt-0.5" title="Wilaya/commune non renseignées — adresse texte libre saisie par l'utilisateur">Adresse libre (non structurée)</div>
+                          )}
+                        </div>
                       ) : <span className="text-gray-300 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-4 text-center">

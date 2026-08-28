@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Link } from "@/i18n/navigation"
 import { Lock, Mail, Phone, Building2, User, Building, Hotel, PartyPopper, Warehouse, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { WILAYAS } from "@/data/wilayas"
-import { COMMUNES } from "@/data/communes"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 const numberFromForm = z.preprocess((v) => {
   if (v === "" || v === null || v === undefined) return undefined
@@ -156,16 +156,18 @@ export default function RegisterPage() {
     }
   }, [activityFamily, setValue, userType])
 
+  // Wilayas/communes chargées depuis la vraie base (mêmes endpoints que l'admin) : les ids
+  // envoyés au serveur sont ainsi de vrais City.id/Town.id, pas des codes d'un jeu de données
+  // statique séparé — ce qui garantissait auparavant un townId jamais résolu côté serveur.
   useEffect(() => {
     const fetchCities = async () => {
       setIsLoadingCities(true)
       try {
-        setCities(
-          WILAYAS.map((w) => ({
-            id: Number(w.code),
-            nameFr: w.name,
-          })).sort((a, b) => a.id - b.id)
-        )
+        const res = await fetch(`${API_URL}/cities`)
+        const data = await res.json()
+        setCities(Array.isArray(data) ? data : [])
+      } catch {
+        setCities([])
       } finally {
         setIsLoadingCities(false)
       }
@@ -182,12 +184,11 @@ export default function RegisterPage() {
       }
       setIsLoadingTowns(true)
       try {
-        const wilayaCode = String(selectedCityCode).padStart(2, "0")
-        setTowns(
-          COMMUNES.filter((c) => c.wilayaCode === wilayaCode)
-            .map((c) => ({ id: Number(c.id), nameFr: c.name }))
-            .sort((a, b) => (a.nameFr || "").localeCompare(b.nameFr || "", "fr"))
-        )
+        const res = await fetch(`${API_URL}/cities/${selectedCityCode}/towns`)
+        const data = await res.json()
+        setTowns(Array.isArray(data) ? data : [])
+      } catch {
+        setTowns([])
       } finally {
         setIsLoadingTowns(false)
       }
@@ -198,25 +199,26 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormOutput) => {
     setIsLoading(true)
     try {
-      const { confirmPassword, ...rest } = data
+      const { confirmPassword, cityCode, townCode, ...rest } = data
       // Clean up data based on type
       const payload = {
         ...rest,
         userType, // Ensure userType is set from state if needed, or form data
+        // townCode est le vrai Town.id (sélectionné parmi les communes chargées depuis /cities/:id/towns) :
+        // c'est le champ que le serveur lit réellement (townId), cityCode ne sert qu'au filtrage local.
+        ...(userType === "SOCIETE" && townCode ? { townId: townCode } : {}),
         // Remove undefined fields to avoid sending empty strings
         ...(userType === "PARTICULIER" ? {
           companyName: undefined,
           activityType: undefined,
           position: undefined,
-          cityCode: undefined,
-          townCode: undefined
         } : {
           firstName: undefined,
           lastName: undefined
         })
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/register`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

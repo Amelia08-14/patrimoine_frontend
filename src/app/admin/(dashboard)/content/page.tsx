@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
-  ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff, Building, Hotel, PartyPopper, Warehouse, Pencil, ImageOff
+  ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff, Building, Hotel, PartyPopper, Warehouse, Pencil, ImageOff,
+  Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe,
 } from "lucide-react"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
@@ -309,6 +310,7 @@ function PartnersTab() {
   const [newLogo, setNewLogo] = useState<File | null>(null)
   const [adding, setAdding] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL")
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>("ALL")
   const [editingId, setEditingId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
@@ -369,7 +371,11 @@ function PartnersTab() {
 
   if (loading) return <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
 
-  const filteredItems = categoryFilter === "ALL" ? items : items.filter(p => p.category === categoryFilter)
+  const filteredItems = items.filter((p) => {
+    if (categoryFilter !== "ALL" && p.category !== categoryFilter) return false
+    if (subCategoryFilter !== "ALL" && p.subCategory !== subCategoryFilter) return false
+    return true
+  })
 
   return (
     <div className="space-y-6">
@@ -377,9 +383,19 @@ function PartnersTab() {
       <ChipRow
         options={[{ id: "ALL", label: "Toutes catégories" }, ...PARTNER_CATEGORIES]}
         value={categoryFilter}
-        onChange={(id) => setCategoryFilter(id || "ALL")}
+        onChange={(id) => { setCategoryFilter(id || "ALL"); setSubCategoryFilter("ALL") }}
         activeClassName="bg-[#003B4A] border-[#003B4A] text-white"
       />
+
+      {/* Sous-catégories de la catégorie filtrée, pour affiner */}
+      {categoryFilter !== "ALL" && (
+        <ChipRow
+          options={[{ id: "ALL", label: "Toutes sous-catégories" }, ...subCategoriesForPole(categoryFilter as ActivityPole)]}
+          value={subCategoryFilter}
+          onChange={(id) => setSubCategoryFilter(id || "ALL")}
+          activeClassName="bg-[#00BFA6] border-[#00BFA6] text-white"
+        />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredItems.map((p) => {
@@ -477,6 +493,41 @@ function PartnersTab() {
 
 // ───────────────────────── Contact & Support ─────────────────────────
 
+// Un département = 5 canaux indépendants (email/téléphone/WhatsApp/Viber/Telegram),
+// tous optionnels — seuls ceux renseignés apparaissent, cliquables, sur la page publique.
+const DEPARTMENTS: { id: string; label: string; icon: typeof Briefcase; prefix: string; placeholder: { email: string; phone: string } }[] = [
+  { id: 'COMMERCIAL', label: 'Service Commercial', icon: Briefcase, prefix: 'SUPPORT_COMMERCIAL', placeholder: { email: 'commercial@votreplateforme.com', phone: '+213 XX XXX XXX' } },
+  { id: 'JURIDIQUE', label: 'Service Légal & Juridique', icon: Scale, prefix: 'SUPPORT_JURIDIQUE', placeholder: { email: 'juridique@votreplateforme.com', phone: '+213 XX XXX XXX' } },
+  { id: 'TECHNIQUE', label: 'Support Technique', icon: Wrench, prefix: 'SUPPORT_TECHNIQUE', placeholder: { email: 'technique@votreplateforme.com', phone: '+213 XX XXX XXX' } },
+]
+
+function ChannelFields({ prefix, settings, set }: { prefix: string; settings: Record<string, string>; set: (key: string, value: string) => void }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-gray-400" /> E-mail</label>
+        <input value={settings[`${prefix}_EMAIL`] || ''} onChange={(e) => set(`${prefix}_EMAIL`, e.target.value)} placeholder="contact@votreplateforme.com" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-gray-400" /> Téléphone</label>
+        <input value={settings[`${prefix}_PHONE`] || ''} onChange={(e) => set(`${prefix}_PHONE`, e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" /> WhatsApp</label>
+        <input value={settings[`${prefix}_WHATSAPP`] || ''} onChange={(e) => set(`${prefix}_WHATSAPP`, e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-purple-500" /> Viber</label>
+        <input value={settings[`${prefix}_VIBER`] || ''} onChange={(e) => set(`${prefix}_VIBER`, e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+      </div>
+      <div className="sm:col-span-2">
+        <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Send className="h-3.5 w-3.5 text-blue-500" /> Telegram</label>
+        <input value={settings[`${prefix}_TELEGRAM`] || ''} onChange={(e) => set(`${prefix}_TELEGRAM`, e.target.value)} placeholder="@NomDuBot_Support ou nom d'utilisateur" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+      </div>
+    </div>
+  )
+}
+
 function ContactTab() {
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -500,54 +551,55 @@ function ContactTab() {
   if (loading) return <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 max-w-2xl space-y-5">
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">Téléphone</label>
-        <input value={settings.CONTACT_PHONE || ''} onChange={(e) => set('CONTACT_PHONE', e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">E-mail</label>
-        <input value={settings.CONTACT_EMAIL || ''} onChange={(e) => set('CONTACT_EMAIL', e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">Adresse</label>
-        <input value={settings.CONTACT_ADDRESS || ''} onChange={(e) => set('CONTACT_ADDRESS', e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">Texte "Service Support"</label>
-        <textarea value={settings.SUPPORT_CONTENT || ''} onChange={(e) => set('SUPPORT_CONTENT', e.target.value)} rows={4} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">E-mails dédiés par département</p>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🛠️ Support Technique</label>
-        <input value={settings.SUPPORT_TECHNIQUE_EMAIL || ''} onChange={(e) => set('SUPPORT_TECHNIQUE_EMAIL', e.target.value)} placeholder="technique@votreplateforme.com" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">💼 Service Commercial</label>
-        <input value={settings.SUPPORT_COMMERCIAL_EMAIL || ''} onChange={(e) => set('SUPPORT_COMMERCIAL_EMAIL', e.target.value)} placeholder="commercial@votreplateforme.com" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">⚖️ Service Légal & Juridique</label>
-        <input value={settings.SUPPORT_JURIDIQUE_EMAIL || ''} onChange={(e) => set('SUPPORT_JURIDIQUE_EMAIL', e.target.value)} placeholder="juridique@votreplateforme.com" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Canaux de messagerie instantanée</p>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🟢 WhatsApp Pro</label>
-        <input value={settings.WHATSAPP_PRO_NUMBER || ''} onChange={(e) => set('WHATSAPP_PRO_NUMBER', e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🟣 Viber Business</label>
-        <input value={settings.VIBER_NUMBER || ''} onChange={(e) => set('VIBER_NUMBER', e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
-      </div>
-      <div>
-        <label className="text-sm font-bold text-gray-700 mb-1.5 block">🔵 Telegram Support Bot</label>
-        <input value={settings.TELEGRAM_BOT_USERNAME || ''} onChange={(e) => set('TELEGRAM_BOT_USERNAME', e.target.value)} placeholder="@NomDuBot_Support" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3" />
+    <div className="space-y-5 max-w-3xl">
+      {/* Contact général */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+        <h3 className="text-sm font-bold text-[#003B4A] flex items-center gap-2"><Globe className="h-4 w-4 text-[#00BFA6]" /> Contact Général</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-gray-400" /> Téléphone</label>
+            <input value={settings.CONTACT_PHONE || ''} onChange={(e) => set('CONTACT_PHONE', e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-gray-400" /> E-mail</label>
+            <input value={settings.CONTACT_EMAIL || ''} onChange={(e) => set('CONTACT_EMAIL', e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" /> WhatsApp</label>
+            <input value={settings.CONTACT_WHATSAPP || ''} onChange={(e) => set('CONTACT_WHATSAPP', e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-purple-500" /> Viber</label>
+            <input value={settings.CONTACT_VIBER || ''} onChange={(e) => set('CONTACT_VIBER', e.target.value)} placeholder="+213 XX XXX XXX" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Send className="h-3.5 w-3.5 text-blue-500" /> Telegram</label>
+            <input value={settings.CONTACT_TELEGRAM || ''} onChange={(e) => set('CONTACT_TELEGRAM', e.target.value)} placeholder="@NomDuBot_Support" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-gray-400" /> Adresse</label>
+            <input value={settings.CONTACT_ADDRESS || ''} onChange={(e) => set('CONTACT_ADDRESS', e.target.value)} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-500 mb-1 block">Texte "Service Support"</label>
+          <textarea value={settings.SUPPORT_CONTENT || ''} onChange={(e) => set('SUPPORT_CONTENT', e.target.value)} rows={3} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Button onClick={save} disabled={saving} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
+      {/* Un bloc par département : email + téléphone + WhatsApp + Viber + Telegram */}
+      {DEPARTMENTS.map((dept) => {
+        const Icon = dept.icon
+        return (
+          <div key={dept.id} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+            <h3 className="text-sm font-bold text-[#003B4A] flex items-center gap-2"><Icon className="h-4 w-4 text-[#00BFA6]" /> {dept.label}</h3>
+            <ChannelFields prefix={dept.prefix} settings={settings} set={set} />
+          </div>
+        )
+      })}
+
+      <div className="flex items-center gap-3 sticky bottom-4">
+        <Button onClick={save} disabled={saving} className="bg-[#00BFA6] hover:bg-[#00908A] text-white shadow-lg">
           {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />} Enregistrer
         </Button>
         {saved && <span className="text-sm text-green-600 font-bold flex items-center gap-1"><Check className="h-4 w-4" /> Enregistré</span>}

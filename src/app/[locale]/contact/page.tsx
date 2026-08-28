@@ -29,6 +29,60 @@ const SUBJECT_PREFIX: Record<Motif, string> = {
   GENERAL: '[CONTACT]',
 };
 
+// Chaque motif est adossé à un "département" de réglages (email/téléphone/WhatsApp/Viber/
+// Telegram) — GENERAL utilise le préfixe CONTACT, qui sert aussi de repli pour les autres
+// s'ils n'ont pas leurs propres canaux renseignés par l'admin.
+const MOTIF_PREFIX: Record<Motif, string> = {
+  COMMERCIAL: 'SUPPORT_COMMERCIAL',
+  JURIDIQUE: 'SUPPORT_JURIDIQUE',
+  TECHNIQUE: 'SUPPORT_TECHNIQUE',
+  GENERAL: 'CONTACT',
+};
+
+function channelsFor(prefix: string, settings: Record<string, string>) {
+  const fallback = (key: string) => (prefix !== 'CONTACT' ? settings[`CONTACT_${key}`] : undefined);
+  return {
+    email: settings[`${prefix}_EMAIL`] || fallback('EMAIL'),
+    phone: settings[`${prefix}_PHONE`] || fallback('PHONE'),
+    whatsapp: settings[`${prefix}_WHATSAPP`] || fallback('WHATSAPP'),
+    viber: settings[`${prefix}_VIBER`] || fallback('VIBER'),
+    telegram: settings[`${prefix}_TELEGRAM`] || fallback('TELEGRAM'),
+  };
+}
+
+const telHref = (v: string) => `tel:${v.replace(/[^0-9+]/g, '')}`;
+const mailHref = (v: string) => `mailto:${v}`;
+const waHref = (v: string) => `https://wa.me/${v.replace(/[^0-9]/g, '')}`;
+const viberHref = (v: string) => `viber://chat?number=${encodeURIComponent(v.replace(/[^0-9+]/g, ''))}`;
+const telegramHref = (v: string) => `https://t.me/${v.replace(/^@/, '').trim()}`;
+
+function ChannelBadge({ icon: Icon, text, href, colorClass, external }: { icon: typeof Mail; text?: string; href?: string; colorClass: string; external?: boolean }) {
+  if (!text || !href) return null;
+  return (
+    <a
+      href={href}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener noreferrer' : undefined}
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:border-[#00BFA6] hover:shadow-sm transition-all text-sm font-semibold text-gray-700 hover:text-[#00BFA6]"
+    >
+      <Icon className={`h-4 w-4 shrink-0 ${colorClass}`} /> {text}
+    </a>
+  );
+}
+
+function ChannelBadgeRow({ prefix, settings }: { prefix: string; settings: Record<string, string> }) {
+  const c = channelsFor(prefix, settings);
+  return (
+    <div className="flex flex-wrap gap-2.5">
+      <ChannelBadge icon={Mail} text={c.email} href={c.email && mailHref(c.email)} colorClass="text-[#00BFA6]" />
+      <ChannelBadge icon={Phone} text={c.phone} href={c.phone && telHref(c.phone)} colorClass="text-[#00BFA6]" />
+      <ChannelBadge icon={MessageCircle} text={c.whatsapp && 'WhatsApp'} href={c.whatsapp && waHref(c.whatsapp)} colorClass="text-green-500" external />
+      <ChannelBadge icon={MessageCircle} text={c.viber && 'Viber'} href={c.viber && viberHref(c.viber)} colorClass="text-purple-500" external />
+      <ChannelBadge icon={Send} text={c.telegram && 'Telegram'} href={c.telegram && telegramHref(c.telegram)} colorClass="text-blue-500" external />
+    </div>
+  );
+}
+
 export default function ContactPage() {
   const t = useTranslations('Contact');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -83,15 +137,8 @@ export default function ContactPage() {
     { id: 'GENERAL', icon: Globe, label: t('motifGeneral'), desc: t('motifGeneralDesc') },
   ];
 
-  const CHANNELS: Record<Motif, { email: string; call: string }> = {
-    COMMERCIAL: { email: settings.SUPPORT_COMMERCIAL_EMAIL || settings.CONTACT_EMAIL || '—', call: 'WhatsApp Pro / Viber / ligne commerciale dédiée' },
-    JURIDIQUE: { email: settings.SUPPORT_JURIDIQUE_EMAIL || settings.CONTACT_EMAIL || '—', call: 'Ligne sécurisée du service contentieux et juridique' },
-    TECHNIQUE: { email: settings.SUPPORT_TECHNIQUE_EMAIL || settings.CONTACT_EMAIL || '—', call: 'Telegram Support Bot / WhatsApp Support Technique' },
-    GENERAL: { email: settings.CONTACT_EMAIL || '—', call: 'Standard téléphonique général / WhatsApp Accueil' },
-  };
-
   const activeMotif = MOTIFS.find((m) => m.id === motif)!;
-  const activeChannels = CHANNELS[motif];
+  const generalChannels = channelsFor('CONTACT', settings);
 
   const onSubmit = async (data: ContactFormValues) => {
     setLoading(true);
@@ -152,24 +199,18 @@ export default function ContactPage() {
           </div>
           <p className="text-sm text-gray-500 mt-4">{activeMotif.desc}</p>
 
-          <div className="flex flex-wrap gap-4 mt-5 pt-5 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Mail className="h-4 w-4 text-[#00BFA6]" />
-              <span>{t('channelEmail')}: <strong className="text-gray-900">{activeChannels.email}</strong></span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <MessageCircle className="h-4 w-4 text-[#00BFA6]" />
-              <span>{t('channelCall')}: <strong className="text-gray-900">{activeChannels.call}</strong></span>
-            </div>
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <ChannelBadgeRow prefix={MOTIF_PREFIX[motif]} settings={settings} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Contact Form */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-[#00BFA6]" /> {t('formTitle')}
             </h2>
+            <p className="text-sm text-[#00BFA6] font-semibold mb-6">{activeMotif.label}</p>
 
             {success ? (
               <div className="flex flex-col items-center text-center py-10">
@@ -242,44 +283,72 @@ export default function ContactPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
               <h2 className="text-xl font-bold text-gray-900 mb-5">{t('infoTitle')}</h2>
-              <div className="space-y-5">
-                <div className="flex items-center gap-4">
-                  <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center shrink-0">
-                    <Phone className="h-5 w-5 text-[#00BFA6]" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-sm">{t('phoneLabel')}</p>
-                    <p className="text-gray-500 text-sm">{settings.CONTACT_PHONE || '—'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center shrink-0">
-                    <Mail className="h-5 w-5 text-[#00BFA6]" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-sm">{t('emailInfoLabel')}</p>
-                    <p className="text-gray-500 text-sm">{settings.CONTACT_EMAIL || '—'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center shrink-0">
-                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-sm">{t('addressLabel')}</p>
-                    <p className="text-gray-500 text-sm">{settings.CONTACT_ADDRESS || '—'}</p>
-                  </div>
-                </div>
-                {settings.WHATSAPP_PRO_NUMBER && (
+              <div className="space-y-4">
+                {generalChannels.phone && (
+                  <a href={telHref(generalChannels.phone)} className="flex items-center gap-4 group">
+                    <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center shrink-0">
+                      <Phone className="h-5 w-5 text-[#00BFA6]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">{t('phoneLabel')}</p>
+                      <p className="text-gray-500 text-sm group-hover:text-[#00BFA6] transition-colors">{generalChannels.phone}</p>
+                    </div>
+                  </a>
+                )}
+                {generalChannels.email && (
+                  <a href={mailHref(generalChannels.email)} className="flex items-center gap-4 group">
+                    <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center shrink-0">
+                      <Mail className="h-5 w-5 text-[#00BFA6]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">{t('emailInfoLabel')}</p>
+                      <p className="text-gray-500 text-sm group-hover:text-[#00BFA6] transition-colors">{generalChannels.email}</p>
+                    </div>
+                  </a>
+                )}
+                {settings.CONTACT_ADDRESS && (
                   <div className="flex items-center gap-4">
+                    <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center shrink-0">
+                      <MapPin className="h-5 w-5 text-[#00BFA6]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">{t('addressLabel')}</p>
+                      <p className="text-gray-500 text-sm">{settings.CONTACT_ADDRESS}</p>
+                    </div>
+                  </div>
+                )}
+                {generalChannels.whatsapp && (
+                  <a href={waHref(generalChannels.whatsapp)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
                     <div className="h-11 w-11 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
                       <MessageCircle className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">WhatsApp Pro</p>
-                      <p className="text-gray-500 text-sm">{settings.WHATSAPP_PRO_NUMBER}</p>
+                      <p className="font-bold text-gray-900 text-sm">WhatsApp</p>
+                      <p className="text-gray-500 text-sm group-hover:text-green-600 transition-colors">{generalChannels.whatsapp}</p>
                     </div>
-                  </div>
+                  </a>
+                )}
+                {generalChannels.viber && (
+                  <a href={viberHref(generalChannels.viber)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
+                    <div className="h-11 w-11 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+                      <MessageCircle className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">Viber</p>
+                      <p className="text-gray-500 text-sm group-hover:text-purple-600 transition-colors">{generalChannels.viber}</p>
+                    </div>
+                  </a>
+                )}
+                {generalChannels.telegram && (
+                  <a href={telegramHref(generalChannels.telegram)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
+                    <div className="h-11 w-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                      <Send className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">Telegram</p>
+                      <p className="text-gray-500 text-sm group-hover:text-blue-600 transition-colors">{generalChannels.telegram}</p>
+                    </div>
+                  </a>
                 )}
               </div>
             </div>

@@ -21,6 +21,11 @@ const PROPERTY_TYPE_TO_CATEGORY: Record<string, string> = Object.fromEntries(
   PROPERTY_TYPES.map((pt) => [pt.id, pt.categoryId])
 )
 
+// Sous-catégories (types de bien précis) disponibles pour une catégorie du filtre "Type d'immobilier"
+function propertyTypesForFilterCategory(categoryIds: string[]) {
+  return PROPERTY_TYPES.filter((pt) => categoryIds.includes(pt.categoryId))
+}
+
 const TRANSACTION_FILTERS: { id: string; label: string; types?: string[] }[] = [
   { id: "ALL", label: "Tous" },
   { id: "LOCATION", label: "Location", types: ["RENTAL", "HOLIDAY_RENTAL"] },
@@ -47,6 +52,7 @@ function AdminAnnouncesContent() {
   const [towns, setTowns] = useState<any[]>([])
   const [statusFilter, setStatusFilter] = useState<"ALL" | "WAITING_VALIDATION" | "VALIDATED" | "REJECTED">("WAITING_VALIDATION")
   const [propertyCategoryFilter, setPropertyCategoryFilter] = useState<string>("ALL")
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>("ALL")
   const [transactionFilter, setTransactionFilter] = useState<string>("ALL")
   const [accountTypeFilter, setAccountTypeFilter] = useState<"ALL" | "PARTICULIER" | "SOCIETE">("ALL")
   const [activityPoleFilter, setActivityPoleFilter] = useState<string>("ALL")
@@ -171,7 +177,9 @@ function AdminAnnouncesContent() {
     return announces.filter((a) => {
       if (statusFilter !== "ALL" && a.status !== statusFilter) return false
 
-      if (propertyCategoryDef) {
+      if (propertyTypeFilter !== "ALL") {
+        if (a.property?.propertyType !== propertyTypeFilter) return false
+      } else if (propertyCategoryDef) {
         const catId = PROPERTY_TYPE_TO_CATEGORY[a.property?.propertyType]
         if (!catId || !propertyCategoryDef.categoryIds.includes(catId)) return false
       }
@@ -184,7 +192,7 @@ function AdminAnnouncesContent() {
 
       return true
     })
-  }, [announces, statusFilter, propertyCategoryFilter, transactionFilter, accountTypeFilter, activityPoleFilter])
+  }, [announces, statusFilter, propertyCategoryFilter, propertyTypeFilter, transactionFilter, accountTypeFilter, activityPoleFilter])
 
   const pendingCount = announces.filter(a => a.status === 'WAITING_VALIDATION').length
 
@@ -239,13 +247,8 @@ function AdminAnnouncesContent() {
         </div>
       </div>
 
-      {/* Filtres avancés : type d'immobilier, transaction, annonceur */}
+      {/* Filtres avancés : transaction, annonceur */}
       <div className="flex flex-wrap items-center gap-2">
-        <select value={propertyCategoryFilter} onChange={(e) => setPropertyCategoryFilter(e.target.value)} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
-          <option value="ALL">Type d&apos;immobilier : Tous</option>
-          {PROPERTY_FILTER_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-        </select>
-
         <select value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
           {TRANSACTION_FILTERS.map((t) => <option key={t.id} value={t.id}>{t.id === "ALL" ? "Type & Prix : Tous" : t.label}</option>)}
         </select>
@@ -262,6 +265,46 @@ function AdminAnnouncesContent() {
           </select>
         )}
       </div>
+
+      {/* Type d'immobilier — catégories cliquables */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => { setPropertyCategoryFilter("ALL"); setPropertyTypeFilter("ALL") }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${propertyCategoryFilter === "ALL" ? 'bg-[#00BFA6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+        >
+          Toutes catégories
+        </button>
+        {PROPERTY_FILTER_CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => { setPropertyCategoryFilter(c.id); setPropertyTypeFilter("ALL") }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${propertyCategoryFilter === c.id ? 'bg-[#00BFA6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sous-catégories (types de bien précis) de la catégorie sélectionnée */}
+      {propertyCategoryFilter !== "ALL" && (
+        <div className="flex flex-wrap gap-2 pl-1">
+          <button
+            onClick={() => setPropertyTypeFilter("ALL")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${propertyTypeFilter === "ALL" ? 'bg-[#003B4A] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+          >
+            Tous les types
+          </button>
+          {propertyTypesForFilterCategory(PROPERTY_FILTER_CATEGORIES.find((c) => c.id === propertyCategoryFilter)?.categoryIds ?? []).map((pt) => (
+            <button
+              key={pt.id}
+              onClick={() => setPropertyTypeFilter(pt.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${propertyTypeFilter === pt.id ? 'bg-[#003B4A] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}
+            >
+              {pt.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">

@@ -12,19 +12,18 @@
   --font-sans: "Montserrat";
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-serif-brand), Georgia, serif;
+  /* Le site (public + admin) n'a aucune variante sombre (aucune classe `dark:` dans le
+     projet, tous les fonds de carte sont codés en dur en blanc/gris clair) : on force donc
+     le thème clair même si l'OS/navigateur du visiteur est en mode sombre. Auparavant, une
+     règle @media (prefers-color-scheme: dark) passait le texte en gris quasi blanc sur des
+     fonds restés blancs -> texte illisible pour qui a le mode sombre activé sur son PC. */
+  color-scheme: light;
 }
 
 /* Écho serif du logo (mot-symbole "Patrimoine") — réservé aux titres de page de
    l'admin, jamais au texte courant. Se dégrade sur Georgia si non chargée. */
 .font-brand {
   font-family: var(--font-serif);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 html {

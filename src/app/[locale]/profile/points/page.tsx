@@ -13,17 +13,42 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
 
+type OfferPack = { id: number; kind: 'POINTS' | 'BOUTIQUE'; key: string; title: string; description: string | null; price: number; points: number }
+
+// Habillage visuel (couleur, mise en avant) des packs connus — le contenu (titre/description/
+// prix/points) vient de l'admin. Tout pack créé depuis l'admin sans style connu reçoit une
+// couleur par défaut (cycle ci-dessous) : la liste affichée n'est jamais figée à 3 entrées.
+const POINT_PACK_STYLE: Record<string, { color: string; popular?: boolean }> = {
+  PACK_50: { color: "#6B7280" },
+  PACK_100: { color: "#1E40AF", popular: true },
+  PACK_200: { color: "#D97706" },
+}
+const DEFAULT_COLORS = ["#0EA5E9", "#059669", "#DB2777", "#7C3AED", "#EA580C"]
+
 // Modal achat de points seuls
-function PointPackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]; onClose: () => void; onSuccess: () => void }) {
   const t = useTranslations("ProfilePoints")
   const [ordering, setOrdering] = useState<string | null>(null)
   const [error, setError] = useState("")
 
-  const POINT_PACKS = [
-    { id: "PACK_50",  label: t("pointPackStarterLabel"), points: 50,  price: 1500, color: "#6B7280" },
-    { id: "PACK_100", label: t("pointPackProLabel"),      points: 100, price: 2500, color: "#1E40AF", popular: true },
-    { id: "PACK_200", label: t("pointPackPremiumLabel"),  points: 200, price: 3500, color: "#D97706" },
+  // Repli si l'API est injoignable (les 3 packs d'origine) ; sinon, tout ce qui est en base.
+  const FALLBACK: { id: string; label: string; description: string | null; points: number; price: number; color: string; popular?: boolean }[] = [
+    { id: "PACK_50", label: t("pointPackStarterLabel"), description: null, points: 50, price: 1500, color: "#6B7280" },
+    { id: "PACK_100", label: t("pointPackProLabel"), description: null, points: 100, price: 2500, color: "#1E40AF", popular: true },
+    { id: "PACK_200", label: t("pointPackPremiumLabel"), description: null, points: 200, price: 3500, color: "#D97706" },
   ]
+
+  const live = offerPacks.filter((p) => p.kind === 'POINTS')
+  const POINT_PACKS = live.length > 0
+    ? live.map((p, i) => ({
+        id: p.key,
+        label: p.title,
+        description: p.description,
+        points: p.points,
+        price: p.price,
+        ...(POINT_PACK_STYLE[p.key] || { color: DEFAULT_COLORS[i % DEFAULT_COLORS.length] }),
+      }))
+    : FALLBACK
 
   const order = async (packId: string) => {
     setOrdering(packId); setError("")
@@ -56,7 +81,7 @@ function PointPackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
           </div>
         )}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {POINT_PACKS.map(pack => (
             <div key={pack.id} className={`relative bg-white rounded-2xl border-2 overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : 'border-gray-200'}`}>
               {pack.popular && (
@@ -66,7 +91,8 @@ function PointPackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                 <div className="text-3xl font-black mb-1" style={{ color: pack.color }}>{pack.points}</div>
                 <div className="text-sm font-bold text-gray-500 mb-3">{t("pointsUnit")}</div>
                 <div className="text-xl font-black text-gray-900 mb-1">{pack.price.toLocaleString()}</div>
-                <div className="text-xs text-gray-400 mb-4">{t("oneTimePayment")}</div>
+                <div className="text-xs text-gray-400">{t("oneTimePayment")}</div>
+                <div className="text-[11px] text-gray-400 mb-4 min-h-[1em]">{pack.description || ''}</div>
                 <button
                   onClick={() => order(pack.id)}
                   disabled={ordering === pack.id}
@@ -86,43 +112,44 @@ function PointPackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
   )
 }
 
+// Habillage visuel (icône/couleur/bordure/liste de fonctionnalités) — le contenu
+// (titre/description/prix/points) vient de l'admin (Points & Achats)
+const BOUTIQUE_PACK_STYLE: Record<string, { icon: typeof Store; color: string; border: string; popular?: boolean }> = {
+  STANDARD: { icon: Store, color: "#6B7280", border: "border-gray-200" },
+  AVANCEE: { icon: Star, color: "#1E40AF", border: "border-blue-200", popular: true },
+  ENTREPRISE: { icon: Crown, color: "#D97706", border: "border-amber-200" },
+}
+
 // Modal pour choisir le pack boutique
-function PackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]; onClose: () => void; onSuccess: () => void }) {
   const t = useTranslations("ProfilePoints")
 
-  const BOUTIQUE_PACKS = [
-    {
-      id: "STANDARD",
-      label: t("boutiqueStandardLabel"),
-      price: 5000,
-      points: 50,
-      icon: Store,
-      color: "#6B7280",
-      border: "border-gray-200",
-      features: [t("boutiqueStandardFeature1"), t("boutiqueStandardFeature2"), t("boutiqueStandardFeature3"), t("boutiqueStandardFeature4")],
-    },
-    {
-      id: "AVANCEE",
-      label: t("boutiqueAvanceeLabel"),
-      price: 10000,
-      points: 100,
-      icon: Star,
-      color: "#1E40AF",
-      border: "border-blue-200",
-      features: [t("boutiqueAvanceeFeature1"), t("boutiqueAvanceeFeature2"), t("boutiqueAvanceeFeature3"), t("boutiqueAvanceeFeature4")],
-      popular: true,
-    },
-    {
-      id: "ENTREPRISE",
-      label: t("boutiqueEntrepriseLabel"),
-      price: 15000,
-      points: 200,
-      icon: Crown,
-      color: "#D97706",
-      border: "border-amber-200",
-      features: [t("boutiqueEntrepriseFeature1"), t("boutiqueEntrepriseFeature2"), t("boutiqueEntrepriseFeature3"), t("boutiqueEntrepriseFeature4"), t("boutiqueEntrepriseFeature5")],
-    },
+  const FEATURES: Record<string, string[]> = {
+    STANDARD: [t("boutiqueStandardFeature1"), t("boutiqueStandardFeature2"), t("boutiqueStandardFeature3"), t("boutiqueStandardFeature4")],
+    AVANCEE: [t("boutiqueAvanceeFeature1"), t("boutiqueAvanceeFeature2"), t("boutiqueAvanceeFeature3"), t("boutiqueAvanceeFeature4")],
+    ENTREPRISE: [t("boutiqueEntrepriseFeature1"), t("boutiqueEntrepriseFeature2"), t("boutiqueEntrepriseFeature3"), t("boutiqueEntrepriseFeature4"), t("boutiqueEntrepriseFeature5")],
+  }
+
+  // Repli si l'API est injoignable (les 3 packs d'origine) ; sinon, tout ce qui est en base —
+  // un pack créé depuis l'admin sans style connu reçoit une icône/couleur par défaut.
+  const FALLBACK = [
+    { id: "STANDARD", label: t("boutiqueStandardLabel"), description: null as string | null, price: 5000, points: 50, features: FEATURES.STANDARD, ...BOUTIQUE_PACK_STYLE.STANDARD },
+    { id: "AVANCEE", label: t("boutiqueAvanceeLabel"), description: null as string | null, price: 10000, points: 100, features: FEATURES.AVANCEE, ...BOUTIQUE_PACK_STYLE.AVANCEE },
+    { id: "ENTREPRISE", label: t("boutiqueEntrepriseLabel"), description: null as string | null, price: 15000, points: 200, features: FEATURES.ENTREPRISE, ...BOUTIQUE_PACK_STYLE.ENTREPRISE },
   ]
+
+  const live = offerPacks.filter((p) => p.kind === 'BOUTIQUE')
+  const BOUTIQUE_PACKS = live.length > 0
+    ? live.map((p, i) => ({
+        id: p.key,
+        label: p.title,
+        description: p.description,
+        price: p.price,
+        points: p.points,
+        features: FEATURES[p.key] || [],
+        ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
+      }))
+    : FALLBACK
 
   const [ordering, setOrdering] = useState<string | null>(null)
   const [error, setError] = useState("")
@@ -176,8 +203,9 @@ function PackModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                       <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
                     </div>
                   </div>
-                  <div className="text-xl font-black text-gray-900 mb-3">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500">{t("perMonth")}</span></div>
-                  <ul className="space-y-1.5 mb-4">
+                  <div className="text-xl font-black text-gray-900 mb-1">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500">{t("perMonth")}</span></div>
+                  {pack.description && <p className="text-[11px] text-gray-400 mb-3">{pack.description}</p>}
+                  <ul className={`space-y-1.5 mb-4 ${pack.description ? '' : 'mt-2'}`}>
                     {pack.features.map(f => (
                       <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
                         <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
@@ -280,13 +308,28 @@ export default function EspacePublicitairePage() {
   const [showPackModal, setShowPackModal] = useState(false)
   const [showPointPackModal, setShowPointPackModal] = useState(false)
   const [toast, setToast] = useState("")
+  const [offerPacks, setOfferPacks] = useState<OfferPack[]>([])
+  // La boutique est réservée aux comptes professionnels — jamais proposée à un particulier.
+  const [isPro, setIsPro] = useState(false)
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) setIsPro(JSON.parse(userStr).userType === 'SOCIETE')
+    } catch { /* ignore */ }
+  }, [])
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
 
-  const BOUTIQUE_PACKS_LABELS: Record<string, string> = {
-    STANDARD: t("boutiqueStandardLabel"),
-    AVANCEE: t("boutiqueAvanceeLabel"),
-    ENTREPRISE: t("boutiqueEntrepriseLabel"),
+  const packLabel = (pack: string) => {
+    const live = offerPacks.find((p) => p.kind === 'BOUTIQUE' && p.key === pack)
+    if (live) return live.title
+    const fallback: Record<string, string> = {
+      STANDARD: t("boutiqueStandardLabel"),
+      AVANCEE: t("boutiqueAvanceeLabel"),
+      ENTREPRISE: t("boutiqueEntrepriseLabel"),
+    }
+    return fallback[pack] || pack
   }
 
   const load = async () => {
@@ -294,12 +337,13 @@ export default function EspacePublicitairePage() {
     if (!token) { router.push('/auth/login'); return }
     const headers = { Authorization: `Bearer ${token}` }
     try {
-      const [bal, sub, subs, hist, ann] = await Promise.all([
+      const [bal, sub, subs, hist, ann, packs] = await Promise.all([
         axios.get(`${API_URL}/points/balance`, { headers }).catch(() => ({ data: { points: 0 } })),
         axios.get(`${API_URL}/boutique-sub/active`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API_URL}/boutique-sub/my`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/points/history`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/announces/user/my-announces`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/offer-packs`).catch(() => ({ data: [] })),
       ])
       setBalance(bal.data.points || 0)
       setExpirationDate(bal.data.expirationDate || null)
@@ -308,6 +352,7 @@ export default function EspacePublicitairePage() {
       setMySubs(subs.data)
       setHistory(hist.data)
       setAnnounces(ann.data)
+      setOfferPacks(packs.data)
     } catch (e: any) {
       if (e?.response?.status === 401) { localStorage.removeItem('token'); router.push('/auth/login') }
     } finally {
@@ -334,8 +379,6 @@ export default function EspacePublicitairePage() {
 
   const isCurrentlyFeatured = (a: any) => a.featuredUntil && new Date(a.featuredUntil) > new Date()
 
-  const packLabel = (pack: string) => BOUTIQUE_PACKS_LABELS[pack] || pack
-
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-[#00BFA6]" /></div>
 
   return (
@@ -343,8 +386,8 @@ export default function EspacePublicitairePage() {
       {toast && (
         <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
       )}
-      {showPackModal && <PackModal onClose={() => setShowPackModal(false)} onSuccess={() => { showToast(t("subPurchaseSuccess")); load() }} />}
-      {showPointPackModal && <PointPackModal onClose={() => setShowPointPackModal(false)} onSuccess={() => { showToast(t("pointsPurchaseSuccess")); load() }} />}
+      {showPackModal && <PackModal offerPacks={offerPacks} onClose={() => setShowPackModal(false)} onSuccess={() => { showToast(t("subPurchaseSuccess")); load() }} />}
+      {showPointPackModal && <PointPackModal offerPacks={offerPacks} onClose={() => setShowPointPackModal(false)} onSuccess={() => { showToast(t("pointsPurchaseSuccess")); load() }} />}
       {featureTarget && <FeatureModal announce={featureTarget} onClose={() => setFeatureTarget(null)} onSuccess={() => { load(); showToast(ta("adFeaturedSuccess")) }} />}
 
       <div className="max-w-5xl mx-auto space-y-6">
@@ -374,8 +417,8 @@ export default function EspacePublicitairePage() {
           </div>
         </div>
 
-        {/* Abonnement boutique actif */}
-        {activeSub ? (
+        {/* Abonnement boutique actif — réservé aux comptes professionnels */}
+        {isPro && (activeSub ? (
           <div className="bg-white rounded-2xl border border-[#00BFA6]/30 shadow-sm p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center">
@@ -405,7 +448,7 @@ export default function EspacePublicitairePage() {
               <Store className="h-4 w-4" /> {t("activateMyBoutique")}
             </button>
           </div>
-        )}
+        ))}
 
         {/* Comment utiliser */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -470,7 +513,7 @@ export default function EspacePublicitairePage() {
         )}
 
         {/* Historique abonnements boutique */}
-        {mySubs.length > 0 && (
+        {isPro && mySubs.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><Clock className="h-5 w-5 text-amber-500" /> {t("subsHistoryTitle")}</h2>
             <div className="space-y-3">

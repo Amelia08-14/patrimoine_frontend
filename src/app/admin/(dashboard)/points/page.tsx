@@ -3,20 +3,19 @@
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search } from "lucide-react"
+import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search, Pencil, Save, Trash2, Plus } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-const BOUTIQUE_PACK_LABELS: Record<string, { label: string; pts: number }> = {
-  STANDARD:   { label: "Boutique Standard",   pts: 50  },
-  AVANCEE:    { label: "Boutique Avancée",     pts: 100 },
-  ENTREPRISE: { label: "Boutique Entreprise",  pts: 200 },
-}
-
-const POINT_PACK_LABELS: Record<string, { label: string; pts: number }> = {
-  PACK_50:  { label: "Starter", pts: 50 },
-  PACK_100: { label: "Pro",     pts: 100 },
-  PACK_200: { label: "Premium", pts: 200 },
+type OfferPack = {
+  id: number
+  kind: 'POINTS' | 'BOUTIQUE'
+  key: string
+  title: string
+  description: string | null
+  price: number
+  points: number
+  order: number
 }
 
 type Purchase = {
@@ -57,13 +56,103 @@ export default function AdminPointsPage() {
   const [processing, setProcessing] = useState<number | null>(null)
   const [toast, setToast] = useState("")
   const [error, setError] = useState("")
+  const [packs, setPacks] = useState<OfferPack[]>([])
+  const [editingPackId, setEditingPackId] = useState<number | null>(null)
+  const [editForm, setEditForm] = useState<{ title: string; description: string; price: string; points: string }>({ title: "", description: "", price: "", points: "" })
+  const [savingPack, setSavingPack] = useState(false)
+  const [deletingPackId, setDeletingPackId] = useState<number | null>(null)
+  const [creatingPack, setCreatingPack] = useState(false)
+  const [creatingKind, setCreatingKind] = useState<'POINTS' | 'BOUTIQUE' | null>(null)
+  const [createForm, setCreateForm] = useState<{ key: string; title: string; description: string; price: string; points: string }>({ key: "", title: "", description: "", price: "", points: "" })
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('admin_token')}` })
 
+  const loadPacks = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/offer-packs`)
+      setPacks(res.data)
+    } catch {
+      // silencieux : les cartes garderont leur dernier état connu
+    }
+  }, [])
+
   useEffect(() => {
     fetch(`${API_URL}/cities`).then((r) => r.json()).then(setCities).catch(() => {})
-  }, [])
+    loadPacks()
+  }, [loadPacks])
+
+  const startEditPack = (pack: OfferPack) => {
+    setEditingPackId(pack.id)
+    setEditForm({ title: pack.title, description: pack.description || "", price: String(pack.price), points: String(pack.points) })
+  }
+
+  const savePack = async (pack: OfferPack) => {
+    // Garde-fou : ne jamais écraser une offre publiée avec des champs vides/invalides.
+    if (!editForm.title.trim()) { showToast("❌ Le titre est obligatoire"); return }
+    const price = Number(editForm.price)
+    const points = Number(editForm.points)
+    if (!Number.isFinite(price) || price < 0) { showToast("❌ Prix invalide"); return }
+    if (!Number.isFinite(points) || points < 0) { showToast("❌ Nombre de points invalide"); return }
+
+    setSavingPack(true)
+    try {
+      await axios.put(`${API_URL}/admin/offer-packs/${pack.id}`, {
+        title: editForm.title.trim(),
+        description: editForm.description.trim() || null,
+        price,
+        points,
+      }, { headers: getHeaders() })
+      showToast("✅ Offre mise à jour")
+      setEditingPackId(null)
+      await loadPacks()
+    } catch (e: any) {
+      showToast("❌ " + (e?.response?.data?.message || "Erreur"))
+    } finally {
+      setSavingPack(false)
+    }
+  }
+
+  const deletePack = async (pack: OfferPack) => {
+    if (!confirm(`Supprimer l'offre "${pack.title}" ? Cette action est irréversible (l'historique des achats déjà effectués est conservé).`)) return
+    setDeletingPackId(pack.id)
+    try {
+      await axios.delete(`${API_URL}/admin/offer-packs/${pack.id}`, { headers: getHeaders() })
+      showToast("✅ Offre supprimée")
+      await loadPacks()
+    } catch (e: any) {
+      showToast("❌ " + (e?.response?.data?.message || "Erreur"))
+    } finally {
+      setDeletingPackId(null)
+    }
+  }
+
+  const startCreatePack = (kind: 'POINTS' | 'BOUTIQUE') => {
+    setCreatingKind(kind)
+    setCreateForm({ key: "", title: "", description: "", price: "", points: "" })
+  }
+
+  const createPack = async () => {
+    if (!creatingKind) return
+    setCreatingPack(true)
+    try {
+      await axios.post(`${API_URL}/admin/offer-packs`, {
+        kind: creatingKind,
+        key: createForm.key || createForm.title,
+        title: createForm.title,
+        description: createForm.description || null,
+        price: Number(createForm.price),
+        points: Number(createForm.points),
+      }, { headers: getHeaders() })
+      showToast("✅ Nouvelle offre créée")
+      setCreatingKind(null)
+      await loadPacks()
+    } catch (e: any) {
+      showToast("❌ " + (e?.response?.data?.message || "Erreur"))
+    } finally {
+      setCreatingPack(false)
+    }
+  }
 
   useEffect(() => {
     if (!wilaya) { setTowns([]); return }
@@ -212,22 +301,181 @@ export default function AdminPointsPage() {
         </div>
       </div>
 
-      {/* Info packs */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {sourceFilter !== 'POINTS' && Object.entries(BOUTIQUE_PACK_LABELS).map(([key, val]) => (
-          <div key={key} className="bg-white rounded-xl border border-gray-100 p-4 text-center">
-            <div className="font-black text-gray-900 text-sm">{val.label}</div>
-            <div className="text-[#00BFA6] font-bold">{val.pts} pts</div>
-            <div className="text-xs text-gray-400">{key === 'STANDARD' ? '5 000' : key === 'AVANCEE' ? '10 000' : '15 000'} DA/mois</div>
-          </div>
-        ))}
-        {sourceFilter !== 'BOUTIQUE' && Object.entries(POINT_PACK_LABELS).map(([key, val]) => (
-          <div key={key} className="bg-white rounded-xl border border-gray-100 p-4 text-center">
-            <div className="font-black text-gray-900 text-sm">{val.label}</div>
-            <div className="text-[#00BFA6] font-bold">{val.pts} pts</div>
-            <div className="text-xs text-gray-400">{key === 'PACK_50' ? '1 500' : key === 'PACK_100' ? '2 500' : '3 500'} DA</div>
-          </div>
-        ))}
+      {/* Offres — modifiables (titre, description, prix, points) */}
+      <div className="mb-6">
+        <h2 className="text-sm font-bold text-[#003B4A] mb-3">Offres proposées</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {packs
+            .filter((p) => (sourceFilter === 'ALL' || p.kind === sourceFilter))
+            .map((pack) => {
+              const isBoutique = pack.kind === 'BOUTIQUE'
+              const isEditing = editingPackId === pack.id
+              return (
+                <div key={pack.id} className="bg-white rounded-xl border border-gray-100 p-4">
+                  {!isEditing ? (
+                    <div className="text-center relative">
+                      <div className="absolute -top-1 -right-1 flex items-center gap-0.5">
+                        <button
+                          onClick={() => startEditPack(pack)}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#00BFA6]"
+                          title="Modifier cette offre"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deletePack(pack)}
+                          disabled={deletingPackId === pack.id}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-60"
+                          title="Supprimer cette offre"
+                        >
+                          {deletingPackId === pack.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                      <div className="font-black text-gray-900 text-sm">{pack.title}</div>
+                      {pack.description && <p className="text-[11px] text-gray-400 mt-1">{pack.description}</p>}
+                      <div className="text-[#00BFA6] font-bold mt-1">{pack.points} pts</div>
+                      <div className="text-xs text-gray-400">{pack.price.toLocaleString()} DA{isBoutique ? '/mois' : ''}</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 text-left">
+                      <input
+                        value={editForm.title}
+                        onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                        placeholder="Titre"
+                        className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                      />
+                      <textarea
+                        value={editForm.description}
+                        onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                        placeholder="Description (optionnelle)"
+                        rows={2}
+                        className="w-full text-xs text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                      />
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase">Prix (DA)</label>
+                          <input
+                            type="number"
+                            value={editForm.price}
+                            onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
+                            className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase">Points</label>
+                          <input
+                            type="number"
+                            value={editForm.points}
+                            onChange={(e) => setEditForm((f) => ({ ...f, points: e.target.value }))}
+                            className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => savePack(pack)}
+                          disabled={savingPack}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#00BFA6] text-white rounded-lg text-xs font-bold hover:bg-[#00908A] disabled:opacity-60 transition-colors"
+                        >
+                          {savingPack ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Enregistrer
+                        </button>
+                        <button
+                          onClick={() => setEditingPackId(null)}
+                          className="px-3 py-1.5 bg-gray-50 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+          {/* Créer une nouvelle offre */}
+          {(sourceFilter === 'ALL' || sourceFilter === 'POINTS') && creatingKind !== 'POINTS' && (
+            <button
+              onClick={() => startCreatePack('POINTS')}
+              className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors min-h-[110px]"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="text-xs font-bold">Nouveau pack de points</span>
+            </button>
+          )}
+          {(sourceFilter === 'ALL' || sourceFilter === 'BOUTIQUE') && creatingKind !== 'BOUTIQUE' && (
+            <button
+              onClick={() => startCreatePack('BOUTIQUE')}
+              className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors min-h-[110px]"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="text-xs font-bold">Nouveau pack boutique</span>
+            </button>
+          )}
+
+          {creatingKind && (
+            <div className="bg-white rounded-xl border-2 border-[#00BFA6]/40 p-4">
+              <p className="text-xs font-bold text-[#00BFA6] uppercase tracking-wide mb-2">
+                Nouveau pack {creatingKind === 'BOUTIQUE' ? 'boutique' : 'de points'}
+              </p>
+              <div className="space-y-2 text-left">
+                <input
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, title: e.target.value }))}
+                  placeholder="Titre (ex. Starter)"
+                  className="w-full text-sm font-bold outline-none border border-gray-200 rounded-lg p-2"
+                />
+                <input
+                  value={createForm.key}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, key: e.target.value }))}
+                  placeholder="Identifiant technique (optionnel, déduit du titre)"
+                  className="w-full text-xs outline-none border border-gray-200 rounded-lg p-2 text-gray-500"
+                />
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder="Description (optionnelle)"
+                  rows={2}
+                  className="w-full text-xs outline-none border border-gray-200 rounded-lg p-2"
+                />
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Prix (DA)</label>
+                    <input
+                      type="number"
+                      value={createForm.price}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, price: e.target.value }))}
+                      className="w-full text-sm outline-none border border-gray-200 rounded-lg p-2"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Points</label>
+                    <input
+                      type="number"
+                      value={createForm.points}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, points: e.target.value }))}
+                      className="w-full text-sm outline-none border border-gray-200 rounded-lg p-2"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={createPack}
+                    disabled={creatingPack || !createForm.title || !createForm.price || !createForm.points}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#00BFA6] text-white rounded-lg text-xs font-bold hover:bg-[#00908A] disabled:opacity-60 transition-colors"
+                  >
+                    {creatingPack ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Créer
+                  </button>
+                  <button
+                    onClick={() => setCreatingKind(null)}
+                    className="px-3 py-1.5 bg-gray-50 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tableau */}
@@ -247,7 +495,7 @@ export default function AdminPointsPage() {
             <div className="divide-y divide-gray-50">
               {filtered.map((p) => {
                 const isBoutique = p.source === 'BOUTIQUE'
-                const packDef = isBoutique ? BOUTIQUE_PACK_LABELS[p.pack] : POINT_PACK_LABELS[p.pack]
+                const packDef = packs.find((pk) => pk.kind === p.source && pk.key === p.pack)
                 const isCompany = p.user.userType === 'SOCIETE'
                 return (
                   <div key={`${p.source}-${p.id}`} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-4 items-center hover:bg-gray-50">
@@ -278,7 +526,7 @@ export default function AdminPointsPage() {
                     </div>
                     <div className="text-center">
                       <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] rounded-full text-xs font-bold whitespace-nowrap">
-                        {packDef?.label || p.pack}
+                        {packDef?.title || p.pack}
                       </span>
                       <div className="text-[10px] text-gray-400 mt-0.5">{p.points} pts</div>
                     </div>

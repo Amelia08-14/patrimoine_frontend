@@ -8,13 +8,19 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Building2, User, MapPin, Phone, Upload, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { WILAYAS } from "@/data/wilayas"
-import { COMMUNES } from "@/data/communes"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export default function CompleteProfilePage() {
   const t = useTranslations("ProfileComplete")
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
+  // Wilayas/communes chargées depuis la vraie base (comme dans l'admin) : les valeurs des
+  // selects sont ainsi de vrais City.id/Town.id envoyés en townId, plutôt que des noms en
+  // texte libre qu'un rapprochement approximatif côté serveur pouvait ne jamais retrouver
+  // (ex. "Alger-Centre" saisi vs "Alger Centre" en base -> townId jamais enregistré).
+  const [cities, setCities] = useState<Array<{ id: number; nameFr: string }>>([])
+  const [towns, setTowns] = useState<Array<{ id: number; nameFr: string }>>([])
 
   const profileSchema = z.object({
     civility: z.enum(["M", "MME"], { message: t("civilityRequired") }),
@@ -73,6 +79,16 @@ export default function CompleteProfilePage() {
     }
   }, [setValue])
 
+  useEffect(() => {
+    fetch(`${API_URL}/cities`).then((r) => r.json()).then((d) => setCities(Array.isArray(d) ? d : [])).catch(() => setCities([]))
+  }, [])
+
+  const selectedWilaya = watch("wilaya")
+  useEffect(() => {
+    if (!selectedWilaya) { setTowns([]); return }
+    fetch(`${API_URL}/cities/${selectedWilaya}/towns`).then((r) => r.json()).then((d) => setTowns(Array.isArray(d) ? d : [])).catch(() => setTowns([]))
+  }, [selectedWilaya])
+
   const onSubmit = async (data: ProfileForm) => {
     setIsLoading(true)
     try {
@@ -82,10 +98,19 @@ export default function CompleteProfilePage() {
         // Append text fields
         Object.keys(data).forEach(key => {
              const value = data[key as keyof ProfileForm];
-             if (key !== 'rcDocument' && key !== 'agreementDocument' && key !== 'agencyLogo' && value) {
+             if (key !== 'rcDocument' && key !== 'agreementDocument' && key !== 'agencyLogo' && key !== 'wilaya' && key !== 'commune' && value) {
                  formData.append(key, value as string)
              }
         })
+
+        // wilaya/commune contiennent les vrais City.id / Town.id (sélectionnés depuis /cities et
+        // /cities/:id/towns) : on envoie le Town.id directement en townId (lu en priorité par le
+        // serveur), et les libellés lisibles séparément pour l'adresse complète affichée ensuite.
+        const cityLabel = cities.find((c) => String(c.id) === String(data.wilaya))?.nameFr || data.wilaya
+        const townLabel = towns.find((t) => String(t.id) === String(data.commune))?.nameFr || data.commune
+        formData.append('wilaya', cityLabel)
+        formData.append('commune', townLabel)
+        if (data.commune) formData.append('townId', String(data.commune))
 
         // Append files
         if (data.rcDocument?.[0]) formData.append('rcDocument', data.rcDocument[0])
@@ -274,8 +299,8 @@ export default function CompleteProfilePage() {
                                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]"
                                  >
                                      <option value="">{t("selectOption")}</option>
-                                     {WILAYAS.map((wilaya) => (
-                                         <option key={wilaya.id} value={wilaya.code}>{wilaya.code} - {wilaya.name}</option>
+                                     {cities.map((c) => (
+                                         <option key={c.id} value={c.id}>{c.nameFr}</option>
                                      ))}
                                  </select>
                                  {errors.wilaya && <p className="text-red-500 text-xs pl-1">{errors.wilaya.message}</p>}
@@ -284,9 +309,9 @@ export default function CompleteProfilePage() {
                                  <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("communeLabel")}</label>
                                  <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px] disabled:opacity-60">
                                      <option value="">{t("selectOption")}</option>
-                                     {COMMUNES.filter((c) => c.wilayaCode === watch("wilaya")).map((c) => (
-                                       <option key={c.id} value={c.name}>
-                                         {c.name}
+                                     {towns.map((town) => (
+                                       <option key={town.id} value={town.id}>
+                                         {town.nameFr}
                                        </option>
                                      ))}
                                  </select>
