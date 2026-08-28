@@ -914,6 +914,23 @@
     "whyProfilesTitle": "Particuliers & professionnels",
     "whyProfilesDesc": "Agences, promoteurs, hôteliers ou propriétaires : un espace pensé pour chacun.",
     "whySupportTitle": "Accompagnement dédié",
-    "whySupportDesc": "Une équipe support joignable pour vous accompagner à chaque étape."
+    "whySupportDesc": "Une équipe support joignable pour vous accompagner à chaque étape.",
+    "ownerTitle": "Vous êtes propriétaire ?",
+    "ownerDesc": "Publiez votre annonce en quelques minutes et touchez des milliers d'acheteurs et de locataires partout en Algérie.",
+    "seekerTitle": "Vous avez besoin d'un bien et vous êtes perdu ?",
+    "seekerDesc": "Confiez-nous vos critères : notre équipe se charge de trouver le bien qui vous correspond et vous tient informé.",
+    "pointsSectionTitle": "Points & Boutique",
+    "pointsSectionSubtitle": "Le système qui donne de la visibilité à vos annonces.",
+    "pointsParticulierTitle": "Pour les particuliers",
+    "pointsParticulierDesc": "Achetez des points pour mettre votre annonce en avant sur la page d'accueil et gagner en visibilité auprès des acheteurs et locataires.",
+    "pointsParticulierCta": "Découvrir les points",
+    "pointsProTitle": "Pour les professionnels",
+    "pointsProDesc": "Nos formules Boutique donnent un pack de points chaque mois pour mettre en avant vos annonces en continu, en plus de l'achat de points à l'unité.",
+    "pointsProCta": "Voir les formules boutique",
+    "partnersSectionTitle": "Ils nous font confiance",
+    "partnersSectionSubtitle": "Agences, promoteurs et professionnels partenaires de Patrimoine Immobilier.",
+    "partnersSeeAll": "Voir tous les partenaires",
+    "mobileAppTitle": "L'application mobile arrive bientôt",
+    "mobileAppDesc": "Consultez les annonces, recevez des alertes et gérez vos points directement depuis votre téléphone."
   }
 }

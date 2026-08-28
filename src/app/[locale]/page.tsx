@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, CheckCircle, Heart, MapPin, BedDouble, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset } from "lucide-react"
+import { ArrowRight, CheckCircle, Heart, MapPin, BedDouble, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, Smartphone, ClipboardList, HandHeart } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
@@ -61,7 +61,7 @@ const getCategoryHeroGradientById = (categoryId: string) => {
 const getCategoryHeroImageById = (categoryId: string) => {
   switch (categoryId) {
     case "RESIDENTIEL": return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=2400&q=80"
-    case "INDUSTRIEL": return "https://unsplash.com/fr/photos/usine-industrielle-dans-un-paysage-enneige-5BpJ33Oetm0"
+    case "INDUSTRIEL": return "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=2400&q=80"
     case "BUREAUX_COMMERCES": return "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2400&q=80"
     case "HOTELIER": return "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2400&q=80"
     case "EVENEMENTIEL": return "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2400&q=80"
@@ -325,22 +325,32 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [announces, setAnnounces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; subtitle: string | null }[]>([]);
+  const [partners, setPartners] = useState<{ id: number; name: string; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
   const handleCategoryClick = (categoryId: string) => {
     router.push(`/announces?realEstateCategory=${categoryId}`)
   }
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % REAL_ESTATE_CATEGORIES.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
+  // Slides gérés depuis l'admin (Contenu du site > Slides d'accueil). À défaut, on retombe sur
+  // un visuel par domaine généré depuis REAL_ESTATE_CATEGORIES, pour que la page ne soit jamais vide.
+  const uniqueCategories = REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
+  const fallbackSlides = uniqueCategories.map((c) => ({ id: -1, categoryId: c.id, imageUrl: getCategoryHeroImageById(c.id), title: null, subtitle: null }))
+  const activeSlides = heroSlides.length > 0 ? heroSlides : fallbackSlides
+  const activeSlide = activeSlides[currentSlide % activeSlides.length]
+  const activeSlideCategory = activeSlide ? REAL_ESTATE_CATEGORIES.find((c) => c.id === activeSlide.categoryId) : undefined
 
   useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % Math.max(activeSlides.length, 1));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [activeSlides.length]);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     const fetchAnnounces = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
         const res = await axios.get(`${apiUrl}/announces`);
         setAnnounces(res.data);
       } catch (err) {
@@ -350,10 +360,12 @@ export default function HomePage() {
       }
     }
     fetchAnnounces();
+    fetch(`${apiUrl}/content/hero-slides`).then((r) => r.json()).then((d) => setHeroSlides(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch(`${apiUrl}/content/partners`).then((r) => r.json()).then((d) => setPartners(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % REAL_ESTATE_CATEGORIES.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + REAL_ESTATE_CATEGORIES.length) % REAL_ESTATE_CATEGORIES.length);
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % Math.max(activeSlides.length, 1));
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + activeSlides.length) % Math.max(activeSlides.length, 1));
 
   const now = new Date();
   const filteredAnnounces = announces.filter(a =>
@@ -417,17 +429,17 @@ export default function HomePage() {
       {/* HERO SECTION */}
       <div className="relative h-[480px] sm:h-[520px] lg:h-[560px] w-full group">
         <div className="absolute inset-0 overflow-hidden bg-[#04222b]">
-          {REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).map((category, index) => (
+          {activeSlides.map((slide, index) => (
             <div
-              key={category.id}
+              key={slide.id === -1 ? `fallback-${slide.categoryId}` : slide.id}
               className={cn(
                 "absolute inset-0 transition-opacity duration-1000 ease-in-out",
                 index === currentSlide ? "opacity-100" : "opacity-0"
               )}
             >
               <img
-                src={getCategoryHeroImageById(category.id)}
-                alt={tc(category.id)}
+                src={slide.id === -1 ? slide.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${slide.imageUrl}`}
+                alt={slide.title || (slide.categoryId ? tc(slide.categoryId) : "")}
                 className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
@@ -457,34 +469,39 @@ export default function HomePage() {
                 <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
                 {t("heroEyebrow")}
               </div>
-              <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.4rem] leading-[1.08] text-white">
-                {t("heroTitle")}<br />
-                <span className="text-[#5EEAD4]">{t("heroTitleAccent")}</span>
-              </h1>
+              {activeSlide?.title ? (
+                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.4rem] leading-[1.08] text-white">
+                  {activeSlide.title}
+                </h1>
+              ) : (
+                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.4rem] leading-[1.08] text-white">
+                  {t("heroTitle")}<br />
+                  <span className="text-[#5EEAD4]">{t("heroTitleAccent")}</span>
+                </h1>
+              )}
               <p className="mt-5 text-white/80 text-base sm:text-lg leading-relaxed max-w-xl">
-                {t("heroSubtitle")}
+                {activeSlide?.subtitle || t("heroSubtitle")}
               </p>
 
-              <button
-                onClick={() => handleCategoryClick(REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)[currentSlide]?.id)}
-                className="mt-7 inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md rounded-2xl pl-2 pr-4 py-2 transition-colors"
-              >
-                {(() => {
-                  const cats = REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
-                  const cat = cats[currentSlide]
-                  if (!cat) return null
-                  const Icon = getIcon(cat.iconName)
-                  return (
-                    <>
-                      <span className="h-8 w-8 rounded-xl bg-[#00BFA6]/20 flex items-center justify-center shrink-0">
-                        <Icon className="h-4 w-4 text-[#5EEAD4]" />
-                      </span>
-                      <span className="text-white text-sm font-bold">{tc(cat.id)}</span>
-                      <ArrowRight className="h-4 w-4 text-white/60" />
-                    </>
-                  )
-                })()}
-              </button>
+              {activeSlideCategory && (
+                <button
+                  onClick={() => handleCategoryClick(activeSlideCategory.id)}
+                  className="mt-7 inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md rounded-2xl pl-2 pr-4 py-2 transition-colors"
+                >
+                  {(() => {
+                    const Icon = getIcon(activeSlideCategory.iconName)
+                    return (
+                      <>
+                        <span className="h-8 w-8 rounded-xl bg-[#00BFA6]/20 flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-[#5EEAD4]" />
+                        </span>
+                        <span className="text-white text-sm font-bold">{tc(activeSlideCategory.id)}</span>
+                        <ArrowRight className="h-4 w-4 text-white/60" />
+                      </>
+                    )
+                  })()}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -586,53 +603,128 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA SECTION */}
+      {/* JE CONFIE MON PROJET — texte à gauche, sans photo, deux profils distincts */}
       <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-brand text-3xl text-[#003B4A]">{t("entrustProjectTitle")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative h-[320px] sm:h-[350px] rounded-3xl overflow-hidden group cursor-pointer shadow-xl">
-              <img
-                src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
-                alt={t("ownerQuestion")}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#003B4A] via-[#003B4A]/30 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-7 text-center">
-                <h3 className="text-xl font-bold text-white mb-4">{t("ownerQuestion")}</h3>
-                <Link href="/deposit">
-                  <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white font-bold py-5 px-7 rounded-full">
-                    {t("entrustMyProperty")}
-                  </Button>
-                </Link>
+            <div className="bg-white rounded-3xl border border-gray-100 p-8 sm:p-10">
+              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
+                <Building2 className="h-6 w-6 text-[#00BFA6]" />
               </div>
+              <h3 className="text-xl font-bold text-[#003B4A] mb-3">{t("ownerTitle")}</h3>
+              <p className="text-gray-500 leading-relaxed mb-7">{t("ownerDesc")}</p>
+              <Link href="/deposit">
+                <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white font-bold py-5 px-7 rounded-full">
+                  {t("entrustMyProperty")} <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
             </div>
-            <div className="relative h-[320px] sm:h-[350px] rounded-3xl overflow-hidden group cursor-pointer shadow-xl">
-              <img
-                src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
-                alt={t("seekerQuestion")}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#003B4A] via-[#003B4A]/30 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-7 text-center">
-                <h3 className="text-xl font-bold text-white mb-4">{t("seekerQuestion")}</h3>
-                <Link href="/research">
-                  <Button className="bg-white text-[#003B4A] hover:bg-white/90 font-bold py-5 px-7 rounded-full">
-                    {t("entrustMySearch")}
-                  </Button>
-                </Link>
+            <div className="bg-[#003B4A] rounded-3xl p-8 sm:p-10">
+              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
+                <HandHeart className="h-6 w-6 text-[#5EEAD4]" />
               </div>
+              <h3 className="text-xl font-bold text-white mb-3">{t("seekerTitle")}</h3>
+              <p className="text-white/60 leading-relaxed mb-7">{t("seekerDesc")}</p>
+              <Link href="/research">
+                <Button className="bg-white text-[#003B4A] hover:bg-white/90 font-bold py-5 px-7 rounded-full">
+                  {t("entrustMySearch")} <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-8 bg-white">
+      {/* POINTS & BOUTIQUE — deux mécaniques réelles de la plateforme, un profil chacune */}
+      <section className="py-16 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-gray-100 bg-[#003B4A] text-white p-6 text-center shadow-lg">
-            <p className="text-base font-semibold tracking-wide">{t("appComingSoon")}</p>
+          <div className="text-center mb-12">
+            <h2 className="font-brand text-3xl text-[#003B4A]">{t("pointsSectionTitle")}</h2>
+            <p className="text-gray-500 mt-3 max-w-xl mx-auto">{t("pointsSectionSubtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10">
+              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
+                <Coins className="h-6 w-6 text-[#00BFA6]" />
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsParticulierTitle")}</span>
+              <p className="text-gray-500 leading-relaxed mt-3 mb-7">{t("pointsParticulierDesc")}</p>
+              <Link href="/profile/points" className="inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
+                {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10">
+              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
+                <Store className="h-6 w-6 text-[#00BFA6]" />
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsProTitle")}</span>
+              <p className="text-gray-500 leading-relaxed mt-3 mb-7">{t("pointsProDesc")}</p>
+              <Link href="/profile/boutique" className="inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
+                {t("pointsProCta")} <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* NOS PARTENAIRES — défilement continu, n'apparaît que s'il y a des partenaires publiés */}
+      {partners.length > 0 && (
+        <section className="py-16 sm:py-20 bg-gray-50 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="font-brand text-3xl text-[#003B4A]">{t("partnersSectionTitle")}</h2>
+              <p className="text-gray-500 mt-2">{t("partnersSectionSubtitle")}</p>
+            </div>
+            <Link href="/partenaires" className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
+              {t("partnersSeeAll")} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="relative">
+            <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none" />
+            <div className="flex w-max animate-marquee">
+              {[...partners, ...partners].map((p, i) => (
+                <div key={`${p.id}-${i}`} className="w-40 sm:w-48 shrink-0 flex items-center justify-center px-6">
+                  {p.logoUrl ? (
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${p.logoUrl}`}
+                      alt={p.name}
+                      className="h-12 max-w-full object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all"
+                    />
+                  ) : (
+                    <span className="text-gray-400 font-bold text-sm text-center">{p.name}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* APPLICATION MOBILE — pas de capture réelle à ce stade, mockup honnête plutôt qu'une fausse image */}
+      <section className="py-16 sm:py-20 bg-[#022229] relative overflow-hidden">
+        <div className="absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-[#00BFA6]/[0.06] blur-3xl" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="order-2 md:order-1 text-center md:text-left">
+            <h2 className="font-brand text-3xl text-white mb-4">{t("mobileAppTitle")}</h2>
+            <p className="text-white/60 leading-relaxed max-w-md mx-auto md:mx-0">{t("mobileAppDesc")}</p>
+          </div>
+          <div className="order-1 md:order-2 flex justify-center">
+            <div className="w-[220px] h-[440px] rounded-[36px] border-[6px] border-white/15 bg-white/[0.03] p-3 shadow-2xl">
+              <div className="h-full w-full rounded-[24px] bg-gradient-to-b from-[#003B4A] to-[#022229] p-4 flex flex-col gap-3">
+                <div className="h-2 w-16 rounded-full bg-white/15 mx-auto" />
+                <div className="mt-4 h-20 rounded-2xl bg-white/[0.06] border border-white/10" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="h-16 rounded-xl bg-white/[0.06] border border-white/10" />
+                  <div className="h-16 rounded-xl bg-white/[0.06] border border-white/10" />
+                </div>
+                <div className="h-16 rounded-xl bg-[#00BFA6]/15 border border-[#00BFA6]/20" />
+                <div className="h-16 rounded-xl bg-white/[0.06] border border-white/10" />
+              </div>
+            </div>
           </div>
         </div>
       </section>

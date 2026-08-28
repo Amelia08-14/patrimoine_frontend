@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
-import { Camera, Heart, Square, BedDouble, MapPin, Building2, ArrowUpDown } from "lucide-react";
+import { Camera, Eye, Heart, MapPin, Building2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PROPERTY_TYPES } from "@/data/propertyTypes";
 
 // Helper for Image URLs
 const getImageUrl = (url: string) => {
@@ -16,83 +17,54 @@ const getImageUrl = (url: string) => {
     return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${cleanUrl}`;
 }
 
-const INDUSTRIAL_TYPES = ["HANGAR", "USINE", "CHAMBRE_FROIDE", "CO_STOCKAGE", "DEPOT"];
-const HOTEL_TYPES = ["HOTEL", "COMPLEXE_TOURISTIQUE", "BUNGALOW", "TERRAIN_HOTELIER", "AUTRE_HOTEL"];
-
-// Extrait les critères d'affichage adaptés à la catégorie du bien (résidentiel / industriel / hôtelier)
-const getCategorySpecs = (announce: any) => {
-    const property = announce.property || {};
-    const pType = (property._displayPropertyType || property.propertyType || "").toUpperCase();
-
-    let amenities: any = {};
-    try {
-        amenities = property.amenities ? JSON.parse(property.amenities) : {};
-    } catch {
-        amenities = {};
-    }
-
-    if (INDUSTRIAL_TYPES.includes(pType)) {
-        const factory = amenities.industrialFactory;
-        const coldRoom = amenities.coldRoom;
-        const hangar = amenities.hangar;
-
-        let height: number | undefined;
-        let width: number | undefined;
-        let typeLabel: string | undefined;
-
-        if (coldRoom) {
-            height = coldRoom.dimensions?.height;
-            width = coldRoom.dimensions?.width;
-            typeLabel = coldRoom.typeFroid?.[0] || coldRoom.techniqueFroid?.[0];
-        } else if (factory) {
-            height = factory.structure?.hspMeters;
-            typeLabel = factory.sector?.[0];
-        } else if (hangar) {
-            height = hangar.dimensions?.height;
-            width = hangar.dimensions?.width;
-        }
-
-        return {
-            kind: "industrial" as const,
-            area: property.area,
-            height,
-            width,
-            typeLabel,
-        };
-    }
-
-    if (HOTEL_TYPES.includes(pType)) {
-        return {
-            kind: "hotel" as const,
-            area: property.area,
-            nbSuites: property.nbSuites || property.nbRooms,
-        };
-    }
-
-    return {
-        kind: "residential" as const,
-        area: property.area,
-        nbRooms: property.nbRooms,
-    };
+const TERRAIN_TOPOGRAPHIE_LABELS: Record<string, string> = {
+    PLAT: "Plat",
+    EN_PENTE: "En pente",
+    ACCIDENTE: "Accidenté",
 };
 
-// Ligne de caractéristiques sobre : texte + icône, séparés par un point médian — plus de "pills"
-function SpecLine({ specs }: { specs: ReturnType<typeof getCategorySpecs> }) {
-    const t = useTranslations("PropertyCard");
-    const parts: { icon: typeof Square; label: string }[] = [
-        { icon: Square, label: `${specs.area ?? 0} m²` },
-    ];
-    if (specs.kind === "residential" && specs.nbRooms) parts.push({ icon: BedDouble, label: t("rooms", { count: specs.nbRooms }) });
-    if (specs.kind === "hotel" && specs.nbSuites) parts.push({ icon: BedDouble, label: t("bedrooms", { count: specs.nbSuites }) });
-    if (specs.kind === "industrial" && specs.height) parts.push({ icon: ArrowUpDown, label: `${specs.height} m` });
+// Couleur du bandeau inférieur par domaine — donne un repère visuel immédiat par catégorie,
+// indépendant du badge vente/location (qui reste aux couleurs de marque).
+const CATEGORY_OVERLAY_COLOR: Record<string, string> = {
+    RESIDENTIEL: "bg-emerald-800/90",
+    BUREAUX_COMMERCES: "bg-sky-800/90",
+    INDUSTRIEL: "bg-slate-700/90",
+    TERRAIN_FONCIER: "bg-amber-900/90",
+};
+
+// Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
+// Hébergement & Séjour non traité pour l'instant (aucun bandeau affiché).
+function PhotoOverlaySpecs({ announce }: { announce: any }) {
+    const property = announce.property || {};
+    const pType = (property._displayPropertyType || property.propertyType || "").toUpperCase();
+    const typeObj = PROPERTY_TYPES.find((t) => t.id === pType);
+    const categoryId = typeObj?.categoryId;
+
+    let amenities: any = {};
+    try { amenities = property.amenities ? JSON.parse(property.amenities) : {}; } catch { amenities = {}; }
+
+    let items: string[] = [];
+    if (categoryId === "RESIDENTIEL" || categoryId === "BUREAUX_COMMERCES") {
+        if (property.typology) items.push(property.typology);
+        if (property.area) items.push(`${property.area} m²`);
+        if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(`Étage ${property.nbFloors}`);
+    } else if (categoryId === "INDUSTRIEL") {
+        if (property.landArea) items.push(`Terrain ${property.landArea} m²`);
+        if (property.builtArea) items.push(`Couverte ${property.builtArea} m²`);
+    } else if (categoryId === "TERRAIN_FONCIER") {
+        if (property.landArea || property.area) items.push(`Terrain ${property.landArea || property.area} m²`);
+        const topo = amenities?.terrain?.topographie;
+        if (topo) items.push(TERRAIN_TOPOGRAPHIE_LABELS[topo] || topo);
+    }
+
+    if (items.length === 0) return null;
 
     return (
-        <div className="flex items-center gap-3 text-[13px] text-gray-500 font-medium">
-            {parts.map((p, i) => (
-                <span key={i} className="flex items-center gap-1.5">
-                    {i > 0 && <span className="text-gray-300">·</span>}
-                    <p.icon className="h-3.5 w-3.5 text-gray-400" />
-                    {p.label}
+        <div className={cn("absolute bottom-0 inset-x-0 px-3.5 py-2 flex items-center gap-2 flex-wrap", CATEGORY_OVERLAY_COLOR[categoryId as string] || "bg-[#003B4A]/90")}>
+            {items.map((item, i) => (
+                <span key={i} className="flex items-center gap-2 text-white text-[11px] font-bold">
+                    {i > 0 && <span className="h-1 w-1 rounded-full bg-white/40" />}
+                    {item}
                 </span>
             ))}
         </div>
@@ -102,14 +74,19 @@ function SpecLine({ specs }: { specs: ReturnType<typeof getCategorySpecs> }) {
 export const PropertyCard = ({ announce }: { announce: any }) => {
   const t = useTranslations("PropertyCard");
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
-  const locationName = announce.property?.address?.town?.nameFr || announce.property?.address?.town?.city?.nameFr || t("defaultCountry");
+
+  const commune = announce.property?.address?.town?.nameFr;
+  const wilaya = announce.property?.address?.town?.city?.nameFr;
+  const locationLabel = [commune, wilaya].filter(Boolean).join(" - ") || t("defaultCountry");
 
   // Normalize Property Type for Display — use cross-display type if available (cross-category context)
   const pType = announce.property?._displayPropertyType || announce.property?.propertyType;
-  const typeObj = require("@/data/propertyTypes").PROPERTY_TYPES.find((t: any) => t.id === pType?.toUpperCase() || t.label === pType);
+  const typeObj = PROPERTY_TYPES.find((pt) => pt.id === pType?.toUpperCase() || pt.label === pType);
   const categoryName = typeObj ? typeObj.label : (pType || t("defaultCategory"));
-  const specs = getCategorySpecs(announce);
   const isSale = announce.type === "SALE";
+
+  const fullTitle = announce.title || t("titleFallback", { category: categoryName, location: locationLabel });
+  const shortTitle = fullTitle.length > 15 ? `${fullTitle.slice(0, 15).trimEnd()}…` : fullTitle;
 
   // Get main image (first image with isMain = true, fallback to first image)
   const images = announce.property?.images || [];
@@ -163,66 +140,74 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
               {isSale ? t("sale") : t("rental")}
           </span>
 
-          {/* Nombre de photos — discret */}
-          {images.length > 0 && (
-            <span className="absolute bottom-3.5 left-3.5 flex items-center gap-1 text-white text-[11px] font-semibold [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]">
-              <Camera className="h-3.5 w-3.5" /> {images.length}
-            </span>
-          )}
+          {/* Photos, vues puis favori — regroupés en haut à droite */}
+          <div className="absolute top-3 right-3 flex items-center gap-1.5">
+              {images.length > 0 && (
+                <span className="flex items-center gap-1 h-8 px-2.5 rounded-full bg-black/45 backdrop-blur-sm text-white text-[11px] font-bold">
+                  <Camera className="h-3.5 w-3.5" /> {images.length}
+                </span>
+              )}
+              <span className="flex items-center gap-1 h-8 px-2.5 rounded-full bg-black/45 backdrop-blur-sm text-white text-[11px] font-bold">
+                <Eye className="h-3.5 w-3.5" /> {announce.nbViews || 0}
+              </span>
+              <button
+                  onClick={toggleFavorite}
+                  aria-label={t("loginToFavorite")}
+                  className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-gray-500 hover:text-[#00BFA6] transition-colors shrink-0"
+              >
+                  <Heart className={cn("h-4 w-4", isFavorite && "fill-[#00BFA6] text-[#00BFA6]")} />
+              </button>
+          </div>
 
-          {/* Favori */}
-          <button
-              onClick={toggleFavorite}
-              aria-label={t("loginToFavorite")}
-              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-gray-500 hover:text-[#00BFA6] transition-colors"
-          >
-              <Heart className={cn("h-4 w-4", isFavorite && "fill-[#00BFA6] text-[#00BFA6]")} />
-          </button>
+          <PhotoOverlaySpecs announce={announce} />
         </div>
 
-        {/* Contenu */}
-        <div className="p-5 flex flex-col gap-3 flex-1">
-            <div className="flex flex-col gap-1">
-                <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide">
+        {/* Contenu — ordre : sous-catégorie + prix, titre, localisation, agence */}
+        <div className="p-4 flex flex-col gap-1.5 flex-1">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide truncate">
                     {categoryName}
-                    {specs.kind === "industrial" && specs.typeLabel && (
-                        <span className="text-gray-400 font-medium normal-case tracking-normal"> · {specs.typeLabel}</span>
-                    )}
                 </span>
-                <h3 className="text-gray-900 font-bold text-[15px] leading-snug line-clamp-1" title={announce.title || t("titleFallback", { category: categoryName, location: locationName })}>
-                    {announce.title ? announce.title : t("titleFallback", { category: categoryName, location: locationName })}
-                </h3>
+                <span className="text-base font-bold text-[#003B4A] leading-none shrink-0">
+                    {new Intl.NumberFormat('fr-DZ').format(announce.price)}
+                    <span className="text-[10px] text-gray-400 font-semibold ml-1">DA</span>
+                </span>
             </div>
 
-            <SpecLine specs={specs} />
-
-            <div className="mt-auto pt-3 border-t border-gray-50 flex items-end justify-between gap-3">
-                <div className="min-w-0">
-                    <div className="text-xl font-bold text-[#003B4A] leading-none">
-                        {new Intl.NumberFormat('fr-DZ').format(announce.price)}
-                        <span className="text-xs text-gray-400 font-semibold ml-1">DA</span>
-                    </div>
-                    <div className="flex items-center text-gray-400 text-xs font-medium gap-1 mt-2 truncate">
-                        <MapPin className="h-3.5 w-3.5 text-gray-300 shrink-0" />
-                        {locationName}
-                    </div>
-                </div>
-
-                {isCompany && (
-                    <div className="shrink-0" title={announce.user?.companyName}>
-                        {announce.user?.imageUrl ? (
-                            <img
-                                src={getImageUrl(announce.user.imageUrl) || ''}
-                                alt={announce.user.companyName}
-                                className="w-8 h-8 rounded-full object-cover border border-gray-100"
-                            />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 border border-gray-100">
-                                <Building2 className="h-4 w-4" />
-                            </div>
-                        )}
-                    </div>
+            <div className="flex items-center gap-1.5 min-w-0">
+                <h3 className="text-gray-900 font-bold text-[15px] leading-snug truncate">
+                    {shortTitle}
+                </h3>
+                {fullTitle.length > 15 && (
+                    <span title={fullTitle} className="shrink-0 text-gray-300 hover:text-gray-500 cursor-help">
+                        <Info className="h-3.5 w-3.5" />
+                    </span>
                 )}
+            </div>
+
+            <div className="flex items-center text-gray-400 text-xs font-medium gap-1 truncate">
+                <MapPin className="h-3.5 w-3.5 text-gray-300 shrink-0" />
+                {locationLabel}
+            </div>
+
+            {/* Agence : logo rond + nom si société, sinon ligne vide de même hauteur pour garder l'alignement des cartes */}
+            <div className="mt-auto pt-2 flex items-center gap-2 h-8">
+                {isCompany ? (
+                    <>
+                        <div className="h-7 w-7 rounded-full border border-gray-100 shrink-0 overflow-hidden flex items-center justify-center bg-gray-50">
+                            {announce.user?.imageUrl ? (
+                                <img
+                                    src={getImageUrl(announce.user.imageUrl) || ''}
+                                    alt={announce.user.companyName}
+                                    className="h-full w-full object-contain"
+                                />
+                            ) : (
+                                <Building2 className="h-3.5 w-3.5 text-gray-300" />
+                            )}
+                        </div>
+                        <span className="text-gray-500 text-xs font-semibold truncate">{announce.user?.companyName}</span>
+                    </>
+                ) : null}
             </div>
         </div>
       </div>

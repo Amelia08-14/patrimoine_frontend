@@ -53,3 +53,16 @@ body {
 .legal-rich-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; white-space: normal; }
 .legal-rich-content table td, .legal-rich-content table th { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
 .legal-rich-content table th { background: #f3f4f6; font-weight: 700; }
+
+/* Défilement continu des logos partenaires (page d'accueil). Le conteneur duplique la liste
+   une fois ; l'animation glisse exactement de -50% pour boucler sans à-coup. Se met en pause
+   au survol pour laisser le temps de lire un logo. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 28s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}

@@ -644,47 +644,24 @@ export default function AnnounceDetailsPage() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Images Grid - Modern Layout */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
-            <div className="flex justify-between items-center mb-6 px-2">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <ArrowLeft className="h-6 w-6 text-gray-700" />
-                    </button>
-                    <h2 className="text-2xl font-bold text-gray-900">{announce?.title || t("galleryFallbackTitle")}</h2>
-                </div>
+        {/* Images Grid - Compact, à la Airbnb : titre/prix restent au-dessus du pli, le filtre par
+            pièce ne prend de la place que dans la modale plein écran (voir plus bas). */}
+        <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 mb-8">
+            <div className="flex justify-between items-center mb-3 px-1">
+                <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <ArrowLeft className="h-5 w-5 text-gray-700" />
+                </button>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm">
-                        <Heart className="h-5 w-5" />
+                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
+                        <Heart className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm">
-                        <Share2 className="h-5 w-5" />
+                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
+                        <Share2 className="h-4 w-4" />
                     </Button>
                 </div>
-            </div>
-            
-            {/* Gallery Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-4 mb-4 hide-scrollbar px-2">
-                {Object.keys(imagesByCategory).map(cat => (
-                    <button 
-                        key={cat}
-                        onClick={() => setActiveTab(cat)}
-                        className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm border-2 ${(activeTab === cat || (activeTab === 'ALL' && cat === Object.keys(imagesByCategory)[0])) ? 'border-[#00BFA6] bg-[#00BFA6] text-white' : 'border-gray-100 bg-white text-gray-600 hover:border-gray-300'}`}
-                    >
-                        {LABELS[cat] || cat} ({imagesByCategory[cat].length})
-                    </button>
-                ))}
-                {videosList.length > 0 && (
-                    <button 
-                        onClick={() => setActiveTab('VIDEO')}
-                        className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm border-2 animate-pulse ${activeTab === 'VIDEO' ? 'border-blue-600 bg-blue-600 text-white shadow-blue-500/50' : 'border-blue-500 bg-blue-500 text-white shadow-blue-500/50'}`}
-                    >
-                        {t("videoLabel")} ({videosList.length})
-                    </button>
-                )}
             </div>
 
-            <div className="h-[360px] md:h-[440px] lg:h-[500px] rounded-2xl overflow-hidden relative bg-gray-50">
+            <div className="h-[280px] sm:h-[320px] lg:h-[360px] rounded-2xl overflow-hidden relative bg-gray-50">
                 {activeTab === 'VIDEO' && videosList.length > 0 ? (
                     <div className="w-full h-full flex items-center justify-center bg-black">
                         <video
@@ -818,6 +795,29 @@ export default function AnnounceDetailsPage() {
                         <X className="h-6 w-6" />
                     </button>
                 </div>
+
+                {/* Filtre par pièce — à l'intérieur de la galerie plein écran, comme sur Airbnb */}
+                {Object.keys(imagesByCategory).length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-3 px-4 hide-scrollbar">
+                        {Object.keys(imagesByCategory).map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveImage(allImages.indexOf(imagesByCategory[cat][0]))}
+                                className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border border-white/15 bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
+                            >
+                                {LABELS[cat] || cat} ({imagesByCategory[cat].length})
+                            </button>
+                        ))}
+                        {videosList.length > 0 && (
+                            <button
+                                onClick={() => setActiveTab('VIDEO')}
+                                className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border border-blue-400/40 bg-blue-500/80 hover:bg-blue-500 text-white transition-colors shrink-0"
+                            >
+                                {t("videoLabel")} ({videosList.length})
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Main View */}
                 <div className="flex-1 flex items-center justify-center relative px-4 md:px-20">

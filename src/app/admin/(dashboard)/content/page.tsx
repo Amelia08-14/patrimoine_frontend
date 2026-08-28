@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button"
 import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
   ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff, Building, Hotel, PartyPopper, Warehouse, Pencil, ImageOff,
-  Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe, Link2, ExternalLink, Users,
+  Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe, Link2, ExternalLink, Users, Images,
 } from "lucide-react"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
+import { REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const getHeaders = (json = true) => {
@@ -18,7 +19,7 @@ const getHeaders = (json = true) => {
     : { Authorization: `Bearer ${token}` }
 }
 
-type Tab = 'LEGAL' | 'ABOUT' | 'FAQ' | 'PARTNERS' | 'LINKS' | 'CONTACT'
+type Tab = 'LEGAL' | 'ABOUT' | 'FAQ' | 'PARTNERS' | 'LINKS' | 'SLIDES' | 'CONTACT'
 
 const PARTNER_CATEGORIES: { id: ActivityPole; label: string; icon: typeof Building }[] = [
   { id: 'IMMOBILIER', label: 'Activité immobilière', icon: Building },
@@ -44,6 +45,7 @@ export default function AdminContentPage() {
     { id: 'FAQ', label: 'FAQ', icon: HelpCircle },
     { id: 'PARTNERS', label: 'Partenaires', icon: Handshake },
     { id: 'LINKS', label: 'Liens Utiles', icon: Link2 },
+    { id: 'SLIDES', label: "Slides d'accueil", icon: Images },
     { id: 'CONTACT', label: 'Contact & Support', icon: Phone },
   ]
 
@@ -68,6 +70,7 @@ export default function AdminContentPage() {
       {tab === 'FAQ' && <FaqTab />}
       {tab === 'PARTNERS' && <PartnersTab />}
       {tab === 'LINKS' && <LinksTab />}
+      {tab === 'SLIDES' && <SlidesTab />}
       {tab === 'CONTACT' && <ContactTab />}
     </div>
   )
@@ -727,6 +730,153 @@ function LinksTab() {
         <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre (ex. Blog, Aide, Carrières...)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
         <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="URL (ex. https://exemple.com)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
         <Button onClick={addLink} disabled={adding} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
+          {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ───────────────────────── Slides d'accueil ─────────────────────────
+// Diapositives du hero de la page d'accueil. Chaque slide est rattachée (optionnellement) à un
+// domaine d'activité (réutilise les mêmes catégories que le reste du site) ; l'image et le
+// domaine suffisent, titre/sous-titre sont optionnels et, si vides, la page utilise le texte
+// générique du domaine.
+
+function SlidesTab() {
+  const [slides, setSlides] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState<number | null>(null)
+  const [newCategory, setNewCategory] = useState("")
+  const [newTitle, setNewTitle] = useState("")
+  const [newSubtitle, setNewSubtitle] = useState("")
+  const [newImage, setNewImage] = useState<File | null>(null)
+  const [adding, setAdding] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/admin/content/hero-slides`, { headers: getHeaders(false) as any })
+      if (res.ok) setSlides(await res.json())
+    } finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const updateSlide = async (id: number, data: Record<string, string | boolean | undefined>, image?: File | null) => {
+    setSaving(id)
+    try {
+      const fd = new FormData()
+      Object.entries(data).forEach(([k, v]) => { if (v !== undefined) fd.append(k, String(v)) })
+      if (image) fd.append('image', image)
+      const res = await fetch(`${API_URL}/admin/content/hero-slides/${id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
+      if (res.ok) await load()
+    } finally { setSaving(null) }
+  }
+
+  const deleteSlide = async (id: number) => {
+    if (!confirm("Supprimer ce slide ?")) return
+    await fetch(`${API_URL}/admin/content/hero-slides/${id}`, { method: 'DELETE', headers: getHeaders() as any })
+    await load()
+  }
+
+  const move = async (index: number, dir: -1 | 1) => {
+    const target = slides[index + dir]
+    if (!target) return
+    const current = slides[index]
+    await Promise.all([
+      updateSlide(current.id, { order: target.order }),
+      updateSlide(target.id, { order: current.order }),
+    ])
+  }
+
+  const addSlide = async () => {
+    if (!newImage) return
+    setAdding(true)
+    try {
+      const fd = new FormData()
+      fd.append('image', newImage)
+      if (newCategory) fd.append('categoryId', newCategory)
+      if (newTitle) fd.append('title', newTitle)
+      if (newSubtitle) fd.append('subtitle', newSubtitle)
+      fd.append('order', String(slides.length))
+      await fetch(`${API_URL}/admin/content/hero-slides`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
+      setNewCategory(""); setNewTitle(""); setNewSubtitle(""); setNewImage(null)
+      await load()
+    } finally { setAdding(false) }
+  }
+
+  const categoryLabel = (id: string | null) => REAL_ESTATE_CATEGORIES.find((c) => c.id === id)?.label || null
+
+  if (loading) return <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
+
+  return (
+    <div className="space-y-4 max-w-3xl">
+      <p className="text-xs text-gray-400">
+        Ces images défilent dans le grand visuel du haut de la page d'accueil. Rattacher un slide à un domaine réutilise l'icône et le libellé déjà définis pour ce domaine ; le titre/sous-titre restent optionnels.
+      </p>
+
+      <div className="space-y-3">
+        {slides.map((s, i) => (
+          <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col sm:flex-row gap-4">
+            <div className="relative shrink-0">
+              <img src={`${API_URL}${s.imageUrl}`} alt="" className="w-full sm:w-40 h-28 object-cover rounded-xl border border-gray-100" />
+              <label className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 rounded-xl transition-colors cursor-pointer group">
+                <Upload className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) updateSlide(s.id, {}, f); e.target.value = '' }} />
+              </label>
+            </div>
+            <div className="flex-1 min-w-0 space-y-2">
+              <select
+                defaultValue={s.categoryId || ""}
+                onChange={(e) => updateSlide(s.id, { categoryId: e.target.value })}
+                className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1.5 bg-white outline-none"
+              >
+                <option value="">Aucun domaine (générique)</option>
+                {REAL_ESTATE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+              <input
+                defaultValue={s.title || ""}
+                onBlur={(e) => e.target.value !== (s.title || "") && updateSlide(s.id, { title: e.target.value })}
+                placeholder={`Titre (par défaut : texte du domaine${categoryLabel(s.categoryId) ? ` « ${categoryLabel(s.categoryId)} »` : ''})`}
+                className="w-full text-sm font-bold text-gray-900 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
+              />
+              <input
+                defaultValue={s.subtitle || ""}
+                onBlur={(e) => e.target.value !== (s.subtitle || "") && updateSlide(s.id, { subtitle: e.target.value })}
+                placeholder="Sous-titre (optionnel)"
+                className="w-full text-sm text-gray-500 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
+              />
+            </div>
+            <div className="flex sm:flex-col items-center gap-1 shrink-0">
+              <button onClick={() => move(i, -1)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+              <button onClick={() => move(i, 1)} disabled={i === slides.length - 1} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+              <button onClick={() => updateSlide(s.id, { published: !s.published })} className="p-1.5 rounded-lg hover:bg-gray-100" title={s.published ? 'Publié' : 'Masqué'}>
+                {s.published ? <Eye className="h-3.5 w-3.5 text-green-600" /> : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
+              </button>
+              <button onClick={() => deleteSlide(s.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
+              {saving === s.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+            </div>
+          </div>
+        ))}
+        {slides.length === 0 && (
+          <p className="text-center text-gray-400 text-sm py-6">Aucun slide pour le moment — la page d'accueil affiche les visuels par défaut de chaque domaine.</p>
+        )}
+      </div>
+
+      <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter un slide</p>
+        <label className="flex items-center gap-2 w-full text-sm border border-gray-200 rounded-xl p-3 bg-white cursor-pointer">
+          <Upload className="h-4 w-4 text-gray-400" /> {newImage ? newImage.name : "Image (requise)"}
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
+        </label>
+        <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="w-full text-sm font-medium border border-gray-200 rounded-xl p-3 bg-white outline-none">
+          <option value="">Aucun domaine (générique)</option>
+          {REAL_ESTATE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
+        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre (optionnel)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newSubtitle} onChange={(e) => setNewSubtitle(e.target.value)} placeholder="Sous-titre (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <Button onClick={addSlide} disabled={adding || !newImage} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
           {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
         </Button>
       </div>
