@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
   ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff, Building, Hotel, PartyPopper, Warehouse, Pencil, ImageOff,
-  Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe,
+  Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe, Link2, ExternalLink, Users,
 } from "lucide-react"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
@@ -18,7 +18,7 @@ const getHeaders = (json = true) => {
     : { Authorization: `Bearer ${token}` }
 }
 
-type Tab = 'LEGAL' | 'FAQ' | 'PARTNERS' | 'CONTACT'
+type Tab = 'LEGAL' | 'ABOUT' | 'FAQ' | 'PARTNERS' | 'LINKS' | 'CONTACT'
 
 const PARTNER_CATEGORIES: { id: ActivityPole; label: string; icon: typeof Building }[] = [
   { id: 'IMMOBILIER', label: 'Activité immobilière', icon: Building },
@@ -40,8 +40,10 @@ export default function AdminContentPage() {
 
   const TABS: { id: Tab; label: string; icon: any }[] = [
     { id: 'LEGAL', label: 'Pages légales', icon: FileText },
+    { id: 'ABOUT', label: 'Qui sommes-nous ?', icon: Users },
     { id: 'FAQ', label: 'FAQ', icon: HelpCircle },
     { id: 'PARTNERS', label: 'Partenaires', icon: Handshake },
+    { id: 'LINKS', label: 'Liens Utiles', icon: Link2 },
     { id: 'CONTACT', label: 'Contact & Support', icon: Phone },
   ]
 
@@ -62,22 +64,34 @@ export default function AdminContentPage() {
       </div>
 
       {tab === 'LEGAL' && <LegalTab />}
+      {tab === 'ABOUT' && <AboutUsTab />}
       {tab === 'FAQ' && <FaqTab />}
       {tab === 'PARTNERS' && <PartnersTab />}
+      {tab === 'LINKS' && <LinksTab />}
       {tab === 'CONTACT' && <ContactTab />}
     </div>
   )
 }
 
 // ───────────────────────── Pages légales ─────────────────────────
+// Composant générique "pages à sections" (titre + éditeur riche + image optionnelle),
+// réutilisé tel quel pour les Pages légales (CGU/Confidentialité) et pour "Qui sommes-nous ?"
+// (onglet séparé plus bas) : mêmes mécaniques d'édition, contenus sans rapport entre eux.
 
-function LegalTab() {
-  const [page, setPage] = useState<'CGU' | 'CONFIDENTIALITE'>('CGU')
+const LEGAL_PAGES = [
+  { id: 'CGU', label: 'CGU' },
+  { id: 'CONFIDENTIALITE', label: 'Politique de Confidentialité' },
+] as const
+
+function LegalSectionsEditor({ pages, defaultPage, hint }: { pages: readonly { id: string; label: string }[]; defaultPage: string; hint?: React.ReactNode }) {
+  const [page, setPage] = useState<string>(defaultPage)
   const [sections, setSections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<number | null>(null)
   const [newTitle, setNewTitle] = useState("")
   const [newBody, setNewBody] = useState("")
+  const [newImage, setNewImage] = useState<File | null>(null)
+  const [adding, setAdding] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -89,10 +103,16 @@ function LegalTab() {
 
   useEffect(() => { load() }, [load])
 
-  const updateSection = async (id: number, data: any) => {
+  // Les routes acceptent désormais un multipart (image optionnelle) : toute mise à jour,
+  // même texte seul, passe par FormData — même convention que l'onglet Partenaires.
+  const updateSection = async (id: number, data: Record<string, string | boolean | undefined>, image?: File | null, removeImage?: boolean) => {
     setSaving(id)
     try {
-      const res = await fetch(`${API_URL}/admin/content/legal/section/${id}`, { method: 'PUT', headers: getHeaders() as any, body: JSON.stringify(data) })
+      const fd = new FormData()
+      Object.entries(data).forEach(([k, v]) => { if (v !== undefined) fd.append(k, String(v)) })
+      if (image) fd.append('image', image)
+      if (removeImage) fd.append('removeImage', 'true')
+      const res = await fetch(`${API_URL}/admin/content/legal/section/${id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
       if (res.ok) await load()
     } finally { setSaving(null) }
   }
@@ -115,24 +135,32 @@ function LegalTab() {
 
   const addSection = async () => {
     if (!newTitle.trim() || !newBody.trim()) return
-    await fetch(`${API_URL}/admin/content/legal/${page}`, {
-      method: 'POST', headers: getHeaders() as any,
-      body: JSON.stringify({ title: newTitle, body: newBody, order: sections.length }),
-    })
-    setNewTitle(""); setNewBody("")
-    await load()
+    setAdding(true)
+    try {
+      const fd = new FormData()
+      fd.append('title', newTitle)
+      fd.append('body', newBody)
+      fd.append('order', String(sections.length))
+      if (newImage) fd.append('image', newImage)
+      await fetch(`${API_URL}/admin/content/legal/${page}`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
+      setNewTitle(""); setNewBody(""); setNewImage(null)
+      await load()
+    } finally { setAdding(false) }
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-0.5 w-fit">
-        {(['CGU', 'CONFIDENTIALITE'] as const).map(p => (
-          <button key={p} onClick={() => setPage(p)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${page === p ? 'bg-gray-900 text-white' : 'text-gray-500'}`}>
-            {p === 'CGU' ? 'CGU' : 'Politique de Confidentialité'}
-          </button>
-        ))}
-      </div>
+      {pages.length > 1 && (
+        <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-0.5 w-fit flex-wrap">
+          {pages.map(p => (
+            <button key={p.id} onClick={() => setPage(p.id)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${page === p.id ? 'bg-gray-900 text-white' : 'text-gray-500'}`}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {hint && <p className="text-xs text-gray-400">{hint}</p>}
 
       {loading ? (
         <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
@@ -153,6 +181,31 @@ function LegalTab() {
                   {saving === s.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
                 </div>
               </div>
+
+              {/* Image d'illustration de la section (optionnelle) */}
+              <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-50">
+                {s.imageUrl ? (
+                  <img src={`${API_URL}${s.imageUrl}`} alt={s.title} className="h-20 w-32 object-cover rounded-xl border border-gray-100" />
+                ) : (
+                  <div className="h-20 w-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300">
+                    <ImageOff className="h-5 w-5" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-[#00BFA6] cursor-pointer hover:underline w-fit">
+                    <Upload className="h-3.5 w-3.5" /> {s.imageUrl ? "Changer l'image" : "Ajouter une image"}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) updateSection(s.id, {}, f)
+                      e.target.value = ''
+                    }} />
+                  </label>
+                  {s.imageUrl && (
+                    <button onClick={() => updateSection(s.id, {}, null, true)} className="text-xs text-red-500 hover:underline w-fit">Retirer l'image</button>
+                  )}
+                </div>
+              </div>
+
               <LegalRichEditor
                 initialHtml={s.body}
                 published={s.published}
@@ -167,11 +220,37 @@ function LegalTab() {
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter une section</p>
             <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre de la section" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
             <textarea value={newBody} onChange={(e) => setNewBody(e.target.value)} placeholder="Contenu..." rows={3} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-            <Button onClick={addSection} className="bg-[#00BFA6] hover:bg-[#00908A] text-white"><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+            <label className="flex items-center gap-2 w-full text-sm border border-gray-200 rounded-xl p-3 bg-white cursor-pointer">
+              <Upload className="h-4 w-4 text-gray-400" /> {newImage ? newImage.name : "Image (optionnelle)"}
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
+            </label>
+            <Button onClick={addSection} disabled={adding} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
+              {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
+            </Button>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+function LegalTab() {
+  return <LegalSectionsEditor pages={LEGAL_PAGES} defaultPage="CGU" />
+}
+
+// ───────────────────────── Qui sommes-nous ? ─────────────────────────
+// Onglet à part entière : cette page n'a aucun rapport avec les pages légales (CGU/Confidentialité),
+// elle partage simplement le même mécanisme d'édition (sections titre + image + éditeur riche).
+
+const ABOUT_PAGES = [{ id: 'A_PROPOS', label: 'Qui sommes-nous ?' }] as const
+
+function AboutUsTab() {
+  return (
+    <LegalSectionsEditor
+      pages={ABOUT_PAGES}
+      defaultPage="A_PROPOS"
+      hint={<>Cette page est accessible publiquement sur <code className="bg-gray-100 px-1.5 py-0.5 rounded">/a-propos</code> et son lien apparaît automatiquement dans le footer du site.</>}
+    />
   )
 }
 
@@ -526,6 +605,128 @@ function PartnersTab() {
           <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewLogo(e.target.files?.[0] || null)} />
         </label>
         <Button onClick={add} disabled={adding} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
+          {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ───────────────────────── Liens Utiles ─────────────────────────
+// Simples couples titre/URL, affichés automatiquement dans le footer du site public
+// (colonne "Liens utiles"), dans l'ordre défini ici.
+
+function LinksTab() {
+  const [links, setLinks] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState<number | null>(null)
+  const [newTitle, setNewTitle] = useState("")
+  const [newUrl, setNewUrl] = useState("")
+  const [adding, setAdding] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/admin/content/useful-links`, { headers: getHeaders(false) as any })
+      if (res.ok) setLinks(await res.json())
+    } finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const updateLink = async (id: number, data: any) => {
+    setSaving(id)
+    try {
+      const res = await fetch(`${API_URL}/admin/content/useful-links/${id}`, { method: 'PUT', headers: getHeaders() as any, body: JSON.stringify(data) })
+      if (res.ok) await load()
+    } finally { setSaving(null) }
+  }
+
+  const deleteLink = async (id: number) => {
+    if (!confirm("Supprimer ce lien ?")) return
+    await fetch(`${API_URL}/admin/content/useful-links/${id}`, { method: 'DELETE', headers: getHeaders() as any })
+    await load()
+  }
+
+  const move = async (index: number, dir: -1 | 1) => {
+    const target = links[index + dir]
+    if (!target) return
+    const current = links[index]
+    await Promise.all([
+      updateLink(current.id, { order: target.order }),
+      updateLink(target.id, { order: current.order }),
+    ])
+  }
+
+  const normalizeUrl = (u: string) => {
+    const trimmed = u.trim()
+    if (!trimmed) return trimmed
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  }
+
+  const addLink = async () => {
+    if (!newTitle.trim() || !newUrl.trim()) return
+    setAdding(true)
+    try {
+      await fetch(`${API_URL}/admin/content/useful-links`, {
+        method: 'POST', headers: getHeaders() as any,
+        body: JSON.stringify({ title: newTitle.trim(), url: normalizeUrl(newUrl), order: links.length }),
+      })
+      setNewTitle(""); setNewUrl("")
+      await load()
+    } finally { setAdding(false) }
+  }
+
+  if (loading) return <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <p className="text-xs text-gray-400">
+        Ces liens apparaissent automatiquement dans le footer du site, colonne « Liens utiles ».
+      </p>
+
+      <div className="space-y-2">
+        {links.map((l, i) => (
+          <div key={l.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
+            <Link2 className="h-4 w-4 text-gray-300 shrink-0" />
+            <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                defaultValue={l.title}
+                onBlur={(e) => e.target.value !== l.title && updateLink(l.id, { title: e.target.value })}
+                placeholder="Titre affiché"
+                className="text-sm font-bold text-gray-900 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
+              />
+              <input
+                defaultValue={l.url}
+                onBlur={(e) => e.target.value !== l.url && updateLink(l.id, { url: normalizeUrl(e.target.value) })}
+                placeholder="https://..."
+                className="text-sm text-gray-500 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1 truncate"
+              />
+            </div>
+            <a href={l.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#00BFA6] shrink-0" title="Ouvrir le lien">
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+            <button onClick={() => updateLink(l.id, { published: !l.published })} className="p-1.5 rounded-lg hover:bg-gray-100 shrink-0" title={l.published ? 'Publié' : 'Masqué'}>
+              {l.published ? <Eye className="h-3.5 w-3.5 text-green-600" /> : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
+            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button onClick={() => move(i, -1)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+              <button onClick={() => move(i, 1)} disabled={i === links.length - 1} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+              <button onClick={() => deleteLink(l.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
+              {saving === l.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+            </div>
+          </div>
+        ))}
+        {links.length === 0 && (
+          <p className="text-center text-gray-400 text-sm py-6">Aucun lien utile pour le moment.</p>
+        )}
+      </div>
+
+      <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter un lien</p>
+        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre (ex. Blog, Aide, Carrières...)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="URL (ex. https://exemple.com)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <Button onClick={addLink} disabled={adding} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
           {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
         </Button>
       </div>

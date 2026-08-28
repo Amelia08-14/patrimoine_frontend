@@ -330,7 +330,7 @@ export function Navbar() {
                             {/* 5. Assistance */}
                             <div className="py-2">
                                 <p className="px-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('assistance')}</p>
-                                <Link href="/faq" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                <Link href="/contact?motif=technique" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
                                     <LifeBuoy className="h-4 w-4 mr-3" /> {t('technicalAssistance')}
                                 </Link>
                             </div>

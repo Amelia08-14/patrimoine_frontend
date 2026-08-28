@@ -44,6 +44,8 @@
     "clientSpace": "فضاء العميل"
   },
   "Footer": {
+    "ctaTitle": "لديك عقار للكراء أو البيع؟",
+    "ctaButton": "أضف إعلانًا",
     "tagline": "شريكك الموثوق في مجال العقارات. اعثر على العقار الذي تحلم به أو بِعه بأفضل سعر.",
     "searchTitle": "البحث",
     "browseProperties": "البحث عن عقارات",
@@ -57,6 +59,8 @@
     "legalTitle": "قانوني",
     "cgu": "شروط الاستخدام العامة",
     "privacy": "سياسة الخصوصية",
+    "aboutUs": "من نحن؟",
+    "usefulLinksTitle": "روابط مفيدة",
     "copyright": "© {year} Patrimoine Immobilier. جميع الحقوق محفوظة."
   },
   "Auth": {
@@ -261,7 +265,11 @@
     "title": "الأسئلة الشائعة",
     "subtitle": "إجابات على أكثر الأسئلة شيوعًا حول المنصة.",
     "loading": "جارٍ التحميل...",
-    "noItems": "لا توجد أسئلة في الوقت الحالي."
+    "noItems": "لا توجد أسئلة في الوقت الحالي.",
+    "searchPlaceholder": "ابحث عن سؤال...",
+    "noResults": "لا يوجد سؤال يطابق بحثك.",
+    "stillNeedHelp": "لم تجد إجابتك؟",
+    "contactSupport": "تواصل مع الدعم"
   },
   "Support": {
     "title": "خدمة الدعم",
@@ -283,6 +291,11 @@
   "Confidentialite": {
     "title": "سياسة الخصوصية",
     "loading": "جارٍ التحميل..."
+  },
+  "APropos": {
+    "title": "من نحن؟",
+    "loading": "جارٍ التحميل...",
+    "empty": "هذه الصفحة قيد الإعداد."
   },
   "Demandes": {
     "title": "طلبات البحث الجارية",
@@ -880,6 +893,27 @@
     "entrustMyProperty": "فوّض عقاري",
     "seekerQuestion": "هل تبحث عن عقار؟",
     "entrustMySearch": "فوّض بحثي",
-    "appComingSoon": "التطبيق متوفر قريبًا"
+    "appComingSoon": "التطبيق متوفر قريبًا",
+    "heroEyebrow": "Patrimoine Immobilier — الجزائر",
+    "heroTitle": "العقار الجزائري،",
+    "heroTitleAccent": "كله في مكان واحد.",
+    "heroSubtitle": "سكني، تجاري، فندقي، عقاري — إعلانات موثّقة في الولايات الـ58.",
+    "searchTransactionLabel": "أبحث عن",
+    "searchBuy": "الشراء",
+    "searchRent": "الكراء",
+    "searchCategoryPlaceholder": "نوع العقار",
+    "searchWilayaPlaceholder": "الولاية",
+    "searchButton": "بحث",
+    "statListings": "إعلانات منشورة",
+    "statWilayas": "ولاية مغطاة",
+    "statCategories": "فئات العقارات",
+    "whyVerifiedTitle": "إعلانات موثّقة",
+    "whyVerifiedDesc": "يتم التحقق من كل إعلان من طرف فريقنا قبل نشره.",
+    "whyCoverageTitle": "الجزائر بأكملها",
+    "whyCoverageDesc": "58 ولاية مغطاة، من العقار إلى الفندقة مرورًا بالتجارة.",
+    "whyProfilesTitle": "أفراد ومحترفون",
+    "whyProfilesDesc": "وكالات، مروّجون، فنادق أو ملاك: فضاء مصمم للجميع.",
+    "whySupportTitle": "مرافقة مخصصة",
+    "whySupportDesc": "فريق دعم متاح لمرافقتك في كل خطوة."
   }
 }

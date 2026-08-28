@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
-import { Camera, Eye, Heart, Square, BedDouble, MapPin, Building2, ArrowUpDown, Thermometer, Factory } from "lucide-react";
+import { Camera, Heart, Square, BedDouble, MapPin, Building2, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Helper for Image URLs
@@ -76,6 +76,29 @@ const getCategorySpecs = (announce: any) => {
     };
 };
 
+// Ligne de caractéristiques sobre : texte + icône, séparés par un point médian — plus de "pills"
+function SpecLine({ specs }: { specs: ReturnType<typeof getCategorySpecs> }) {
+    const t = useTranslations("PropertyCard");
+    const parts: { icon: typeof Square; label: string }[] = [
+        { icon: Square, label: `${specs.area ?? 0} m²` },
+    ];
+    if (specs.kind === "residential" && specs.nbRooms) parts.push({ icon: BedDouble, label: t("rooms", { count: specs.nbRooms }) });
+    if (specs.kind === "hotel" && specs.nbSuites) parts.push({ icon: BedDouble, label: t("bedrooms", { count: specs.nbSuites }) });
+    if (specs.kind === "industrial" && specs.height) parts.push({ icon: ArrowUpDown, label: `${specs.height} m` });
+
+    return (
+        <div className="flex items-center gap-3 text-[13px] text-gray-500 font-medium">
+            {parts.map((p, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                    {i > 0 && <span className="text-gray-300">·</span>}
+                    <p.icon className="h-3.5 w-3.5 text-gray-400" />
+                    {p.label}
+                </span>
+            ))}
+        </div>
+    )
+}
+
 export const PropertyCard = ({ announce }: { announce: any }) => {
   const t = useTranslations("PropertyCard");
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
@@ -86,17 +109,18 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
   const typeObj = require("@/data/propertyTypes").PROPERTY_TYPES.find((t: any) => t.id === pType?.toUpperCase() || t.label === pType);
   const categoryName = typeObj ? typeObj.label : (pType || t("defaultCategory"));
   const specs = getCategorySpecs(announce);
+  const isSale = announce.type === "SALE";
 
   // Get main image (first image with isMain = true, fallback to first image)
   const images = announce.property?.images || [];
   const mainImage = images.find((img: any) => img.isMain) || images[0];
 
-  const [isFavorite, setIsFavorite] = useState(false); 
-  
+  const [isFavorite, setIsFavorite] = useState(false);
+
   const toggleFavorite = async (e: React.MouseEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
     e.stopPropagation();
-    
+
     const token = localStorage.getItem('token');
     if (!token) {
         alert(t("loginToFavorite"));
@@ -115,146 +139,88 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
 
   return (
     <Link href={`/announces/${announce.id}`} className="block h-full w-full">
-      <div className="bg-white rounded-3xl shadow-md hover:shadow-2xl transition-all duration-300 group cursor-pointer border border-gray-100 h-full w-full flex flex-col overflow-hidden relative">
-        
-        {/* Image Section - Full Bleed */}
-        <div className="relative h-[260px] min-h-[260px] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 group cursor-pointer border border-gray-100 h-full w-full flex flex-col overflow-hidden">
+
+        {/* Image */}
+        <div className="relative h-[240px] min-h-[240px] overflow-hidden bg-gray-100">
           {mainImage ? (
-            <img 
+            <img
                 src={getImageUrl(mainImage.url) || ''}
-                alt={announce.reference} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                alt={announce.reference}
+                className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                <Camera className="h-12 w-12 opacity-20" />
+            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                <Camera className="h-10 w-10" strokeWidth={1.5} />
             </div>
           )}
-          
-          {/* Gradient for text readability */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
 
-          {/* Top Badges */}
-          <div className="absolute top-4 left-4 flex gap-2">
-              <div className="bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
-                  <Camera className="h-3.5 w-3.5" />
-                  {announce.property?.images?.length || 0}
-              </div>
-              <div className="bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
-                  <Eye className="h-3.5 w-3.5" />
-                  {announce.nbViews || 0}
-              </div>
-          </div>
+          {/* Transaction — un seul badge, aux couleurs de la marque */}
+          <span className={cn(
+              "absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide text-white",
+              isSale ? "bg-[#00BFA6]" : "bg-[#003B4A]"
+            )}>
+              {isSale ? t("sale") : t("rental")}
+          </span>
 
-          {/* Favorite Button */}
-          <div className="absolute top-4 right-4 z-10">
-              <button
-                  onClick={toggleFavorite}
-                  className={cn(
-                      "p-2.5 rounded-full transition-colors shadow-lg hover:scale-110 duration-200",
-                      isFavorite ? "bg-red-50 text-red-500" : "bg-white text-gray-400 hover:text-red-500"
-                  )}
-              >
-                  <Heart className={cn("h-4 w-4", isFavorite ? "fill-current" : "fill-transparent hover:fill-current")} />
-              </button>
-          </div>
+          {/* Nombre de photos — discret */}
+          {images.length > 0 && (
+            <span className="absolute bottom-3.5 left-3.5 flex items-center gap-1 text-white text-[11px] font-semibold [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]">
+              <Camera className="h-3.5 w-3.5" /> {images.length}
+            </span>
+          )}
 
-          {/* Transaction Badge */}
-          <div className="absolute bottom-4 left-4">
-              <span className={cn(
-                  "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg",
-                  announce.type === "SALE" ? "bg-red-600 text-white" : "bg-blue-600 text-white"
-                )}>
-                  {announce.type === 'SALE' ? t("sale") : t("rental")}
-              </span>
-          </div>
+          {/* Favori */}
+          <button
+              onClick={toggleFavorite}
+              aria-label={t("loginToFavorite")}
+              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-gray-500 hover:text-[#00BFA6] transition-colors"
+          >
+              <Heart className={cn("h-4 w-4", isFavorite && "fill-[#00BFA6] text-[#00BFA6]")} />
+          </button>
         </div>
 
-        {/* Content Section */}
-        <div className="p-6 flex flex-col justify-between flex-1 relative min-h-[160px]">
-            <div className="flex flex-col gap-2">
-                {/* Category */}
-                <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[#00BFA6] font-extrabold text-[11px] uppercase tracking-widest">
-                        {categoryName}
-                    </span>
+        {/* Contenu */}
+        <div className="p-5 flex flex-col gap-3 flex-1">
+            <div className="flex flex-col gap-1">
+                <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide">
+                    {categoryName}
                     {specs.kind === "industrial" && specs.typeLabel && (
-                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">
-                            {pType === "CHAMBRE_FROIDE" ? <Thermometer className="h-3 w-3" /> : <Factory className="h-3 w-3" />}
-                            {specs.typeLabel}
-                        </span>
+                        <span className="text-gray-400 font-medium normal-case tracking-normal"> · {specs.typeLabel}</span>
                     )}
-                </div>
-
-                {/* Title */}
-                <h3 className="text-gray-900 font-bold text-lg leading-tight line-clamp-1 group-hover:text-[#00BFA6] transition-colors" title={announce.title || t("titleFallback", { category: categoryName, location: locationName })}>
+                </span>
+                <h3 className="text-gray-900 font-bold text-[15px] leading-snug line-clamp-1" title={announce.title || t("titleFallback", { category: categoryName, location: locationName })}>
                     {announce.title ? announce.title : t("titleFallback", { category: categoryName, location: locationName })}
                 </h3>
-
-                {/* Specs Row */}
-                <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
-                        <Square className="h-3.5 w-3.5 text-[#00BFA6]" />
-                        {specs.area} m²
-                    </div>
-                    {specs.kind === "residential" && specs.nbRooms && (
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
-                            <BedDouble className="h-3.5 w-3.5 text-[#00BFA6]" />
-                            {t("rooms", { count: specs.nbRooms })}
-                        </div>
-                    )}
-                    {specs.kind === "hotel" && specs.nbSuites && (
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
-                            <BedDouble className="h-3.5 w-3.5 text-[#00BFA6]" />
-                            {t("bedrooms", { count: specs.nbSuites })}
-                        </div>
-                    )}
-                    {specs.kind === "industrial" && specs.height && (
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
-                            <ArrowUpDown className="h-3.5 w-3.5 text-[#00BFA6]" />
-                            {specs.height} m
-                        </div>
-                    )}
-                    {specs.kind === "industrial" && specs.width && (
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg text-xs font-bold text-gray-600">
-                            <ArrowUpDown className="h-3.5 w-3.5 text-[#00BFA6] rotate-90" />
-                            {specs.width} m
-                        </div>
-                    )}
-                </div>
             </div>
 
-            {/* Price & Location & Agency */}
-            <div className="flex items-end justify-between mt-auto pt-2">
-                <div className="flex flex-col">
-                    <span className="text-2xl font-black text-gray-900 leading-none">
-                        {new Intl.NumberFormat('fr-DZ').format(announce.price)} <span className="text-sm text-gray-500 font-bold">DA</span>
-                    </span>
-                    <div className="flex items-center text-gray-400 text-xs font-semibold gap-1.5 mt-2">
-                        <MapPin className="h-4 w-4 text-[#00BFA6]" />
+            <SpecLine specs={specs} />
+
+            <div className="mt-auto pt-3 border-t border-gray-50 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="text-xl font-bold text-[#003B4A] leading-none">
+                        {new Intl.NumberFormat('fr-DZ').format(announce.price)}
+                        <span className="text-xs text-gray-400 font-semibold ml-1">DA</span>
+                    </div>
+                    <div className="flex items-center text-gray-400 text-xs font-medium gap-1 mt-2 truncate">
+                        <MapPin className="h-3.5 w-3.5 text-gray-300 shrink-0" />
                         {locationName}
                     </div>
                 </div>
 
-                {/* Agency Footer (Right Side) */}
                 {isCompany && (
-                    <div className="flex flex-col items-center gap-1 min-w-[80px]">
+                    <div className="shrink-0" title={announce.user?.companyName}>
                         {announce.user?.imageUrl ? (
-                            <div className="p-0.5 rounded-full border border-gray-100 shadow-sm">
-                              <img 
-                                  src={getImageUrl(announce.user.imageUrl) || ''} 
-                                  alt={announce.user.companyName}
-                                  className="w-10 h-10 rounded-full object-cover"
-                              />
-                            </div>
+                            <img
+                                src={getImageUrl(announce.user.imageUrl) || ''}
+                                alt={announce.user.companyName}
+                                className="w-8 h-8 rounded-full object-cover border border-gray-100"
+                            />
                         ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100">
-                                <Building2 className="h-5 w-5" />
+                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 border border-gray-100">
+                                <Building2 className="h-4 w-4" />
                             </div>
                         )}
-                        <span className="text-gray-400 text-[8px] font-bold uppercase tracking-widest text-center truncate max-w-[100px]">
-                            {announce.user?.companyName}
-                        </span>
                     </div>
                 )}
             </div>

@@ -44,6 +44,8 @@
     "clientSpace": "Client space"
   },
   "Footer": {
+    "ctaTitle": "Have a property to rent or sell?",
+    "ctaButton": "Post a listing",
     "tagline": "Your trusted real estate partner. Find the property of your dreams or sell at the best price.",
     "searchTitle": "Search",
     "browseProperties": "Browse properties",
@@ -57,6 +59,8 @@
     "legalTitle": "Legal",
     "cgu": "Terms of Use",
     "privacy": "Privacy Policy",
+    "aboutUs": "About Us",
+    "usefulLinksTitle": "Useful Links",
     "copyright": "© {year} Patrimoine Immobilier. All rights reserved."
   },
   "Auth": {
@@ -261,7 +265,11 @@
     "title": "Frequently Asked Questions",
     "subtitle": "Answers to the most common questions about the platform.",
     "loading": "Loading...",
-    "noItems": "No questions at the moment."
+    "noItems": "No questions at the moment.",
+    "searchPlaceholder": "Search a question...",
+    "noResults": "No question matches your search.",
+    "stillNeedHelp": "Can't find your answer?",
+    "contactSupport": "Contact support"
   },
   "Support": {
     "title": "Support Service",
@@ -283,6 +291,11 @@
   "Confidentialite": {
     "title": "Privacy Policy",
     "loading": "Loading..."
+  },
+  "APropos": {
+    "title": "About Us",
+    "loading": "Loading...",
+    "empty": "This page is being written."
   },
   "Demandes": {
     "title": "Open search requests",
@@ -880,6 +893,27 @@
     "entrustMyProperty": "Entrust my property",
     "seekerQuestion": "Looking for a property?",
     "entrustMySearch": "Entrust my search",
-    "appComingSoon": "App coming soon"
+    "appComingSoon": "App coming soon",
+    "heroEyebrow": "Patrimoine Immobilier — Algeria",
+    "heroTitle": "Algerian real estate,",
+    "heroTitleAccent": "all in one place.",
+    "heroSubtitle": "Residential, retail, hospitality, land — verified listings across all 58 wilayas.",
+    "searchTransactionLabel": "I'm looking to",
+    "searchBuy": "Buy",
+    "searchRent": "Rent",
+    "searchCategoryPlaceholder": "Property type",
+    "searchWilayaPlaceholder": "Wilaya",
+    "searchButton": "Search",
+    "statListings": "Live listings",
+    "statWilayas": "Wilayas covered",
+    "statCategories": "Property categories",
+    "whyVerifiedTitle": "Verified listings",
+    "whyVerifiedDesc": "Every listing is reviewed by our team before it goes live.",
+    "whyCoverageTitle": "All of Algeria",
+    "whyCoverageDesc": "58 wilayas covered, from land to hospitality to retail.",
+    "whyProfilesTitle": "Individuals & professionals",
+    "whyProfilesDesc": "Agencies, developers, hoteliers or owners: a space built for each.",
+    "whySupportTitle": "Dedicated support",
+    "whySupportDesc": "A support team you can reach at every step."
   }
 }

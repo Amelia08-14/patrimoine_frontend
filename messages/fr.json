@@ -44,6 +44,8 @@
     "clientSpace": "Espace Client"
   },
   "Footer": {
+    "ctaTitle": "Vous avez un bien à louer ou à vendre ?",
+    "ctaButton": "Déposer une annonce",
     "tagline": "Votre partenaire de confiance pour l'immobilier. Trouvez le bien de vos rêves ou vendez au meilleur prix.",
     "searchTitle": "Rechercher",
     "browseProperties": "Recherche de biens",
@@ -57,6 +59,8 @@
     "legalTitle": "Légal",
     "cgu": "Conditions Générales d'Utilisation",
     "privacy": "Politique de Confidentialité",
+    "aboutUs": "Qui sommes-nous ?",
+    "usefulLinksTitle": "Liens Utiles",
     "copyright": "© {year} Patrimoine Immobilier. Tous droits réservés."
   },
   "Auth": {
@@ -261,7 +265,11 @@
     "title": "Foire Aux Questions",
     "subtitle": "Les réponses aux questions les plus fréquentes sur la plateforme.",
     "loading": "Chargement...",
-    "noItems": "Aucune question pour le moment."
+    "noItems": "Aucune question pour le moment.",
+    "searchPlaceholder": "Rechercher une question...",
+    "noResults": "Aucune question ne correspond à votre recherche.",
+    "stillNeedHelp": "Vous ne trouvez pas votre réponse ?",
+    "contactSupport": "Contacter le support"
   },
   "Support": {
     "title": "Service Support",
@@ -283,6 +291,11 @@
   "Confidentialite": {
     "title": "Politique de Confidentialité",
     "loading": "Chargement..."
+  },
+  "APropos": {
+    "title": "Qui sommes-nous ?",
+    "loading": "Chargement...",
+    "empty": "Cette page est en cours de rédaction."
   },
   "Demandes": {
     "title": "Demandes en cours de recherche",
@@ -880,6 +893,27 @@
     "entrustMyProperty": "Confier mon bien",
     "seekerQuestion": "Vous cherchez un bien ?",
     "entrustMySearch": "Confier ma recherche",
-    "appComingSoon": "Application disponible bientôt"
+    "appComingSoon": "Application disponible bientôt",
+    "heroEyebrow": "Patrimoine Immobilier — Algérie",
+    "heroTitle": "L'immobilier algérien,",
+    "heroTitleAccent": "réuni au même endroit.",
+    "heroSubtitle": "Résidentiel, commerces, hôtellerie, foncier — des annonces vérifiées, partout dans les 58 wilayas.",
+    "searchTransactionLabel": "Je cherche à",
+    "searchBuy": "Acheter",
+    "searchRent": "Louer",
+    "searchCategoryPlaceholder": "Type de bien",
+    "searchWilayaPlaceholder": "Wilaya",
+    "searchButton": "Rechercher",
+    "statListings": "Annonces en ligne",
+    "statWilayas": "Wilayas couvertes",
+    "statCategories": "Catégories de biens",
+    "whyVerifiedTitle": "Annonces vérifiées",
+    "whyVerifiedDesc": "Chaque annonce est contrôlée par notre équipe avant sa mise en ligne.",
+    "whyCoverageTitle": "Toute l'Algérie",
+    "whyCoverageDesc": "58 wilayas couvertes, du foncier à l'hôtellerie en passant par le commerce.",
+    "whyProfilesTitle": "Particuliers & professionnels",
+    "whyProfilesDesc": "Agences, promoteurs, hôteliers ou propriétaires : un espace pensé pour chacun.",
+    "whySupportTitle": "Accompagnement dédié",
+    "whySupportDesc": "Une équipe support joignable pour vous accompagner à chaque étape."
   }
 }

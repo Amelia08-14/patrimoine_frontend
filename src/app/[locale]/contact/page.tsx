@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -83,9 +84,10 @@ function ChannelBadgeRow({ prefix, settings }: { prefix: string; settings: Recor
   );
 }
 
-export default function ContactPage() {
+function ContactPageContent() {
   const t = useTranslations('Contact');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const searchParams = useSearchParams();
 
   const contactSchema = z.object({
     name: z.string().min(5, t('nameTooShort')).max(150),
@@ -98,7 +100,9 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [settings, setSettings] = useState<Record<string, string>>({});
-  const [motif, setMotif] = useState<Motif>('GENERAL');
+  const motifParam = searchParams.get('motif')?.toUpperCase();
+  const initialMotif: Motif = motifParam === 'TECHNIQUE' || motifParam === 'COMMERCIAL' || motifParam === 'JURIDIQUE' ? motifParam : 'GENERAL';
+  const [motif, setMotif] = useState<Motif>(initialMotif);
   const [attachment, setAttachment] = useState<File | null>(null);
 
   useEffect(() => {
@@ -360,5 +364,13 @@ export default function ContactPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContactPageContent />
+    </Suspense>
   );
 }

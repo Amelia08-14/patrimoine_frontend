@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, CheckCircle, Heart, MapPin, BedDouble, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles } from "lucide-react"
+import { ArrowRight, CheckCircle, Heart, MapPin, BedDouble, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
@@ -61,7 +61,7 @@ const getCategoryHeroGradientById = (categoryId: string) => {
 const getCategoryHeroImageById = (categoryId: string) => {
   switch (categoryId) {
     case "RESIDENTIEL": return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=2400&q=80"
-    case "INDUSTRIEL": return "https://images.unsplash.com/photo-1581091870627-3c5f1d0d2c32?auto=format&fit=crop&w=2400&q=80"
+    case "INDUSTRIEL": return "https://unsplash.com/fr/photos/usine-industrielle-dans-un-paysage-enneige-5BpJ33Oetm0"
     case "BUREAUX_COMMERCES": return "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2400&q=80"
     case "HOTELIER": return "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2400&q=80"
     case "EVENEMENTIEL": return "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2400&q=80"
@@ -415,70 +415,99 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen font-sans bg-gray-50">
 
       {/* HERO SECTION */}
-      <div className="relative h-[450px] w-full group">
-        <div className="absolute inset-0 overflow-hidden rounded-b-[50px] bg-gray-900">
-          {REAL_ESTATE_CATEGORIES.map((category, index) => {
-            const Icon = getIcon(category.iconName)
-            const isActive = index === currentSlide
-            return (
-              <div
-                key={category.id}
-                className={cn(
-                  "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-                  isActive ? "opacity-100" : "opacity-0"
-                )}
-              >
-                <img
-                  src={getCategoryHeroImageById(category.id)}
-                  alt={tc(category.id)}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className={cn("absolute inset-0 bg-gradient-to-r opacity-65", getCategoryHeroGradientById(category.id))} />
-                <div className="absolute inset-0 bg-black/45" />
+      <div className="relative h-[480px] sm:h-[520px] lg:h-[560px] w-full group">
+        <div className="absolute inset-0 overflow-hidden bg-[#04222b]">
+          {REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).map((category, index) => (
+            <div
+              key={category.id}
+              className={cn(
+                "absolute inset-0 transition-opacity duration-1000 ease-in-out",
+                index === currentSlide ? "opacity-100" : "opacity-0"
+              )}
+            >
+              <img
+                src={getCategoryHeroImageById(category.id)}
+                alt={tc(category.id)}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </div>
+          ))}
+          {/* Voile de marque — navy en dégradé, constant quelle que soit la catégorie affichée */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#022229] via-[#003B4A]/85 to-[#003B4A]/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#022229]/95 via-[#003B4A]/50 to-transparent" />
 
-                <div className="relative h-full w-full">
-                  <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 h-full flex items-center justify-end">
-                    <div className="w-full max-w-xl min-h-[260px] bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-7 sm:p-10 flex flex-col justify-center">
-                      <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-white/20 border border-white/20 flex items-center justify-center">
-                          <Icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-white/85 text-xs font-extrabold tracking-[0.2em] uppercase">{t("categoryLabel")}</div>
-                          <div className="text-white text-2xl sm:text-3xl font-extrabold leading-tight">{tc(category.id)}</div>
-                        </div>
-                      </div>
+          {/* Signature : voûte inspirée de l'architecture algérienne, détourant le bas du hero */}
+          <svg className="absolute -bottom-px left-0 w-full h-[70px] sm:h-[90px] text-gray-50" viewBox="0 0 1200 90" preserveAspectRatio="none" fill="currentColor" aria-hidden="true">
+            <path d="M0,90 L0,55 C120,55 130,10 240,10 C350,10 360,55 480,55 C600,55 600,10 720,10 C840,10 850,55 960,55 C1080,55 1090,10 1200,10 L1200,90 Z" />
+          </svg>
 
-                      <div className="mt-4 text-white/90 text-sm sm:text-base leading-relaxed">
-                        {t("heroDescription", { category: tc(category.id).toLowerCase() })}
-                      </div>
+          <button onClick={prevSlide} aria-label="Catégorie précédente" className="absolute left-4 sm:left-8 top-[42%] -translate-y-1/2 bg-white/10 hover:bg-white/25 backdrop-blur-md p-2.5 sm:p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-20">
+            <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
+          </button>
+          <button onClick={nextSlide} aria-label="Catégorie suivante" className="absolute right-4 sm:right-8 top-[42%] -translate-y-1/2 bg-white/10 hover:bg-white/25 backdrop-blur-md p-2.5 sm:p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-20">
+            <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
+          </button>
+        </div>
 
-                      <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                        <Button
-                          onClick={() => handleCategoryClick(category.id)}
-                          className="bg-white text-gray-900 hover:bg-white/90 rounded-full px-8 py-6 text-base font-extrabold"
-                        >
-                          {t("viewListings")}
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        {/* Contenu : titre + badge catégorie vivant */}
+        <div className="relative h-full w-full flex flex-col justify-center pb-10 sm:pb-14">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 text-white/80 text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
+                {t("heroEyebrow")}
               </div>
-            )
-          })}
-          <button onClick={prevSlide} className="absolute left-8 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/30 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-20">
-            <ChevronLeft className="h-8 w-8" />
-          </button>
-          <button onClick={nextSlide} className="absolute right-8 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/30 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-20">
-            <ChevronRight className="h-8 w-8" />
-          </button>
+              <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.4rem] leading-[1.08] text-white">
+                {t("heroTitle")}<br />
+                <span className="text-[#5EEAD4]">{t("heroTitleAccent")}</span>
+              </h1>
+              <p className="mt-5 text-white/80 text-base sm:text-lg leading-relaxed max-w-xl">
+                {t("heroSubtitle")}
+              </p>
+
+              <button
+                onClick={() => handleCategoryClick(REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)[currentSlide]?.id)}
+                className="mt-7 inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md rounded-2xl pl-2 pr-4 py-2 transition-colors"
+              >
+                {(() => {
+                  const cats = REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
+                  const cat = cats[currentSlide]
+                  if (!cat) return null
+                  const Icon = getIcon(cat.iconName)
+                  return (
+                    <>
+                      <span className="h-8 w-8 rounded-xl bg-[#00BFA6]/20 flex items-center justify-center shrink-0">
+                        <Icon className="h-4 w-4 text-[#5EEAD4]" />
+                      </span>
+                      <span className="text-white text-sm font-bold">{tc(cat.id)}</span>
+                      <ArrowRight className="h-4 w-4 text-white/60" />
+                    </>
+                  )
+                })()}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* CATÉGORIES EN BULLES — navigation fixe */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm py-3">
+      {/* Chiffres clés — donnée réelle, pas d'avis ou de notes fabriqués */}
+      <div className="bg-gray-50 pt-6 sm:pt-8 pb-4">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-3 divide-x divide-gray-200">
+          {[
+            { value: `${announces.length || 0}+`, label: t("statListings") },
+            { value: "58", label: t("statWilayas") },
+            { value: String(REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).length), label: t("statCategories") },
+          ].map((s) => (
+            <div key={s.label} className="text-center px-2">
+              <div className="font-brand text-2xl sm:text-3xl text-[#003B4A]">{s.value}</div>
+              <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CATÉGORIES EN BULLES — plus de bandeau autour, juste les pastilles */}
+      <div className="bg-gray-50 pb-8">
         <div className="max-w-7xl mx-auto px-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           <div className="flex gap-2 items-center justify-center min-w-max mx-auto w-fit">
             {orderedCategoryIds.map(catId => {
@@ -531,49 +560,66 @@ export default function HomePage() {
       )}
 
       {/* WHY CHOOSE US */}
-      <section className="py-16 bg-slate-900 text-white relative overflow-hidden">
+      <section className="py-16 sm:py-20 bg-[#003B4A] text-white relative overflow-hidden">
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#00BFA6]/10 blur-3xl" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-3 uppercase tracking-widest text-green-400">{t("whyChooseUsTitle")}</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">{t("whyChooseUsSubtitle")}</p>
+          <div className="text-center mb-14">
+            <h2 className="font-brand text-3xl md:text-4xl text-white mb-3">{t("whyChooseUsTitle")}</h2>
+            <p className="text-white/60 max-w-2xl mx-auto">{t("whyChooseUsSubtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: ShieldCheck, title: t("whyVerifiedTitle"), desc: t("whyVerifiedDesc") },
+              { icon: Globe2, title: t("whyCoverageTitle"), desc: t("whyCoverageDesc") },
+              { icon: Users, title: t("whyProfilesTitle"), desc: t("whyProfilesDesc") },
+              { icon: Headset, title: t("whySupportTitle"), desc: t("whySupportDesc") },
+            ].map((card) => (
+              <div key={card.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 hover:bg-white/[0.07] transition-colors">
+                <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/15 flex items-center justify-center mb-5">
+                  <card.icon className="h-5 w-5 text-[#5EEAD4]" />
+                </div>
+                <h3 className="font-bold text-white text-[15px] mb-2">{card.title}</h3>
+                <p className="text-white/55 text-sm leading-relaxed">{card.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA SECTION */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 uppercase">{t("entrustProjectTitle")}</h2>
+            <h2 className="font-brand text-3xl text-[#003B4A]">{t("entrustProjectTitle")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative h-[350px] rounded-3xl overflow-hidden group cursor-pointer shadow-xl">
+            <div className="relative h-[320px] sm:h-[350px] rounded-3xl overflow-hidden group cursor-pointer shadow-xl">
               <img
                 src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
                 alt={t("ownerQuestion")}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-black/40"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#003B4A] via-[#003B4A]/30 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-7 text-center">
                 <h3 className="text-xl font-bold text-white mb-4">{t("ownerQuestion")}</h3>
                 <Link href="/deposit">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white font-bold py-5 px-6 rounded-full">
+                  <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white font-bold py-5 px-7 rounded-full">
                     {t("entrustMyProperty")}
                   </Button>
                 </Link>
               </div>
             </div>
-            <div className="relative h-[350px] rounded-3xl overflow-hidden group cursor-pointer shadow-xl">
+            <div className="relative h-[320px] sm:h-[350px] rounded-3xl overflow-hidden group cursor-pointer shadow-xl">
               <img
                 src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
                 alt={t("seekerQuestion")}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-black/40"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#003B4A] via-[#003B4A]/30 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-7 text-center">
                 <h3 className="text-xl font-bold text-white mb-4">{t("seekerQuestion")}</h3>
                 <Link href="/research">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-6 rounded-full">
+                  <Button className="bg-white text-[#003B4A] hover:bg-white/90 font-bold py-5 px-7 rounded-full">
                     {t("entrustMySearch")}
                   </Button>
                 </Link>
