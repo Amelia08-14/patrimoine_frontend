@@ -345,7 +345,7 @@ export default function BoutiqueConfigPage() {
         <p className="text-gray-500 text-sm mb-6 leading-relaxed">
           {t("notActivatedText")}
         </p>
-        <div className="grid grid-cols-3 gap-3 mb-6 text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 text-left">
           {[
             { pack: t("packStandard"), price: '5 000 DA', pts: '50 pts' },
             { pack: t("packAvancee"), price: '10 000 DA', pts: '100 pts', hot: true },
@@ -580,7 +580,7 @@ export default function BoutiqueConfigPage() {
                 <span className="text-[#00BFA6] font-black text-lg">Aa</span> {t("typographyTitle")}
               </h2>
               <p className="text-xs text-gray-500 mb-4">{t("typographySubtitle")}</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { name: "", label: t("fontDefault") },
                   { name: "Inter", label: "Inter" },
@@ -642,7 +642,7 @@ export default function BoutiqueConfigPage() {
               <input ref={storyInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={e => { if (e.target.files?.[0]) { addStory(e.target.files[0]); e.target.value = '' } }} />
 
               {config.stories.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
                   {config.stories.map((s, idx) => (
                     <div key={idx} className="relative rounded-xl overflow-hidden bg-gray-100" style={{ aspectRatio: '9/16' }}>
                       {s.type === 'video' ? (
@@ -772,7 +772,7 @@ export default function BoutiqueConfigPage() {
                     placeholder={t("companyDescriptionPlaceholder")}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("buttonLabelField")}</label>
                     <input
@@ -860,7 +860,7 @@ export default function BoutiqueConfigPage() {
                 )}
 
                 {/* Annonces placeholder grid */}
-                <div className="p-4 grid grid-cols-2 gap-3">
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[1, 2, 3, 4].map(i => (
                     <div key={i} className="rounded-xl overflow-hidden bg-white border border-gray-200 shadow-sm">
                       <div className="h-20 bg-gray-100" />

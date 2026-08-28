@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button"
 import {
   CheckCircle, XCircle, FileText, Search, RefreshCw, AlertTriangle, ShieldOff, ShieldCheck,
   ShieldAlert, ChevronDown, KeyRound, LayoutGrid, Building, Hotel, PartyPopper, Warehouse, MapPin,
+  FileDown, FileSpreadsheet,
 } from "lucide-react"
 import { POLE_LABELS, SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
+import { PeriodFilterBar } from "@/components/admin/PeriodFilterBar"
+import { DATE_PRESETS, todayStr, periodLabel } from "@/lib/datePresets"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -112,6 +115,15 @@ function AdminUsersContent() {
   const [pole, setPole] = useState<PoleFilter>("ALL")
   const [subCategory, setSubCategory] = useState<string>("ALL")
   const [statusMenuFor, setStatusMenuFor] = useState<number | null>(null)
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [activePreset, setActivePreset] = useState("")
+  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null)
+
+  const applyPreset = (preset: typeof DATE_PRESETS[number]) => {
+    setActivePreset(preset.id); setDateFrom(preset.from()); setDateTo(preset.to())
+  }
+  const clearPeriod = () => { setActivePreset(""); setDateFrom(""); setDateTo("") }
 
   useEffect(() => {
     fetch(`${API_URL}/cities`).then((r) => r.json()).then(setCities).catch(() => {})
@@ -133,6 +145,8 @@ function AdminUsersContent() {
       if (accountType !== 'ALL') params.set('accountType', accountType)
       if (pole !== 'ALL') params.set('pole', pole)
       if (subCategory !== 'ALL') params.set('subCategory', subCategory)
+      if (dateFrom) params.set('from', dateFrom)
+      if (dateTo) params.set('to', dateTo)
       const response = await fetch(`${API_URL}/admin/users?${params.toString()}`, {
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -149,7 +163,7 @@ function AdminUsersContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [search, wilaya, commune, status, accountType, pole, subCategory])
+  }, [search, wilaya, commune, status, accountType, pole, subCategory, dateFrom, dateTo])
 
   useEffect(() => {
     fetchUsers()
@@ -241,6 +255,57 @@ function AdminUsersContent() {
     }
   }
 
+  const exportRows = () => users.map((u) => ({
+    compte: u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+    type: u.companyName ? 'Professionnel' : 'Particulier',
+    email: u.email || '',
+    telephone: u.phone || '',
+    activite: u.companyActivity ? (SUB_CATEGORY_LABELS[u.companyActivity] || u.companyActivity) : '',
+    localisation: u.location || '',
+    statut: STATUS_BADGE[u.accountStatus || 'ACTIVE']?.label || u.accountStatus || '',
+    inscritLe: new Date(u.createdAt).toLocaleDateString('fr-FR'),
+  }))
+
+  const exportExcel = async () => {
+    setExporting('excel')
+    try {
+      const XLSX = await import('xlsx')
+      const rows = exportRows()
+      const sheet = XLSX.utils.aoa_to_sheet([
+        ['Utilisateurs — Patrimoine Immobilier'],
+        [`Période : ${periodLabel(dateFrom, dateTo)}`],
+        [`Généré le ${new Date().toLocaleString('fr-FR')}`],
+        [],
+        ['Compte', 'Type', 'Email', 'Téléphone', 'Activité', 'Localisation', 'Statut', 'Inscrit le'],
+        ...rows.map((r) => [r.compte, r.type, r.email, r.telephone, r.activite, r.localisation, r.statut, r.inscritLe]),
+      ])
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, sheet, 'Utilisateurs')
+      XLSX.writeFile(wb, `utilisateurs-patrimoine-${todayStr()}.xlsx`)
+    } finally { setExporting(null) }
+  }
+
+  const exportPDF = async () => {
+    setExporting('pdf')
+    try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
+      const doc = new jsPDF({ orientation: 'landscape' })
+      doc.setFontSize(16); doc.setTextColor(0, 59, 74)
+      doc.text('Utilisateurs — Patrimoine Immobilier', 14, 18)
+      doc.setFontSize(10); doc.setTextColor(120)
+      doc.text(`Période : ${periodLabel(dateFrom, dateTo)}`, 14, 25)
+      doc.text(`Généré le ${new Date().toLocaleString('fr-FR')}`, 14, 30)
+      autoTable(doc, {
+        startY: 36,
+        head: [['Compte', 'Type', 'Email', 'Téléphone', 'Activité', 'Localisation', 'Statut', 'Inscrit le']],
+        body: exportRows().map((r) => [r.compte, r.type, r.email, r.telephone, r.activite, r.localisation, r.statut, r.inscritLe]),
+        headStyles: { fillColor: [0, 191, 166] },
+        styles: { fontSize: 8 },
+      })
+      doc.save(`utilisateurs-patrimoine-${todayStr()}.pdf`)
+    } finally { setExporting(null) }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -248,10 +313,25 @@ function AdminUsersContent() {
           <h1 className="text-2xl font-bold text-[#003B4A] font-brand">Utilisateurs</h1>
           <p className="text-gray-500">Annuaire global — segmentation par pôle d'activité, conformité documentaire et statuts de compte.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchUsers} title="Actualiser">
-            <RefreshCw className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportExcel} disabled={exporting !== null} title="Exporter en Excel">
+            <FileSpreadsheet className="h-4 w-4 mr-1.5" /> {exporting === 'excel' ? 'Export...' : 'Excel'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportPDF} disabled={exporting !== null} title="Exporter en PDF">
+            <FileDown className="h-4 w-4 mr-1.5" /> {exporting === 'pdf' ? 'Export...' : 'PDF'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchUsers} title="Actualiser">
+              <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+
+      <PeriodFilterBar
+        dateFrom={dateFrom} dateTo={dateTo} activePreset={activePreset}
+        onApplyPreset={applyPreset} onClear={clearPeriod}
+        onChangeFrom={(v) => { setDateFrom(v); setActivePreset("") }}
+        onChangeTo={(v) => { setDateTo(v); setActivePreset("") }}
+      />
 
       {/* Recherche */}
       <div className="bg-white px-3 py-2 rounded-xl border-2 border-gray-200 flex items-center gap-2">
@@ -259,7 +339,7 @@ function AdminUsersContent() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Nom, prénom, raison sociale, email, téléphone ou numéro d'identification..."
+          placeholder="Nom, prénom, raison sociale, email, téléphone, wilaya, commune..."
           className="outline-none text-sm w-full"
         />
       </div>

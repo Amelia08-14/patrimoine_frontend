@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   FileText, AlertCircle, User, Briefcase, Building2, Hotel, PartyPopper, Warehouse, RefreshCw,
-  FileDown, FileSpreadsheet, Calendar,
+  FileDown, FileSpreadsheet, Calendar, Presentation,
 } from "lucide-react"
 import { format, subDays, startOfMonth } from "date-fns"
 import { subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
   const [activePreset, setActivePreset] = useState<string>("")
-  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null)
+  const [exporting, setExporting] = useState<'pdf' | 'excel' | 'pptx' | null>(null)
 
   const loadStats = useCallback(async () => {
     try {
@@ -195,6 +195,110 @@ export default function AdminDashboard() {
     }
   }
 
+  const exportPPTX = async () => {
+    if (!stats) return
+    setExporting('pptx')
+    try {
+      const { default: pptxgen } = await import('pptxgenjs')
+      const pres = new pptxgen()
+      pres.defineLayout({ name: 'PATRIMOINE', width: 10, height: 5.63 })
+      pres.layout = 'PATRIMOINE'
+
+      const NAVY = '003B4A'
+      const TEAL = '00BFA6'
+      const GRAY = '6B7280'
+
+      // Slide 1 — Titre
+      const title = pres.addSlide()
+      title.background = { color: NAVY }
+      title.addText('Patrimoine Immobilier', { x: 0.6, y: 1.9, w: 8.8, h: 0.7, fontSize: 30, bold: true, color: 'FFFFFF', fontFace: 'Arial' })
+      title.addText('Tableau de bord — Performances de la plateforme', { x: 0.6, y: 2.6, w: 8.8, h: 0.5, fontSize: 16, color: TEAL, fontFace: 'Arial' })
+      title.addText(`Période : ${periodLabel}`, { x: 0.6, y: 3.3, w: 8.8, h: 0.35, fontSize: 12, color: 'C7D6DA', fontFace: 'Arial' })
+      title.addText(`Généré le ${new Date().toLocaleString('fr-FR')}`, { x: 0.6, y: 3.6, w: 8.8, h: 0.35, fontSize: 12, color: 'C7D6DA', fontFace: 'Arial' })
+
+      // Slide 2 — Indicateurs clés (barres)
+      const kpiSlide = pres.addSlide()
+      kpiSlide.addText('Indicateurs clés', { x: 0.5, y: 0.3, w: 9, h: 0.5, fontSize: 22, bold: true, color: NAVY, fontFace: 'Arial' })
+      kpiSlide.addChart(
+        pres.ChartType.bar,
+        [{
+          name: 'Total',
+          labels: ['Annonces en attente', 'Annonces en ligne', 'Particuliers', 'Professionnels'],
+          values: [
+            stats.pendingAnnounces,
+            stats.totalOnlineAnnounces,
+            stats.totalParticuliers,
+            stats.totalProfessionnels,
+          ],
+        }],
+        {
+          x: 0.5, y: 1.0, w: 9, h: 4.3,
+          barDir: 'col',
+          chartColors: [TEAL],
+          showLegend: false,
+          showValue: true,
+          dataLabelColor: NAVY,
+          dataLabelFontSize: 11,
+          catAxisLabelColor: GRAY,
+          valAxisLabelColor: GRAY,
+          catAxisLabelFontSize: 10,
+        },
+      )
+
+      // Slide 3 — Particuliers vs Professionnels (répartition)
+      const splitSlide = pres.addSlide()
+      splitSlide.addText('Répartition des comptes', { x: 0.5, y: 0.3, w: 9, h: 0.5, fontSize: 22, bold: true, color: NAVY, fontFace: 'Arial' })
+      splitSlide.addChart(
+        pres.ChartType.pie,
+        [{
+          name: 'Comptes',
+          labels: ['Particuliers', 'Professionnels'],
+          values: [stats.totalParticuliers, stats.totalProfessionnels],
+        }],
+        {
+          x: 1.5, y: 1.0, w: 7, h: 4.3,
+          chartColors: [NAVY, TEAL],
+          showLegend: true,
+          legendPos: 'b',
+          showValue: true,
+          dataLabelColor: 'FFFFFF',
+          dataLabelFontSize: 12,
+        },
+      )
+
+      // Slide 4 — Type de professionnel (par pôle d'activité)
+      const poleRows = activityRows.filter((r) => r.isPole)
+      if (poleRows.length > 0) {
+        const poleSlide = pres.addSlide()
+        poleSlide.addText('Type de professionnel', { x: 0.5, y: 0.3, w: 9, h: 0.5, fontSize: 22, bold: true, color: NAVY, fontFace: 'Arial' })
+        poleSlide.addChart(
+          pres.ChartType.bar,
+          [{
+            name: 'Comptes',
+            labels: poleRows.map((r) => r.label),
+            values: poleRows.map((r) => r.value),
+          }],
+          {
+            x: 0.5, y: 1.0, w: 9, h: 4.3,
+            barDir: 'bar',
+            chartColors: [TEAL],
+            showLegend: false,
+            showValue: true,
+            dataLabelColor: NAVY,
+            dataLabelFontSize: 11,
+            catAxisLabelColor: GRAY,
+            valAxisLabelColor: GRAY,
+            catAxisLabelFontSize: 10,
+          },
+        )
+      }
+
+      await pres.writeFile({ fileName: `dashboard-patrimoine-${todayStr()}.pptx` })
+    } finally {
+      setExporting(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -208,6 +312,9 @@ export default function AdminDashboard() {
           </Button>
           <Button variant="outline" size="sm" onClick={exportPDF} disabled={!stats || exporting !== null} title="Exporter en PDF">
             <FileDown className="h-4 w-4 mr-1.5" /> {exporting === 'pdf' ? 'Export...' : 'PDF'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportPPTX} disabled={!stats || exporting !== null} title="Exporter en PowerPoint (avec graphiques)">
+            <Presentation className="h-4 w-4 mr-1.5" /> {exporting === 'pptx' ? 'Export...' : 'PowerPoint'}
           </Button>
           <Button variant="outline" size="sm" onClick={loadStats} title="Actualiser">
             <RefreshCw className="h-4 w-4" />

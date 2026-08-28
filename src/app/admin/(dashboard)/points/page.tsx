@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search, Pencil, Save, Trash2, Plus } from "lucide-react"
+import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search, Pencil, Save, Trash2, Plus, FileDown, FileSpreadsheet } from "lucide-react"
+import { DATE_PRESETS, todayStr, periodLabel } from "@/lib/datePresets"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -51,6 +52,8 @@ export default function AdminPointsPage() {
   const [commune, setCommune] = useState("")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
+  const [activePreset, setActivePreset] = useState("")
+  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null)
   const [cities, setCities] = useState<any[]>([])
   const [towns, setTowns] = useState<any[]>([])
   const [processing, setProcessing] = useState<number | null>(null)
@@ -220,6 +223,63 @@ export default function AdminPointsPage() {
 
   const pendingCount = purchases.filter(p => p.status === 'PENDING').length
 
+  const applyPreset = (preset: typeof DATE_PRESETS[number]) => {
+    setActivePreset(preset.id); setDateFrom(preset.from()); setDateTo(preset.to())
+  }
+  const clearPeriod = () => { setActivePreset(""); setDateFrom(""); setDateTo("") }
+
+  const exportRows = () => filtered.map((p) => ({
+    compte: p.user.companyName || `${p.user.firstName} ${p.user.lastName}`,
+    type: p.user.userType === 'SOCIETE' ? 'Professionnel' : 'Particulier',
+    offre: p.source === 'BOUTIQUE' ? 'Boutique' : 'Points',
+    pack: packs.find((pk) => pk.kind === p.source && pk.key === p.pack)?.title || p.pack,
+    points: p.points,
+    prix: `${p.price.toLocaleString()} DA`,
+    statut: p.status === 'VALIDATED' ? 'Validée' : p.status === 'REJECTED' ? 'Refusée' : 'En attente',
+    localisation: p.user.location || '',
+    date: new Date(p.createdAt).toLocaleDateString('fr-FR'),
+  }))
+
+  const exportExcel = async () => {
+    setExporting('excel')
+    try {
+      const XLSX = await import('xlsx')
+      const rows = exportRows()
+      const sheet = XLSX.utils.aoa_to_sheet([
+        ['Points & Achats — Patrimoine Immobilier'],
+        [`Période : ${periodLabel(dateFrom, dateTo)}`],
+        [`Généré le ${new Date().toLocaleString('fr-FR')}`],
+        [],
+        ['Compte', 'Type', 'Offre', 'Pack', 'Points', 'Prix', 'Statut', 'Localisation', 'Date'],
+        ...rows.map((r) => [r.compte, r.type, r.offre, r.pack, r.points, r.prix, r.statut, r.localisation, r.date]),
+      ])
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, sheet, 'Points & Achats')
+      XLSX.writeFile(wb, `points-achats-patrimoine-${todayStr()}.xlsx`)
+    } finally { setExporting(null) }
+  }
+
+  const exportPDF = async () => {
+    setExporting('pdf')
+    try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
+      const doc = new jsPDF({ orientation: 'landscape' })
+      doc.setFontSize(16); doc.setTextColor(0, 59, 74)
+      doc.text('Points & Achats — Patrimoine Immobilier', 14, 18)
+      doc.setFontSize(10); doc.setTextColor(120)
+      doc.text(`Période : ${periodLabel(dateFrom, dateTo)}`, 14, 25)
+      doc.text(`Généré le ${new Date().toLocaleString('fr-FR')}`, 14, 30)
+      autoTable(doc, {
+        startY: 36,
+        head: [['Compte', 'Type', 'Offre', 'Pack', 'Points', 'Prix', 'Statut', 'Localisation', 'Date']],
+        body: exportRows().map((r) => [r.compte, r.type, r.offre, r.pack, String(r.points), r.prix, r.statut, r.localisation, r.date]),
+        headStyles: { fillColor: [0, 191, 166] },
+        styles: { fontSize: 8 },
+      })
+      doc.save(`points-achats-patrimoine-${todayStr()}.pdf`)
+    } finally { setExporting(null) }
+  }
+
   return (
     <div>
       {toast && (
@@ -239,6 +299,12 @@ export default function AdminPointsPage() {
               {pendingCount} en attente
             </span>
           )}
+          <button onClick={exportExcel} disabled={exporting !== null} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 disabled:opacity-60">
+            <FileSpreadsheet className="h-4 w-4" /> {exporting === 'excel' ? 'Export...' : 'Excel'}
+          </button>
+          <button onClick={exportPDF} disabled={exporting !== null} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600 disabled:opacity-60">
+            <FileDown className="h-4 w-4" /> {exporting === 'pdf' ? 'Export...' : 'PDF'}
+          </button>
           <button onClick={load} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
             <RefreshCw className="h-4 w-4 text-gray-600" />
           </button>
@@ -287,11 +353,18 @@ export default function AdminPointsPage() {
             </select>
           )}
 
+          <div className="flex items-center gap-1 flex-wrap">
+            <button onClick={clearPeriod} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${!dateFrom && !dateTo ? 'bg-[#00BFA6] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Tout</button>
+            {DATE_PRESETS.map((p) => (
+              <button key={p.id} onClick={() => applyPreset(p)} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${activePreset === p.id ? 'bg-[#00BFA6] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{p.label}</button>
+            ))}
+          </div>
+
           <div className="flex items-center gap-1.5 text-sm text-gray-500">
             <span className="text-xs font-medium">Du</span>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-2 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none" />
+            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setActivePreset("") }} className="px-2 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none" />
             <span className="text-xs font-medium">au</span>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-2 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none" />
+            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setActivePreset("") }} className="px-2 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none" />
           </div>
 
           <div className="bg-white px-3 py-2 rounded-xl border-2 border-gray-200 flex items-center gap-2 flex-1 min-w-[220px]">
@@ -488,7 +561,8 @@ export default function AdminPointsPage() {
             <p className="font-medium">Aucune demande ne correspond aux filtres.</p>
           </div>
         ) : (
-          <>
+          <div className="overflow-x-auto">
+            <div className="min-w-[760px]">
             <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
               <span>#</span><span>Compte</span><span>Pack</span><span>Prix</span><span>Date</span><span>Actions</span>
             </div>
@@ -564,7 +638,8 @@ export default function AdminPointsPage() {
                 )
               })}
             </div>
-          </>
+            </div>
+          </div>
         )}
       </div>
       {!loading && filtered.length > 0 && (

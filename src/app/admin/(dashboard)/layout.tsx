@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, Mail, Star, ChevronDown, BarChart3 } from "lucide-react"
+import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, Mail, Star, ChevronDown, BarChart3, Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -164,6 +164,10 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
   const [adminUser, setAdminUser] = useState<any>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // La navigation ferme le tiroir mobile automatiquement à chaque changement de page
+  useEffect(() => { setSidebarOpen(false) }, [pathname])
 
   const navigation = [
     { name: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
@@ -202,14 +206,36 @@ export default function AdminLayout({
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-100 flex flex-col fixed h-full inset-y-0 z-50">
-        <div className="p-6 border-b border-gray-100">
+    <div className="min-h-screen bg-gray-50 lg:flex">
+      {/* Fond assombri derrière le tiroir mobile — ferme au clic */}
+      {sidebarOpen && (
+        <button
+          aria-label="Fermer le menu"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-[#003B4A]/40 backdrop-blur-[1px] lg:hidden"
+        />
+      )}
+
+      {/* Sidebar — tiroir coulissant sous lg, fixe et toujours visible à partir de lg */}
+      <div
+        className={cn(
+          "w-72 lg:w-64 bg-white border-r border-gray-100 flex flex-col fixed h-full inset-y-0 z-50 transition-transform duration-300 ease-out",
+          "lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <img src="/logo.png" alt="Patrimoine Immobilier" className="h-11 w-auto object-contain" />
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1.5 -mr-1.5 rounded-xl text-gray-400 hover:bg-gray-50 hover:text-[#003B4A]"
+            aria-label="Fermer le menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -242,17 +268,26 @@ export default function AdminLayout({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64 p-8">
-        <header className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-            <div>
-              <p className="text-lg font-bold text-[#003B4A] font-brand">
-                Bonjour{adminUser?.firstName ? `, ${adminUser.firstName}` : ''}
-              </p>
-              <p className="text-xs text-gray-400">
-                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
+      <div className="flex-1 lg:ml-64 p-4 sm:p-6 lg:p-8 min-w-0">
+        <header className="flex items-center justify-between mb-6 lg:mb-8 gap-3 sm:gap-4 flex-wrap">
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden shrink-0 p-2 rounded-xl border border-gray-200 bg-white text-[#003B4A] hover:bg-gray-50"
+                aria-label="Ouvrir le menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="min-w-0">
+                <p className="text-base sm:text-lg font-bold text-[#003B4A] font-brand truncate">
+                  Bonjour{adminUser?.firstName ? `, ${adminUser.firstName}` : ''}
+                </p>
+                <p className="text-xs text-gray-400 hidden sm:block">
+                  {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
+            <div className="flex items-center gap-3 flex-1 justify-end min-w-0 order-3 sm:order-none basis-full sm:basis-auto">
               <GlobalSearch />
               <ProfileMenu adminUser={adminUser} />
             </div>

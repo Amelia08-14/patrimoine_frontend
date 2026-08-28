@@ -2814,7 +2814,7 @@ export default function AnnounceDetailsPage() {
 
                           {/* Chauffage et Climatisation */}
                           {(property.heatingType || property.acType) && (
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {property.heatingType && (
                                       <div className="space-y-2">
                                           <h4 className="text-sm font-bold text-gray-900 mb-2">Chauffage</h4>
@@ -2836,7 +2836,7 @@ export default function AnnounceDetailsPage() {
 
                           {/* Sécurité et Connectivité */}
                           {(securityFeatures.length > 0 || connectivityFeatures.length > 0) && (
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {securityFeatures.length > 0 && (
                                       <div className="space-y-2">
                                           <h4 className="text-sm font-bold text-gray-900 mb-2">Sécurité</h4>

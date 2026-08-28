@@ -3352,7 +3352,7 @@ function DepositPageComponent() {
                     {/* Step 2: Real Estate Type */}
                     {currentStep === 2 && (
                         <div className="w-full max-w-7xl animate-fade-in py-8">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6 justify-items-center">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6 justify-items-center">
                                 {filteredCategories.map((cat) => {
                                     const Icon = IconMap[cat.iconName] || Home
                                     const isSelected = realEstateType === cat.id
@@ -3391,7 +3391,7 @@ function DepositPageComponent() {
                     {/* Step 3: Property Type */}
                     {currentStep === 3 && (
                         <div className="w-full max-w-5xl animate-fade-in py-8">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 justify-items-center">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 justify-items-center">
                                 {filteredPropertyTypes.map((type) => {
                                     const Icon = IconMap[type.iconName] || Home
                                     const isSelected = propertyType === type.id
@@ -3439,7 +3439,7 @@ function DepositPageComponent() {
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Secteur d&apos;activité</label>
                                         <input type="hidden" {...register("industrialSector")} />
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                             {INDUSTRIAL_SECTORS.map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
@@ -4229,7 +4229,7 @@ function DepositPageComponent() {
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Secteur compatible</label>
                                         <input type="hidden" {...register("cfSector")} />
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                             {CF_SECTORS.map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
@@ -4262,7 +4262,7 @@ function DepositPageComponent() {
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Infrastructure &amp; Surfaces
                                 </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (ml)</label>
                                         <input {...register("cfLength")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
@@ -4293,7 +4293,7 @@ function DepositPageComponent() {
                                     <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
                                     Annexes &amp; Commodités
                                 </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
                                     {/* Bureaux */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Bureaux</div>
@@ -4805,7 +4805,7 @@ function DepositPageComponent() {
                                     {/* Exposition */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">Exposition</div>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             {TERRAIN_AGRICOLE_EXPOSITION.map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={e.id} {...register("terrainAgricoleExposition")} className="accent-[#00BFA6] w-4 h-4" />
@@ -5027,7 +5027,7 @@ function DepositPageComponent() {
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Informations Générales &amp; Superficies
                                 </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
                                         <input {...register("immeubleSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
@@ -5487,7 +5487,7 @@ function DepositPageComponent() {
                                 </h2>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
-                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter(item => item.id !== 'barbecue').map((item) => {
                                             const Icon = IconMap[item.icon] || Trees
                                             return (
@@ -5505,7 +5505,7 @@ function DepositPageComponent() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Sécurité</label>
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.security.map(s => {
                                                 const Icon = IconMap[s.icon] || Shield
                                                 return (
@@ -5522,7 +5522,7 @@ function DepositPageComponent() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Connectivité</label>
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                 const Icon = IconMap[c.icon] || Wifi
                                                 return (
@@ -5766,7 +5766,7 @@ function DepositPageComponent() {
                                             <>
                                             <div className="min-w-0">
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     {BUILDING_TYPOLOGY_MODES.map((m) => (
                                                         <label key={m.id} className="cursor-pointer">
                                                             <input type="radio" value={m.id} {...register("buildingTypologyMode")} className="peer sr-only" />
@@ -5829,7 +5829,7 @@ function DepositPageComponent() {
                                                         </div>
                                                         <div className="min-w-0">
                                                             <label className="block text-xs font-bold text-gray-900 mb-1">Surface <span className="text-red-500">*</span></label>
-                                                            <div className="grid grid-cols-2 gap-2 p-1 border-2 border-gray-200 rounded-lg bg-white">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 border-2 border-gray-200 rounded-lg bg-white">
                                                                 {BUILDING_SURFACE_MODES.map((m) => (
                                                                     <label key={m.id} className="cursor-pointer">
                                                                         <input type="radio" value={m.id} {...register("buildingSurfaceMode")} className="peer sr-only" />
@@ -6419,7 +6419,7 @@ function DepositPageComponent() {
                                     {/* Équipements de la cuisine */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">Équipements de la cuisine</label>
-                                        <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 const kitchenRegister = register("kitchenEquipment")
@@ -6471,7 +6471,7 @@ function DepositPageComponent() {
                                 {/* Extérieur Checkboxes */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
-                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                             if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
                                                 return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
@@ -6507,7 +6507,7 @@ function DepositPageComponent() {
                                         {/* Chauffage */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">Chauffage</label>
-                                            <div className="grid grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {HEATING_TYPES.map(h => {
                                                     const Icon = IconMap[h.icon] || Flame
                                                     return (
@@ -6527,7 +6527,7 @@ function DepositPageComponent() {
                                         {/* Climatisation */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">Climatisation</label>
-                                            <div className="grid grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {AC_TYPES.map(a => {
                                                     const Icon = IconMap[a.icon] || Fan
                                                     return (
@@ -6549,7 +6549,7 @@ function DepositPageComponent() {
                                         {/* Sécurité */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">Sécurité</label>
-                                            <div className="grid grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.security.map(s => {
                                                     const Icon = IconMap[s.icon] || Shield
                                                     return (
@@ -6572,7 +6572,7 @@ function DepositPageComponent() {
                                         {/* Connectivité */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">Connectivité</label>
-                                            <div className="grid grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                     const Icon = IconMap[c.icon] || Wifi
                                                     return (
@@ -6709,7 +6709,7 @@ function DepositPageComponent() {
                                 {/* Typologie - Sans chiffres prédéfinis */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">Typologie</label>
-                                    <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         {TYPOLOGIES.map((t) => (
                                             <label key={t.id} className="cursor-pointer">
                                                 <input 
@@ -6728,7 +6728,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Pièces */}
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? "Nombre de bureaux" : "Nombre de chambres"}</label>
                                         <input 
@@ -6756,7 +6756,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Salles de bain et WC */}
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de salles de bain</label>
                                         <input 
@@ -6786,7 +6786,7 @@ function DepositPageComponent() {
                                 {/* Type de salle de bain */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">Type de salle de bain principale</label>
-                                    <div className="grid grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                         {BATHROOM_TYPES.map((type) => {
                                             const Icon = IconMap[type.icon] || Bath
                                             return (
@@ -6832,7 +6832,7 @@ function DepositPageComponent() {
                                 {/* Mesures & Capacité */}
                                 <div className="border-t pt-6">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">Mesures & Capacité</h3>
-                                    <div className="grid grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Surface Terrain (m²)</label>
                                             <input 
@@ -6868,7 +6868,7 @@ function DepositPageComponent() {
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Cuisine</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 const kitchenRegister = register("kitchenEquipment")
@@ -6912,7 +6912,7 @@ function DepositPageComponent() {
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Extérieur</label>
-                                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                                 if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
                                                     return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
@@ -6955,7 +6955,7 @@ function DepositPageComponent() {
                                     {/* Eau/Énergie */}
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">Eau/Énergie</label>
-                                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.utilities.map((item) => {
                                                 const Icon = IconMap[item.icon] || Droplet
                                                 return (
@@ -7065,7 +7065,7 @@ function DepositPageComponent() {
                                 {habFormule === "LOGEMENT_ENTIER" && (
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
                                         <div className="font-bold text-gray-800 text-sm">Détails du logement entier</div>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Nb. chambres</label>
                                                 <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 3" />
@@ -7095,7 +7095,7 @@ function DepositPageComponent() {
                                     <Home className="h-5 w-5 text-[#00BFA6]" />
                                     Type de propriété / Unité
                                 </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                     {HAB_UNIT_TYPES.map((u) => (
                                         <label key={u.id} className="cursor-pointer">
                                             <input type="radio" value={u.id} {...register("habUnitType")} className="peer sr-only" />
@@ -7120,7 +7120,7 @@ function DepositPageComponent() {
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Caractéristiques physiques
                                 </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Surface habitable (m²)</label>
                                         <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 80" />
@@ -7416,7 +7416,7 @@ function DepositPageComponent() {
                                 {/* Confort & Multimédia */}
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">Confort &amp; Multimédia</div>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                                         {HAB_CONFORT.map((c) => (
                                             <label key={c.id} className="cursor-pointer">
                                                 <input type="checkbox" value={c.id} {...register("habConfort")} className="peer sr-only" />
@@ -7555,7 +7555,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {habReceptionMode === "HORAIRES" && (
-                                        <div className="grid grid-cols-2 gap-4 ml-0">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-0">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Ouverte de</label>
                                                 <input {...register("habReceptionStart")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
@@ -7820,7 +7820,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {habPeriodeOuverture === "SAISONNIER" && (
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Début de saison</label>
                                             <input {...register("habDebutSaison")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Juin" />
@@ -8430,7 +8430,7 @@ function DepositPageComponent() {
                                         </div>
 
                                         {selectedFiles.length > 0 && (
-                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                                 {selectedFiles.map((file, idx) => (
                                                     <div key={idx} className={cn(
                                                         "relative aspect-square bg-gray-100 rounded-lg overflow-hidden group border-2 transition-all",
@@ -8564,7 +8564,7 @@ function DepositPageComponent() {
                                                         <div 
                                                             ref={provided.innerRef}
                                                             {...provided.droppableProps}
-                                                            className="grid grid-cols-2 md:grid-cols-4 gap-4 min-h-[120px]"
+                                                            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 min-h-[120px]"
                                                         >
                                                             {category.photos.map((photo, index) => {
                                                                 const isSelected = selectedPhotos.includes(photo);

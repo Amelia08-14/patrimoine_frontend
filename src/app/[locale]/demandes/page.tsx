@@ -113,7 +113,7 @@ export default function DemandesPage() {
                     <p className="text-gray-600 text-sm leading-relaxed line-clamp-4">{r.comment}</p>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 border-t border-gray-50 pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 border-t border-gray-50 pt-4">
                     {(r.minBudget || r.maxBudget) && (
                       <div className="flex items-center gap-2">
                         <Wallet className="h-4 w-4 text-[#00BFA6] shrink-0" />

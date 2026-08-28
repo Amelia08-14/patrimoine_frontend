@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, Suspense, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff } from "lucide-react"
+import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff, FileDown, FileSpreadsheet } from "lucide-react"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
+import { PeriodFilterBar } from "@/components/admin/PeriodFilterBar"
+import { DATE_PRESETS, todayStr, periodLabel } from "@/lib/datePresets"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -56,6 +58,15 @@ function AdminAnnouncesContent() {
   const [transactionFilter, setTransactionFilter] = useState<string>("ALL")
   const [accountTypeFilter, setAccountTypeFilter] = useState<"ALL" | "PARTICULIER" | "SOCIETE">("ALL")
   const [activityPoleFilter, setActivityPoleFilter] = useState<string>("ALL")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [activePreset, setActivePreset] = useState("")
+  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null)
+
+  const applyPreset = (preset: typeof DATE_PRESETS[number]) => {
+    setActivePreset(preset.id); setDateFrom(preset.from()); setDateTo(preset.to())
+  }
+  const clearPeriod = () => { setActivePreset(""); setDateFrom(""); setDateTo("") }
 
   useEffect(() => {
     fetch(`${API_URL}/cities`).then((r) => r.json()).then(setCities).catch(() => {})
@@ -73,6 +84,8 @@ function AdminAnnouncesContent() {
       if (search) params.set('search', search)
       if (wilaya) params.set('wilaya', wilaya)
       if (commune) params.set('commune', commune)
+      if (dateFrom) params.set('from', dateFrom)
+      if (dateTo) params.set('to', dateTo)
       const response = await fetch(`${API_URL}/admin/announces?${params.toString()}`, {
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -90,7 +103,7 @@ function AdminAnnouncesContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [search, wilaya, commune])
+  }, [search, wilaya, commune, dateFrom, dateTo])
 
   useEffect(() => {
     fetchAnnounces()
@@ -196,6 +209,58 @@ function AdminAnnouncesContent() {
 
   const pendingCount = announces.filter(a => a.status === 'WAITING_VALIDATION').length
 
+  const STATUS_LABELS: Record<string, string> = { VALIDATED: 'Validée', WAITING_VALIDATION: 'En attente', REJECTED: 'Rejetée', DRAFT: 'Brouillon' }
+  const exportRows = () => filtered.map((a) => ({
+    reference: a.reference,
+    titre: a.title || a.property?.propertyType || 'Bien immobilier',
+    type: a.type === 'SALE' ? 'Vente' : 'Location',
+    prix: a.price != null ? `${a.price.toLocaleString()} DZD` : '',
+    annonceur: a.user?.companyName || `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim(),
+    localisation: a.property?.address?.town?.nameFr || a.property?.address?.street || '',
+    statut: STATUS_LABELS[a.status] || a.status,
+    creeLe: new Date(a.createdAt).toLocaleDateString('fr-FR'),
+  }))
+
+  const exportExcel = async () => {
+    setExporting('excel')
+    try {
+      const XLSX = await import('xlsx')
+      const rows = exportRows()
+      const sheet = XLSX.utils.aoa_to_sheet([
+        ['Annonces — Patrimoine Immobilier'],
+        [`Période : ${periodLabel(dateFrom, dateTo)}`],
+        [`Généré le ${new Date().toLocaleString('fr-FR')}`],
+        [],
+        ['Référence', 'Titre', 'Type', 'Prix', 'Annonceur', 'Localisation', 'Statut', 'Créée le'],
+        ...rows.map((r) => [r.reference, r.titre, r.type, r.prix, r.annonceur, r.localisation, r.statut, r.creeLe]),
+      ])
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, sheet, 'Annonces')
+      XLSX.writeFile(wb, `annonces-patrimoine-${todayStr()}.xlsx`)
+    } finally { setExporting(null) }
+  }
+
+  const exportPDF = async () => {
+    setExporting('pdf')
+    try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
+      const doc = new jsPDF({ orientation: 'landscape' })
+      doc.setFontSize(16); doc.setTextColor(0, 59, 74)
+      doc.text('Annonces — Patrimoine Immobilier', 14, 18)
+      doc.setFontSize(10); doc.setTextColor(120)
+      doc.text(`Période : ${periodLabel(dateFrom, dateTo)}`, 14, 25)
+      doc.text(`Généré le ${new Date().toLocaleString('fr-FR')}`, 14, 30)
+      autoTable(doc, {
+        startY: 36,
+        head: [['Référence', 'Titre', 'Type', 'Prix', 'Annonceur', 'Localisation', 'Statut', 'Créée le']],
+        body: exportRows().map((r) => [r.reference, r.titre, r.type, r.prix, r.annonceur, r.localisation, r.statut, r.creeLe]),
+        headStyles: { fillColor: [0, 191, 166] },
+        styles: { fontSize: 8 },
+      })
+      doc.save(`annonces-patrimoine-${todayStr()}.pdf`)
+    } finally { setExporting(null) }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -208,10 +273,25 @@ function AdminAnnouncesContent() {
           </h1>
           <p className="text-gray-500">Examinez, validez ou rejetez les annonces publiées.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchAnnounces} title="Actualiser">
-            <RefreshCw className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportExcel} disabled={exporting !== null} title="Exporter en Excel">
+            <FileSpreadsheet className="h-4 w-4 mr-1.5" /> {exporting === 'excel' ? 'Export...' : 'Excel'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportPDF} disabled={exporting !== null} title="Exporter en PDF">
+            <FileDown className="h-4 w-4 mr-1.5" /> {exporting === 'pdf' ? 'Export...' : 'PDF'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchAnnounces} title="Actualiser">
+              <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+
+      <PeriodFilterBar
+        dateFrom={dateFrom} dateTo={dateTo} activePreset={activePreset}
+        onApplyPreset={applyPreset} onClear={clearPeriod}
+        onChangeFrom={(v) => { setDateFrom(v); setActivePreset("") }}
+        onChangeTo={(v) => { setDateTo(v); setActivePreset("") }}
+      />
 
       {/* Filtres */}
       <div className="flex flex-wrap items-center gap-2">

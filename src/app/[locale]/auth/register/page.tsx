@@ -404,7 +404,7 @@ export default function RegisterPage() {
             
             {/* --- FORMULAIRE PARTICULIER --- */}
             {userType === "PARTICULIER" && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <input
                     {...register("firstName")}
@@ -428,7 +428,7 @@ export default function RegisterPage() {
             {userType === "SOCIETE" && (
               <div className="space-y-6">
                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-4 md:gap-y-8 md:gap-x-6 justify-items-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-4 md:gap-y-8 md:gap-x-6 justify-items-center">
                       {ACTIVITY_FAMILIES.map((family) => {
                         const Icon = family.icon
                         const isActive = activityFamily === family.id
@@ -529,7 +529,7 @@ export default function RegisterPage() {
                    {errors.position && <p className="text-red-500 text-xs pl-1">{errors.position.message}</p>}
                  </fieldset>
 
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="space-y-1">
                      <div className="relative">
                        <select
@@ -607,7 +607,7 @@ export default function RegisterPage() {
               </div>
               {errors.phone && <p className="text-red-500 text-xs pl-1">{errors.phone.message}</p>}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-[#00BFA6]" />

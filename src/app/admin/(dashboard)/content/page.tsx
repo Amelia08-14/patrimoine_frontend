@@ -290,7 +290,7 @@ function PartnerLogo({ logoUrl, name, size = "h-16 w-16" }: { logoUrl: string | 
   return (
     <div className={`${size} rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0`}>
       {logoUrl ? (
-        <img src={`${API_URL}${logoUrl}`} alt={name} className="h-full w-full object-contain p-1.5" />
+        <img src={/^(https?:|blob:|data:)/.test(logoUrl) ? logoUrl : `${API_URL}${logoUrl}`} alt={name} className="h-full w-full object-contain p-1.5" />
       ) : (
         <div className="flex flex-col items-center gap-1 text-gray-300">
           <ImageOff className="h-5 w-5" />
@@ -312,6 +312,10 @@ function PartnersTab() {
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL")
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>("ALL")
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editUrl, setEditUrl] = useState("")
+  const [editLogo, setEditLogo] = useState<File | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -344,6 +348,27 @@ function PartnersTab() {
     fd.append('subCategory', subCategory)
     await fetch(`${API_URL}/admin/content/partners/${p.id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
     await load()
+  }
+
+  const startEdit = (p: any) => {
+    setEditingId(p.id)
+    setEditName(p.name)
+    setEditUrl(p.websiteUrl || "")
+    setEditLogo(null)
+  }
+
+  const saveEdit = async (p: any) => {
+    if (!editName.trim()) return
+    setSaving(true)
+    try {
+      const fd = new FormData()
+      fd.append('name', editName.trim())
+      fd.append('websiteUrl', editUrl.trim())
+      if (editLogo) fd.append('logo', editLogo)
+      await fetch(`${API_URL}/admin/content/partners/${p.id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
+      setEditingId(null)
+      await load()
+    } finally { setSaving(false) }
   }
 
   const remove = async (id: number) => {
@@ -403,25 +428,36 @@ function PartnersTab() {
           const isEditing = editingId === p.id
           return (
             <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col items-center text-center gap-2.5 hover:shadow-sm transition-shadow">
-              <PartnerLogo logoUrl={p.logoUrl} name={p.name} />
-              <p className="font-bold text-gray-900 text-sm">{p.name}</p>
-              {p.websiteUrl && <p className="text-xs text-gray-400 truncate max-w-full">{p.websiteUrl}</p>}
-
               {!isEditing ? (
-                <div className="flex flex-col items-center gap-1">
-                  {catDef ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1 bg-[#00BFA6]/10 text-[#00BFA6]">
-                      <catDef.icon className="h-3 w-3" /> {POLE_SHORT_LABELS[p.category] || catDef.label}
-                    </span>
-                  ) : (
-                    <span className="text-[11px] font-bold rounded-full px-2.5 py-1 bg-gray-100 text-gray-400">Sans catégorie</span>
-                  )}
-                  {p.subCategory && (
-                    <span className="text-[10px] text-gray-400">{SUB_CATEGORY_LABELS[p.subCategory] || p.subCategory}</span>
-                  )}
-                </div>
+                <>
+                  <PartnerLogo logoUrl={p.logoUrl} name={p.name} />
+                  <p className="font-bold text-gray-900 text-sm">{p.name}</p>
+                  {p.websiteUrl && <p className="text-xs text-gray-400 truncate max-w-full">{p.websiteUrl}</p>}
+                  <div className="flex flex-col items-center gap-1">
+                    {catDef ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1 bg-[#00BFA6]/10 text-[#00BFA6]">
+                        <catDef.icon className="h-3 w-3" /> {POLE_SHORT_LABELS[p.category] || catDef.label}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold rounded-full px-2.5 py-1 bg-gray-100 text-gray-400">Sans catégorie</span>
+                    )}
+                    {p.subCategory && (
+                      <span className="text-[10px] text-gray-400">{SUB_CATEGORY_LABELS[p.subCategory] || p.subCategory}</span>
+                    )}
+                  </div>
+                </>
               ) : (
-                <div className="w-full space-y-2 text-left bg-gray-50 rounded-xl p-3">
+                <div className="w-full space-y-2.5 text-left bg-gray-50 rounded-xl p-3">
+                  <div className="flex items-center gap-3">
+                    <PartnerLogo logoUrl={editLogo ? URL.createObjectURL(editLogo) : p.logoUrl} name={editName || p.name} size="h-12 w-12" />
+                    <label className="flex-1 flex items-center gap-2 text-xs border border-gray-200 rounded-lg p-2 bg-white cursor-pointer">
+                      <Upload className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <span className="truncate">{editLogo ? editLogo.name : "Changer le logo"}</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => setEditLogo(e.target.files?.[0] || null)} />
+                    </label>
+                  </div>
+                  <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nom du partenaire" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900" />
+                  <input value={editUrl} onChange={(e) => setEditUrl(e.target.value)} placeholder="Site web (optionnel)" className="w-full text-xs outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900" />
                   <ChipRow
                     options={PARTNER_CATEGORIES.map(c => ({ id: c.id, label: POLE_SHORT_LABELS[c.id], icon: c.icon }))}
                     value={p.category || ""}
@@ -436,11 +472,17 @@ function PartnersTab() {
                       activeClassName="bg-[#003B4A] border-[#003B4A] text-white"
                     />
                   )}
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => saveEdit(p)} disabled={saving} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#00BFA6] text-white rounded-lg text-xs font-bold hover:bg-[#00908A] disabled:opacity-60">
+                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Enregistrer
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="px-3 py-1.5 bg-white border border-gray-200 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100">Annuler</button>
+                  </div>
                 </div>
               )}
 
               <div className="flex items-center gap-2 mt-1">
-                <button onClick={() => setEditingId(isEditing ? null : p.id)} className="p-1.5 rounded-lg hover:bg-gray-100" title="Modifier la catégorie">
+                <button onClick={() => (isEditing ? setEditingId(null) : startEdit(p))} className="p-1.5 rounded-lg hover:bg-gray-100" title="Modifier le partenaire">
                   <Pencil className={`h-4 w-4 ${isEditing ? 'text-[#00BFA6]' : 'text-gray-400'}`} />
                 </button>
                 <button onClick={() => togglePublished(p)} className="p-1.5 rounded-lg hover:bg-gray-100" title={p.published ? 'Publié' : 'Masqué'}>

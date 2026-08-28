@@ -44,8 +44,8 @@ export default function NotificationsPage() {
             </div>
           </div>
 
-          <div className="flex gap-6">
-            <aside className="w-[330px] shrink-0 rounded-[26px] border border-[#dfe6eb] bg-[#dfeaf3] p-5 text-[#1f2937]">
+          <div className="flex flex-col lg:flex-row gap-6">
+            <aside className="w-full lg:w-[330px] shrink-0 rounded-[26px] border border-[#dfe6eb] bg-[#dfeaf3] p-5 text-[#1f2937]">
               <button className="mb-5 flex w-full items-center gap-3 rounded-[18px] border border-[#cfe0ec] bg-[#cfe8f5] px-4 py-4 text-left text-[16px] font-medium shadow-sm">
                 <PencilLine className="h-5 w-5" />
                 Nouveau message
