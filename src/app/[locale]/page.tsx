@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, CheckCircle, Heart, MapPin, BedDouble, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, Smartphone, ClipboardList, HandHeart } from "lucide-react"
+import { ArrowRight, CheckCircle, Heart, MapPin, BedDouble, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, Smartphone, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
@@ -318,6 +318,104 @@ const CategoryCarousel = ({ categories, onCategoryClick }: { categories: any[], 
   )
 }
 
+const BUDGET_RANGES = [
+  { id: "0-5000000", label: "< 5M DA", min: "", max: "5000000" },
+  { id: "5000000-15000000", label: "5M – 15M DA", min: "5000000", max: "15000000" },
+  { id: "15000000-30000000", label: "15M – 30M DA", min: "15000000", max: "30000000" },
+  { id: "30000000-", label: "> 30M DA", min: "30000000", max: "" },
+] as const
+
+// Barre de recherche du hero — réellement câblée vers /announces (mêmes paramètres que la page
+// de recherche : transactionType, realEstateCategory, wilaya, minPrice/maxPrice, nbPieces).
+function HeroSearchBar() {
+  const router = useRouter();
+  const t = useTranslations("HomePage");
+  const tc = useTranslations("Categories");
+  const [transactionType, setTransactionType] = useState<"" | "SALE" | "RENTAL">("")
+  const [category, setCategory] = useState("")
+  const [wilaya, setWilaya] = useState("")
+  const [budget, setBudget] = useState("")
+  const [pieces, setPieces] = useState("")
+  const [cities, setCities] = useState<{ id: number; code: number; nameFr: string }[]>([])
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    fetch(`${apiUrl}/cities`).then((r) => r.json()).then((d) => setCities(Array.isArray(d) ? d : [])).catch(() => {})
+  }, [])
+
+  const submit = () => {
+    const params = new URLSearchParams()
+    if (transactionType) params.set('transactionType', transactionType)
+    if (category) params.set('realEstateCategory', category)
+    if (wilaya) params.set('wilaya', wilaya)
+    if (pieces) params.set('nbPieces', pieces)
+    const range = BUDGET_RANGES.find((b) => b.id === budget)
+    if (range) {
+      if (range.min) params.set('minPrice', range.min)
+      if (range.max) params.set('maxPrice', range.max)
+    }
+    router.push(`/announces?${params.toString()}`)
+  }
+
+  return (
+    <div className="w-full bg-white rounded-[26px] shadow-xl shadow-black/[0.06] border border-gray-100 p-2 sm:p-2.5 flex flex-col lg:flex-row items-stretch gap-2">
+      <div className="flex bg-gray-50 rounded-2xl p-1 shrink-0">
+        {([{ id: "SALE", label: t("searchBuy") }, { id: "RENTAL", label: t("searchRent") }] as const).map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => setTransactionType(transactionType === o.id ? "" : (o.id as "SALE" | "RENTAL"))}
+            className={cn(
+              "px-4 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
+              transactionType === o.id ? "bg-[#003B4A] text-white shadow-sm" : "text-gray-500 hover:text-[#003B4A]"
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 flex items-center gap-2 px-3 border-y lg:border-y-0 lg:border-x border-gray-100 min-w-0">
+        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+        <select value={wilaya} onChange={(e) => setWilaya(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
+          <option value="">{t("searchWilayaPlaceholder")}</option>
+          {cities.map((c) => <option key={c.id} value={c.code}>{c.nameFr}</option>)}
+        </select>
+      </div>
+
+      <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 min-w-0">
+        <Building2 className="h-4 w-4 text-gray-400 shrink-0" />
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
+          <option value="">{t("searchCategoryPlaceholder")}</option>
+          {REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).map((c) => (
+            <option key={c.id} value={c.id}>{tc(c.id)}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 min-w-0">
+        <Coins className="h-4 w-4 text-gray-400 shrink-0" />
+        <select value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
+          <option value="">{t("searchBudgetPlaceholder")}</option>
+          {BUDGET_RANGES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
+        </select>
+      </div>
+
+      <div className="flex-1 flex items-center gap-2 px-3 min-w-0">
+        <BedDouble className="h-4 w-4 text-gray-400 shrink-0" />
+        <select value={pieces} onChange={(e) => setPieces(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
+          <option value="">{t("searchPiecesPlaceholder")}</option>
+          {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}+</option>)}
+        </select>
+      </div>
+
+      <Button onClick={submit} className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-2xl px-6 py-6 lg:py-0 text-sm font-extrabold shrink-0">
+        <Search className="h-4 w-4 mr-2" /> {t("searchButton")}
+      </Button>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("HomePage");
@@ -423,110 +521,145 @@ export default function HomePage() {
     "TERRAIN_FONCIER",
   ];
 
+  // Comptes réels par domaine (toutes les annonces en ligne, pas seulement celles en vedette)
+  // pour la rangée "Explorer par type de bien".
+  const countsByCategory = announces.reduce((acc: Record<string, number>, announce: any) => {
+    let pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType?.toUpperCase());
+    if (!pType) pType = PROPERTY_TYPES.find(t => t.label === announce.property?.propertyType);
+    if (pType) acc[pType.categoryId] = (acc[pType.categoryId] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Annonce réelle mise en avant dans la fiche flottante du hero — jamais de donnée fictive.
+  const heroPreviewAnnounce = filteredAnnounces[0] || announces[0];
+  const heroPreviewImage = heroPreviewAnnounce?.property?.images?.find((img: any) => img.isMain) || heroPreviewAnnounce?.property?.images?.[0];
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const getImg = (url: string) => (url?.startsWith('http') ? url : `${apiUrl}${url}`);
+
   return (
     <div className="flex flex-col min-h-screen font-sans bg-gray-50">
 
-      {/* HERO SECTION */}
-      <div className="relative h-[480px] sm:h-[520px] lg:h-[560px] w-full group">
-        <div className="absolute inset-0 overflow-hidden bg-[#04222b]">
+      {/* HERO SECTION — plein écran, photo edge-to-edge avec fondu texte/image */}
+      <div className="bg-white">
+        <div className="relative h-[560px] sm:h-[600px] lg:h-[660px] overflow-hidden group">
+          {/* Photo plein cadre, rotation par catégorie */}
           {activeSlides.map((slide, index) => (
-            <div
+            <img
               key={slide.id === -1 ? `fallback-${slide.categoryId}` : slide.id}
-              className={cn(
-                "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-                index === currentSlide ? "opacity-100" : "opacity-0"
-              )}
-            >
-              <img
-                src={slide.id === -1 ? slide.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${slide.imageUrl}`}
-                alt={slide.title || (slide.categoryId ? tc(slide.categoryId) : "")}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            </div>
+              src={slide.id === -1 ? slide.imageUrl : `${apiUrl}${slide.imageUrl}`}
+              alt={slide.title || (slide.categoryId ? tc(slide.categoryId) : "")}
+              className={cn("absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out", index === currentSlide ? "opacity-100" : "opacity-0")}
+            />
           ))}
-          {/* Voile de marque — navy en dégradé, constant quelle que soit la catégorie affichée */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#022229] via-[#003B4A]/85 to-[#003B4A]/40" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#022229]/95 via-[#003B4A]/50 to-transparent" />
 
-          {/* Signature : voûte inspirée de l'architecture algérienne, détourant le bas du hero */}
-          <svg className="absolute -bottom-px left-0 w-full h-[70px] sm:h-[90px] text-gray-50" viewBox="0 0 1200 90" preserveAspectRatio="none" fill="currentColor" aria-hidden="true">
-            <path d="M0,90 L0,55 C120,55 130,10 240,10 C350,10 360,55 480,55 C600,55 600,10 720,10 C840,10 850,55 960,55 C1080,55 1090,10 1200,10 L1200,90 Z" />
-          </svg>
+          {/* Fondu : vert/navy de la charte plein sur le texte, dégradé vers la photo à droite */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#003B4A] via-[#003B4A]/85 to-[#00BFA6]/10 sm:via-[#003B4A]/80 sm:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#00BFA6]/40 via-transparent to-transparent" />
+          {/* Léger fondu bas pour la transition vers la barre de recherche */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#003B4A]/70 to-transparent" />
 
-          <button onClick={prevSlide} aria-label="Catégorie précédente" className="absolute left-4 sm:left-8 top-[42%] -translate-y-1/2 bg-white/10 hover:bg-white/25 backdrop-blur-md p-2.5 sm:p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-20">
-            <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
+          <button onClick={prevSlide} aria-label="Catégorie précédente" className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full text-[#003B4A] transition-all opacity-0 group-hover:opacity-100 z-20">
+            <ChevronLeft className="h-5 w-5" />
           </button>
-          <button onClick={nextSlide} aria-label="Catégorie suivante" className="absolute right-4 sm:right-8 top-[42%] -translate-y-1/2 bg-white/10 hover:bg-white/25 backdrop-blur-md p-2.5 sm:p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-20">
-            <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
+          <button onClick={nextSlide} aria-label="Catégorie suivante" className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full text-[#003B4A] transition-all opacity-0 group-hover:opacity-100 z-20">
+            <ChevronRight className="h-5 w-5" />
           </button>
-        </div>
+          {activeSlideCategory && (
+            <button
+              onClick={() => handleCategoryClick(activeSlideCategory.id)}
+              className="absolute top-6 right-6 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1.5 pr-3.5 py-1.5 text-xs font-bold text-[#003B4A] hover:bg-white transition-colors z-20"
+            >
+              {(() => {
+                const Icon = getIcon(activeSlideCategory.iconName)
+                return <><span className="h-6 w-6 rounded-full bg-[#00BFA6]/15 flex items-center justify-center"><Icon className="h-3.5 w-3.5 text-[#00BFA6]" /></span>{tc(activeSlideCategory.id)}</>
+              })()}
+            </button>
+          )}
 
-        {/* Contenu : titre + badge catégorie vivant */}
-        <div className="relative h-full w-full flex flex-col justify-center pb-10 sm:pb-14">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 text-white/80 text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
+          {/* Contenu texte — posé sur le fondu, aligné à gauche */}
+          <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 flex items-center">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
                 {t("heroEyebrow")}
               </div>
               {activeSlide?.title ? (
-                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.4rem] leading-[1.08] text-white">
+                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.2rem] leading-[1.1] text-white">
                   {activeSlide.title}
                 </h1>
               ) : (
-                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.4rem] leading-[1.08] text-white">
+                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.2rem] leading-[1.1] text-white">
                   {t("heroTitle")}<br />
-                  <span className="text-[#5EEAD4]">{t("heroTitleAccent")}</span>
+                  <span className="text-[#00BFA6]">{t("heroTitleAccent")}</span>
                 </h1>
               )}
-              <p className="mt-5 text-white/80 text-base sm:text-lg leading-relaxed max-w-xl">
+              <p className="mt-5 text-white/70 text-base sm:text-lg leading-relaxed max-w-lg">
                 {activeSlide?.subtitle || t("heroSubtitle")}
               </p>
 
-              {activeSlideCategory && (
-                <button
-                  onClick={() => handleCategoryClick(activeSlideCategory.id)}
-                  className="mt-7 inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md rounded-2xl pl-2 pr-4 py-2 transition-colors"
-                >
-                  {(() => {
-                    const Icon = getIcon(activeSlideCategory.iconName)
-                    return (
-                      <>
-                        <span className="h-8 w-8 rounded-xl bg-[#00BFA6]/20 flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-[#5EEAD4]" />
-                        </span>
-                        <span className="text-white text-sm font-bold">{tc(activeSlideCategory.id)}</span>
-                        <ArrowRight className="h-4 w-4 text-white/60" />
-                      </>
-                    )
-                  })()}
-                </button>
-              )}
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link href="/announces">
+                  <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold">
+                    {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/faq">
+                  <Button variant="outline" className="rounded-full px-7 py-6 text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20">
+                    {t("howItWorks")}
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Signaux de confiance réels — pas d'avatars ni de compteurs fictifs */}
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+                <span className="flex items-center gap-2 text-sm font-semibold text-white/80">
+                  <ShieldCheck className="h-4 w-4 text-[#00BFA6]" /> {t("whyVerifiedTitle")}
+                </span>
+                <span className="flex items-center gap-2 text-sm font-semibold text-white/80">
+                  <Globe2 className="h-4 w-4 text-[#00BFA6]" /> {t("statWilayas")}
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Fiche d'une annonce réelle — flottante sur la photo, jamais de mockup fictif */}
+          {heroPreviewAnnounce && (
+            <Link
+              href={`/announces/${heroPreviewAnnounce.id}`}
+              className="hidden sm:flex items-center gap-3 absolute right-6 lg:right-12 bottom-10 sm:bottom-14 bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 p-3 pr-5 max-w-[280px] hover:shadow-2xl transition-shadow z-20"
+            >
+              <div className="h-12 w-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                {heroPreviewImage ? (
+                  <img src={getImg(heroPreviewImage.url)} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-gray-300"><HomeIcon className="h-5 w-5" /></div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] font-bold text-gray-900 truncate">{heroPreviewAnnounce.title || tc('RESIDENTIEL')}</p>
+                <p className="text-[11px] text-gray-400 truncate">{heroPreviewAnnounce.property?.address?.town?.city?.nameFr || ""}</p>
+                <p className="text-[13px] font-bold text-[#00BFA6] mt-0.5">{new Intl.NumberFormat('fr-DZ').format(heroPreviewAnnounce.price)} DA</p>
+              </div>
+            </Link>
+          )}
+        </div>
+
+        {/* Barre de recherche — chevauche le bas du hero */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 relative -mt-8 z-10">
+          <HeroSearchBar />
         </div>
       </div>
 
-      {/* Chiffres clés — donnée réelle, pas d'avis ou de notes fabriqués */}
-      <div className="bg-gray-50 pt-6 sm:pt-8 pb-4">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-3 divide-x divide-gray-200">
-          {[
-            { value: `${announces.length || 0}+`, label: t("statListings") },
-            { value: "58", label: t("statWilayas") },
-            { value: String(REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).length), label: t("statCategories") },
-          ].map((s) => (
-            <div key={s.label} className="text-center px-2">
-              <div className="font-brand text-2xl sm:text-3xl text-[#003B4A]">{s.value}</div>
-              <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-1">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* CATÉGORIES EN BULLES — plus de bandeau autour, juste les pastilles */}
-      <div className="bg-gray-50 pb-8">
-        <div className="max-w-7xl mx-auto px-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          <div className="flex gap-2 items-center justify-center min-w-max mx-auto w-fit">
+      {/* EXPLORER PAR TYPE DE BIEN — comptes réels */}
+      <div className="bg-gray-50 pt-14 lg:pt-16 pb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
+          <div className="flex items-end justify-between gap-4 mb-6">
+            <h2 className="font-brand text-2xl text-[#003B4A]">{t("exploreTypesTitle")}</h2>
+            <Link href="/announces" className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
+              {t("viewAllListings")} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {orderedCategoryIds.map(catId => {
               const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
               if (!catDef) return null
@@ -535,10 +668,13 @@ export default function HomePage() {
                 <Link
                   key={catId}
                   href={`/announces?realEstateCategory=${catId}`}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] whitespace-nowrap transition-colors shrink-0"
+                  className="flex flex-col items-center text-center gap-2.5 bg-white border border-gray-100 rounded-2xl p-5 hover:border-[#00BFA6] hover:shadow-sm transition-all"
                 >
-                  <Icon className={`h-4 w-4 ${getIconColorById(catId)}`} />
-                  {tc(catId)}
+                  <span className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center">
+                    <Icon className="h-5 w-5 text-[#00BFA6]" />
+                  </span>
+                  <span className="text-sm font-bold text-gray-800">{tc(catId)}</span>
+                  <span className="text-[11px] text-gray-400 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
                 </Link>
               )
             })}
@@ -670,59 +806,136 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NOS PARTENAIRES — défilement continu, n'apparaît que s'il y a des partenaires publiés */}
+      {/* NOS PARTENAIRES — défilement continu confiné au cadre du titre, n'apparaît que s'il y a des partenaires publiés */}
       {partners.length > 0 && (
-        <section className="py-16 sm:py-20 bg-gray-50 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 flex items-end justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="font-brand text-3xl text-[#003B4A]">{t("partnersSectionTitle")}</h2>
-              <p className="text-gray-500 mt-2">{t("partnersSectionSubtitle")}</p>
+        <section className="py-16 sm:py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="font-brand text-3xl text-[#003B4A]">{t("partnersSectionTitle")}</h2>
+                <p className="text-gray-500 mt-2">{t("partnersSectionSubtitle")}</p>
+              </div>
+              <Link href="/partenaires" className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
+                {t("partnersSeeAll")} <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-            <Link href="/partenaires" className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
-              {t("partnersSeeAll")} <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none" />
-            <div className="flex w-max animate-marquee">
-              {[...partners, ...partners].map((p, i) => (
-                <div key={`${p.id}-${i}`} className="w-40 sm:w-48 shrink-0 flex items-center justify-center px-6">
-                  {p.logoUrl ? (
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${p.logoUrl}`}
-                      alt={p.name}
-                      className="h-12 max-w-full object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all"
-                    />
-                  ) : (
-                    <span className="text-gray-400 font-bold text-sm text-center">{p.name}</span>
-                  )}
-                </div>
-              ))}
+            <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white py-10">
+              <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+              <div className="flex w-max animate-marquee">
+                {[...partners, ...partners, ...partners, ...partners].map((p, i) => (
+                  <div key={`${p.id}-${i}`} className="w-52 sm:w-64 shrink-0 flex items-center justify-center px-8">
+                    {p.logoUrl ? (
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${p.logoUrl}`}
+                        alt={p.name}
+                        className="h-20 sm:h-24 max-w-full object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all"
+                      />
+                    ) : (
+                      <span className="text-gray-400 font-bold text-sm text-center">{p.name}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* APPLICATION MOBILE — pas de capture réelle à ce stade, mockup honnête plutôt qu'une fausse image */}
+      {/* APPLICATION MOBILE — capture réelle de l'app (public/app_mobile.png) */}
       <section className="py-16 sm:py-20 bg-[#022229] relative overflow-hidden">
         <div className="absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-[#00BFA6]/[0.06] blur-3xl" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className="absolute -right-16 top-0 h-80 w-80 rounded-full bg-[#00BFA6]/[0.05] blur-3xl" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-8 items-center">
+          {/* Colonne texte */}
           <div className="order-2 md:order-1 text-center md:text-left">
-            <h2 className="font-brand text-3xl text-white mb-4">{t("mobileAppTitle")}</h2>
-            <p className="text-white/60 leading-relaxed max-w-md mx-auto md:mx-0">{t("mobileAppDesc")}</p>
-          </div>
-          <div className="order-1 md:order-2 flex justify-center">
-            <div className="w-[220px] h-[440px] rounded-[36px] border-[6px] border-white/15 bg-white/[0.03] p-3 shadow-2xl">
-              <div className="h-full w-full rounded-[24px] bg-gradient-to-b from-[#003B4A] to-[#022229] p-4 flex flex-col gap-3">
-                <div className="h-2 w-16 rounded-full bg-white/15 mx-auto" />
-                <div className="mt-4 h-20 rounded-2xl bg-white/[0.06] border border-white/10" />
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="h-16 rounded-xl bg-white/[0.06] border border-white/10" />
-                  <div className="h-16 rounded-xl bg-white/[0.06] border border-white/10" />
+            <div className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
+              {t("heroEyebrow")}
+            </div>
+            <h2 className="font-brand text-[2rem] sm:text-4xl leading-[1.15] text-white mb-4">
+              {t("mobileAppHeadline")}<br />
+              <span className="text-[#00BFA6]">{t("mobileAppHeadlineAccent")}</span>
+            </h2>
+            <p className="text-white/60 leading-relaxed max-w-md mx-auto md:mx-0 mb-8">{t("heroSubtitle")}</p>
+
+            <div className="flex flex-col gap-4 max-w-sm mx-auto md:mx-0">
+              <div className="flex items-start gap-3">
+                <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><ShieldCheck className="h-4.5 w-4.5 text-[#00BFA6]" /></span>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-white">{t("whyVerifiedTitle")}</p>
+                  <p className="text-xs text-white/50">{t("whyVerifiedDesc")}</p>
                 </div>
-                <div className="h-16 rounded-xl bg-[#00BFA6]/15 border border-[#00BFA6]/20" />
-                <div className="h-16 rounded-xl bg-white/[0.06] border border-white/10" />
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Globe2 className="h-4.5 w-4.5 text-[#00BFA6]" /></span>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-white">{t("whyCoverageTitle")}</p>
+                  <p className="text-xs text-white/50">{t("whyCoverageDesc")}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Users className="h-4.5 w-4.5 text-[#00BFA6]" /></span>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-white">{t("whyProfilesTitle")}</p>
+                  <p className="text-xs text-white/50">{t("whyProfilesDesc")}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Badges App Store / Google Play — application pas encore publiée, badges non cliquables */}
+            <div className="mt-8 flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <div className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
+                <Apple className="h-6 w-6 text-white" />
+                <div className="text-left leading-tight">
+                  <p className="text-[9px] text-white/50 uppercase tracking-wide">{t("mobileAppStoreSoon")}</p>
+                  <p className="text-sm font-bold text-white">{t("mobileAppStoreApple")}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5">
+                <PlayCircle className="h-6 w-6 text-white" />
+                <div className="text-left leading-tight">
+                  <p className="text-[9px] text-white/50 uppercase tracking-wide">{t("mobileAppStoreSoon")}</p>
+                  <p className="text-sm font-bold text-white">{t("mobileAppStoreGoogle")}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Colonne téléphone — capture réelle de l'application + chiffres réels en cartes flottantes */}
+          <div className="order-1 md:order-2 relative flex justify-center">
+            <img
+              src="/app_mobile.png"
+              alt={t("mobileAppTitle")}
+              className="relative z-10 w-[240px] sm:w-[280px] lg:w-[320px] h-auto drop-shadow-2xl"
+            />
+
+            <div className="hidden lg:flex items-center gap-2.5 absolute top-8 -left-4 bg-white rounded-2xl shadow-xl shadow-black/20 px-4 py-3 z-20">
+              <span className="h-8 w-8 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><ShieldCheck className="h-4 w-4 text-[#00BFA6]" /></span>
+              <p className="text-xs font-bold text-[#003B4A] whitespace-nowrap">{t("whyVerifiedTitle")}</p>
+            </div>
+
+            <div className="hidden lg:flex flex-col gap-2 absolute bottom-16 -right-6 bg-white rounded-2xl shadow-xl shadow-black/20 px-4 py-3.5 z-20 min-w-[168px]">
+              <div className="flex items-center gap-2.5">
+                <span className="h-8 w-8 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Building2 className="h-4 w-4 text-[#00BFA6]" /></span>
+                <div>
+                  <p className="text-sm font-extrabold text-[#003B4A] leading-none">{announces.length}</p>
+                  <p className="text-[10px] text-gray-400">{t("mobileAppStatListings")}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="h-8 w-8 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Globe2 className="h-4 w-4 text-[#00BFA6]" /></span>
+                <div>
+                  <p className="text-sm font-extrabold text-[#003B4A] leading-none">58</p>
+                  <p className="text-[10px] text-gray-400">{t("mobileAppStatWilayas")}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="h-8 w-8 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><LayoutGrid className="h-4 w-4 text-[#00BFA6]" /></span>
+                <div>
+                  <p className="text-sm font-extrabold text-[#003B4A] leading-none">{REAL_ESTATE_CATEGORIES.length}</p>
+                  <p className="text-[10px] text-gray-400">{t("mobileAppStatCategories")}</p>
+                </div>
               </div>
             </div>
           </div>

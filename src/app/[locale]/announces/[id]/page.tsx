@@ -677,7 +677,7 @@ export default function AnnounceDetailsPage() {
                         {/* Main Image (Left Half) */}
                         <div 
                             className="col-span-1 md:col-span-2 row-span-2 relative cursor-pointer group h-full"
-                            onClick={() => { setActiveImage(allImages.indexOf(displayImages[0])); setShowGallery(true); }}
+                            onClick={() => { setActiveImage(0); setShowGallery(true); }}
                         >
                             <img 
                                 src={getImageUrl(displayImages[0]?.url) || ''} 
@@ -690,7 +690,7 @@ export default function AnnounceDetailsPage() {
                         <div className="hidden md:flex flex-col gap-2 col-span-1 row-span-2 h-full">
                             <div 
                                 className={`flex-1 relative overflow-hidden ${displayImages[1] ? 'cursor-pointer group' : ''}`}
-                                onClick={() => { if(displayImages[1]) { setActiveImage(allImages.indexOf(displayImages[1])); setShowGallery(true); } }}
+                                onClick={() => { if(displayImages[1]) { setActiveImage(1); setShowGallery(true); } }}
                             >
                                 {displayImages[1] ? (
                                     <>
@@ -707,7 +707,7 @@ export default function AnnounceDetailsPage() {
                             </div>
                             <div 
                                 className={`flex-1 relative overflow-hidden ${displayImages[2] ? 'cursor-pointer group' : ''}`}
-                                onClick={() => { if(displayImages[2]) { setActiveImage(allImages.indexOf(displayImages[2])); setShowGallery(true); } }}
+                                onClick={() => { if(displayImages[2]) { setActiveImage(2); setShowGallery(true); } }}
                             >
                                 {displayImages[2] ? (
                                     <>
@@ -728,7 +728,7 @@ export default function AnnounceDetailsPage() {
                         <div className="hidden md:flex flex-col gap-2 col-span-1 row-span-2 h-full">
                             <div 
                                 className={`flex-1 relative overflow-hidden rounded-tr-2xl ${displayImages[3] ? 'cursor-pointer group' : ''}`}
-                                onClick={() => { if(displayImages[3]) { setActiveImage(allImages.indexOf(displayImages[3])); setShowGallery(true); } }}
+                                onClick={() => { if(displayImages[3]) { setActiveImage(3); setShowGallery(true); } }}
                             >
                                 {displayImages[3] ? (
                                     <>
@@ -745,7 +745,7 @@ export default function AnnounceDetailsPage() {
                             </div>
                             <div 
                                 className={`flex-1 relative overflow-hidden rounded-br-2xl ${displayImages[4] ? 'cursor-pointer group' : ''}`}
-                                onClick={() => { if(displayImages[4]) { setActiveImage(allImages.indexOf(displayImages[4])); setShowGallery(true); } }}
+                                onClick={() => { if(displayImages[4]) { setActiveImage(4); setShowGallery(true); } }}
                             >
                                 {displayImages[4] ? (
                                     <>
@@ -790,20 +790,27 @@ export default function AnnounceDetailsPage() {
             <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col">
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 text-white">
-                    <span className="text-sm font-medium">{activeImage + 1} / {images.length}</span>
+                    <span className="text-sm font-medium">{displayImages.length > 0 ? activeImage + 1 : 0} / {displayImages.length}</span>
                     <button onClick={() => setShowGallery(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                         <X className="h-6 w-6" />
                     </button>
                 </div>
 
-                {/* Filtre par pièce — à l'intérieur de la galerie plein écran, comme sur Airbnb */}
+                {/* Filtre par pièce — filtre réellement la photo affichée et le bandeau de vignettes,
+                    comme sur Airbnb. "Toutes" reste toujours disponible pour revenir à la liste complète. */}
                 {Object.keys(imagesByCategory).length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-3 px-4 hide-scrollbar">
+                        <button
+                            onClick={() => { setActiveTab('ALL'); setActiveImage(0) }}
+                            className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-colors shrink-0 ${activeTab === 'ALL' ? 'border-[#00BFA6] bg-[#00BFA6] text-white' : 'border-white/15 bg-white/10 hover:bg-white/20 text-white'}`}
+                        >
+                            {t("allPhotosLabel")} ({orderedAllImages.length})
+                        </button>
                         {Object.keys(imagesByCategory).map(cat => (
                             <button
                                 key={cat}
-                                onClick={() => setActiveImage(allImages.indexOf(imagesByCategory[cat][0]))}
-                                className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border border-white/15 bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
+                                onClick={() => { setActiveTab(cat); setActiveImage(0) }}
+                                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-colors shrink-0 ${activeTab === cat ? 'border-[#00BFA6] bg-[#00BFA6] text-white' : 'border-white/15 bg-white/10 hover:bg-white/20 text-white'}`}
                             >
                                 {LABELS[cat] || cat} ({imagesByCategory[cat].length})
                             </button>
@@ -811,7 +818,7 @@ export default function AnnounceDetailsPage() {
                         {videosList.length > 0 && (
                             <button
                                 onClick={() => setActiveTab('VIDEO')}
-                                className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border border-blue-400/40 bg-blue-500/80 hover:bg-blue-500 text-white transition-colors shrink-0"
+                                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-colors shrink-0 ${activeTab === 'VIDEO' ? 'border-blue-400 bg-blue-500 text-white' : 'border-blue-400/40 bg-blue-500/80 hover:bg-blue-500 text-white'}`}
                             >
                                 {t("videoLabel")} ({videosList.length})
                             </button>
@@ -821,37 +828,41 @@ export default function AnnounceDetailsPage() {
 
                 {/* Main View */}
                 <div className="flex-1 flex items-center justify-center relative px-4 md:px-20">
-                    <img 
-                        src={getImageUrl(images[activeImage]?.url) || ''} 
-                        alt="Gallery view" 
-                        className="max-h-[80vh] max-w-full object-contain shadow-2xl"
-                    />
-                    
+                    {activeTab === 'VIDEO' && videosList.length > 0 ? (
+                        <video src={getImageUrl(videosList[0]) || ''} controls className="max-h-[80vh] max-w-full shadow-2xl" />
+                    ) : (
+                        <img
+                            src={getImageUrl(displayImages[activeImage]?.url) || ''}
+                            alt="Gallery view"
+                            className="max-h-[80vh] max-w-full object-contain shadow-2xl"
+                        />
+                    )}
+
                     {/* Navigation Arrows */}
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev > 0 ? prev - 1 : images.length - 1)) }}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev > 0 ? prev - 1 : displayImages.length - 1)) }}
                         className="absolute left-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"
                     >
                         <ArrowLeft className="h-6 w-6" />
                     </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev < images.length - 1 ? prev + 1 : 0)) }}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev < displayImages.length - 1 ? prev + 1 : 0)) }}
                         className="absolute right-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all rotate-180"
                     >
                         <ArrowLeft className="h-6 w-6" />
                     </button>
                 </div>
 
-                {/* Thumbnails Strip */}
+                {/* Thumbnails Strip — reflète le filtre actif */}
                 <div className="h-24 bg-black/50 overflow-x-auto flex items-center gap-2 px-4 snap-x">
-                    {images.map((img: any, idx: number) => (
-                        <div 
+                    {displayImages.map((img: any, idx: number) => (
+                        <div
                             key={idx}
                             onClick={() => setActiveImage(idx)}
                             className={`flex-shrink-0 h-16 w-24 cursor-pointer rounded-lg overflow-hidden border-2 transition-all snap-center ${activeImage === idx ? 'border-[#00BFA6] opacity-100' : 'border-transparent opacity-50 hover:opacity-80'}`}
                         >
-                            <img 
-                                src={getImageUrl(img.url) || ''} 
+                            <img
+                                src={getImageUrl(img.url) || ''}
                                 className="w-full h-full object-cover"
                             />
                         </div>

@@ -23,13 +23,13 @@ const TERRAIN_TOPOGRAPHIE_LABELS: Record<string, string> = {
     ACCIDENTE: "Accidenté",
 };
 
-// Couleur du bandeau inférieur par domaine — donne un repère visuel immédiat par catégorie,
-// indépendant du badge vente/location (qui reste aux couleurs de marque).
+// Fondu par domaine (dégradé, pas un aplat) — donne un repère visuel par catégorie tout en
+// gardant les infos lisibles sans écraser la photo. Indépendant du badge vente/location.
 const CATEGORY_OVERLAY_COLOR: Record<string, string> = {
-    RESIDENTIEL: "bg-emerald-800/90",
-    BUREAUX_COMMERCES: "bg-sky-800/90",
-    INDUSTRIEL: "bg-slate-700/90",
-    TERRAIN_FONCIER: "bg-amber-900/90",
+    RESIDENTIEL: "from-emerald-950/90",
+    BUREAUX_COMMERCES: "from-sky-950/90",
+    INDUSTRIEL: "from-slate-950/90",
+    TERRAIN_FONCIER: "from-amber-950/90",
 };
 
 // Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
@@ -60,10 +60,13 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     if (items.length === 0) return null;
 
     return (
-        <div className={cn("absolute bottom-0 inset-x-0 px-3.5 py-2 flex items-center gap-2 flex-wrap", CATEGORY_OVERLAY_COLOR[categoryId as string] || "bg-[#003B4A]/90")}>
+        <div className={cn(
+            "absolute bottom-0 inset-x-0 px-3.5 pt-9 pb-2.5 flex items-end gap-2 flex-wrap bg-gradient-to-t to-transparent",
+            CATEGORY_OVERLAY_COLOR[categoryId as string] || "from-[#003B4A]/90"
+        )}>
             {items.map((item, i) => (
-                <span key={i} className="flex items-center gap-2 text-white text-[11px] font-bold">
-                    {i > 0 && <span className="h-1 w-1 rounded-full bg-white/40" />}
+                <span key={i} className="flex items-center gap-2 text-white text-[11px] font-bold [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]">
+                    {i > 0 && <span className="h-1 w-1 rounded-full bg-white/50" />}
                     {item}
                 </span>
             ))}
@@ -162,27 +165,27 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
           <PhotoOverlaySpecs announce={announce} />
         </div>
 
-        {/* Contenu — ordre : sous-catégorie + prix, titre, localisation, agence */}
+        {/* Contenu — ordre : sous-catégorie, titre + prix (aligné à droite), localisation, agence */}
         <div className="p-4 flex flex-col gap-1.5 flex-1">
+            <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide truncate">
+                {categoryName}
+            </span>
+
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide truncate">
-                    {categoryName}
-                </span>
-                <span className="text-base font-bold text-[#003B4A] leading-none shrink-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                    <h3 className="text-gray-900 font-bold text-[15px] leading-snug truncate">
+                        {shortTitle}
+                    </h3>
+                    {fullTitle.length > 15 && (
+                        <span title={fullTitle} className="shrink-0 text-gray-300 hover:text-gray-500 cursor-help">
+                            <Info className="h-3.5 w-3.5" />
+                        </span>
+                    )}
+                </div>
+                <span className="text-base font-bold text-[#003B4A] leading-none shrink-0 whitespace-nowrap">
                     {new Intl.NumberFormat('fr-DZ').format(announce.price)}
                     <span className="text-[10px] text-gray-400 font-semibold ml-1">DA</span>
                 </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 min-w-0">
-                <h3 className="text-gray-900 font-bold text-[15px] leading-snug truncate">
-                    {shortTitle}
-                </h3>
-                {fullTitle.length > 15 && (
-                    <span title={fullTitle} className="shrink-0 text-gray-300 hover:text-gray-500 cursor-help">
-                        <Info className="h-3.5 w-3.5" />
-                    </span>
-                )}
             </div>
 
             <div className="flex items-center text-gray-400 text-xs font-medium gap-1 truncate">
