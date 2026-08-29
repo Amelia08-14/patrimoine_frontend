@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { Phone, Mail, MapPin, ArrowRight } from "lucide-react";
+import { Phone, Mail, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -24,21 +24,6 @@ export function Footer() {
 
   return (
     <footer className="bg-[#022229] text-white relative overflow-hidden">
-      {/* Bandeau — invite réelle vers le dépôt d'annonce, pas une newsletter factice */}
-      <div className="bg-[#00BFA6] relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-brand text-lg sm:text-xl text-[#022229] text-center sm:text-left">
-            {t("ctaTitle")}
-          </p>
-          <Link
-            href="/deposit"
-            className="shrink-0 inline-flex items-center gap-2 bg-[#022229] hover:bg-[#04333f] text-white rounded-full px-6 py-3 text-sm font-bold transition-colors"
-          >
-            {t("ctaButton")} <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-
       <div className="absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-[#00BFA6]/[0.06] blur-3xl" />
       <div className="max-w-7xl mx-auto py-14 sm:py-16 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className={cn("grid grid-cols-2 gap-x-8 gap-y-10", usefulLinks.length > 0 ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-3 lg:grid-cols-5")}>

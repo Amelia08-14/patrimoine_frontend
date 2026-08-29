@@ -6,6 +6,7 @@ import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
   ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff, Building, Hotel, PartyPopper, Warehouse, Pencil, ImageOff,
   Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe, Link2, ExternalLink, Users, Images,
+  X, Clock, ChevronDown,
 } from "lucide-react"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
@@ -382,6 +383,81 @@ function PartnerLogo({ logoUrl, name, size = "h-16 w-16" }: { logoUrl: string | 
   )
 }
 
+// Candidatures reçues depuis le bouton "Devenir partenaire" de la page publique /partenaires,
+// à étudier et valider ici. Une validation crée automatiquement le Partner publié correspondant.
+function PartnerApplicationsPanel({ onApproved }: { onApproved: () => void }) {
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState(true)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/admin/content/partner-applications?status=PENDING`, { headers: getHeaders(false) as any })
+      if (res.ok) setItems(await res.json())
+    } finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const review = async (id: number, status: 'APPROVED' | 'REJECTED') => {
+    setBusyId(id)
+    try {
+      await fetch(`${API_URL}/admin/content/partner-applications/${id}`, {
+        method: 'PUT', headers: getHeaders() as any, body: JSON.stringify({ status }),
+      })
+      await load()
+      if (status === 'APPROVED') onApproved()
+    } finally { setBusyId(null) }
+  }
+
+  if (loading || items.length === 0) return null
+
+  return (
+    <div className="rounded-2xl border border-[#00BFA6]/30 bg-[#00BFA6]/[0.04] p-5">
+      <button onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2 font-bold text-[#003B4A] text-sm">
+          <Clock className="h-4 w-4 text-[#00BFA6]" />
+          Candidatures en attente
+          <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-[#00BFA6] text-white text-[11px] font-bold">{items.length}</span>
+        </span>
+        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </button>
+      {expanded && (
+        <div className="mt-4 space-y-3">
+          {items.map((app) => (
+            <div key={app.id} className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div className="flex items-start gap-3 min-w-0">
+                <PartnerLogo logoUrl={app.logoUrl} name={app.companyName} size="h-11 w-11" />
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 text-sm">{app.companyName}</p>
+                  <p className="text-xs text-gray-400">{app.contactName} · {app.email} · {app.phone}</p>
+                  {app.category && (
+                    <p className="text-[11px] text-[#00BFA6] font-semibold mt-1">
+                      {POLE_SHORT_LABELS[app.category]}{app.subCategory ? ` · ${SUB_CATEGORY_LABELS[app.subCategory] || app.subCategory}` : ''}
+                    </p>
+                  )}
+                  {app.websiteUrl && <a href={app.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 underline block truncate">{app.websiteUrl}</a>}
+                  {app.message && <p className="text-xs text-gray-500 mt-1.5 italic">"{app.message}"</p>}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <button onClick={() => review(app.id, 'REJECTED')} disabled={busyId === app.id} title="Rejeter" className="p-2 rounded-lg hover:bg-red-50 text-red-500 disabled:opacity-50">
+                  <X className="h-4 w-4" />
+                </button>
+                <button onClick={() => review(app.id, 'APPROVED')} disabled={busyId === app.id} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00BFA6] text-white text-xs font-bold hover:bg-[#00908A] disabled:opacity-60">
+                  {busyId === app.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Valider
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PartnersTab() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -486,6 +562,9 @@ function PartnersTab() {
 
   return (
     <div className="space-y-6">
+      {/* Candidatures reçues via le formulaire public "Devenir partenaire" */}
+      <PartnerApplicationsPanel onApproved={load} />
+
       {/* Filtre par catégorie — cliquable */}
       <ChipRow
         options={[{ id: "ALL", label: "Toutes catégories" }, ...PARTNER_CATEGORIES]}

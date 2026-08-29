@@ -66,3 +66,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation: none; }
 }
+
+/* Mot rotatif des catégories dans "Je confie mon projet [catégorie]" — glisse et s'estompe
+   à chaque changement de mot (React remonte le <span> via sa key, l'animation rejoue seule). */
+@keyframes rotate-word-in {
+  from { transform: translateY(65%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-rotate-word-in { animation: rotate-word-in 0.5s cubic-bezier(0.16, 1, 0.3, 1); }

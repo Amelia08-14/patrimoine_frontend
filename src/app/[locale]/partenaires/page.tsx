@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react"
 import { useTranslations } from "next-intl"
-import { Handshake, Mail, Building, Hotel, PartyPopper, Warehouse, ImageOff, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react"
+import { Handshake, Building, Hotel, PartyPopper, Warehouse, ImageOff, ExternalLink, ChevronLeft, ChevronRight, Send, Loader2, CheckCircle2, Upload, ArrowRight } from "lucide-react"
 import { subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -99,6 +99,126 @@ function PartnerCarousel({ partners }: { partners: any[] }) {
   )
 }
 
+// Formulaire "Devenir partenaire" — envoie une vraie candidature étudiée et validée depuis le dashboard admin.
+function PartnerApplicationForm() {
+  const t = useTranslations("Partners")
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle")
+  const [companyName, setCompanyName] = useState("")
+  const [contactName, setContactName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [category, setCategory] = useState<ActivityPole | "">("")
+  const [subCategory, setSubCategory] = useState("")
+  const [websiteUrl, setWebsiteUrl] = useState("")
+  const [message, setMessage] = useState("")
+  const [logo, setLogo] = useState<File | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setStatus("submitting")
+    try {
+      const fd = new FormData()
+      fd.append("companyName", companyName)
+      fd.append("contactName", contactName)
+      fd.append("email", email)
+      fd.append("phone", phone)
+      if (category) fd.append("category", category)
+      if (subCategory) fd.append("subCategory", subCategory)
+      if (websiteUrl) fd.append("websiteUrl", websiteUrl)
+      if (message) fd.append("message", message)
+      if (logo) fd.append("logo", logo)
+
+      const res = await fetch(`${API_URL}/content/partner-applications`, { method: "POST", body: fd })
+      if (!res.ok) throw new Error("failed")
+      setStatus("success")
+    } catch {
+      setStatus("error")
+    }
+  }
+
+  if (status === "success") {
+    return (
+      <div className="text-center py-10">
+        <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[#00BFA6]/10 mb-5">
+          <CheckCircle2 className="h-7 w-7 text-[#00BFA6]" />
+        </div>
+        <h3 className="text-xl font-bold text-[#003B4A] mb-2">{t("formSuccessTitle")}</h3>
+        <p className="text-gray-500 max-w-md mx-auto">{t("formSuccessText")}</p>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formCompanyName")}</label>
+        <input required value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formContactName")}</label>
+        <input required value={contactName} onChange={(e) => setContactName(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formEmail")}</label>
+        <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formPhone")}</label>
+        <input required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formCategory")}</label>
+        <select
+          value={category}
+          onChange={(e) => { setCategory(e.target.value as ActivityPole | ""); setSubCategory("") }}
+          className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]"
+        >
+          <option value="">{t("formCategoryPlaceholder")}</option>
+          {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formSubCategory")}</label>
+        <select
+          value={subCategory}
+          onChange={(e) => setSubCategory(e.target.value)}
+          disabled={!category}
+          className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]"
+        >
+          <option value="">{t("formSubCategoryPlaceholder")}</option>
+          {category && subCategoriesForPole(category).map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formWebsite")}</label>
+        <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://" className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formLogo")}</label>
+        <label className="flex items-center gap-2 w-full rounded-xl border border-dashed border-gray-300 px-3.5 py-2.5 text-sm text-gray-500 cursor-pointer hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors">
+          <Upload className="h-4 w-4 shrink-0" />
+          <span className="truncate">{logo ? logo.name : t("formLogo")}</span>
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => setLogo(e.target.files?.[0] || null)} />
+        </label>
+      </div>
+      <div className="sm:col-span-2">
+        <label className="block text-xs font-bold text-gray-600 mb-1.5">{t("formMessage")}</label>
+        <textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
+      </div>
+      <div className="sm:col-span-2 flex flex-col items-center gap-3 pt-2">
+        {status === "error" && <p className="text-sm text-red-500 font-semibold">{t("formErrorText")}</p>}
+        <button
+          type="submit"
+          disabled={status === "submitting"}
+          className="inline-flex items-center gap-2 bg-[#00BFA6] hover:bg-[#00908A] disabled:opacity-60 text-white rounded-full px-7 py-3 font-bold shadow-lg shadow-[#00BFA6]/20 transition-colors"
+        >
+          {status === "submitting" ? <><Loader2 className="h-4 w-4 animate-spin" /> {t("formSubmitting")}</> : <><Send className="h-4 w-4" /> {t("formSubmit")}</>}
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export default function PartenairesPage() {
   const t = useTranslations("Partners")
   const [partners, setPartners] = useState<any[]>([])
@@ -161,6 +281,13 @@ export default function PartenairesPage() {
           <p className="mt-3 text-white/70 max-w-2xl mx-auto leading-relaxed">
             {t("intro")}
           </p>
+          <a
+            href="#devenir-partenaire"
+            onClick={(e) => { e.preventDefault(); document.getElementById("devenir-partenaire")?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
+            className="mt-7 inline-flex items-center gap-2 bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-6 py-3 font-bold shadow-lg shadow-[#00BFA6]/20 transition-colors"
+          >
+            {t("becomePartnerCta")} <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
       </div>
 
@@ -279,19 +406,18 @@ export default function PartenairesPage() {
         )}
       </div>
 
-      <div className="bg-white border-t border-gray-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h2 className="text-2xl font-bold text-[#003B4A] mb-3">{t("becomePartnerTitle")}</h2>
-          <p className="text-gray-500 mb-6 max-w-xl mx-auto">
-            {t("becomePartnerText")}
-          </p>
-          <a
-            href="/contact"
-            className="inline-flex items-center gap-2 bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-6 py-3 font-bold shadow-lg shadow-[#00BFA6]/20 transition-colors"
-          >
-            <Mail className="h-4 w-4" />
-            {t("contactUs")}
-          </a>
+      <div id="devenir-partenaire" className="bg-white border-t border-gray-100 scroll-mt-6">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#00BFA6]/10 mb-5">
+              <Handshake className="h-6 w-6 text-[#00BFA6]" />
+            </div>
+            <h2 className="text-2xl font-bold text-[#003B4A] mb-3">{t("becomePartnerTitle")}</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              {t("becomePartnerText")}
+            </p>
+          </div>
+          <PartnerApplicationForm />
         </div>
       </div>
     </div>

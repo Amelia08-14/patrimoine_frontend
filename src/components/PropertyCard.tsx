@@ -165,27 +165,28 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
           <PhotoOverlaySpecs announce={announce} />
         </div>
 
-        {/* Contenu — ordre : sous-catégorie, titre + prix (aligné à droite), localisation, agence */}
+        {/* Contenu — ordre : sous-catégorie, prix (seul, aligné à droite), titre, localisation, agence */}
         <div className="p-4 flex flex-col gap-1.5 flex-1">
             <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide truncate">
                 {categoryName}
             </span>
 
-            <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 min-w-0">
-                    <h3 className="text-gray-900 font-bold text-[15px] leading-snug truncate">
-                        {shortTitle}
-                    </h3>
-                    {fullTitle.length > 15 && (
-                        <span title={fullTitle} className="shrink-0 text-gray-300 hover:text-gray-500 cursor-help">
-                            <Info className="h-3.5 w-3.5" />
-                        </span>
-                    )}
-                </div>
-                <span className="text-base font-bold text-[#003B4A] leading-none shrink-0 whitespace-nowrap">
+            <div className="text-right">
+                <span className="text-base font-bold text-[#003B4A] leading-none whitespace-nowrap">
                     {new Intl.NumberFormat('fr-DZ').format(announce.price)}
                     <span className="text-[10px] text-gray-400 font-semibold ml-1">DA</span>
                 </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 min-w-0">
+                <h3 className="text-gray-900 font-bold text-[15px] leading-snug truncate">
+                    {shortTitle}
+                </h3>
+                {fullTitle.length > 15 && (
+                    <span title={fullTitle} className="shrink-0 text-gray-300 hover:text-gray-500 cursor-help">
+                        <Info className="h-3.5 w-3.5" />
+                    </span>
+                )}
             </div>
 
             <div className="flex items-center text-gray-400 text-xs font-medium gap-1 truncate">

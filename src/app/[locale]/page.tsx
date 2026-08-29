@@ -151,7 +151,7 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((item) => (
-            <div key={item.id} className="min-w-[280px] md:min-w-[300px] lg:w-[calc(25%-1.125rem)] lg:min-w-[calc(25%-1.125rem)] flex-shrink-0 snap-start flex">
+            <div key={item.id} className="min-w-[280px] md:min-w-[300px] lg:w-[calc(23%-1.1rem)] lg:min-w-[calc(23%-1.1rem)] flex-shrink-0 snap-start flex">
               <div className="w-full">
                 <PropertyCard announce={item} />
               </div>
@@ -160,6 +160,37 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
         </div>
       </div>
     </section>
+  )
+}
+
+// Mot rotatif — fait défiler les 5 catégories réelles du bien dans le titre "Je confie mon projet [catégorie]".
+// Respecte prefers-reduced-motion en figeant sur la première catégorie.
+const RotatingCategoryWord = ({ categories, tc }: { categories: { id: string, iconName: string }[], tc: (id: string) => string }) => {
+  const [index, setIndex] = useState(0)
+  const [reduced, setReduced] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  }, [])
+
+  useEffect(() => {
+    if (reduced || categories.length <= 1) return
+    const id = setInterval(() => setIndex((i) => (i + 1) % categories.length), 2200)
+    return () => clearInterval(id)
+  }, [reduced, categories.length])
+
+  if (categories.length === 0) return null
+  const cat = categories[index]
+  const Icon = getIcon(cat.iconName)
+
+  return (
+    <span className="relative inline-flex h-[1.2em] overflow-hidden align-bottom">
+      <span key={cat.id} className={cn("inline-flex items-center gap-2.5 text-[#00BFA6]", !reduced && "animate-rotate-word-in")}>
+        <Icon className="h-[0.78em] w-[0.78em] shrink-0" />
+        {tc(cat.id)}
+      </span>
+    </span>
   )
 }
 
@@ -530,18 +561,14 @@ export default function HomePage() {
     return acc;
   }, {});
 
-  // Annonce réelle mise en avant dans la fiche flottante du hero — jamais de donnée fictive.
-  const heroPreviewAnnounce = filteredAnnounces[0] || announces[0];
-  const heroPreviewImage = heroPreviewAnnounce?.property?.images?.find((img: any) => img.isMain) || heroPreviewAnnounce?.property?.images?.[0];
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  const getImg = (url: string) => (url?.startsWith('http') ? url : `${apiUrl}${url}`);
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-gray-50">
 
       {/* HERO SECTION — plein écran, photo edge-to-edge avec fondu texte/image */}
       <div className="bg-white">
-        <div className="relative h-[560px] sm:h-[600px] lg:h-[660px] overflow-hidden group">
+        <div className="relative h-[400px] sm:h-[440px] lg:h-[480px] overflow-hidden group">
           {/* Photo plein cadre, rotation par catégorie */}
           {activeSlides.map((slide, index) => (
             <img
@@ -622,26 +649,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Fiche d'une annonce réelle — flottante sur la photo, jamais de mockup fictif */}
-          {heroPreviewAnnounce && (
-            <Link
-              href={`/announces/${heroPreviewAnnounce.id}`}
-              className="hidden sm:flex items-center gap-3 absolute right-6 lg:right-12 bottom-10 sm:bottom-14 bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 p-3 pr-5 max-w-[280px] hover:shadow-2xl transition-shadow z-20"
-            >
-              <div className="h-12 w-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                {heroPreviewImage ? (
-                  <img src={getImg(heroPreviewImage.url)} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-gray-300"><HomeIcon className="h-5 w-5" /></div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-[13px] font-bold text-gray-900 truncate">{heroPreviewAnnounce.title || tc('RESIDENTIEL')}</p>
-                <p className="text-[11px] text-gray-400 truncate">{heroPreviewAnnounce.property?.address?.town?.city?.nameFr || ""}</p>
-                <p className="text-[13px] font-bold text-[#00BFA6] mt-0.5">{new Intl.NumberFormat('fr-DZ').format(heroPreviewAnnounce.price)} DA</p>
-              </div>
-            </Link>
-          )}
         </div>
 
         {/* Barre de recherche — chevauche le bas du hero */}
@@ -650,15 +657,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* EXPLORER PAR TYPE DE BIEN — comptes réels */}
-      <div className="bg-gray-50 pt-14 lg:pt-16 pb-10">
+      {/* EXPLORER PAR TYPE DE BIEN — comptes réels, rangées compactes pour libérer de la hauteur */}
+      <div className="bg-gray-50 pt-6 lg:pt-8 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
-          <div className="flex items-end justify-between gap-4 mb-6">
-            <h2 className="font-brand text-2xl text-[#003B4A]">{t("exploreTypesTitle")}</h2>
-            <Link href="/announces" className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
-              {t("viewAllListings")} <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+          <h2 className="font-brand text-xl text-[#003B4A] mb-4">{t("exploreTypesTitle")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {orderedCategoryIds.map(catId => {
               const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
@@ -668,13 +670,15 @@ export default function HomePage() {
                 <Link
                   key={catId}
                   href={`/announces?realEstateCategory=${catId}`}
-                  className="flex flex-col items-center text-center gap-2.5 bg-white border border-gray-100 rounded-2xl p-5 hover:border-[#00BFA6] hover:shadow-sm transition-all"
+                  className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-3.5 py-3 hover:border-[#00BFA6] hover:shadow-sm transition-all"
                 >
-                  <span className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center">
-                    <Icon className="h-5 w-5 text-[#00BFA6]" />
+                  <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center">
+                    <Icon className="h-4.5 w-4.5 text-[#00BFA6]" />
                   </span>
-                  <span className="text-sm font-bold text-gray-800">{tc(catId)}</span>
-                  <span className="text-[11px] text-gray-400 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-gray-800 truncate">{tc(catId)}</span>
+                    <span className="block text-[11px] text-gray-400 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
+                  </span>
                 </Link>
               )
             })}
@@ -712,41 +716,62 @@ export default function HomePage() {
         </>
       )}
 
-      {/* WHY CHOOSE US */}
+      {/* WHY CHOOSE US — présenté comme un acte certifié, pas une grille de cartes générique */}
       <section className="py-16 sm:py-20 bg-[#003B4A] text-white relative overflow-hidden">
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#00BFA6]/10 blur-3xl" />
+        <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#00BFA6]/[0.06] blur-3xl" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-14">
+          <div className="text-center mb-12">
             <h2 className="font-brand text-3xl md:text-4xl text-white mb-3">{t("whyChooseUsTitle")}</h2>
             <p className="text-white/60 max-w-2xl mx-auto">{t("whyChooseUsSubtitle")}</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { icon: ShieldCheck, title: t("whyVerifiedTitle"), desc: t("whyVerifiedDesc") },
-              { icon: Globe2, title: t("whyCoverageTitle"), desc: t("whyCoverageDesc") },
-              { icon: Users, title: t("whyProfilesTitle"), desc: t("whyProfilesDesc") },
-              { icon: Headset, title: t("whySupportTitle"), desc: t("whySupportDesc") },
-            ].map((card) => (
-              <div key={card.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 hover:bg-white/[0.07] transition-colors">
-                <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/15 flex items-center justify-center mb-5">
-                  <card.icon className="h-5 w-5 text-[#5EEAD4]" />
+
+          {/* Panneau "certificat" — perforations en pointillés entre chaque garantie, comme un acte officiel */}
+          <div className="relative rounded-[28px] border border-dashed border-white/20 bg-white/[0.03] px-2 py-2 sm:px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { icon: ShieldCheck, title: t("whyVerifiedTitle"), desc: t("whyVerifiedDesc") },
+                { icon: Globe2, title: t("whyCoverageTitle"), desc: t("whyCoverageDesc") },
+                { icon: Users, title: t("whyProfilesTitle"), desc: t("whyProfilesDesc") },
+                { icon: Headset, title: t("whySupportTitle"), desc: t("whySupportDesc") },
+              ].map((card, i) => (
+                <div
+                  key={card.title}
+                  className={cn(
+                    "px-6 py-8 text-center sm:text-left",
+                    i > 0 && "sm:border-l sm:border-dashed sm:border-white/15",
+                    i === 2 && "sm:border-l-0 lg:border-l"
+                  )}
+                >
+                  <div className="mx-auto sm:mx-0 h-12 w-12 rounded-full border border-dashed border-[#00BFA6]/40 flex items-center justify-center mb-5">
+                    <div className="h-8 w-8 rounded-full bg-[#00BFA6]/15 flex items-center justify-center">
+                      <card.icon className="h-4 w-4 text-[#5EEAD4]" />
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-white text-[15px] mb-2">{card.title}</h3>
+                  <p className="text-white/55 text-sm leading-relaxed">{card.desc}</p>
                 </div>
-                <h3 className="font-bold text-white text-[15px] mb-2">{card.title}</h3>
-                <p className="text-white/55 text-sm leading-relaxed">{card.desc}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* JE CONFIE MON PROJET — texte à gauche, sans photo, deux profils distincts */}
+      {/* JE CONFIE MON PROJET — le mot de catégorie défile dans le titre, deux profils distincts */}
       <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="font-brand text-3xl text-[#003B4A]">{t("entrustProjectTitle")}</h2>
+            <h2 className="font-brand text-3xl text-[#003B4A]">
+              {t("entrustProjectTitle")}{" "}
+              <RotatingCategoryWord
+                categories={orderedCategoryIds.map(id => REAL_ESTATE_CATEGORIES.find(c => c.id === id)).filter(Boolean) as { id: string, iconName: string }[]}
+                tc={tc}
+              />
+            </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 sm:p-10">
+            <div className="relative bg-white rounded-3xl border border-gray-100 p-8 sm:p-10 overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-[#00BFA6]" />
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Building2 className="h-6 w-6 text-[#00BFA6]" />
               </div>
@@ -758,7 +783,8 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
-            <div className="bg-[#003B4A] rounded-3xl p-8 sm:p-10">
+            <div className="relative bg-[#003B4A] rounded-3xl p-8 sm:p-10 overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-[#5EEAD4]" />
               <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
                 <HandHeart className="h-6 w-6 text-[#5EEAD4]" />
               </div>
@@ -774,7 +800,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* POINTS & BOUTIQUE — deux mécaniques réelles de la plateforme, un profil chacune */}
+      {/* NOS OFFRES POINTS & BOUTIQUES — la boutique se montre plutôt que de se décrire */}
       <section className="py-16 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -782,23 +808,71 @@ export default function HomePage() {
             <p className="text-gray-500 mt-3 max-w-xl mx-auto">{t("pointsSectionSubtitle")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10">
+            {/* Points — visualisation d'une annonce qui gagne en visibilité */}
+            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10 flex flex-col">
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Coins className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsParticulierTitle")}</span>
               <p className="text-gray-500 leading-relaxed mt-3 mb-7">{t("pointsParticulierDesc")}</p>
-              <Link href="/profile/points" className="inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
+
+              {/* Mini-visuel : annonce standard vs annonce boostée par les points */}
+              <div className="mt-auto flex items-end gap-4 pt-4">
+                <div className="flex-1 rounded-xl border border-gray-100 bg-gray-50 p-3">
+                  <div className="h-2 w-10 rounded-full bg-gray-200 mb-2" />
+                  <div className="h-1.5 w-16 rounded-full bg-gray-200" />
+                </div>
+                <div className="flex-1 rounded-xl border border-[#00BFA6]/30 bg-[#00BFA6]/[0.06] p-3 relative">
+                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[#00BFA6] flex items-center justify-center">
+                    <Star className="h-2.5 w-2.5 text-white fill-white" />
+                  </span>
+                  <div className="h-2 w-10 rounded-full bg-[#00BFA6]/50 mb-2" />
+                  <div className="h-1.5 w-16 rounded-full bg-[#00BFA6]/30" />
+                </div>
+              </div>
+
+              <Link href="/profile/points" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
                 {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10">
+
+            {/* Boutique — aperçu schématique de la vraie vitrine personnalisable (logo, bannière, réseaux) */}
+            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10 flex flex-col">
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Store className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsProTitle")}</span>
               <p className="text-gray-500 leading-relaxed mt-3 mb-7">{t("pointsProDesc")}</p>
-              <Link href="/profile/boutique" className="inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
+
+              {/* Mini-maquette de la boutique : barre de navigateur + logo + bannière + réseaux */}
+              <div className="mt-auto rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                <div className="flex items-center gap-1.5 bg-gray-50 border-b border-gray-100 px-3 py-2">
+                  <span className="h-2 w-2 rounded-full bg-gray-300" />
+                  <span className="h-2 w-2 rounded-full bg-gray-300" />
+                  <span className="h-2 w-2 rounded-full bg-gray-300" />
+                  <span className="ml-2 text-[10px] text-gray-400 truncate">patrimoine.dz/boutique/votre-marque</span>
+                </div>
+                <div className="bg-gradient-to-r from-[#003B4A] to-[#00BFA6] h-10" />
+                <div className="bg-white px-3 pt-3 pb-3 -mt-5">
+                  <div className="h-10 w-10 rounded-full bg-white border-2 border-white shadow flex items-center justify-center overflow-hidden">
+                    <div className="h-full w-full bg-[#00BFA6]/15 flex items-center justify-center">
+                      <Store className="h-4 w-4 text-[#00BFA6]" />
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 mt-3">
+                    <span className="h-5 rounded-full bg-[#003B4A] px-2.5 flex items-center text-[9px] font-bold text-white">{t("boutiquePreviewLabel")}</span>
+                    <span className="h-5 w-10 rounded-full bg-gray-100" />
+                    <span className="h-5 w-10 rounded-full bg-gray-100" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 mt-3">
+                    <div className="h-8 rounded-md bg-gray-100" />
+                    <div className="h-8 rounded-md bg-gray-100" />
+                    <div className="h-8 rounded-md bg-gray-100" />
+                  </div>
+                </div>
+              </div>
+
+              <Link href="/profile/boutique" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
                 {t("pointsProCta")} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -829,7 +903,7 @@ export default function HomePage() {
                       <img
                         src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${p.logoUrl}`}
                         alt={p.name}
-                        className="h-20 sm:h-24 max-w-full object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all"
+                        className="h-20 sm:h-24 max-w-full object-contain opacity-90 hover:opacity-100 hover:scale-105 transition-all"
                       />
                     ) : (
                       <span className="text-gray-400 font-bold text-sm text-center">{p.name}</span>
