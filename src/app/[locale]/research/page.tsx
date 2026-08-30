@@ -10,7 +10,7 @@ import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import {
   Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
-  Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2,
+  Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2, Store, Zap,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -18,6 +18,8 @@ import {
   HOTELIER_EQUIPMENT_OPTIONS, ResearchBranchId,
   SITUATION_OPTIONS, ACHAT_INTERLOCUTOR_OPTIONS, REALISATION_STAGE_OPTIONS,
   AIRPORT_PROXIMITY_OPTIONS, CURRENCY_OPTIONS, FINANCING_OPTIONS,
+  OFFICE_SPACE_TYPE_OPTIONS, OFFICE_ENERGY_OPTIONS, GENERAL_STATE_OPTIONS, ZONE_TYPE_OPTIONS,
+  VISIBILITY_OPTIONS, LOCAL_STYLE_ETAT_OPTIONS, LOCAL_ENVIRONMENT_OPTIONS, LOCAL_USAGE_OPTIONS,
   ENVIRONMENT_OPTIONS,
   RESIDENTIEL_TYPE_IDS, VILLA_LEVEL_ENTRANCE_OPTIONS, BUILDING_APARTMENT_STYLE_OPTIONS,
 } from '@/data/researchConfig';
@@ -281,6 +283,17 @@ export default function ResearchPage() {
     buildingSurfaceMax: z.coerce.number().optional(),
     buildingApartmentStyles: z.array(z.string()).optional(),
 
+    // Bureaux et Commerces — choix entre 3 fiches dédiées (même concept que Résidentiel).
+    bureauxSearchScope: z.enum(['GROUPEE', 'IMMEUBLE', 'BLOC_ADMINISTRATIF', 'BLOC_COMMERCIAL', 'LOCAL_COMMERCIAL']).optional(),
+    baSpaceTypes: z.array(z.string()).optional(),
+    baEnergie: z.array(z.string()).optional(),
+    bcEtatGeneral: z.array(z.string()).optional(),
+    bcZoneType: z.array(z.string()).optional(),
+    bcVisibilite: z.array(z.string()).optional(),
+    lcStyleEtat: z.array(z.string()).optional(),
+    lcEnvironnement: z.array(z.string()).optional(),
+    lcUsage: z.array(z.string()).optional(),
+
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     email: z.string().optional(),
@@ -296,16 +309,17 @@ export default function ResearchPage() {
   type ResearchFormInput = z.input<typeof researchSchema>;
   type ResearchFormValues = z.output<typeof researchSchema>;
 
-  const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
+  const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
   type StepKey = typeof STEP_KEYS[number];
   // Étapes à choix unique et immédiat (une grande pastille) : on avance dès le clic, sans passer
   // par le bouton "Continuer" — contrairement au dépôt d'annonces.
-  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE'];
+  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE'];
 
   const STEP_LABELS: Record<StepKey, string> = {
     BRANCH: t('stepBranch'),
     TRANSACTION: t('stepTransaction'),
     RES_SEARCH_SCOPE: t('stepSearchScope'),
+    BUR_SEARCH_SCOPE: t('stepSearchScope'),
     CRITERIA: t('stepCriteria'),
     BUDGET: t('stepBudget'),
     INTERLOCUTOR: t('stepInterlocutor'),
@@ -335,6 +349,14 @@ export default function ResearchPage() {
       resPropertyTypes: [],
       cityIds: [],
       buildingApartmentStyles: [],
+      baSpaceTypes: [],
+      baEnergie: [],
+      bcEtatGeneral: [],
+      bcZoneType: [],
+      bcVisibilite: [],
+      lcStyleEtat: [],
+      lcEnvironnement: [],
+      lcUsage: [],
     },
   });
 
@@ -343,13 +365,16 @@ export default function ResearchPage() {
   const isResidentielLocation = branch === 'RESIDENTIEL' && watch('transaction') === TransactionType.RENTAL;
   const selectedResPropertyTypes: string[] = watch('resPropertyTypes') || [];
 
-  // Résidentiel Location et Achat : un choix supplémentaire "Recherche groupée / Recherche
-  // immeuble d'appartements" (pastille auto-avancée), puis fiche unique (critères + localisation
-  // + budget + interlocuteur) et contact direct. Les autres branches gardent le parcours complet
-  // pour le moment, sans cette étape de choix qui ne les concerne pas.
+  const isBureauxCommerces = branch === 'BUREAUX_COMMERCES';
+
+  // Résidentiel (Location/Achat) et Bureaux et Commerces : un choix supplémentaire de fiche
+  // dédiée (pastille auto-avancée), puis fiche unique (critères + localisation + interlocuteur)
+  // et contact direct. Les autres branches gardent le parcours complet pour le moment.
   const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
     ? ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
-    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE');
+    : isBureauxCommerces
+    ? ['BRANCH', 'TRANSACTION', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE');
   const currentStep = steps[currentStepIndex];
 
   // Si le parcours se raccourcit (ex: on vient de choisir Résidentiel + Location) alors qu'on
@@ -499,13 +524,71 @@ export default function ResearchPage() {
           };
           break;
         case 'BUREAUX_COMMERCES':
-          amenities.bureaux = {
-            nbOffices: data.nbOffices,
-            streetWindow: !!data.streetWindow,
-            floorLevel: data.floorLevel,
-            equipments: data.bureauxEquipments,
-            footfall: data.footfall,
-          };
+          amenities.bureaux = { searchScope: data.bureauxSearchScope };
+          if (data.bureauxSearchScope === 'GROUPEE') {
+            // Fiche "Recherche Groupée" identique à celle du Résidentiel (mêmes champs, réutilisés
+            // tels quels), simplement stockée sous amenities.bureaux.groupee.
+            amenities.bureaux.groupee = {
+              propertyTypes: data.resPropertyTypes || [],
+              villaLevelEntrance: data.villaLevelEntrance,
+              typologyMin: data.typologyMin,
+              typologyMax: data.typologyMax,
+              floorMin: data.floorMin,
+              floorMax: data.floorMax,
+              minSurface: data.minSurface,
+              maxSurface: data.maxSurface,
+              budgetUnit: data.budgetUnit,
+              cityIds: data.cityIds || [],
+              environment: data.environment,
+            };
+          } else if (data.bureauxSearchScope === 'IMMEUBLE') {
+            // Fiche "Recherche Immeuble" identique à celle du Résidentiel (mêmes champs, réutilisés
+            // tels quels), simplement stockée sous amenities.bureaux.immeuble.
+            amenities.bureaux.immeuble = {
+              typologyMin: data.buildingTypologyMin,
+              typologyMax: data.buildingTypologyMax,
+              floorsMin: data.buildingFloorsMin,
+              floorsMax: data.buildingFloorsMax,
+              apartmentsMin: data.buildingApartmentsMin,
+              apartmentsMax: data.buildingApartmentsMax,
+              surfaceMin: data.buildingSurfaceMin,
+              surfaceMax: data.buildingSurfaceMax,
+              apartmentStyles: data.buildingApartmentStyles || [],
+              cityIds: data.cityIds || [],
+              environment: data.environment,
+            };
+          } else if (data.bureauxSearchScope === 'BLOC_COMMERCIAL') {
+            amenities.bureaux.blocCommercial = {
+              minSurface: data.minSurface,
+              maxSurface: data.maxSurface,
+              etatGeneral: data.bcEtatGeneral || [],
+              zoneType: data.bcZoneType || [],
+              visibilite: data.bcVisibilite || [],
+              cityIds: data.cityIds || [],
+            };
+          } else if (data.bureauxSearchScope === 'LOCAL_COMMERCIAL') {
+            amenities.bureaux.localCommercial = {
+              minSurface: data.minSurface,
+              maxSurface: data.maxSurface,
+              floorMin: data.floorMin,
+              floorMax: data.floorMax,
+              styleEtat: data.lcStyleEtat || [],
+              environnement: data.lcEnvironnement || [],
+              usage: data.lcUsage || [],
+              cityIds: data.cityIds || [],
+            };
+          } else {
+            amenities.bureaux.blocAdministratif = {
+              minSurface: data.minSurface,
+              maxSurface: data.maxSurface,
+              floorMin: data.floorMin,
+              floorMax: data.floorMax,
+              budgetUnit: data.budgetUnit,
+              spaceTypes: data.baSpaceTypes || [],
+              energie: data.baEnergie || [],
+              cityIds: data.cityIds || [],
+            };
+          }
           break;
         case 'TERRAIN_FONCIER':
           amenities.terrain = {
@@ -605,7 +688,6 @@ export default function ResearchPage() {
   };
 
   const renderResidentielAchatCriteria = () => {
-    const interlocutorOptions = RESEARCH_INTERLOCUTORS.RESIDENTIEL;
     return (
       <>
         {renderPropertyTypeSection()}
@@ -623,18 +705,7 @@ export default function ResearchPage() {
         </Section>
 
         {renderLocalisationSection()}
-
-        <Section title={t('stepInterlocutor')} icon={Handshake}>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {interlocutorOptions.map((opt) => (
-                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
-              ))}
-            </div>
-          </div>
-        </Section>
-
+        {renderSharedInterlocutorSection()}
         {renderCommentSection()}
       </>
     );
@@ -712,6 +783,60 @@ export default function ResearchPage() {
     );
   };
 
+  // Ligne "Min [x] Max [y] [unité DA/m²/Millions...]" réutilisée partout où un budget est demandé.
+  const renderBudgetInputs = () => (
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="text-sm font-bold text-gray-700 shrink-0">{t('resLocMin')}</span>
+      <input
+        type="text" inputMode="numeric"
+        value={formatThousands(watch('minBudget') as any)}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/[^\d]/g, '');
+          setValue('minBudget', (digits ? Number(digits) : undefined) as any);
+        }}
+        className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
+      />
+      <span className="text-sm font-bold text-gray-700 shrink-0">{t('resLocMax')}</span>
+      <input
+        type="text" inputMode="numeric"
+        value={formatThousands(watch('maxBudget') as any)}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/[^\d]/g, '');
+          setValue('maxBudget', (digits ? Number(digits) : undefined) as any);
+        }}
+        className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
+      />
+      <select
+        {...register('budgetUnit')}
+        className="h-11 px-3 rounded-xl border-2 border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#00BFA6] cursor-pointer"
+      >
+        <option value="DA">DA</option>
+        <option value="DA_M2">DA / m²</option>
+        <option value="MILLION">Millions</option>
+        <option value="MILLION_M2">Millions / m²</option>
+        <option value="MILLIARD">Milliards</option>
+      </select>
+    </div>
+  );
+
+  // Interlocuteur — mêmes 3 options réutilisées partout (Résidentiel Location, Bureaux et
+  // Commerces...) : Promoteur immobilier / Agence immobilière / Propriétaire particulier.
+  const renderSharedInterlocutorSection = () => {
+    const interlocutorOptions = RESEARCH_INTERLOCUTORS.RESIDENTIEL;
+    return (
+      <Section title={t('stepInterlocutor')} icon={Handshake}>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {interlocutorOptions.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+            ))}
+          </div>
+        </div>
+      </Section>
+    );
+  };
+
   const renderTypologyFloorSurfaceBudgetSection = () => (
     <Section title={t('resLocTypologyTitle')} icon={Ruler}>
       {/* Un seul enfant direct pour ce Section afin de contrôler l'espacement vertical nous-mêmes
@@ -736,38 +861,7 @@ export default function ResearchPage() {
 
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocBudgetRangeTitle')}</label>
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-bold text-gray-700 shrink-0">{t('resLocMin')}</span>
-            <input
-              type="text" inputMode="numeric"
-              value={formatThousands(watch('minBudget') as any)}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/[^\d]/g, '');
-                setValue('minBudget', (digits ? Number(digits) : undefined) as any);
-              }}
-              className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
-            />
-            <span className="text-sm font-bold text-gray-700 shrink-0">{t('resLocMax')}</span>
-            <input
-              type="text" inputMode="numeric"
-              value={formatThousands(watch('maxBudget') as any)}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/[^\d]/g, '');
-                setValue('maxBudget', (digits ? Number(digits) : undefined) as any);
-              }}
-              className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
-            />
-            <select
-              {...register('budgetUnit')}
-              className="h-11 px-3 rounded-xl border-2 border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#00BFA6] cursor-pointer"
-            >
-              <option value="DA">DA</option>
-              <option value="DA_M2">DA / m²</option>
-              <option value="MILLION">Millions</option>
-              <option value="MILLION_M2">Millions / m²</option>
-              <option value="MILLIARD">Milliards</option>
-            </select>
-          </div>
+          {renderBudgetInputs()}
         </div>
       </div>
     </Section>
@@ -830,7 +924,6 @@ export default function ResearchPage() {
   // quand on cherche l'immeuble entier plutôt qu'un lot précis. Localisation/date/commentaire
   // restent les mêmes blocs partagés que les autres fiches.
   const renderImmeubleCriteria = () => {
-    const interlocutorOptions = RESEARCH_INTERLOCUTORS.RESIDENTIEL;
     return (
       <>
         {renderLocalisationSection()}
@@ -866,16 +959,7 @@ export default function ResearchPage() {
           <OptionGroup label={t('immeubleCadreDeVieLabel')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
         </Section>
 
-        <Section title={t('stepInterlocutor')} icon={Handshake}>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {interlocutorOptions.map((opt) => (
-                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
-              ))}
-            </div>
-          </div>
-        </Section>
+        {renderSharedInterlocutorSection()}
 
         {/* Stade de réalisation — uniquement pour l'achat d'un immeuble (une location d'immeuble
             entier ne se conçoit pas "sur plan"). */}
@@ -895,29 +979,132 @@ export default function ResearchPage() {
   };
 
   const renderResidentielLocationCriteria = () => {
-    const interlocutorOptions = RESEARCH_INTERLOCUTORS.RESIDENTIEL;
     return (
       <>
         {renderPropertyTypeSection()}
         {renderTypologyFloorSurfaceBudgetSection()}
         {renderLocalisationSection()}
         {renderEnvironmentSection()}
-
-        <Section title={t('stepInterlocutor')} icon={Handshake}>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {interlocutorOptions.map((opt) => (
-                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
-              ))}
-            </div>
-          </div>
-        </Section>
-
+        {renderSharedInterlocutorSection()}
         {renderCommentSection()}
       </>
     );
   };
+
+  // --- Bureaux et Commerces : fiches "Bloc Administratif" / "Bloc Commercial" / "Local
+  // Commercial" (même concept que Résidentiel — choix de fiche puis critères + localisation +
+  // interlocuteur + commentaire). Pour le moment, même fiche en Location et en Achat. ---
+
+  const renderBlocAdministratifCriteria = () => (
+    <>
+      <Section title={t('burBlocAdminSectionTitle')} icon={Briefcase}>
+        <div className="space-y-3">
+          <div className="flex flex-wrap justify-between gap-x-6 gap-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('burSurfaceRange')}</label>
+              {renderRangeRow('minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', width: 'w-20' })}
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleFloorsRange')}</label>
+              {renderRangeRow('floorMin', 'floorMax', { width: 'w-20' })}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocBudgetRangeTitle')}</label>
+            {renderBudgetInputs()}
+          </div>
+        </div>
+      </Section>
+
+      <Section title={t('burSpaceTypeTitle')} icon={Home}>
+        <OptionGroup label={t('burSpaceTypeLabel')} options={OFFICE_SPACE_TYPE_OPTIONS} field="baSpaceTypes" watch={watch} toggle={toggleArrayValue} />
+      </Section>
+
+      <Section title={t('burEnergyTitle')} icon={Zap}>
+        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="baEnergie" watch={watch} toggle={toggleArrayValue} />
+      </Section>
+
+      {renderLocalisationSection()}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
+  const renderBlocCommercialCriteria = () => (
+    <>
+      <Section title={t('burBlocCommSectionTitle')} icon={Building2}>
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('burSurfaceRange')}</label>
+          {renderRangeRow('minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', width: 'w-20' })}
+        </div>
+      </Section>
+
+      <Section title={t('burEtatGeneralTitle')} icon={Sparkles}>
+        <div className="flex flex-wrap gap-3">
+          {GENERAL_STATE_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('bcEtatGeneral') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('bcEtatGeneral', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title={t('burZoneTypeTitle')} icon={Compass}>
+        <div className="flex flex-wrap gap-3">
+          {ZONE_TYPE_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('bcZoneType') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('bcZoneType', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title={t('burVisibiliteTitle')} icon={Store}>
+        <div className="flex flex-wrap gap-3">
+          {VISIBILITY_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('bcVisibilite') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('bcVisibilite', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      {renderLocalisationSection()}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
+  const renderLocalCommercialCriteria = () => (
+    <>
+      <Section title={t('burLocalCommSectionTitle')} icon={Store}>
+        <div className="flex flex-wrap justify-between gap-x-6 gap-y-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('burSurfaceRange')}</label>
+            {renderRangeRow('minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', width: 'w-20' })}
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleFloorsRange')}</label>
+            {renderRangeRow('floorMin', 'floorMax', { width: 'w-20' })}
+          </div>
+        </div>
+      </Section>
+
+      <Section title={t('burStyleEtatTitle')} icon={Sparkles}>
+        <div className="flex flex-wrap gap-3">
+          {LOCAL_STYLE_ETAT_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('lcStyleEtat') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('lcStyleEtat', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title={t('burLocalEnvironmentTitle')} icon={Compass}>
+        <OptionGroup label={t('burLocalEnvironmentLabel')} options={LOCAL_ENVIRONMENT_OPTIONS} field="lcEnvironnement" watch={watch} toggle={toggleArrayValue} />
+      </Section>
+
+      <Section title={t('burLocalUsageTitle')} icon={Briefcase}>
+        <OptionGroup label={t('burLocalUsageLabel')} options={LOCAL_USAGE_OPTIONS} field="lcUsage" watch={watch} toggle={toggleArrayValue} />
+      </Section>
+
+      {renderLocalisationSection()}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
 
   const renderCriteriaStep = () => {
     switch (branch) {
@@ -947,35 +1134,18 @@ export default function ResearchPage() {
         );
 
       case 'BUREAUX_COMMERCES':
-        return (
-          <Section title={t('mainCriteria')} icon={Briefcase}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label={t('burSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label={t('burSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-              <Field label={t('burNbOffices')}><input type="number" {...register('nbOffices')} className={inputCls} /></Field>
-              <Field label={t('burFloorLevel')}>
-                <select {...register('floorLevel')} className={inputCls}>
-                  <option value="">{t('optIndifferent')}</option>
-                  <option value="RDC">{t('optGroundFloor')}</option>
-                  <option value="ETAGE">{t('optFloor')}</option>
-                </select>
-              </Field>
-              <Field label={t('burFootfall')}>
-                <select {...register('footfall')} className={inputCls}>
-                  <option value="">{t('optIndifferent')}</option>
-                  <option value="FAIBLE">{t('optLow')}</option>
-                  <option value="MOYEN">{t('optMedium')}</option>
-                  <option value="ELEVE">{t('optHigh')}</option>
-                </select>
-              </Field>
-            </div>
-            <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
-              <input type="checkbox" {...register('streetWindow')} className="h-4 w-4 accent-[#00BFA6]" />
-              {t('burStreetWindow')}
-            </label>
-            <OptionGroup label={t('optDesiredEquipment')} options={BUREAUX_EQUIPMENT_OPTIONS} field="bureauxEquipments" watch={watch} toggle={toggleArrayValue} />
-          </Section>
-        );
+        switch (watch('bureauxSearchScope')) {
+          // Mêmes fiches que "Confier votre recherche Résidentiel" (Recherche Groupée / Recherche
+          // Immeuble d'appartements), littéralement réutilisées telles quelles pour Bureaux et
+          // Commerces, en plus des 3 fiches spécifiques ci-dessous.
+          case 'GROUPEE': return renderResidentielLocationCriteria();
+          case 'IMMEUBLE': return renderImmeubleCriteria();
+          case 'BLOC_COMMERCIAL': return renderBlocCommercialCriteria();
+          case 'LOCAL_COMMERCIAL': return renderLocalCommercialCriteria();
+          case 'BLOC_ADMINISTRATIF':
+          default:
+            return renderBlocAdministratifCriteria();
+        }
 
       case 'TERRAIN_FONCIER':
         return (
@@ -1131,6 +1301,7 @@ export default function ResearchPage() {
                     setValue('resPropertyTypes', []);
                     setValue('interlocutors', []);
                     setValue('searchScope', undefined as any);
+                    setValue('bureauxSearchScope', undefined as any);
                     // Fluide comme une sélection de carte : on avance directement à l'étape
                     // suivante au clic, pas besoin du bouton "Continuer" (contrairement au dépôt
                     // d'annonces) pour un choix aussi simple.
@@ -1173,6 +1344,51 @@ export default function ResearchPage() {
                 label={t('resSearchScopeImmeuble')}
                 size="lg"
                 onClick={() => { setValue('searchScope', 'IMMEUBLE'); nextStep(); }}
+              />
+            </div>
+          </div>
+        );
+
+      case 'BUR_SEARCH_SCOPE':
+        return (
+          <div className="w-full max-w-5xl animate-fade-in py-6 md:py-10">
+            {/* 5 pastilles : grille (comme l'étape Branche) plutôt qu'une rangée flex, sinon le
+                w-full interne de CircleOption les fait repasser en colonne dès que ça déborde. */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-10 gap-x-6 justify-items-center">
+              <CircleOption
+                active={watch('bureauxSearchScope') === 'GROUPEE'}
+                icon={Home}
+                label={t('resSearchScopeGroupee')}
+                size="md"
+                onClick={() => { setValue('bureauxSearchScope', 'GROUPEE'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('bureauxSearchScope') === 'IMMEUBLE'}
+                icon={Building2}
+                label={t('resSearchScopeImmeuble')}
+                size="md"
+                onClick={() => { setValue('bureauxSearchScope', 'IMMEUBLE'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('bureauxSearchScope') === 'BLOC_ADMINISTRATIF'}
+                icon={Briefcase}
+                label={t('burScopeBlocAdmin')}
+                size="md"
+                onClick={() => { setValue('bureauxSearchScope', 'BLOC_ADMINISTRATIF'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('bureauxSearchScope') === 'BLOC_COMMERCIAL'}
+                icon={Building2}
+                label={t('burScopeBlocCommercial')}
+                size="md"
+                onClick={() => { setValue('bureauxSearchScope', 'BLOC_COMMERCIAL'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('bureauxSearchScope') === 'LOCAL_COMMERCIAL'}
+                icon={Store}
+                label={t('burScopeLocalCommercial')}
+                size="md"
+                onClick={() => { setValue('bureauxSearchScope', 'LOCAL_COMMERCIAL'); nextStep(); }}
               />
             </div>
           </div>

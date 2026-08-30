@@ -285,6 +285,62 @@ export const BUILDING_APARTMENT_STYLE_OPTIONS = [
   { id: "TRIPLEX", label: "Triplex" },
 ];
 
+// --- Fiches "Bureaux et Commerces" — Bloc Administratif / Bloc Commercial / Local Commercial ---
+
+export const OFFICE_SPACE_TYPE_OPTIONS = [
+  { id: "OPEN_SPACE", label: "Open space" },
+  { id: "SEPARE_BUREAUX", label: "Séparé en bureaux" },
+];
+
+export const OFFICE_ENERGY_OPTIONS = [
+  { id: "ELECTRICITE", label: "Électricité" },
+  { id: "GAZ", label: "Gaz" },
+  { id: "EAU", label: "Eau" },
+  { id: "ASSAINISSEMENT", label: "Assainissement" },
+];
+
+export const GENERAL_STATE_OPTIONS = [
+  { id: "NEUF", label: "Neuf" },
+  { id: "BON_ETAT", label: "Bon état" },
+  { id: "A_RENOVER", label: "À rénover" },
+];
+
+export const ZONE_TYPE_OPTIONS = [
+  { id: "COMMERCIAL", label: "Commercial" },
+  { id: "RESIDENTIEL", label: "Résidentiel" },
+  { id: "INDUSTRIEL", label: "Industriel" },
+];
+
+export const VISIBILITY_OPTIONS = [
+  { id: "AUTOROUTE", label: "Visible autoroute" },
+  { id: "FACADE_COMMERCIALE", label: "Façade commerciale" },
+  { id: "PIETONNE", label: "Forte visibilité piétonne" },
+  { id: "ROUTIERE", label: "Bonne visibilité routière" },
+];
+
+export const LOCAL_STYLE_ETAT_OPTIONS = [
+  { id: "MODERNE", label: "Moderne" },
+  { id: "CLASSIQUE", label: "Classique" },
+  { id: "A_RENOVER", label: "À rénover" },
+];
+
+export const LOCAL_ENVIRONMENT_OPTIONS = [
+  { id: "GALERIE_MARCHANDE", label: "Galerie marchande" },
+  { id: "CENTRE_COMMERCIAL", label: "Centre commercial" },
+  { id: "RUE_COMMERCIALE", label: "Rue commerciale" },
+  { id: "ZONE_ACTIVITE_COMMERCIALE", label: "Zone d'activité commerciale" },
+  { id: "ZONE_INDUSTRIELLE", label: "Zone industrielle" },
+  { id: "AUTRE", label: "Autre" },
+];
+
+export const LOCAL_USAGE_OPTIONS = [
+  { id: "MAGASIN", label: "Magasin" },
+  { id: "DEPOT", label: "Dépôt" },
+  { id: "BUREAU", label: "Bureau" },
+  { id: "SHOWROOM", label: "Showroom" },
+  { id: "AUTRE", label: "Autre" },
+];
+
 // Critère spécifique affiché uniquement quand "Niveau de Villa" est sélectionné
 export const VILLA_LEVEL_ENTRANCE_OPTIONS = [
   { id: "SEPAREE", label: "Entrée séparée" },
