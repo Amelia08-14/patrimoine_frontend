@@ -5,9 +5,9 @@ import { useRouter, Link } from "@/i18n/navigation"
 import { useTranslations, useLocale } from "next-intl"
 import axios from "axios"
 import {
-  Coins, Star, Zap, Crown, Check, Loader2, Clock,
+  Coins, Star, Zap, Loader2,
   ArrowDownCircle, AlertCircle, Sparkles, Store, X,
-  CalendarDays, ShieldCheck
+  CalendarDays, ArrowRight
 } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -112,125 +112,6 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
   )
 }
 
-// Habillage visuel (icône/couleur/bordure/liste de fonctionnalités) — le contenu
-// (titre/description/prix/points) vient de l'admin (Points & Achats)
-const BOUTIQUE_PACK_STYLE: Record<string, { icon: typeof Store; color: string; border: string; popular?: boolean }> = {
-  STANDARD: { icon: Store, color: "#6B7280", border: "border-gray-200" },
-  AVANCEE: { icon: Star, color: "#1E40AF", border: "border-blue-200", popular: true },
-  ENTREPRISE: { icon: Crown, color: "#D97706", border: "border-amber-200" },
-}
-
-// Modal pour choisir le pack boutique
-function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]; onClose: () => void; onSuccess: () => void }) {
-  const t = useTranslations("ProfilePoints")
-
-  const FEATURES: Record<string, string[]> = {
-    STANDARD: [t("boutiqueStandardFeature1"), t("boutiqueStandardFeature2"), t("boutiqueStandardFeature3"), t("boutiqueStandardFeature4")],
-    AVANCEE: [t("boutiqueAvanceeFeature1"), t("boutiqueAvanceeFeature2"), t("boutiqueAvanceeFeature3"), t("boutiqueAvanceeFeature4")],
-    ENTREPRISE: [t("boutiqueEntrepriseFeature1"), t("boutiqueEntrepriseFeature2"), t("boutiqueEntrepriseFeature3"), t("boutiqueEntrepriseFeature4"), t("boutiqueEntrepriseFeature5")],
-  }
-
-  // Repli si l'API est injoignable (les 3 packs d'origine) ; sinon, tout ce qui est en base —
-  // un pack créé depuis l'admin sans style connu reçoit une icône/couleur par défaut.
-  const FALLBACK = [
-    { id: "STANDARD", label: t("boutiqueStandardLabel"), description: null as string | null, price: 5000, points: 50, features: FEATURES.STANDARD, ...BOUTIQUE_PACK_STYLE.STANDARD },
-    { id: "AVANCEE", label: t("boutiqueAvanceeLabel"), description: null as string | null, price: 10000, points: 100, features: FEATURES.AVANCEE, ...BOUTIQUE_PACK_STYLE.AVANCEE },
-    { id: "ENTREPRISE", label: t("boutiqueEntrepriseLabel"), description: null as string | null, price: 15000, points: 200, features: FEATURES.ENTREPRISE, ...BOUTIQUE_PACK_STYLE.ENTREPRISE },
-  ]
-
-  const live = offerPacks.filter((p) => p.kind === 'BOUTIQUE')
-  const BOUTIQUE_PACKS = live.length > 0
-    ? live.map((p, i) => ({
-        id: p.key,
-        label: p.title,
-        description: p.description,
-        price: p.price,
-        points: p.points,
-        features: FEATURES[p.key] || [],
-        ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
-      }))
-    : FALLBACK
-
-  const [ordering, setOrdering] = useState<string | null>(null)
-  const [error, setError] = useState("")
-
-  const order = async (packId: string) => {
-    setOrdering(packId); setError("")
-    try {
-      const token = localStorage.getItem('token')
-      await axios.post(`${API_URL}/boutique-sub/purchase`, { pack: packId }, { headers: { Authorization: `Bearer ${token}` } })
-      onSuccess()
-      onClose()
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("orderError"))
-    } finally {
-      setOrdering(null)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 my-4">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="font-black text-gray-900 text-xl flex items-center gap-2">
-              <Store className="h-6 w-6 text-[#00BFA6]" /> {t("activateBoutiqueTitle")}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">{t("activateBoutiqueSubtitle")}</p>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="h-5 w-5" /></button>
-        </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
-          </div>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {BOUTIQUE_PACKS.map(pack => {
-            const Icon = pack.icon
-            return (
-              <div key={pack.id} className={`relative bg-white rounded-2xl border-2 ${pack.border} overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6]' : ''}`}>
-                {pack.popular && (
-                  <div className="absolute top-0 inset-x-0 text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
-                )}
-                <div className={`p-5 ${pack.popular ? 'pt-9' : ''}`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: pack.color + '20' }}>
-                      <Icon className="h-5 w-5" style={{ color: pack.color }} />
-                    </div>
-                    <div>
-                      <div className="font-black text-gray-900 text-sm">{pack.label}</div>
-                      <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
-                    </div>
-                  </div>
-                  <div className="text-xl font-black text-gray-900 mb-1">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500">{t("perMonth")}</span></div>
-                  {pack.description && <p className="text-[11px] text-gray-400 mb-3">{pack.description}</p>}
-                  <ul className={`space-y-1.5 mb-4 ${pack.description ? '' : 'mt-2'}`}>
-                    {pack.features.map(f => (
-                      <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
-                        <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={() => order(pack.id)}
-                    disabled={ordering === pack.id}
-                    className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
-                    style={{ backgroundColor: pack.color }}
-                  >
-                    {ordering === pack.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
-                    {t("order")}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // Modal publicité
 function FeatureModal({ announce, onClose, onSuccess }: { announce: any; onClose: () => void; onSuccess: () => void }) {
   const t = useTranslations("ProfileAnnounces")
@@ -298,14 +179,11 @@ export default function EspacePublicitairePage() {
   const [balance, setBalance] = useState(0)
   const [expirationDate, setExpirationDate] = useState<string | null>(null)
   const [expired, setExpired] = useState(false)
-  const [activeSub, setActiveSub] = useState<any>(null)
-  const [mySubs, setMySubs] = useState<any[]>([])
   const [history, setHistory] = useState<any[]>([])
   const [announces, setAnnounces] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [boosting, setBoosting] = useState<number | null>(null)
   const [featureTarget, setFeatureTarget] = useState<any>(null)
-  const [showPackModal, setShowPackModal] = useState(false)
   const [showPointPackModal, setShowPointPackModal] = useState(false)
   const [toast, setToast] = useState("")
   const [offerPacks, setOfferPacks] = useState<OfferPack[]>([])
@@ -321,26 +199,13 @@ export default function EspacePublicitairePage() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
 
-  const packLabel = (pack: string) => {
-    const live = offerPacks.find((p) => p.kind === 'BOUTIQUE' && p.key === pack)
-    if (live) return live.title
-    const fallback: Record<string, string> = {
-      STANDARD: t("boutiqueStandardLabel"),
-      AVANCEE: t("boutiqueAvanceeLabel"),
-      ENTREPRISE: t("boutiqueEntrepriseLabel"),
-    }
-    return fallback[pack] || pack
-  }
-
   const load = async () => {
     const token = localStorage.getItem('token')
     if (!token) { router.push('/auth/login'); return }
     const headers = { Authorization: `Bearer ${token}` }
     try {
-      const [bal, sub, subs, hist, ann, packs] = await Promise.all([
+      const [bal, hist, ann, packs] = await Promise.all([
         axios.get(`${API_URL}/points/balance`, { headers }).catch(() => ({ data: { points: 0 } })),
-        axios.get(`${API_URL}/boutique-sub/active`, { headers }).catch(() => ({ data: null })),
-        axios.get(`${API_URL}/boutique-sub/my`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/points/history`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/announces/user/my-announces`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/offer-packs`).catch(() => ({ data: [] })),
@@ -348,8 +213,6 @@ export default function EspacePublicitairePage() {
       setBalance(bal.data.points || 0)
       setExpirationDate(bal.data.expirationDate || null)
       setExpired(bal.data.expired || false)
-      setActiveSub(sub.data)
-      setMySubs(subs.data)
       setHistory(hist.data)
       setAnnounces(ann.data)
       setOfferPacks(packs.data)
@@ -386,7 +249,6 @@ export default function EspacePublicitairePage() {
       {toast && (
         <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
       )}
-      {showPackModal && <PackModal offerPacks={offerPacks} onClose={() => setShowPackModal(false)} onSuccess={() => { showToast(t("subPurchaseSuccess")); load() }} />}
       {showPointPackModal && <PointPackModal offerPacks={offerPacks} onClose={() => setShowPointPackModal(false)} onSuccess={() => { showToast(t("pointsPurchaseSuccess")); load() }} />}
       {featureTarget && <FeatureModal announce={featureTarget} onClose={() => setFeatureTarget(null)} onSuccess={() => { load(); showToast(ta("adFeaturedSuccess")) }} />}
 
@@ -417,38 +279,23 @@ export default function EspacePublicitairePage() {
           </div>
         </div>
 
-        {/* Abonnement boutique actif — réservé aux comptes professionnels */}
-        {isPro && (activeSub ? (
-          <div className="bg-white rounded-2xl border border-[#00BFA6]/30 shadow-sm p-5 flex items-center justify-between">
+        {/* Renvoi vers la page dédiée "Type de Vitrine" — réservée aux comptes professionnels.
+            Le détail des formules boutique (offres, abonnement actif, historique) y vit désormais,
+            pour ne pas mélanger deux sujets distincts (points d'un côté, formule boutique de l'autre). */}
+        {isPro && (
+          <Link href="/profile/vitrine" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between hover:border-[#00BFA6]/40 transition-colors group">
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center">
-                <ShieldCheck className="h-6 w-6 text-[#00BFA6]" />
+                <Store className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <div>
-                <p className="font-black text-gray-900">{packLabel(activeSub.pack)}</p>
-                <p className="text-sm text-gray-500">
-                  {t("activeUntil", { date: new Date(activeSub.expiresAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR'), points: activeSub.pointsIncluded })}
-                </p>
+                <p className="font-black text-gray-900">{t("vitrineCrossSellTitle")}</p>
+                <p className="text-sm text-gray-500">{t("vitrineCrossSellText")}</p>
               </div>
             </div>
-            <button onClick={() => setShowPackModal(true)} className="px-4 py-2 border border-[#00BFA6] text-[#00BFA6] rounded-xl text-sm font-bold hover:bg-[#00BFA6]/5 transition-colors">
-              {t("renewBtn")}
-            </button>
-          </div>
-        ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Store className="h-8 w-8 text-amber-500" />
-              <div>
-                <p className="font-black text-gray-900">{t("boutiqueNotActivated")}</p>
-                <p className="text-sm text-gray-600">{t("boutiqueNotActivatedText")}</p>
-              </div>
-            </div>
-            <button onClick={() => setShowPackModal(true)} className="px-5 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-bold hover:bg-amber-600 transition-colors flex items-center gap-2">
-              <Store className="h-4 w-4" /> {t("activateMyBoutique")}
-            </button>
-          </div>
-        ))}
+            <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-[#00BFA6] transition-colors shrink-0" />
+          </Link>
+        )}
 
         {/* Comment utiliser */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -508,33 +355,6 @@ export default function EspacePublicitairePage() {
                   </div>
                 )
               })}
-            </div>
-          </div>
-        )}
-
-        {/* Historique abonnements boutique */}
-        {isPro && mySubs.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><Clock className="h-5 w-5 text-amber-500" /> {t("subsHistoryTitle")}</h2>
-            <div className="space-y-3">
-              {mySubs.map(s => (
-                <div key={s.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                  <div>
-                    <span className="font-bold text-gray-900">{packLabel(s.pack)}</span>
-                    <span className="text-gray-500 text-sm ml-2">— {s.price.toLocaleString()} {t("perMonthShort")}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                      s.status === 'VALIDATED' ? 'bg-green-100 text-green-700' :
-                      s.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {s.status === 'VALIDATED' ? t("validated") : s.status === 'REJECTED' ? t("rejected") : t("pending")}
-                    </span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}

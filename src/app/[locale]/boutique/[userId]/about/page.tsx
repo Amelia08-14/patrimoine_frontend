@@ -15,16 +15,43 @@ function getImageUrl(url: string) {
 }
 
 export default function BoutiqueAboutPage({ params }: { params: Promise<{ userId: string }> }) {
-  const { userId } = use(params)
+  const { userId: rawParam } = use(params)
   const [config, setConfig] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/boutique/${userId}`)
-      .then(r => r.json())
-      .then(data => { setConfig(data); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [userId])
+    const load = async () => {
+      // Le lien "À propos" de la boutique pointe vers le même paramètre que la page principale,
+      // qui peut être un slug personnalisé plutôt que le userId numérique — il faut le résoudre
+      // en premier, sinon /api/boutique/:userId (indexé par id numérique) ne trouve rien.
+      let resolvedId = rawParam
+      if (!/^\d+$/.test(rawParam)) {
+        try {
+          const slugRes = await fetch(`/api/boutique/slug/${rawParam}`)
+          if (slugRes.ok) {
+            const slugData = await slugRes.json()
+            if (slugData?.userId) {
+              resolvedId = String(slugData.userId)
+              setConfig(slugData)
+              setLoading(false)
+              return
+            }
+          }
+        } catch { /* on tente quand même le fetch direct ci-dessous */ }
+      }
+
+      try {
+        const res = await fetch(`/api/boutique/${resolvedId}`)
+        const data = res.ok ? await res.json() : null
+        setConfig(data)
+      } catch {
+        setConfig(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [rawParam])
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -52,7 +79,7 @@ export default function BoutiqueAboutPage({ params }: { params: Promise<{ userId
       {/* Header */}
       <div className="py-5 px-6" style={{ backgroundColor: hc }}>
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link href={`/boutique/${userId}`} className="flex items-center gap-2 text-sm font-bold rounded-full px-4 py-1.5 bg-white/20 hover:bg-white/30 transition-colors" style={{ color: htc }}>
+          <Link href={`/boutique/${rawParam}`} className="flex items-center gap-2 text-sm font-bold rounded-full px-4 py-1.5 bg-white/20 hover:bg-white/30 transition-colors" style={{ color: htc }}>
             <ArrowLeft className="h-4 w-4" /> Retour à la boutique
           </Link>
           <span className="font-black text-lg" style={{ color: htc }}>{config.companyName}</span>
@@ -89,7 +116,7 @@ export default function BoutiqueAboutPage({ params }: { params: Promise<{ userId
         {!config.aboutImage && !config.aboutDescription && !config.aboutButtonLabel && (
           <div className="text-center py-20 text-gray-400">
             <p className="text-lg">Cette page est en cours de configuration.</p>
-            <Link href={`/boutique/${userId}`} className="mt-4 inline-block font-bold" style={{ color: hc }}>
+            <Link href={`/boutique/${rawParam}`} className="mt-4 inline-block font-bold" style={{ color: hc }}>
               Voir les annonces →
             </Link>
           </div>

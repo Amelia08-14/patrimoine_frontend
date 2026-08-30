@@ -299,7 +299,7 @@ export function Navbar() {
                                 <Link href="/profile/boutique" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
                                     <Store className="h-4 w-4 mr-3" /> {t('myShopItem')}
                                 </Link>
-                                <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                <Link href="/profile/vitrine" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
                                     <LayoutTemplate className="h-4 w-4 mr-3" /> {t('showcaseType')}
                                 </Link>
                               </div>

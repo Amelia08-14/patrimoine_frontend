@@ -8,7 +8,7 @@ import {
   Store, Save, Eye, Palette, Image as ImageIcon, Phone, Mail,
   Globe, Facebook, Instagram, Linkedin, MessageCircle, Check,
   Loader2, AlertCircle, ExternalLink, Upload, X, Building2,
-  User, Square, Circle, Minus, Play, Plus
+  User, Square, Circle, Minus, Play, Plus, Link2
 } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -132,7 +132,10 @@ export default function BoutiqueConfigPage() {
     instagram: "",
     linkedin: "",
     website: "",
-    stories: [] as { url: string; type: 'image' | 'video'; label: string }[],
+    stories: [] as { url: string; type: 'image' | 'video'; label: string; link?: string; linkLabel?: string; views?: number; likes?: number }[],
+    // Stories retirées de la boutique : on garde leurs vues/likes pour l'historique des
+    // statistiques, au lieu de perdre ces chiffres à la suppression.
+    archivedStories: [] as { url: string; type: 'image' | 'video'; label: string; views?: number; likes?: number; removedAt?: string }[],
     menuItems: [] as { label: string; href: string }[],
     aboutImage: "",
     aboutDescription: "",
@@ -178,6 +181,7 @@ export default function BoutiqueConfigPage() {
             storyColor: data.storyColor || data.primaryColor || "#00BFA6",
             fontFamily: data.fontFamily || "",
             stories: data.stories || [],
+            archivedStories: data.archivedStories || [],
             bannerUrls: data.bannerUrls || [],
             menuItems: data.menuItems || [],
             secondLogoUrl: data.secondLogoUrl || "",
@@ -242,8 +246,18 @@ export default function BoutiqueConfigPage() {
     } catch {}
   }
 
-  const removeStory = (idx: number) => setConfig(prev => ({ ...prev, stories: prev.stories.filter((_, i) => i !== idx) }))
+  // On archive la story retirée (avec ses vues/likes) plutôt que de la supprimer purement, pour
+  // que "Mes statistiques" garde l'historique des stories déjà enlevées de la boutique.
+  const removeStory = (idx: number) => setConfig(prev => {
+    const removed = prev.stories[idx]
+    const archived = removed && !removed.url.startsWith('blob:')
+      ? [...prev.archivedStories, { url: removed.url, type: removed.type, label: removed.label, views: removed.views || 0, likes: removed.likes || 0, removedAt: new Date().toISOString() }]
+      : prev.archivedStories
+    return { ...prev, stories: prev.stories.filter((_, i) => i !== idx), archivedStories: archived }
+  })
   const updateStoryLabel = (idx: number, label: string) => setConfig(prev => ({ ...prev, stories: prev.stories.map((s, i) => i === idx ? { ...s, label } : s) }))
+  const updateStoryLink = (idx: number, link: string) => setConfig(prev => ({ ...prev, stories: prev.stories.map((s, i) => i === idx ? { ...s, link } : s) }))
+  const updateStoryLinkLabel = (idx: number, linkLabel: string) => setConfig(prev => ({ ...prev, stories: prev.stories.map((s, i) => i === idx ? { ...s, linkLabel } : s) }))
 
   const uploadAboutImage = async (file: File) => {
     try {
@@ -359,7 +373,7 @@ export default function BoutiqueConfigPage() {
           ))}
         </div>
         <button
-          onClick={() => router.push('/profile/points')}
+          onClick={() => router.push('/profile/vitrine')}
           className="w-full py-3 bg-[#00BFA6] text-white rounded-xl font-bold hover:bg-[#009e88] transition-colors flex items-center justify-center gap-2"
         >
           <Store className="h-5 w-5" /> {t("activateBtn")}
@@ -644,24 +658,44 @@ export default function BoutiqueConfigPage() {
               {config.stories.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
                   {config.stories.map((s, idx) => (
-                    <div key={idx} className="relative rounded-xl overflow-hidden bg-gray-100" style={{ aspectRatio: '9/16' }}>
-                      {s.type === 'video' ? (
-                        <video src={getImageUrl(s.url)} className="w-full h-full object-cover" muted />
-                      ) : (
-                        <img src={getImageUrl(s.url)} alt="" className="w-full h-full object-cover" />
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2">
+                    <div key={idx} className="space-y-1.5">
+                      <div className="relative rounded-xl overflow-hidden bg-gray-100" style={{ aspectRatio: '9/16' }}>
+                        {s.type === 'video' ? (
+                          <video src={getImageUrl(s.url)} className="w-full h-full object-cover" muted />
+                        ) : (
+                          <img src={getImageUrl(s.url)} alt="" className="w-full h-full object-cover" />
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2">
+                          <input
+                            value={s.label}
+                            onChange={e => updateStoryLabel(idx, e.target.value)}
+                            className="w-full bg-transparent text-white text-xs outline-none placeholder-white/60 font-medium"
+                            placeholder={t("storyTitlePlaceholder")}
+                          />
+                        </div>
+                        <button onClick={() => removeStory(idx)} className="absolute top-1.5 right-1.5 h-6 w-6 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                        {s.type === 'video' && <div className="absolute top-1.5 left-1.5 bg-black/50 rounded-full p-1"><Play className="h-3 w-3 text-white" /></div>}
+                      </div>
+                      {/* Lien externe optionnel — affiché à droite de la story avec son icône */}
+                      <div className="flex items-center gap-1 border-2 border-gray-200 rounded-lg px-2 py-1.5 focus-within:border-[#00BFA6]">
+                        <Link2 className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                         <input
-                          value={s.label}
-                          onChange={e => updateStoryLabel(idx, e.target.value)}
-                          className="w-full bg-transparent text-white text-xs outline-none placeholder-white/60 font-medium"
-                          placeholder={t("storyTitlePlaceholder")}
+                          value={s.link || ''}
+                          onChange={e => updateStoryLink(idx, e.target.value)}
+                          className="w-full text-xs outline-none placeholder-gray-400"
+                          placeholder={t("storyLinkPlaceholder")}
                         />
                       </div>
-                      <button onClick={() => removeStory(idx)} className="absolute top-1.5 right-1.5 h-6 w-6 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-colors">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                      {s.type === 'video' && <div className="absolute top-1.5 left-1.5 bg-black/50 rounded-full p-1"><Play className="h-3 w-3 text-white" /></div>}
+                      {s.link && (
+                        <input
+                          value={s.linkLabel || ''}
+                          onChange={e => updateStoryLinkLabel(idx, e.target.value)}
+                          className="w-full text-xs border-2 border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:border-[#00BFA6] placeholder-gray-400"
+                          placeholder={t("storyLinkLabelPlaceholder")}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -679,47 +713,33 @@ export default function BoutiqueConfigPage() {
               </h2>
               <p className="text-xs text-gray-500 mb-4">{t("menuHint")}</p>
               <div className="space-y-2 mb-3">
-                {config.menuItems.map((item, idx) => {
-                  const slug = boutiqueSlug || user?.id
-                  const BOUTIQUE_PAGES = [
-                    { label: t("menuHomePage"), href: `/boutique/${slug}` },
-                    { label: t("menuAboutPage"), href: `/boutique/${slug}/about` },
-                  ]
-                  const isCustom = item.href && !BOUTIQUE_PAGES.some(p => p.href === item.href)
-                  return (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        value={item.label}
-                        onChange={e => {
-                          const next = [...config.menuItems]
-                          next[idx] = { ...next[idx], label: e.target.value }
-                          handleChange('menuItems', next)
-                        }}
-                        className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
-                        placeholder={t("menuLabelPlaceholder")}
-                      />
-                      <select
-                        value={isCustom ? '__custom__' : (item.href || '')}
-                        onChange={e => {
-                          const next = [...config.menuItems]
-                          const val = e.target.value
-                          const page = BOUTIQUE_PAGES.find(p => p.href === val)
-                          next[idx] = { ...next[idx], href: val === '__custom__' ? '' : val, label: next[idx].label || (page?.label || '') }
-                          handleChange('menuItems', next)
-                        }}
-                        className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white"
-                      >
-                        <option value="">{t("menuChoosePage")}</option>
-                        {BOUTIQUE_PAGES.map(p => (
-                          <option key={p.href} value={p.href}>{p.label}</option>
-                        ))}
-                      </select>
-                      <button onClick={() => handleChange('menuItems', config.menuItems.filter((_, i) => i !== idx))} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )
-                })}
+                {config.menuItems.map((item, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input
+                      value={item.label}
+                      onChange={e => {
+                        const next = [...config.menuItems]
+                        next[idx] = { ...next[idx], label: e.target.value }
+                        handleChange('menuItems', next)
+                      }}
+                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
+                      placeholder={t("menuLabelPlaceholder")}
+                    />
+                    <input
+                      value={item.href}
+                      onChange={e => {
+                        const next = [...config.menuItems]
+                        next[idx] = { ...next[idx], href: e.target.value }
+                        handleChange('menuItems', next)
+                      }}
+                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
+                      placeholder={t("menuLinkPlaceholder")}
+                    />
+                    <button onClick={() => handleChange('menuItems', config.menuItems.filter((_, i) => i !== idx))} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
               <button
                 onClick={() => handleChange('menuItems', [...config.menuItems, { label: '', href: '' }])}
@@ -853,7 +873,7 @@ export default function BoutiqueConfigPage() {
                             ? <video src={getImageUrl(s.url)} className="h-full w-full object-cover" muted />
                             : <img src={getImageUrl(s.url)} alt="" className="h-full w-full object-cover" />}
                         </div>
-                        <span className="text-[9px] text-gray-500 truncate max-w-[44px] font-medium">{s.label || t("defaultStoryLabel")}</span>
+                        <span className="block text-[9px] text-gray-500 truncate max-w-[44px] font-medium" title={s.label || undefined}>{s.label || t("defaultStoryLabel")}</span>
                       </div>
                     ))}
                   </div>

@@ -7,10 +7,12 @@ import {
   Phone, Mail, MessageCircle, Globe, Facebook, Instagram, Linkedin,
   ChevronDown, Search, Building2, X, ArrowRight,
   Store, LayoutGrid, List, LayoutDashboard, ChevronLeft, ChevronRight,
-  Star, Crown, MapPin, Bell, Send
+  Star, Crown, MapPin, Bell, Send, Heart, Share2, Eye, Link2
 } from "lucide-react"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
+import { WILAYAS } from "@/data/wilayas"
+import { COMMUNES } from "@/data/communes"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -64,49 +66,200 @@ type BoutiqueConfig = {
   aboutDescription?: string
   aboutButtonLabel?: string
   aboutButtonUrl?: string
-  stories?: { url: string; type: 'image' | 'video'; label?: string }[]
+  stories?: { url: string; type: 'image' | 'video'; label?: string; link?: string; linkLabel?: string; views?: number; likes?: number }[]
 }
+
+type Story = { url: string; type: 'image' | 'video'; label?: string; link?: string; linkLabel?: string; views?: number; likes?: number }
 
 const DEFAULT_CONFIG: BoutiqueConfig = {
   primaryColor: "#00BFA6",
 }
 
-function StoryCircle({ story, color }: { story: { url: string; type: 'image' | 'video'; label?: string }; color: string }) {
-  const [open, setOpen] = useState(false)
+// Un simple rond cliquable — l'ouverture est gérée par le parent pour permettre de naviguer
+// entre toutes les stories (compteur + précédent/suivant), pas seulement celle-ci.
+function StoryCircle({ story, color, onOpen }: { story: Story; color: string; onOpen: () => void }) {
   return (
-    <>
-      <button onClick={() => setOpen(true)} className="flex flex-col items-center gap-1.5 shrink-0 group">
-        <div className="h-16 w-16 rounded-full overflow-hidden border-[3px] p-0.5 transition-transform group-hover:scale-105" style={{ borderColor: color }}>
-          <div className="h-full w-full rounded-full overflow-hidden bg-gray-100">
-            {story.type === 'video' ? (
-              <video src={getImageUrl(story.url)} className="h-full w-full object-cover" muted playsInline />
-            ) : (
-              <img src={getImageUrl(story.url)} alt="" className="h-full w-full object-cover" />
-            )}
-          </div>
+    <button onClick={onOpen} className="flex flex-col items-center gap-1.5 shrink-0 group">
+      <div className="h-16 w-16 rounded-full overflow-hidden border-[3px] p-0.5 transition-transform group-hover:scale-105" style={{ borderColor: color }}>
+        <div className="h-full w-full rounded-full overflow-hidden bg-gray-100">
+          {story.type === 'video' ? (
+            <video src={getImageUrl(story.url)} className="h-full w-full object-cover" muted playsInline />
+          ) : (
+            <img src={getImageUrl(story.url)} alt="" className="h-full w-full object-cover" />
+          )}
         </div>
-        <span className="text-[10px] font-semibold text-gray-600 max-w-[64px] truncate">{story.label || 'Story'}</span>
-      </button>
-      {open && (
-        <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center" onClick={() => setOpen(false)}>
-          <div className="relative" style={{ width: 'min(100vw, 400px)', aspectRatio: '9/16' }}>
-            {story.type === 'video' ? (
-              <video src={getImageUrl(story.url)} className="w-full h-full object-contain rounded-2xl" autoPlay controls />
-            ) : (
-              <img src={getImageUrl(story.url)} alt="" className="w-full h-full object-contain rounded-2xl" />
-            )}
-            <button onClick={() => setOpen(false)} className="absolute top-3 right-3 h-9 w-9 bg-black/50 rounded-full flex items-center justify-center text-white">
-              <X className="h-5 w-5" />
-            </button>
-            {story.label && (
-              <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/70 to-transparent rounded-b-2xl">
-                <p className="text-white font-bold text-sm">{story.label}</p>
+      </div>
+      {/* `block` est indispensable : max-width n'a aucun effet sur un <span> inline, ce qui
+          laissait le titre déborder du rond au lieu d'être tronqué. `title` permet de voir le
+          titre complet au survol quand il est tronqué. */}
+      <span className="block text-[10px] font-semibold text-gray-600 max-w-[64px] truncate" title={story.label || undefined}>
+        {story.label || 'Story'}
+      </span>
+    </button>
+  )
+}
+
+// Visionneuse plein écran — navigation précédent/suivant avec compteur, titre en haut,
+// et colonne d'actions à droite (aimer, partager, vues, lien externe optionnel).
+function StoryViewer({
+  stories, index, onIndex, onClose, color, userId,
+}: {
+  stories: Story[]; index: number; onIndex: (i: number) => void; onClose: () => void; color: string; userId: string
+}) {
+  const story = stories[index]
+  const [views, setViews] = useState(story.views || 0)
+  const [likes, setLikes] = useState(story.likes || 0)
+  const [liked, setLiked] = useState(false)
+  const [shared, setShared] = useState(false)
+  const viewedRef = useRef<Set<number>>(new Set())
+
+  useEffect(() => {
+    const current = stories[index]
+    setViews(current.views || 0)
+    setLikes(current.likes || 0)
+    setLiked(typeof window !== 'undefined' && localStorage.getItem(`story-liked-${userId}-${index}`) === '1')
+
+    // Une vue comptée par ouverture de story dans cette session de visionnage (évite qu'un
+    // aller-retour immédiat entre deux stories ne gonfle artificiellement le compteur).
+    if (!viewedRef.current.has(index)) {
+      viewedRef.current.add(index)
+      fetch(`/api/boutique/${userId}/stories/${index}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'view' }),
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setViews(d.views) })
+        .catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, userId])
+
+  const toggleLike = async () => {
+    const nextLiked = !liked
+    setLiked(nextLiked)
+    setLikes(l => l + (nextLiked ? 1 : -1))
+    try {
+      localStorage.setItem(`story-liked-${userId}-${index}`, nextLiked ? '1' : '0')
+    } catch { /* ignore */ }
+    try {
+      const res = await fetch(`/api/boutique/${userId}/stories/${index}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: nextLiked ? 'like' : 'unlike' }),
+      })
+      if (res.ok) { const d = await res.json(); setLikes(d.likes) }
+    } catch { /* ignore */ }
+  }
+
+  const share = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : ''
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: story.label || 'Story', url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        setShared(true)
+        setTimeout(() => setShared(false), 2000)
+      }
+    } catch { /* partage annulé par l'utilisateur */ }
+  }
+
+  const goPrev = () => onIndex(index > 0 ? index - 1 : stories.length - 1)
+  const goNext = () => onIndex(index < stories.length - 1 ? index + 1 : 0)
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center" onClick={onClose}>
+      <div className="relative flex items-center gap-3" onClick={e => e.stopPropagation()}>
+        {/* Précédent */}
+        {stories.length > 1 && (
+          <button onClick={goPrev} aria-label="Story précédente" className="hidden sm:flex h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center text-white shrink-0">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+
+        <div className="relative" style={{ width: 'min(100vw, 400px)', aspectRatio: '9/16' }}>
+          {/* Fondu léger derrière la barre du haut — lisible sur n'importe quelle image, sans l'assombrir */}
+          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/35 to-transparent rounded-t-2xl pointer-events-none" />
+
+          {/* Barre de progression + titre — en haut */}
+          <div className="absolute top-0 left-0 right-0 z-10 px-3 pt-3">
+            {stories.length > 1 && (
+              <div className="flex gap-1 mb-2">
+                {stories.map((_, i) => (
+                  <div key={i} className="h-1 flex-1 rounded-full bg-white/30 overflow-hidden">
+                    <div className="h-full bg-white" style={{ width: i < index ? '100%' : i === index ? '100%' : '0%', opacity: i <= index ? 1 : 0 }} />
+                  </div>
+                ))}
               </div>
             )}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Petit fond derrière le titre — juste assez pour rester lisible sans être trop sombre */}
+                <p className="text-white font-bold text-sm truncate bg-black/35 backdrop-blur-sm rounded-full px-2.5 py-1">{story.label || 'Story'}</p>
+                {stories.length > 1 && (
+                  <span className="text-white/80 text-xs font-bold shrink-0 bg-black/35 backdrop-blur-sm rounded-full px-2 py-1">{index + 1}/{stories.length}</span>
+                )}
+              </div>
+              <button onClick={onClose} className="h-8 w-8 bg-black/40 rounded-full flex items-center justify-center text-white shrink-0">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
+
+          {story.type === 'video' ? (
+            <video key={story.url} src={getImageUrl(story.url)} className="w-full h-full object-contain rounded-2xl" autoPlay controls />
+          ) : (
+            <img key={story.url} src={getImageUrl(story.url)} alt="" className="w-full h-full object-contain rounded-2xl" />
+          )}
+
+          {/* Zones cliquables gauche/droite pour naviguer (mobile, en plus des flèches) */}
+          {stories.length > 1 && (
+            <>
+              <button onClick={goPrev} aria-label="Précédent" className="absolute inset-y-0 left-0 w-1/4 sm:hidden" />
+              <button onClick={goNext} aria-label="Suivant" className="absolute inset-y-0 right-0 w-1/4 sm:hidden" />
+            </>
+          )}
         </div>
-      )}
-    </>
+
+        {/* Colonne d'actions à droite : aimer, partager, vues, lien externe */}
+        <div className="flex flex-col items-center gap-4 shrink-0">
+          <button onClick={toggleLike} className="flex flex-col items-center gap-1 text-white">
+            <span className="h-11 w-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+              <Heart className={`h-5 w-5 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
+            </span>
+            <span className="text-xs font-bold">{likes}</span>
+          </button>
+          <button onClick={share} className="flex flex-col items-center gap-1 text-white">
+            <span className="h-11 w-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+              <Share2 className="h-5 w-5" />
+            </span>
+            <span className="text-xs font-bold">{shared ? 'Copié' : 'Partager'}</span>
+          </button>
+          <div className="flex flex-col items-center gap-1 text-white">
+            <span className="h-11 w-11 rounded-full bg-white/10 flex items-center justify-center">
+              <Eye className="h-5 w-5" />
+            </span>
+            <span className="text-xs font-bold">{views}</span>
+          </div>
+          {story.link && (
+            <a href={story.link} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 text-white" style={{ color }}>
+              <span className="h-11 w-11 rounded-full flex items-center justify-center" style={{ backgroundColor: color }}>
+                <Link2 className="h-5 w-5 text-white" />
+              </span>
+              <span className="text-[10px] font-bold text-white max-w-[64px] truncate text-center">{story.linkLabel || 'Lien'}</span>
+            </a>
+          )}
+        </div>
+
+        {/* Suivant */}
+        {stories.length > 1 && (
+          <button onClick={goNext} aria-label="Story suivante" className="hidden sm:flex h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center text-white shrink-0">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -133,6 +286,15 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
 
   // Banner slider
   const [bannerIndex, setBannerIndex] = useState(0)
+
+  // Visionneuse de story plein écran — null = fermée, sinon index de la story affichée
+  // (permet la navigation précédent/suivant avec compteur entre toutes les stories).
+  const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null)
+
+  // Abonnés à la boutique — compteur réel (repris ensuite dans les statistiques du pro).
+  const [followerCount, setFollowerCount] = useState(0)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
   const bannerTimerRef = useRef<any>(null)
 
   const headerColor = config.headerColor || config.primaryColor || "#00BFA6"
@@ -221,6 +383,55 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     fetchAll()
   }, [rawParam])
 
+  const ownerId = resolvedUserId
+
+  useEffect(() => {
+    if (!ownerId) return
+    let followerId: number | undefined
+    try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) followerId = JSON.parse(userStr)?.id
+    } catch { /* ignore */ }
+    const qs = followerId ? `?followerId=${followerId}` : ''
+    fetch(`${API_URL}/boutique-sub/follow/${ownerId}/status${qs}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) { setFollowerCount(d.count); setIsFollowing(d.following) } })
+      .catch(() => {})
+  }, [ownerId])
+
+  // Suivi des clics sur les boutons de contact de la boutique (pas liés à une annonce précise) —
+  // repris dans "Mes statistiques" du pro sous "Contacts via boutique".
+  const trackBoutiqueContact = (channel: 'CALL' | 'WHATSAPP' | 'EMAIL') => {
+    if (!ownerId) return
+    fetch(`${API_URL}/boutique-sub/${ownerId}/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel }),
+      keepalive: true,
+    }).catch(() => {})
+  }
+
+  const toggleFollow = async () => {
+    if (!ownerId) return
+    const token = localStorage.getItem('token')
+    if (!token) { window.location.href = '/auth/login'; return }
+    setFollowLoading(true)
+    try {
+      const nextFollowing = !isFollowing
+      const res = await fetch(`${API_URL}/boutique-sub/${nextFollowing ? 'follow' : 'unfollow'}/${ownerId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const d = await res.json()
+        setIsFollowing(d.following)
+        setFollowerCount(d.count)
+      }
+    } catch { /* ignore */ } finally {
+      setFollowLoading(false)
+    }
+  }
+
   const availableCategories = useMemo(() => {
     const catIds = new Set<string>()
     announces.forEach(a => {
@@ -231,24 +442,15 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     return REAL_ESTATE_CATEGORIES.filter(c => catIds.has(c.id))
   }, [announces])
 
-  const availableWilayas = useMemo(() => {
-    const cities = new Map<string, string>()
-    announces.forEach(a => {
-      const city = a.property?.address?.town?.city
-      if (city?.nameFr) cities.set(city.nameFr, city.nameFr)
-    })
-    return Array.from(cities.values()).sort()
-  }, [announces])
+  // Toutes les wilayas et communes d'Algérie — pas seulement celles où ce pro a déjà une
+  // annonce, pour que le filtre reste complet même quand la boutique démarre avec peu de biens.
+  const availableWilayas = useMemo(() => WILAYAS.map(w => w.name), [])
 
   const availableCommunes = useMemo(() => {
-    const towns = new Map<string, string>()
-    announces.filter(a => !wilayas || a.property?.address?.town?.city?.nameFr === wilayas)
-      .forEach(a => {
-        const town = a.property?.address?.town
-        if (town?.nameFr) towns.set(town.nameFr, town.nameFr)
-      })
-    return Array.from(towns.values()).sort()
-  }, [announces, wilayas])
+    const selected = WILAYAS.find(w => w.name === wilayas)
+    if (!selected) return []
+    return COMMUNES.filter(c => c.wilayaCode === selected.code).map(c => c.name)
+  }, [wilayas])
 
   const filtered = useMemo(() => {
     return announces.filter(a => {
@@ -536,17 +738,17 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
           {(hasContact || hasSocial) && (
             <div className="mt-6 flex flex-wrap items-center gap-2.5 justify-center">
               {config.phone && (
-                <a href={`tel:${config.phone}`} className="flex items-center gap-2 bg-white text-gray-900 px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
+                <a href={`tel:${config.phone}`} onClick={() => trackBoutiqueContact('CALL')} className="flex items-center gap-2 bg-white text-gray-900 px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
                   <Phone className="h-3.5 w-3.5" style={{ color }} /> {config.phone}
                 </a>
               )}
               {config.whatsapp && (
-                <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
+                <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} onClick={() => trackBoutiqueContact('WHATSAPP')} target="_blank" className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
                   <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                 </a>
               )}
               {config.email && (
-                <a href={`mailto:${config.email}`} className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
+                <a href={`mailto:${config.email}`} onClick={() => trackBoutiqueContact('EMAIL')} className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
                   <Mail className="h-3.5 w-3.5" /> Email
                 </a>
               )}
@@ -595,11 +797,14 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
               <Send className="h-3.5 w-3.5" /> Envoyer un message
             </a>
             <button
-              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all"
+              className={`flex items-center gap-2 border px-4 py-2 rounded-full font-bold text-sm transition-all disabled:opacity-60 ${isFollowing ? 'bg-white/40 border-white/60' : 'bg-white/20 border-white/40 hover:bg-white/30'}`}
               style={{ color: headerTextColor }}
-              onClick={() => alert("Fonctionnalité d'abonnement bientôt disponible !")}
+              onClick={toggleFollow}
+              disabled={followLoading}
             >
-              <Bell className="h-3.5 w-3.5" /> S'abonner
+              <Bell className={`h-3.5 w-3.5 ${isFollowing ? 'fill-current' : ''}`} />
+              {isFollowing ? 'Abonné' : "S'abonner"}
+              {followerCount > 0 && <span className="opacity-80">· {followerCount}</span>}
             </button>
           </div>
         </div>
@@ -614,13 +819,23 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
             <div className="max-w-6xl mx-auto px-4">
               <div className="flex gap-4 overflow-x-auto scrollbar-none pb-1">
                 {stories.map((s, idx) => (
-                  <StoryCircle key={idx} story={s} color={storyColor} />
+                  <StoryCircle key={idx} story={s} color={storyColor} onOpen={() => setStoryViewerIndex(idx)} />
                 ))}
               </div>
             </div>
           </div>
         )
       })()}
+      {storyViewerIndex !== null && config.stories && config.stories.length > 0 && (
+        <StoryViewer
+          stories={config.stories}
+          index={storyViewerIndex}
+          onIndex={setStoryViewerIndex}
+          onClose={() => setStoryViewerIndex(null)}
+          color={storyColor}
+          userId={resolvedUserId || rawParam}
+        />
+      )}
 
       {/* ── FILTER BAR ── */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -801,17 +1016,17 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
                 <h4 className="font-bold text-white/90 mb-4 uppercase text-xs tracking-widest">Contact</h4>
                 <div className="space-y-3">
                   {config.phone && (
-                    <a href={`tel:${config.phone}`} className="flex items-center gap-3 text-white/80 hover:text-white transition-colors text-sm">
+                    <a href={`tel:${config.phone}`} onClick={() => trackBoutiqueContact('CALL')} className="flex items-center gap-3 text-white/80 hover:text-white transition-colors text-sm">
                       <Phone className="h-4 w-4 shrink-0" /> {config.phone}
                     </a>
                   )}
                   {config.whatsapp && (
-                    <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" className="flex items-center gap-3 text-white/80 hover:text-white transition-colors text-sm">
+                    <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} onClick={() => trackBoutiqueContact('WHATSAPP')} target="_blank" className="flex items-center gap-3 text-white/80 hover:text-white transition-colors text-sm">
                       <MessageCircle className="h-4 w-4 shrink-0" /> WhatsApp: {config.whatsapp}
                     </a>
                   )}
                   {config.email && (
-                    <a href={`mailto:${config.email}`} className="flex items-center gap-3 text-white/80 hover:text-white transition-colors text-sm">
+                    <a href={`mailto:${config.email}`} onClick={() => trackBoutiqueContact('EMAIL')} className="flex items-center gap-3 text-white/80 hover:text-white transition-colors text-sm">
                       <Mail className="h-4 w-4 shrink-0" /> {config.email}
                     </a>
                   )}

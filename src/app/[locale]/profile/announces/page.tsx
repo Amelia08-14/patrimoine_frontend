@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import axios from "axios"
-import { Calendar, MapPin, Zap, Star, Loader2, AlertCircle, Check, X, Coins, Edit, Eye } from "lucide-react"
+import { Calendar, MapPin, Zap, Star, Loader2, AlertCircle, Check, X, Coins, Edit, Eye, Filter, RotateCcw, ListChecks, TrendingUp } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -88,6 +88,12 @@ export default function MyAnnouncesPage() {
   const [featureTarget, setFeatureTarget] = useState<any | null>(null)
   const [toast, setToast] = useState("")
 
+  // Filtres — statut (actualisée/boostée), période, tri
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'REFRESHED' | 'NOT_REFRESHED' | 'FEATURED' | 'NOT_FEATURED'>('ALL')
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [sortBy, setSortBy] = useState<'RECENT' | 'OLDEST' | 'POINTS_DESC' | 'POINTS_ASC'>('RECENT')
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
 
   const load = async () => {
@@ -130,6 +136,34 @@ export default function MyAnnouncesPage() {
     return new Date(a.featuredUntil) > new Date()
   }
 
+  const isRecentlyRefreshed = (a: any) => !!a.refreshDate && (new Date().getTime() - new Date(a.refreshDate).getTime()) < 24 * 3600 * 1000
+
+  // KPI de positionnement — calculés sur l'ensemble des annonces, indépendamment des filtres actifs,
+  // pour donner au client une vue d'ensemble stable pendant qu'il filtre la liste en dessous.
+  const kpiRefreshedCount = announces.filter(isRecentlyRefreshed).length
+  const kpiFeaturedCount = announces.filter(isCurrentlyFeatured).length
+  const kpiPointsSpent = announces.reduce((sum, a) => sum + (a.pointsUsageTotal || 0), 0)
+
+  const hasActiveFilters = statusFilter !== 'ALL' || dateFrom || dateTo || sortBy !== 'RECENT'
+  const resetFilters = () => { setStatusFilter('ALL'); setDateFrom(""); setDateTo(""); setSortBy('RECENT') }
+
+  const filteredAnnounces = announces
+    .filter((a) => {
+      if (statusFilter === 'REFRESHED' && !isRecentlyRefreshed(a)) return false
+      if (statusFilter === 'NOT_REFRESHED' && isRecentlyRefreshed(a)) return false
+      if (statusFilter === 'FEATURED' && !isCurrentlyFeatured(a)) return false
+      if (statusFilter === 'NOT_FEATURED' && isCurrentlyFeatured(a)) return false
+      if (dateFrom && new Date(a.createdAt) < new Date(dateFrom)) return false
+      if (dateTo && new Date(a.createdAt) > new Date(`${dateTo}T23:59:59`)) return false
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === 'POINTS_DESC') return (b.pointsUsageTotal || 0) - (a.pointsUsageTotal || 0)
+      if (sortBy === 'POINTS_ASC') return (a.pointsUsageTotal || 0) - (b.pointsUsageTotal || 0)
+      const da = new Date(a.createdAt).getTime(), db = new Date(b.createdAt).getTime()
+      return sortBy === 'OLDEST' ? da - db : db - da
+    })
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-[#00BFA6]" /></div>
 
   return (
@@ -162,6 +196,78 @@ export default function MyAnnouncesPage() {
           </div>
         </div>
 
+        {announces.length > 0 && (
+          <>
+            {/* KPI — vue d'ensemble pour aider le client à se positionner, indépendante des filtres */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                <span className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0"><ListChecks className="h-4.5 w-4.5 text-gray-500" /></span>
+                <div className="min-w-0"><div className="text-lg font-black text-gray-900 leading-none">{announces.length}</div><div className="text-xs text-gray-500 mt-1 truncate">{t("kpiTotal")}</div></div>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                <span className="h-9 w-9 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center shrink-0"><Zap className="h-4.5 w-4.5 text-[#00BFA6]" /></span>
+                <div className="min-w-0"><div className="text-lg font-black text-gray-900 leading-none">{kpiRefreshedCount}</div><div className="text-xs text-gray-500 mt-1 truncate">{t("kpiRefreshed")}</div></div>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                <span className="h-9 w-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0"><Star className="h-4.5 w-4.5 text-amber-500" /></span>
+                <div className="min-w-0"><div className="text-lg font-black text-gray-900 leading-none">{kpiFeaturedCount}</div><div className="text-xs text-gray-500 mt-1 truncate">{t("kpiFeatured")}</div></div>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                <span className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0"><TrendingUp className="h-4.5 w-4.5 text-purple-500" /></span>
+                <div className="min-w-0"><div className="text-lg font-black text-gray-900 leading-none">{kpiPointsSpent}</div><div className="text-xs text-gray-500 mt-1 truncate">{t("kpiPointsSpent")}</div></div>
+              </div>
+            </div>
+
+            {/* Filtres */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5 flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0"><Filter className="h-3.5 w-3.5" /></span>
+
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  ['ALL', t("filterAll")],
+                  ['REFRESHED', t("filterRefreshed")],
+                  ['NOT_REFRESHED', t("filterNotRefreshed")],
+                  ['FEATURED', t("filterFeatured")],
+                  ['NOT_FEATURED', t("filterNotFeatured")],
+                ] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setStatusFilter(id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${statusFilter === id ? 'bg-[#00BFA6] border-[#00BFA6] text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-[#00BFA6] hover:text-[#00BFA6]'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="text-xs font-medium text-gray-500">{t("periodFrom")}</span>
+                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:border-[#00BFA6] outline-none" />
+                <span className="text-xs font-medium text-gray-500">{t("periodTo")}</span>
+                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:border-[#00BFA6] outline-none" />
+              </div>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:border-[#00BFA6] outline-none"
+                title={t("sortLabel")}
+              >
+                <option value="RECENT">{t("sortRecent")}</option>
+                <option value="OLDEST">{t("sortOldest")}</option>
+                <option value="POINTS_DESC">{t("sortMostPoints")}</option>
+                <option value="POINTS_ASC">{t("sortLeastPoints")}</option>
+              </select>
+
+              {hasActiveFilters && (
+                <button onClick={resetFilters} className="flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-gray-600 shrink-0">
+                  <RotateCcw className="h-3.5 w-3.5" /> {t("resetFilters")}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
         {announces.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <p className="text-gray-500 mb-4">{t("noAnnouncesYet")}</p>
@@ -177,32 +283,36 @@ export default function MyAnnouncesPage() {
               <span className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-amber-500" /> {t("legendFeature")}</span>
             </div>
 
+            {filteredAnnounces.length === 0 && (
+              <div className="text-center py-12 text-sm text-gray-400">{t("noResultsFiltered")}</div>
+            )}
+
             {/* Liste */}
             <div className="divide-y divide-gray-100">
-              {announces.map(a => {
+              {filteredAnnounces.map(a => {
                 const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
                 const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
                 const commune = a.property?.address?.town?.nameFr || ''
                 const featured = isCurrentlyFeatured(a)
-                const refreshed = a.refreshDate && (new Date().getTime() - new Date(a.refreshDate).getTime()) < 24 * 3600 * 1000
+                const refreshed = isRecentlyRefreshed(a)
 
                 return (
-                  <div key={a.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+                  <div key={a.id} className="flex flex-wrap sm:flex-nowrap items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
                     {/* ID */}
-                    <span className="text-xs text-gray-400 font-mono w-10 shrink-0">#{a.id}</span>
+                    <span className="text-xs text-gray-400 font-mono w-8 shrink-0 pt-1">#{a.id}</span>
 
                     {/* Image */}
                     <div className="h-14 w-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
                       {img ? <img src={getImageUrl(img.url)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />}
                     </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-bold text-gray-900 text-sm truncate">{a.title || a.reference}</span>
+                    {/* Info : titre, méta, puis badges sur leur propre ligne pour ne rien chevaucher */}
+                    <div className="flex-1 min-w-[220px] space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-gray-900 text-sm truncate max-w-[220px]">{a.title || a.reference}</span>
                         <span className="text-xs text-gray-400 shrink-0 font-mono">{a.reference}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-gray-500">
                         <span className={`px-1.5 py-0.5 rounded font-bold ${
                           a.status === 'VALIDATED' ? 'bg-green-100 text-green-700' :
                           a.status === 'WAITING_VALIDATION' ? 'bg-amber-100 text-amber-700' :
@@ -212,54 +322,61 @@ export default function MyAnnouncesPage() {
                         {city && <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" />{commune}{city && commune !== city ? `, ${city}` : ''}</span>}
                         {a.price && <span className="font-bold text-[#00BFA6]">{Number(a.price).toLocaleString()} DA</span>}
                       </div>
-                    </div>
 
-                    {/* Badges */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {featured && (
-                        <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">
-                          <Star className="h-3 w-3" /> {t("featuredUntil", { date: new Date(a.featuredUntil).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR') })}
-                        </span>
-                      )}
-                      {refreshed && (
-                        <span className="flex items-center gap-1 px-2 py-1 bg-[#00BFA6]/10 text-[#00BFA6] rounded-full text-xs font-bold">
-                          <Zap className="h-3 w-3" /> {t("refreshedBadge")}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <a href={`/announces/${a.id}`} target="_blank"
-                        className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-colors" title={t("viewTitle")}>
-                        <Eye className="h-4 w-4" />
-                      </a>
-                      {a.status === 'VALIDATED' && (
-                        <>
-                          <button
-                            onClick={() => boost(a.id)}
-                            disabled={boosting === a.id || balance < 1}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#00BFA6]/30 text-[#00BFA6] text-xs font-bold hover:bg-[#00BFA6]/5 disabled:opacity-50 transition-colors"
-                            title={t("refreshTitle")}
-                          >
-                            {boosting === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                            {t("refreshBtn")}
-                          </button>
-                          <button
-                            onClick={() => setFeatureTarget(a)}
-                            disabled={balance < 2}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-amber-200 text-amber-600 text-xs font-bold hover:bg-amber-50 disabled:opacity-50 transition-colors"
-                            title={t("featureTitle")}
-                          >
-                            <Star className="h-3.5 w-3.5" />
-                            {featured ? t("renewBtn") : t("publishBtn")}
-                          </button>
-                        </>
+                      {/* Badges — sur leur propre ligne, passent à la ligne suivante entre eux si besoin */}
+                      {(featured || refreshed || a.pointsUsageCount > 0) && (
+                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                          {featured && (
+                            <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold whitespace-nowrap">
+                              <Star className="h-3 w-3 shrink-0" /> {t("featuredUntil", { date: new Date(a.featuredUntil).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR') })}
+                            </span>
+                          )}
+                          {refreshed && (
+                            <span className="flex items-center gap-1 px-2 py-1 bg-[#00BFA6]/10 text-[#00BFA6] rounded-full text-xs font-bold whitespace-nowrap">
+                              <Zap className="h-3 w-3 shrink-0" /> {t("refreshedBadge")}
+                            </span>
+                          )}
+                          {a.pointsUsageCount > 0 && (
+                            <span className="flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-600 rounded-full text-xs font-bold whitespace-nowrap" title={t("kpiPointsSpent")}>
+                              <Coins className="h-3 w-3 shrink-0" /> {t("pointsUsageBadge", { count: a.pointsUsageCount, total: a.pointsUsageTotal })}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 
-                    {/* Date */}
-                    <span className="text-xs text-gray-400 shrink-0 flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(a.createdAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
+                    {/* Date + Actions — colonne à droite, empilées pour limiter la largeur requise */}
+                    <div className="flex flex-col items-end gap-2 shrink-0 ml-auto">
+                      <span className="text-xs text-gray-400 flex items-center gap-1 whitespace-nowrap"><Calendar className="h-3 w-3" />{new Date(a.createdAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
+                      <div className="flex items-center gap-1.5">
+                        <a href={`/announces/${a.id}`} target="_blank"
+                          className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-colors" title={t("viewTitle")}>
+                          <Eye className="h-4 w-4" />
+                        </a>
+                        {a.status === 'VALIDATED' && (
+                          <>
+                            <button
+                              onClick={() => boost(a.id)}
+                              disabled={boosting === a.id || balance < 1}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#00BFA6]/30 text-[#00BFA6] text-xs font-bold hover:bg-[#00BFA6]/5 disabled:opacity-50 transition-colors whitespace-nowrap"
+                              title={t("refreshTitle")}
+                            >
+                              {boosting === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                              {t("refreshBtn")}
+                            </button>
+                            <button
+                              onClick={() => setFeatureTarget(a)}
+                              disabled={balance < 2}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-amber-200 text-amber-600 text-xs font-bold hover:bg-amber-50 disabled:opacity-50 transition-colors whitespace-nowrap"
+                              title={t("featureTitle")}
+                            >
+                              <Star className="h-3.5 w-3.5" />
+                              {featured ? t("renewBtn") : t("publishBtn")}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )
               })}

@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, CheckCircle, Heart, MapPin, BedDouble, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, Smartphone, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid } from "lucide-react"
+import { ArrowRight, CheckCircle, Heart, MapPin, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, Smartphone, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
@@ -9,6 +9,8 @@ import { Link, useRouter } from "@/i18n/navigation"
 import axios from "axios"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
+import { WILAYAS } from "@/data/wilayas"
+import { COMMUNES } from "@/data/communes"
 
 // Helper for Icons
 const getIcon = (name: string) => {
@@ -349,13 +351,6 @@ const CategoryCarousel = ({ categories, onCategoryClick }: { categories: any[], 
   )
 }
 
-const BUDGET_RANGES = [
-  { id: "0-5000000", label: "< 5M DA", min: "", max: "5000000" },
-  { id: "5000000-15000000", label: "5M – 15M DA", min: "5000000", max: "15000000" },
-  { id: "15000000-30000000", label: "15M – 30M DA", min: "15000000", max: "30000000" },
-  { id: "30000000-", label: "> 30M DA", min: "30000000", max: "" },
-] as const
-
 // Barre de recherche du hero — réellement câblée vers /announces (mêmes paramètres que la page
 // de recherche : transactionType, realEstateCategory, wilaya, minPrice/maxPrice, nbPieces).
 function HeroSearchBar() {
@@ -365,26 +360,19 @@ function HeroSearchBar() {
   const [transactionType, setTransactionType] = useState<"" | "SALE" | "RENTAL">("")
   const [category, setCategory] = useState("")
   const [wilaya, setWilaya] = useState("")
-  const [budget, setBudget] = useState("")
-  const [pieces, setPieces] = useState("")
-  const [cities, setCities] = useState<{ id: number; code: number; nameFr: string }[]>([])
+  const [commune, setCommune] = useState("")
 
-  useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    fetch(`${apiUrl}/cities`).then((r) => r.json()).then((d) => setCities(Array.isArray(d) ? d : [])).catch(() => {})
-  }, [])
+  // Mêmes données et mêmes valeurs (wilaya.code / commune.id) que le filtre de la page
+  // /announces (AnnounceFilter), pour que la recherche depuis l'accueil retombe exactement
+  // sur les mêmes résultats que si on affinait ensuite depuis la liste.
+  const filteredCommunes = wilaya ? COMMUNES.filter((c) => c.wilayaCode === wilaya) : []
 
   const submit = () => {
     const params = new URLSearchParams()
     if (transactionType) params.set('transactionType', transactionType)
     if (category) params.set('realEstateCategory', category)
     if (wilaya) params.set('wilaya', wilaya)
-    if (pieces) params.set('nbPieces', pieces)
-    const range = BUDGET_RANGES.find((b) => b.id === budget)
-    if (range) {
-      if (range.min) params.set('minPrice', range.min)
-      if (range.max) params.set('maxPrice', range.max)
-    }
+    if (commune) params.set('commune', commune)
     router.push(`/announces?${params.toString()}`)
   }
 
@@ -407,14 +395,6 @@ function HeroSearchBar() {
       </div>
 
       <div className="flex-1 flex items-center gap-2 px-3 border-y lg:border-y-0 lg:border-x border-gray-100 min-w-0">
-        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={wilaya} onChange={(e) => setWilaya(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
-          <option value="">{t("searchWilayaPlaceholder")}</option>
-          {cities.map((c) => <option key={c.id} value={c.code}>{c.nameFr}</option>)}
-        </select>
-      </div>
-
-      <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 min-w-0">
         <Building2 className="h-4 w-4 text-gray-400 shrink-0" />
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
           <option value="">{t("searchCategoryPlaceholder")}</option>
@@ -425,18 +405,18 @@ function HeroSearchBar() {
       </div>
 
       <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 min-w-0">
-        <Coins className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
-          <option value="">{t("searchBudgetPlaceholder")}</option>
-          {BUDGET_RANGES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
+        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+        <select value={wilaya} onChange={(e) => { setWilaya(e.target.value); setCommune("") }} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
+          <option value="">{t("searchWilayaPlaceholder")}</option>
+          {WILAYAS.map((w) => <option key={w.code} value={w.code}>{w.name}</option>)}
         </select>
       </div>
 
       <div className="flex-1 flex items-center gap-2 px-3 min-w-0">
-        <BedDouble className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={pieces} onChange={(e) => setPieces(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
-          <option value="">{t("searchPiecesPlaceholder")}</option>
-          {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}+</option>)}
+        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+        <select value={commune} onChange={(e) => setCommune(e.target.value)} disabled={!wilaya} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate disabled:text-gray-400">
+          <option value="">{t("searchCommunePlaceholder")}</option>
+          {filteredCommunes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
 

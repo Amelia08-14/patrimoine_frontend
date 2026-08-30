@@ -5,20 +5,28 @@ import axios from "axios";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Lock, Save, Loader2, Building2, Upload, Check } from "lucide-react";
+import { User, Lock, Save, Loader2, Building2, Upload, Check, MapPin } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function ProfileInfoPage() {
   const t = useTranslations("ProfileInfo");
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
+  // Wilaya/commune chargées depuis la vraie base (City/Town), comme dans le reste du site :
+  // les selects portent de vrais id, envoyés en townId — la source pour les filtres par la suite.
+  const [cities, setCities] = useState<Array<{ id: number; nameFr: string }>>([]);
+  const [towns, setTowns] = useState<Array<{ id: number; nameFr: string }>>([]);
+  const [selectedWilaya, setSelectedWilaya] = useState("");
+  const [selectedCommune, setSelectedCommune] = useState("");
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    address: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -41,35 +49,54 @@ export default function ProfileInfoPage() {
     inapiDocument: null as File | null
   });
 
+  const applyUserData = (userData: any) => {
+    setUser(userData);
+    setFormData(prev => ({
+        ...prev,
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        companyName: userData.companyName || "",
+        commercialRegister: userData.commercialRegister || "",
+        agreementNumber: userData.agreementNumber || "",
+        position: userData.position || "",
+        nif: userData.nif || "",
+        nis: userData.nis || "",
+        agreementExpiryDate: userData.agreementExpiryDate ? userData.agreementExpiryDate.substring(0, 10) : ""
+    }));
+    if (userData.town?.city?.id) setSelectedWilaya(String(userData.town.city.id));
+    if (userData.townId) setSelectedCommune(String(userData.townId));
+  };
+
   useEffect(() => {
     // Load user data
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
-    
+
     if (token && userStr) {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        setFormData(prev => ({
-            ...prev,
-            firstName: userData.firstName || "",
-            lastName: userData.lastName || "",
-            email: userData.email || "",
-            phone: userData.phone || "",
-            address: userData.address || "",
-            companyName: userData.companyName || "",
-            commercialRegister: userData.commercialRegister || "",
-            agreementNumber: userData.agreementNumber || "",
-            position: userData.position || "",
-            nif: userData.nif || "",
-            nis: userData.nis || "",
-            agreementExpiryDate: userData.agreementExpiryDate ? userData.agreementExpiryDate.substring(0, 10) : ""
-        }));
+        // Peinture immédiate depuis le cache local, puis on rafraîchit avec /users/me pour
+        // récupérer la wilaya/commune réelles (town.city) même si le cache local est ancien.
+        applyUserData(JSON.parse(userStr));
+        fetch(`${API_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((fresh) => { if (fresh) applyUserData(fresh); })
+            .catch(() => {});
         setLoading(false);
     } else {
         // Redirect or show login
         setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetch(`${API_URL}/cities`).then((r) => r.json()).then((d) => setCities(Array.isArray(d) ? d : [])).catch(() => setCities([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedWilaya) { setTowns([]); return; }
+    fetch(`${API_URL}/cities/${selectedWilaya}/towns`).then((r) => r.json()).then((d) => setTowns(Array.isArray(d) ? d : [])).catch(() => setTowns([]));
+  }, [selectedWilaya]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -94,6 +121,9 @@ export default function ProfileInfoPage() {
         Object.entries(formData).forEach(([key, value]) => {
             if (value) submitData.append(key, value);
         });
+
+        // Wilaya/commune : townId réel (City.id/Town.id), utilisé ensuite pour les filtres.
+        if (selectedCommune) submitData.append('townId', selectedCommune);
 
         // Append files if they exist
         if (files.rcDocument) submitData.append('rcDocument', files.rcDocument);
@@ -269,10 +299,10 @@ export default function ProfileInfoPage() {
                     </div>
                 )}
 
-                {/* Responsable légal (en deuxième) */}
+                {/* Responsable légal pour une société, Informations personnelles pour un particulier (en deuxième) */}
                 <div>
                     <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
-                        <User className="w-5 h-5 text-gray-400" /> {t("legalRepresentativeTitle")}
+                        <User className="w-5 h-5 text-gray-400" /> {user.userType === 'SOCIETE' ? t("legalRepresentativeTitle") : t("personalInfoTitle")}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -314,17 +344,35 @@ export default function ProfileInfoPage() {
                     </div>
                 </div>
 
-                {/* Adresse (en troisième) */}
+                {/* Wilaya / Commune (en troisième) — remplace l'ancien champ Adresse en texte libre, sert de base aux filtres */}
                 <div>
-                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">{t("addressSectionTitle")}</h2>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">{t("address")}</label>
-                        <Input
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                            className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
-                        />
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
+                        <MapPin className="w-5 h-5 text-gray-400" /> {t("addressSectionTitle")}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">{t("wilaya")}</label>
+                            <select
+                                value={selectedWilaya}
+                                onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); }}
+                                className="w-full bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px] rounded-md px-3"
+                            >
+                                <option value="">{t("wilayaPlaceholder")}</option>
+                                {cities.map((c) => <option key={c.id} value={c.id}>{c.nameFr}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">{t("commune")}</label>
+                            <select
+                                value={selectedCommune}
+                                onChange={(e) => setSelectedCommune(e.target.value)}
+                                disabled={!selectedWilaya}
+                                className="w-full bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px] rounded-md px-3 disabled:opacity-60"
+                            >
+                                <option value="">{t("communePlaceholder")}</option>
+                                {towns.map((tw) => <option key={tw.id} value={tw.id}>{tw.nameFr}</option>)}
+                            </select>
+                        </div>
                     </div>
                 </div>
 

@@ -173,17 +173,19 @@ const BASE_PROPERTY_TYPES = [
   { id: "TERRAIN_HOTELIER", label: "Terrain hôtelier", categoryId: "HOTELIER", iconName: "TerrainHotel" },
   { id: "HOTEL", label: "Hôtel", categoryId: "HOTELIER", iconName: "HotelEtoile" },
   { id: "AUTRE_HOTEL", label: "Autre structure hôtelière", categoryId: "HOTELIER", iconName: "StructureHoteliere" },
-  { id: "APPARTEMENT_COMMERCIAL", label: "Appartement commercial", categoryId: "BUREAUX_COMMERCES", iconName: "AppartementBureau" },
-  { id: "VILLA_COMMERCIALE", label: "Villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "VillaBureau" },
-  { id: "NIVEAU_VILLA_COMMERCIAL", label: "Niveau de villa commerciale", categoryId: "BUREAUX_COMMERCES", iconName: "NiveauVillaBureau" },
-  { id: "IMMEUBLE_BUREAU", label: "Immeuble d'appartements commerciales", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
-  { id: "IMMEUBLE_COMMERCIAL", label: "Immeuble commercial", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
+  // Ordre volontaire : L01 (4) tronc commun résidentiel-pro, L02 (4) locaux commerciaux, L03 (3) réservé pro
+  // (Centre d'affaires, Espace co-working, Bureau flexible filtrés pour les particuliers dans getFilteredPropertyTypes).
+  { id: "APPARTEMENT_COMMERCIAL", label: "Appartement", categoryId: "BUREAUX_COMMERCES", iconName: "AppartementBureau" },
+  { id: "VILLA_COMMERCIALE", label: "Villa", categoryId: "BUREAUX_COMMERCES", iconName: "VillaBureau" },
+  { id: "NIVEAU_VILLA_COMMERCIAL", label: "Niveau de villa", categoryId: "BUREAUX_COMMERCES", iconName: "NiveauVillaBureau" },
+  { id: "IMMEUBLE_BUREAU", label: "Immeuble d'appartement", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
+  { id: "BLOC_ADMINISTRATIF", label: "Bloc administratif", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
+  { id: "IMMEUBLE_COMMERCIAL", label: "Bloc commercial", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "LOCAL_COMMERCIAL", label: "Local commercial", categoryId: "BUREAUX_COMMERCES", iconName: "LocalCommercial" },
-  { id: "SHOWROOM", label: "Showroom", categoryId: "BUREAUX_COMMERCES", iconName: "Showroom" },
   { id: "CENTRE_AFFAIRES", label: "Centre d'affaires", categoryId: "BUREAUX_COMMERCES", iconName: "CentreAffaires" },
+  { id: "SHOWROOM", label: "Showroom", categoryId: "BUREAUX_COMMERCES", iconName: "Showroom" },
   { id: "COWORKING", label: "Espace co-working", categoryId: "BUREAUX_COMMERCES", iconName: "Coworking" },
   { id: "BUREAU_FLEXIBLE", label: "Bureau flexible", categoryId: "BUREAUX_COMMERCES", iconName: "BureauFlexible" },
-  { id: "BLOC_ADMINISTRATIF", label: "Bloc administratif", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "HEBERGEMENT_HOTELIER", label: "Hébergement hôtelier étoilé", categoryId: "HEBERGEMENT", iconName: "HebergementEtoile" },
   { id: "AUTRE_HEBERGEMENT", label: "Hébergement hôtelier sans étoile", categoryId: "HEBERGEMENT", iconName: "HebergementSansEtoile" },
   { id: "COMPLEXE_TOURISTIQUE_HEBERGEMENT", label: "Complexe touristique étoilé", categoryId: "HEBERGEMENT", iconName: "ComplexeEtoile" },
@@ -768,6 +770,9 @@ const USAGE_TYPES = [
     }
 ]
 
+// Type d'accès — spécifique au niveau de villa, à choix unique. Le "cadre" (quartier classique /
+// résidence clôturée / promotion immobilière) est géré séparément par APARTMENT_LIFESTYLE_TYPES,
+// à choix multiple, commun à tous les types de biens d'habitation.
 const ENTRY_ACCESS_TYPES = [
     {
         id: "ENTREE_INDEPENDANTE",
@@ -779,21 +784,6 @@ const ENTRY_ACCESS_TYPES = [
         label: "Entrée commune",
         description: "Accès partagé (entrée commune)"
     },
-    {
-        id: "QUARTIER_OUVERT",
-        label: "Quartier classique",
-        description: "Quartier classique ouvert"
-    },
-    {
-        id: "RESIDENCE_CLOTUREE",
-        label: "Résidence clôturée",
-        description: "Résidence clôturée sécurisée"
-    },
-    {
-        id: "PROMOTION_IMMOBILIERE",
-        label: "Promotion immobilière",
-        description: "Promotion immobilière (quartier classique & résidence clôturée)"
-    }
 ]
 
 const APARTMENT_LIFESTYLE_TYPES = [
@@ -812,12 +802,6 @@ const APARTMENT_LIFESTYLE_TYPES = [
         label: "Promotion immobilière",
         description: "Promotion immobilière"
     }
-]
-
-const CADRE_MODE_VIE_TYPES = [
-    { id: "RESIDENCE_FERMEE_PROMOTION", label: "Résidence fermée / Promotion immobilière" },
-    { id: "QUARTIER_RESIDENTIEL_STANDING", label: "Quartier résidentiel / Standing" },
-    { id: "QUARTIER_CLASSIQUE", label: "Quartier classique" },
 ]
 
 const BUILDING_TYPOLOGY_MODES = [
@@ -1086,7 +1070,7 @@ const formSchema = z.object({
   industrialSanitation: stringArrayOptional,
   industrialFireNetwork: stringArrayOptional,
   industrialFireEquipment: stringArrayOptional,
-  industrialFireWaterReserveLiters: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Volume invalide"),
+  industrialFireWaterReserveLiters: z.string().optional().refine((val) => { const n = Number((val || '').replace(/\s/g, '')); return !val || (!isNaN(n) && n > 0) }, "Volume invalide"),
 
   // Hangar
   hangarUsage: stringArrayOptional,
@@ -1418,8 +1402,8 @@ const formSchema = z.object({
         if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
         }
-        if (!["ENTREE_INDEPENDANTE", "ENTREE_COMMUNE", "QUARTIER_OUVERT", "RESIDENCE_CLOTUREE", "PROMOTION_IMMOBILIERE"].includes(data.usageType || "")) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mode de vie requis", path: ["usageType"] })
+        if (!["ENTREE_INDEPENDANTE", "ENTREE_COMMUNE"].includes(data.usageType || "")) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Type d'accès requis", path: ["usageType"] })
         }
     }
 
@@ -1427,17 +1411,11 @@ const formSchema = z.object({
         if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
         }
-        if (!(data.usageType === "QUARTIER_OUVERT" || data.usageType === "RESIDENCE_CLOTUREE" || data.usageType === "PROMOTION_IMMOBILIERE")) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mode de vie requis", path: ["usageType"] })
-        }
     }
 
     if (data.propertyType === "DUPLEX" || data.propertyType === "TRIPLEX" || data.propertyType === "STUDIO") {
         if (!data.area || isNaN(Number(data.area)) || Number(data.area) <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Surface requise", path: ["area"] })
-        }
-        if (!(data.usageType === "QUARTIER_OUVERT" || data.usageType === "RESIDENCE_CLOTUREE" || data.usageType === "PROMOTION_IMMOBILIERE")) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Mode de vie requis", path: ["usageType"] })
         }
     }
     
@@ -2729,7 +2707,7 @@ function DepositPageComponent() {
 
     if (isFactoryRentalPayload) {
         const toNum = (v?: string) => {
-            const n = v ? Number(v) : NaN
+            const n = v ? Number(v.replace(/\s/g, '')) : NaN
             return isNaN(n) ? undefined : n
         }
         const amenitiesPayload: any = {
@@ -2791,7 +2769,7 @@ function DepositPageComponent() {
 
     if (isColdRoomRentalPayload) {
         const toNum = (v?: string) => {
-            const n = v ? Number(v) : NaN
+            const n = v ? Number(v.replace(/\s/g, '')) : NaN
             return isNaN(n) ? undefined : n
         }
         const amenitiesPayload: any = {
@@ -2836,7 +2814,7 @@ function DepositPageComponent() {
         data.propertyType === "HANGAR"
 
     if (isHangarRentalPayload) {
-        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const toNum = (v?: string) => { const n = v ? Number(v.replace(/\s/g, '')) : NaN; return isNaN(n) ? undefined : n }
         const amenitiesPayload: any = {
             hangar: {
                 usage: data.hangarUsage?.length ? data.hangarUsage : undefined,
@@ -3007,6 +2985,23 @@ function DepositPageComponent() {
 
     const shouldSkipIndustrialFields = isFactoryRentalPayload || isColdRoomRentalPayload || isHangarRentalPayload
 
+    // Usage Autorisé (affiché dans la carte "Conditions" de l'annonce, location uniquement) — dérivé
+    // automatiquement de la catégorie du bien et de la case "usage croisé", pas saisi directement :
+    // coché => Habitation + Commercial ; sinon Habitation (résidentiel) ou Commercial (bureaux et commerces).
+    // On réutilise le champ `rentalUsage` déjà déclaré dans le schéma (array) pour qu'il passe par la
+    // boucle générique ci-dessous sans créer de doublon de clé dans le FormData.
+    if (data.transactionType === 'RENTAL') {
+        const category = BASE_PROPERTY_TYPES.find(t => t.id === data.propertyType)?.categoryId
+        const isCommercialCategory = category === 'BUREAUX_COMMERCES'
+        data.rentalUsage = data.acceptsCrossUsage
+            ? ['HABITATION', 'COMMERCIAL']
+            : isCommercialCategory
+                ? ['COMMERCIAL']
+                : ['HABITATION']
+    } else {
+        data.rentalUsage = []
+    }
+
     // Ajouter toutes les autres données du formulaire
     Object.entries(data).forEach(([key, value]) => {
       // On traite le prix manuellement, et description est déjà traité ou présent
@@ -3036,7 +3031,7 @@ function DepositPageComponent() {
     if (data.bathroomType) {
         formData.append('bathroomType', data.bathroomType);
     }
-    
+
     // Ajouter le prix calculé
     formData.append('price', String(finalPrice));
     
@@ -3158,11 +3153,11 @@ function DepositPageComponent() {
           if (propertyType === "TRIPLEX") return "Fiche descriptive - Triplex"
           if (propertyType === "STUDIO") return "Fiche descriptive - Studio"
           if (propertyType === "IMMEUBLE_RESIDENTIEL") return "Fiche descriptive - Immeuble"
-          if (propertyType === "VILLA_COMMERCIALE") return "Fiche descriptive - Villa commerciale"
-          if (propertyType === "NIVEAU_VILLA_COMMERCIAL") return "Fiche descriptive - Niveau de villa commerciale"
-          if (propertyType === "APPARTEMENT_COMMERCIAL") return "Fiche descriptive - Appartement commercial"
-          if (propertyType === "IMMEUBLE_BUREAU") return "Fiche descriptive - Immeuble d'appartements commerciales"
-          if (propertyType === "IMMEUBLE_COMMERCIAL") return "Fiche descriptive - Immeuble commercial"
+          if (propertyType === "VILLA_COMMERCIALE") return "Fiche descriptive - Villa"
+          if (propertyType === "NIVEAU_VILLA_COMMERCIAL") return "Fiche descriptive - Niveau de villa"
+          if (propertyType === "APPARTEMENT_COMMERCIAL") return "Fiche descriptive - Appartement"
+          if (propertyType === "IMMEUBLE_BUREAU") return "Fiche descriptive - Immeuble d'appartement"
+          if (propertyType === "IMMEUBLE_COMMERCIAL") return "Fiche descriptive - Bloc commercial"
           if (propertyType === "USINE") return "Fiche descriptive - Usine"
           if (propertyType === "CHAMBRE_FROIDE") return "Fiche descriptive - Chambre froide"
           if (propertyType === "HANGAR") return "Fiche descriptive - Hangar"
@@ -3813,11 +3808,15 @@ function DepositPageComponent() {
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres) <span className="text-red-500">*</span></label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
-                                                    type="number"
-                                                    min="0"
-                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/[^0-9]/g, "")
+                                                        const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+                                                        setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
+                                                    }}
                                                     className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                    placeholder="Ex: 10000"
+                                                    placeholder="Ex: 10 000"
                                                 />
                                                 {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
                                             </div>
@@ -3946,7 +3945,7 @@ function DepositPageComponent() {
                                         <div className="font-bold text-gray-900">Toiture</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                             <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Tôle TH40
+                                            Tôle TN40
                                         </label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                             <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />
@@ -4199,11 +4198,15 @@ function DepositPageComponent() {
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres) <span className="text-red-500">*</span></label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
-                                                    type="number"
-                                                    min="0"
-                                                    onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/[^0-9]/g, "")
+                                                        const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+                                                        setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
+                                                    }}
                                                     className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                    placeholder="Ex: 10000"
+                                                    placeholder="Ex: 10 000"
                                                 />
                                                 {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
                                             </div>
@@ -5698,7 +5701,18 @@ function DepositPageComponent() {
                                         {industrialFireEquipmentList.includes("BACHE_EAU") && (
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres)</label>
-                                                <input {...register("industrialFireWaterReserveLiters")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Ex: 10000" />
+                                                <input
+                                                    {...register("industrialFireWaterReserveLiters")}
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/[^0-9]/g, "")
+                                                        const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+                                                        setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
+                                                    }}
+                                                    className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium"
+                                                    placeholder="Ex: 10 000"
+                                                />
                                             </div>
                                         )}
                                     </div>
@@ -6210,89 +6224,77 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            {/* 2. Promotion immobilière – multi-choix pour immeubles */}
-                            {(propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") && !isBuildingDemolition && (
-                                <section className="space-y-6">
-                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                        <Users className="text-[#00BFA6]" /> Promotion immobilière
-                                    </h2>
-                                    <div className="flex flex-wrap gap-4">
-                                        {APARTMENT_LIFESTYLE_TYPES.map((u) => (
-                                            <label key={u.id} className="cursor-pointer">
-                                                <input type="checkbox" value={u.id} {...register("buildingUsageTypes")} className="peer sr-only" />
-                                                <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
-                                                    {u.label}
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* 2. Mode de vie – mono-choix pour villas / appartements */}
-                            {!isVillaDemolition && !isBuildingDemolition && propertyType !== "IMMEUBLE_RESIDENTIEL" && propertyType !== "IMMEUBLE_BUREAU" && (
-                                <section className="space-y-6">
-                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                        <Users className="text-[#00BFA6]" />
-                                        {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL")
-                                            ? "Mode de vie et type d'accès"
-                                            : "Promotion immobilière"}
-                                    </h2>
-                                    <div>
-                                        <div className="flex flex-wrap gap-4">
-                                            {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE"
-                                                ? USAGE_TYPES
-                                                : propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL"
-                                                    ? ENTRY_ACCESS_TYPES
-                                                    : APARTMENT_LIFESTYLE_TYPES
-                                            ).map((u) => (
-                                                <label key={u.id} className="cursor-pointer group relative">
-                                                    <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
-                                                    <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
-                                                        {u.label}
-                                                        <div className="relative group/info ml-1">
-                                                            <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
-                                                                {u.description}
-                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            ))}
-                                        </div>
-                                        {errors.usageType && <p className="text-red-500 text-sm mt-1">{errors.usageType.message as any}</p>}
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* Cadre et mode de vie + Usage bureau/commercial — biens d'habitation uniquement */}
-                            {!isVillaDemolition && !isBuildingDemolition && !isCommercialPropertyType && (
+                            {/* Cadre et mode de vie — un seul bloc, plus de doublon avec l'ancienne section "Promotion immobilière" */}
+                            {!isVillaDemolition && !isBuildingDemolition && (
                                 <section className="space-y-6">
                                     <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                         <MapPin className="text-[#00BFA6]" /> Cadre et mode de vie
                                     </h2>
+
+                                    {/* Environnement — choix multiple, commun à tous les types de biens d'habitation */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Environnement / type d'habitat du bien</label>
-                                        <select
-                                            {...register("cadreModeVie")}
-                                            className="w-full sm:w-96 p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                        >
-                                            <option value="">Sélectionner...</option>
-                                            {CADRE_MODE_VIE_TYPES.map((c) => (
-                                                <option key={c.id} value={c.id}>{c.label}</option>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">Environnement / type d'habitat du bien</label>
+                                        <div className="flex flex-wrap gap-4">
+                                            {APARTMENT_LIFESTYLE_TYPES.map((u) => (
+                                                <label key={u.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={u.id} {...register("buildingUsageTypes")} className="peer sr-only" />
+                                                    <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
+                                                        {u.label}
+                                                    </div>
+                                                </label>
                                             ))}
-                                        </select>
-                                        {errors.cadreModeVie && <p className="text-red-500 text-sm mt-1">{errors.cadreModeVie.message as any}</p>}
+                                        </div>
                                     </div>
 
-                                    <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white max-w-xl">
-                                        <input type="checkbox" {...register("acceptsCrossUsage")} className="accent-[#00BFA6] w-5 h-5 mt-0.5 shrink-0" />
-                                        <span>
-                                            <span className="font-bold text-gray-900 text-sm block">Publier également dans Bureaux et Commerces</span>
-                                            <span className="text-xs text-gray-500">La même annonce sera visible dans les deux catégories, sans créer ni gérer de doublon.</span>
-                                        </span>
-                                    </label>
+                                    {/* Usage — choix unique, villa uniquement */}
+                                    {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Usage</label>
+                                            <div className="flex flex-wrap gap-4">
+                                                {USAGE_TYPES.map((u) => (
+                                                    <label key={u.id} className="cursor-pointer group relative">
+                                                        <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
+                                                        <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
+                                                            {u.label}
+                                                            <div className="relative group/info ml-1">
+                                                                <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
+                                                                    {u.description}
+                                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {errors.usageType && <p className="text-red-500 text-sm mt-1">{errors.usageType.message as any}</p>}
+                                        </div>
+                                    )}
+
+                                    {/* Type d'accès — choix unique, niveau de villa uniquement */}
+                                    {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL") && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">Type d&apos;accès</label>
+                                            <div className="flex flex-wrap gap-4">
+                                                {ENTRY_ACCESS_TYPES.map((u) => (
+                                                    <label key={u.id} className="cursor-pointer group relative">
+                                                        <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
+                                                        <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
+                                                            {u.label}
+                                                            <div className="relative group/info ml-1">
+                                                                <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
+                                                                    {u.description}
+                                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {errors.usageType && <p className="text-red-500 text-sm mt-1">{errors.usageType.message as any}</p>}
+                                        </div>
+                                    )}
                                 </section>
                             )}
 
@@ -8047,6 +8049,26 @@ function DepositPageComponent() {
                                         <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <FileText className="text-[#00BFA6]" /> Conditions de Location
                                         </h2>
+
+                                        {/* Usage croisé résidentiel <-> bureaux et commerces, sans créer ni gérer de doublon */}
+                                        {!isCommercialPropertyType ? (
+                                            <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white max-w-xl">
+                                                <input type="checkbox" {...register("acceptsCrossUsage")} className="accent-[#00BFA6] w-5 h-5 mt-0.5 shrink-0" />
+                                                <span>
+                                                    <span className="font-bold text-gray-900 text-sm block">Acceptez-vous également un usage commercial ou bureau ?</span>
+                                                    <span className="text-xs text-gray-500">La même annonce sera aussi visible dans Bureaux et Commerces, sans créer ni gérer de doublon.</span>
+                                                </span>
+                                            </label>
+                                        ) : (
+                                            <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white max-w-xl">
+                                                <input type="checkbox" {...register("acceptsCrossUsage")} className="accent-[#00BFA6] w-5 h-5 mt-0.5 shrink-0" />
+                                                <span>
+                                                    <span className="font-bold text-gray-900 text-sm block">Acceptez-vous également un usage habitation ?</span>
+                                                    <span className="text-xs text-gray-500">La même annonce sera aussi visible dans le Résidentiel, sans créer ni gérer de doublon.</span>
+                                                </span>
+                                            </label>
+                                        )}
+
                                         <div className="space-y-6">
                                             {/* Caution & Charges & Disponibilité Group */}
                                             <div className="flex flex-col gap-6">
@@ -8559,6 +8581,26 @@ function DepositPageComponent() {
                                                     </span>
                                                 </div>
 
+                                                {/* Menu pour déplacer vers d'autres catégories — au-dessus des photos pour rester visible même avec beaucoup de photos */}
+                                                {category.photos.length > 0 && selectedPhotos.some(p => category.photos.includes(p)) && (
+                                                    <div className="mb-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                                        <p className="text-sm font-bold text-gray-700 mb-3">Déplacer la sélection vers :</p>
+                                                        <div className="flex gap-2 flex-wrap">
+                                                            {photoCategories
+                                                                .filter(c => c.id !== category.id)
+                                                                .map(targetCat => (
+                                                                    <button
+                                                                        key={targetCat.id}
+                                                                        onClick={() => moveSelectedPhotos(targetCat.id)}
+                                                                        className="text-sm px-4 py-2 bg-gray-50 border border-gray-300 rounded-full text-gray-800 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] transition-all font-bold"
+                                                                    >
+                                                                        {targetCat.label}
+                                                                    </button>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 <Droppable droppableId={category.id} direction="horizontal">
                                                     {(provided) => (
                                                         <div 
@@ -8609,26 +8651,6 @@ function DepositPageComponent() {
                                                         </div>
                                                     )}
                                                 </Droppable>
-
-                                                {/* Menu pour déplacer vers d'autres catégories */}
-                                                {category.photos.length > 0 && selectedPhotos.some(p => category.photos.includes(p)) && (
-                                                    <div className="mt-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                                        <p className="text-sm font-bold text-gray-700 mb-3">Déplacer la sélection vers :</p>
-                                                        <div className="flex gap-2 flex-wrap">
-                                                            {photoCategories
-                                                                .filter(c => c.id !== category.id)
-                                                                .map(targetCat => (
-                                                                    <button
-                                                                        key={targetCat.id}
-                                                                        onClick={() => moveSelectedPhotos(targetCat.id)}
-                                                                        className="text-sm px-4 py-2 bg-gray-50 border border-gray-300 rounded-full text-gray-800 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] transition-all font-bold"
-                                                                    >
-                                                                        {targetCat.label}
-                                                                    </button>
-                                                                ))}
-                                                        </div>
-                                                    </div>
-                                                )}
                                             </div>
                                         ))}
                                     </DragDropContext>

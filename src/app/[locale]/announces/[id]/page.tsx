@@ -18,14 +18,34 @@ import { Link, useRouter } from "@/i18n/navigation"
   const getImageUrl = (url: string) => {
       if (!url) return null;
       if (url.startsWith('http')) return url;
-      // Fix Windows backslashes to forward slashes
-      const cleanUrl = url.replace(/\\/g, '/');
+      // Fix Windows backslashes to forward slashes, et retire le(s) slash(es) de tête pour
+      // éviter un double slash après le domaine (ex: agencyLogoUrl stocké en "/uploads/...").
+      const cleanUrl = url.replace(/\\/g, '/').replace(/^\/+/, '');
       return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${cleanUrl}`;
   }
   const getIcon = (iconName: string) => {
   const icons: any = { Flower2, Cctv, Sun, Waves, Car, Wind, Warehouse, Archive, ParkingCircle, DoorOpen }
   return icons[iconName] || Check
 }
+
+  // Certaines annonces plus anciennes ont stocké des sélections multiples (Gaz, Assainissement...)
+  // comme une chaîne concaténée sans séparateur (ex: "INDUSTRIELVILLEAUCUN") au lieu d'un tableau.
+  // On répare l'affichage en la redécoupant contre la liste des valeurs possibles connues.
+  const splitEnumValues = (value: any, knownValues: string[]): string[] => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value !== 'string') return [];
+      if (knownValues.includes(value)) return [value];
+      const matches: string[] = [];
+      let rest = value;
+      while (rest.length > 0) {
+          const found = knownValues.find((v) => rest.startsWith(v));
+          if (!found) break;
+          matches.push(found);
+          rest = rest.slice(found.length);
+      }
+      return rest.length === 0 && matches.length > 0 ? matches : [value];
+  }
 
 const LABELS: any = {
     // State
@@ -39,6 +59,11 @@ const LABELS: any = {
     HABITATION: "Habitation",
     PROFESSIONAL: "Professionnel / Bureau",
     COMMERCIAL: "Commercial",
+
+    // Cadre et mode de vie (buildingUsageTypes, choix multiple) + Usage / Type d'accès (usageType, choix unique)
+    QUARTIER_OUVERT: "Quartier classique",
+    RESIDENCE_CLOTUREE: "Résidence clôturée",
+    PROMOTION_IMMOBILIERE: "Promotion immobilière",
     
     // Bathroom
     italian_shower: "Douche Italienne",
@@ -254,6 +279,8 @@ export default function AnnounceDetailsPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [reportReason, setReportReason] = useState("")
   const [reportSent, setReportSent] = useState(false)
+  const [reportSending, setReportSending] = useState(false)
+  const [reportError, setReportError] = useState("")
   const [boutiqueAnnounces, setBoutiqueAnnounces] = useState<any[]>([])
 
   const allImages = announce?.property?.images || [];
@@ -355,12 +382,39 @@ export default function AnnounceDetailsPage() {
     }
   }, [params.id])
 
-  const trackCall = () => {
+  // Suivi par canal (repris dans "Mes statistiques" du propriétaire de l'annonce) — appelé au
+  // clic sur chaque bouton de contact.
+  const trackContact = (channel: 'CALL' | 'WHATSAPP' | 'TELEGRAM' | 'VIBER' | 'EMAIL') => {
     if (!params.id) return
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces/${params.id}/call`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces/${params.id}/contact`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel }),
       keepalive: true,
     }).catch(() => {})
+  }
+
+  const sendReport = async () => {
+    if (!reportReason || !params.id) return
+    setReportSending(true)
+    setReportError("")
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces/${params.id}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ reason: reportReason }),
+      })
+      if (!res.ok) throw new Error()
+      setReportSent(true)
+    } catch {
+      setReportError(t("reportError"))
+    } finally {
+      setReportSending(false)
+    }
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">{t("loading")}</div>
@@ -397,6 +451,7 @@ export default function AnnounceDetailsPage() {
   let securityFeatures: string[] = [];
   let connectivityFeatures: string[] = [];
   let exteriorFeatures: string[] = [];
+  let buildingUsageTypes: string[] = [];
   let buildingTypology: any = null;
   let industrialFactory: any = null;
   let coldRoom: any = null;
@@ -459,6 +514,10 @@ export default function AnnounceDetailsPage() {
               
               if (parsedAmenities.buildingTypology && typeof parsedAmenities.buildingTypology === 'object') {
                   buildingTypology = parsedAmenities.buildingTypology;
+              }
+
+              if (parsedAmenities.buildingUsageTypes && Array.isArray(parsedAmenities.buildingUsageTypes)) {
+                  buildingUsageTypes = parsedAmenities.buildingUsageTypes;
               }
 
               if (parsedAmenities.industrialFactory && typeof parsedAmenities.industrialFactory === 'object') {
@@ -1405,7 +1464,7 @@ export default function AnnounceDetailsPage() {
                               {/* Phone Button */}
                               <a
                                   href={`tel:+${toIntlDigits(contact.phone)}`}
-                                  onClick={trackCall}
+                                  onClick={() => trackContact('CALL')}
                                   className="flex items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900"
                               >
                                   <Phone className="h-4 w-4 text-[#00BFA6]" />
@@ -1415,26 +1474,26 @@ export default function AnnounceDetailsPage() {
                               {/* Hover Icons Dropdown */}
                               {(contact.hasWhatsapp || contact.hasViber || contact.hasTelegram) && (
                                   <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-xl border border-gray-100 flex gap-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 w-max">
-                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={trackCall} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title={t("callTitle")}>
+                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('CALL')} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title={t("callTitle")}>
                                           <Phone className="h-5 w-5" />
                                       </a>
                                       {contact.email && (
-                                          <a href={`mailto:${contact.email}`} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title={t("emailTitle")}>
+                                          <a href={`mailto:${contact.email}`} onClick={() => trackContact('EMAIL')} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title={t("emailTitle")}>
                                               <Mail className="h-5 w-5" />
                                           </a>
                                       )}
                                       {contact.hasWhatsapp && (
-                                          <a href={`https://wa.me/${toIntlDigits(contact.phone)}`} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-[#25D366]/10 text-[#25D366] rounded-lg transition-colors" title="WhatsApp">
+                                          <a href={`https://wa.me/${toIntlDigits(contact.phone)}`} onClick={() => trackContact('WHATSAPP')} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-[#25D366]/10 text-[#25D366] rounded-lg transition-colors" title="WhatsApp">
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                                           </a>
                                       )}
                                       {contact.hasViber && (
-                                          <a href={`viber://add?number=+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-[#7360f2]/10 text-[#7360f2] rounded-lg transition-colors" title="Viber">
+                                          <a href={`viber://add?number=+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('VIBER')} className="p-2 hover:bg-[#7360f2]/10 text-[#7360f2] rounded-lg transition-colors" title="Viber">
                                               <svg viewBox="0 0 512 512" className="h-5 w-5 fill-current"><path d="M437.1 146.4c-6.1-24.5-22.3-43.9-46.7-48.4-38.3-6.9-106.8-6.9-134.4-6.9-27.6 0-96.1 0-134.4 6.9-24.4 4.5-40.6 23.9-46.7 48.4-5.3 21.6-5.3 64.1-5.3 109.6s0 88 5.3 109.6c6.1 24.5 22.3 43.9 46.7 48.4 38.3 6.9 106.8 6.9 134.4 6.9 27.6 0 96.1 0 134.4-6.9 24.4-4.5 40.6-23.9 46.7-48.4 5.3-21.6 5.3-64.1 5.3-109.6s0-88-5.3-109.6zm-175 145.4v13.5c0 23.8-19.3 43.1-43.1 43.1h-43.1c-23.8 0-43.1-19.3-43.1-43.1v-43.1c0-23.8 19.3-43.1 43.1-43.1h13.5v-67h-13.5c-23.8 0-43.1-19.3-43.1-43.1V66c0-23.8 19.3-43.1 43.1-43.1h43.1c23.8 0 43.1 19.3 43.1 43.1v43.1c0 23.8-19.3 43.1-43.1 43.1h-13.5v67zm120.3 43.1c0 23.8-19.3 43.1-43.1 43.1h-43.1c-23.8 0-43.1-19.3-43.1-43.1v-43.1c0-23.8 19.3-43.1 43.1-43.1h13.5v-67h-13.5c-23.8 0-43.1-19.3-43.1-43.1V66c0-23.8 19.3-43.1 43.1-43.1h43.1c23.8 0 43.1 19.3 43.1 43.1v43.1c0 23.8-19.3 43.1-43.1 43.1h-13.5v67h13.5c23.8 0 43.1 19.3 43.1 43.1v43.1z"/></svg>
                                           </a>
                                       )}
                                       {contact.hasTelegram && (
-                                          <a href={`https://t.me/+${toIntlDigits(contact.phone)}`} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title="Telegram">
+                                          <a href={`https://t.me/+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('TELEGRAM')} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title="Telegram">
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm5.894-17.502L15.34 20.35c-.208.92-.746 1.144-1.503.682l-4.16-3.07-2.006 1.93c-.22.22-.405.405-.83.405l.3-4.225 7.684-6.94c.334-.3-.074-.466-.518-.214L4.8 15.38.704 14.1c-.89-.28-.908-.89.186-1.316l15.68-6.04c.725-.268 1.356.168 1.324 1.15z"/></svg>
                                           </a>
                                       )}
@@ -1455,9 +1514,9 @@ export default function AnnounceDetailsPage() {
               {/* En-tête annonceur */}
               {announce.user?.userType === 'SOCIETE' ? (
                 <div className="bg-gradient-to-r from-[#00BFA6] to-[#0077b6] p-5 flex items-center gap-3">
-                  <div className="h-16 w-16 rounded-full overflow-hidden border-3 border-white shadow shrink-0" style={{ borderWidth: 3 }}>
+                  <div className="h-16 w-16 rounded-full overflow-hidden border-3 border-white shadow shrink-0 bg-white" style={{ borderWidth: 3 }}>
                     {announce.user?.agencyLogoUrl ? (
-                      <img src={getImageUrl(announce.user.agencyLogoUrl) || ''} alt="Logo" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(announce.user.agencyLogoUrl) || ''} alt="Logo" className="w-full h-full object-contain p-1.5" />
                     ) : (
                       <div className="w-full h-full bg-white/20 flex items-center justify-center"><Store className="h-8 w-8 text-white" /></div>
                     )}
@@ -1692,24 +1751,16 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                        {Array.isArray(industrialFactory.energy?.gas)
-                          ? industrialFactory.energy.gas.filter((g: string) => g !== "AUCUN").length > 0 && (
+                        {splitEnumValues(industrialFactory.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").length > 0 && (
                             <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                               <span className="text-gray-500 text-xs">Gaz</span>
                               <div className="flex flex-wrap gap-1.5">
-                                {industrialFactory.energy.gas.filter((g: string) => g !== "AUCUN").map((g: string) => (
+                                {splitEnumValues(industrialFactory.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").map((g: string) => (
                                   <span key={g} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
                                 ))}
                               </div>
                             </div>
-                          )
-                          : industrialFactory.energy?.gas && industrialFactory.energy.gas !== "AUCUN" && (
-                            <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                              <span className="text-gray-500 text-xs">Gaz</span>
-                              <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.gas] || industrialFactory.energy.gas}</span>
-                            </div>
-                          )
-                        }
+                        )}
                         {industrialFactory.energy?.waterSources?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Eau</span>
@@ -1720,24 +1771,16 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                        {Array.isArray(industrialFactory.energy?.sanitation)
-                          ? industrialFactory.energy.sanitation.length > 0 && (
+                        {splitEnumValues(industrialFactory.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).length > 0 && (
                             <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                               <span className="text-gray-500 text-xs">Assainissement</span>
                               <div className="flex flex-wrap gap-1.5">
-                                {industrialFactory.energy.sanitation.map((s: string) => (
+                                {splitEnumValues(industrialFactory.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).map((s: string) => (
                                   <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                                 ))}
                               </div>
                             </div>
-                          )
-                          : industrialFactory.energy?.sanitation && (
-                            <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                              <span className="text-gray-500 text-xs">Assainissement</span>
-                              <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.energy.sanitation] || industrialFactory.energy.sanitation}</span>
-                            </div>
-                          )
-                        }
+                        )}
                         {industrialFactory.fireSafety?.network?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
@@ -1755,8 +1798,8 @@ export default function AnnounceDetailsPage() {
                               {industrialFactory.fireSafety.equipment.map((e: string) => (
                                 <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
                                   {LABELS[e] || e}
-                                  {e === "BACHE_EAU" && industrialFactory.energy?.waterTankCapacityLiters
-                                    ? ` — ${industrialFactory.energy.waterTankCapacityLiters.toLocaleString("fr-DZ")} L`
+                                  {e === "BACHE_EAU" && industrialFactory.fireSafety?.waterReserveLiters
+                                    ? ` — ${industrialFactory.fireSafety.waterReserveLiters.toLocaleString("fr-DZ")} L`
                                     : ""}
                                 </span>
                               ))}
@@ -2147,6 +2190,39 @@ export default function AnnounceDetailsPage() {
           {/* ===== SECTION HANGAR ===== */}
           {isHangarRental && (
             <>
+              {/* Description et type d'utilisation — même emplacement/mise en page que pour les autres types de biens */}
+              {hangar && (announce.shortDescription || hangar.usage?.length > 0) && (
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {announce.shortDescription && (
+                              <div>
+                                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                      <Layers className="h-5 w-5 text-[#00BFA6]" />
+                                      Description
+                                  </h2>
+                                  <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                                      {announce.shortDescription}
+                                  </p>
+                              </div>
+                          )}
+
+                          {hangar.usage?.length > 0 && (
+                              <div>
+                                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                      <Ruler className="h-5 w-5 text-[#00BFA6]" />
+                                      Type d&apos;utilisation
+                                  </h2>
+                                  <div className="flex flex-wrap gap-2">
+                                      {hangar.usage.map((u: string) => (
+                                          <span key={u} className="px-3 py-1.5 rounded-full bg-[#00BFA6]/10 text-[#00BFA6] font-bold text-sm">{LABELS[u] || u}</span>
+                                      ))}
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              )}
+
               {hangar && (
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
@@ -2178,7 +2254,7 @@ export default function AnnounceDetailsPage() {
                               <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
                                 <span className="text-gray-500 text-xs">Toiture</span>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Tôle TH40</span>}
+                                  {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Tôle TN40</span>}
                                   {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Panneaux Sandwich</span>}
                                   {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
                                 </div>
@@ -2298,10 +2374,14 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                        {hangar.energy?.gas && hangar.energy.gas !== "AUCUN" && (
+                        {splitEnumValues(hangar.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").length > 0 && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Gaz</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[hangar.energy.gas] || hangar.energy.gas}</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {splitEnumValues(hangar.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").map((g: string) => (
+                                <span key={g} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {hangar.energy?.waterSources?.length > 0 && (
@@ -2314,10 +2394,14 @@ export default function AnnounceDetailsPage() {
                             </div>
                           </div>
                         )}
-                        {hangar.energy?.sanitation && (
+                        {splitEnumValues(hangar.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).length > 0 && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
                             <span className="text-gray-500 text-xs">Assainissement</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[hangar.energy.sanitation] || hangar.energy.sanitation}</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {splitEnumValues(hangar.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).map((s: string) => (
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {hangar.fireSafety?.network?.length > 0 && (
@@ -2337,8 +2421,8 @@ export default function AnnounceDetailsPage() {
                               {hangar.fireSafety.equipment.map((e: string) => (
                                 <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
                                   {LABELS[e] || e}
-                                  {e === "BACHE_EAU" && hangar.energy?.waterTankCapacityLiters
-                                    ? ` — ${hangar.energy.waterTankCapacityLiters.toLocaleString("fr-DZ")} L`
+                                  {e === "BACHE_EAU" && hangar.fireSafety?.waterReserveLiters
+                                    ? ` — ${hangar.fireSafety.waterReserveLiters.toLocaleString("fr-DZ")} L`
                                     : ""}
                                 </span>
                               ))}
@@ -2349,17 +2433,6 @@ export default function AnnounceDetailsPage() {
                     </div>
 
                   </div>
-                </div>
-              )}
-
-              {/* Description */}
-              {announce.shortDescription && (
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-[#00BFA6]" />
-                    Description
-                  </h2>
-                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
                 </div>
               )}
             </>
@@ -2559,7 +2632,7 @@ export default function AnnounceDetailsPage() {
           {/* ===== FIN SECTION TERRAIN AGRICOLE ===== */}
 
           {/* Nouvelle section : Description et informations spécifiques */}
-          {!isSpecialRental && !isSaleDemolition && (announce.shortDescription || property.usageType) && (
+          {!isSpecialRental && !isSaleDemolition && (announce.shortDescription || property.usageType || buildingUsageTypes.length > 0) && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
@@ -2575,12 +2648,29 @@ export default function AnnounceDetailsPage() {
                           </div>
                       )}
 
-                      {/* Mode de vie */}
+                      {/* Cadre et mode de vie — environnement (choix multiple) */}
+                      {buildingUsageTypes.length > 0 && (
+                          <div>
+                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <Users className="h-5 w-5 text-[#00BFA6]" />
+                                  Cadre et mode de vie
+                              </h2>
+                              <div className="flex flex-wrap gap-2">
+                                  {buildingUsageTypes.map((u: string) => (
+                                      <span key={u} className="px-3 py-1.5 rounded-full bg-[#00BFA6]/10 text-[#00BFA6] font-bold text-sm">
+                                          {LABELS[u] || u}
+                                      </span>
+                                  ))}
+                              </div>
+                          </div>
+                      )}
+
+                      {/* Usage / Type d'accès — choix unique (villa / niveau de villa) */}
                       {property.usageType && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Mode de vie et type d'accès" : "Promotion immobilière"}
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Type d'accès" : "Usage"}
                               </h2>
                               <div className="flex gap-4">
                                   {property.usageType === 'UNIQUE' ? (
@@ -2994,13 +3084,22 @@ export default function AnnounceDetailsPage() {
                           <div className="space-y-4 flex-1">
                               <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
                                   <span className="text-gray-500 text-sm">Usage Autorisé</span>
-                                  <span className="font-bold text-gray-900 text-sm">
-                                      {property.rentalUsage ? 
-                                          (typeof property.rentalUsage === 'string' && property.rentalUsage.startsWith('[')) 
-                                              ? JSON.parse(property.rentalUsage).map((u: string) => LABELS[u] || u).join(', ')
-                                              : (LABELS[property.rentalUsage] || property.rentalUsage)
-                                          : 'Non spécifié'}
-                                  </span>
+                                  {(() => {
+                                      const rentalUsageList: string[] = property.rentalUsage
+                                          ? (typeof property.rentalUsage === 'string' && property.rentalUsage.startsWith('['))
+                                              ? JSON.parse(property.rentalUsage)
+                                              : [property.rentalUsage]
+                                          : [];
+                                      return rentalUsageList.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1.5 mt-0.5">
+                                              {rentalUsageList.map((u: string, i: number) => (
+                                                  <span key={i} className={tagPrimaryClass}>{LABELS[u] || u}</span>
+                                              ))}
+                                          </div>
+                                      ) : (
+                                          <span className="font-bold text-gray-900 text-sm">Non spécifié</span>
+                                      );
+                                  })()}
                               </div>
                               <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
                                   <span className="text-gray-500 text-sm">Cautionnement</span>
@@ -3042,7 +3141,7 @@ export default function AnnounceDetailsPage() {
               </div>
           </div>}
 
-          {isSaleDemolition && (announce.shortDescription || property.usageType) && (
+          {isSaleDemolition && (announce.shortDescription || property.usageType || buildingUsageTypes.length > 0) && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mt-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {announce.shortDescription && (
@@ -3057,11 +3156,27 @@ export default function AnnounceDetailsPage() {
                           </div>
                       )}
 
+                      {buildingUsageTypes.length > 0 && (
+                          <div>
+                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <Users className="h-5 w-5 text-[#00BFA6]" />
+                                  Cadre et mode de vie
+                              </h2>
+                              <div className="flex flex-wrap gap-2">
+                                  {buildingUsageTypes.map((u: string) => (
+                                      <span key={u} className="px-3 py-1.5 rounded-full bg-[#00BFA6]/10 text-[#00BFA6] font-bold text-sm">
+                                          {LABELS[u] || u}
+                                      </span>
+                                  ))}
+                              </div>
+                          </div>
+                      )}
+
                       {property.usageType && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Mode de vie et type d'accès" : "Promotion immobilière"}
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Type d'accès" : "Usage"}
                               </h2>
                               <div className="flex gap-4">
                                   {property.usageType === 'UNIQUE' ? (
@@ -3150,14 +3265,14 @@ export default function AnnounceDetailsPage() {
 
     {/* ── MODAL SIGNALEMENT ── */}
       {isReportModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason(""); setReportError("") }}>
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center p-6 border-b border-gray-100">
               <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-red-500 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                 {t("reportProblem")}
               </h3>
-              <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+              <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason(""); setReportError("") }} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -3169,7 +3284,7 @@ export default function AnnounceDetailsPage() {
                   </div>
                   <h4 className="font-bold text-gray-900 text-lg">{t("reportSentTitle")}</h4>
                   <p className="text-gray-500 text-sm mt-2">{t("reportSentText")}</p>
-                  <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason("") }} className="mt-5 px-6 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">{t("close")}</button>
+                  <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason(""); setReportError("") }} className="mt-5 px-6 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">{t("close")}</button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -3185,12 +3300,13 @@ export default function AnnounceDetailsPage() {
                       </label>
                     ))}
                   </div>
+                  {reportError && <p className="text-red-500 text-xs">{reportError}</p>}
                   <Button
-                    disabled={!reportReason}
+                    disabled={!reportReason || reportSending}
                     className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold disabled:opacity-40"
-                    onClick={() => { if (reportReason) setReportSent(true) }}
+                    onClick={sendReport}
                   >
-                    {t("sendReport")}
+                    {reportSending ? t("sending") : t("sendReport")}
                   </Button>
                 </div>
               )}
