@@ -6,8 +6,8 @@ import { useTranslations, useLocale } from "next-intl"
 import axios from "axios"
 import {
   Coins, Star, Zap, Loader2,
-  ArrowDownCircle, AlertCircle, Sparkles, Store, X,
-  CalendarDays, ArrowRight
+  ArrowDownCircle, AlertCircle, Sparkles, X,
+  CalendarDays, Crown, Check, ShieldCheck
 } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -15,13 +15,14 @@ const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar
 
 type OfferPack = { id: number; kind: 'POINTS' | 'BOUTIQUE'; key: string; title: string; description: string | null; price: number; points: number }
 
-// Habillage visuel (couleur, mise en avant) des packs connus — le contenu (titre/description/
-// prix/points) vient de l'admin. Tout pack créé depuis l'admin sans style connu reçoit une
-// couleur par défaut (cycle ci-dessous) : la liste affichée n'est jamais figée à 3 entrées.
-const POINT_PACK_STYLE: Record<string, { color: string; popular?: boolean }> = {
-  PACK_50: { color: "#6B7280" },
-  PACK_100: { color: "#1E40AF", popular: true },
-  PACK_200: { color: "#D97706" },
+// Habillage visuel (icône/couleur/bordure, mise en avant) des packs connus — le contenu
+// (titre/description/prix/points) vient de l'admin. Tout pack créé depuis l'admin sans style
+// connu reçoit une couleur par défaut (cycle ci-dessous) : la liste affichée n'est jamais figée
+// à 3 entrées.
+const POINT_PACK_STYLE: Record<string, { icon: typeof Coins; color: string; border: string; popular?: boolean }> = {
+  PACK_50: { icon: Coins, color: "#6B7280", border: "border-gray-200" },
+  PACK_100: { icon: Star, color: "#1E40AF", border: "border-blue-200", popular: true },
+  PACK_200: { icon: Crown, color: "#D97706", border: "border-amber-200" },
 }
 const DEFAULT_COLORS = ["#0EA5E9", "#059669", "#DB2777", "#7C3AED", "#EA580C"]
 
@@ -46,7 +47,7 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
         description: p.description,
         points: p.points,
         price: p.price,
-        ...(POINT_PACK_STYLE[p.key] || { color: DEFAULT_COLORS[i % DEFAULT_COLORS.length] }),
+        ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
       }))
     : FALLBACK
 
@@ -190,6 +191,17 @@ export default function EspacePublicitairePage() {
   // La boutique est réservée aux comptes professionnels — jamais proposée à un particulier.
   const [isPro, setIsPro] = useState(false)
 
+  // Achats de points (formule choisie + total gagné) et filtre période pour l'historique
+  const [purchases, setPurchases] = useState<any[]>([])
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [historyLoading, setHistoryLoading] = useState(false)
+  // Filtre par type d'action + pagination — purement côté client, sur l'historique déjà
+  // récupéré (lui-même filtré par période côté serveur).
+  const [actionFilter, setActionFilter] = useState<'ALL' | 'BOOST' | 'FEATURE'>('ALL')
+  const [historyPage, setHistoryPage] = useState(1)
+  const HISTORY_PAGE_SIZE = 8
+
   useEffect(() => {
     try {
       const userStr = localStorage.getItem('user')
@@ -204,11 +216,12 @@ export default function EspacePublicitairePage() {
     if (!token) { router.push('/auth/login'); return }
     const headers = { Authorization: `Bearer ${token}` }
     try {
-      const [bal, hist, ann, packs] = await Promise.all([
+      const [bal, hist, ann, packs, purch] = await Promise.all([
         axios.get(`${API_URL}/points/balance`, { headers }).catch(() => ({ data: { points: 0 } })),
         axios.get(`${API_URL}/points/history`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/announces/user/my-announces`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/offer-packs`).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/points/purchases`, { headers }).catch(() => ({ data: [] })),
       ])
       setBalance(bal.data.points || 0)
       setExpirationDate(bal.data.expirationDate || null)
@@ -216,6 +229,7 @@ export default function EspacePublicitairePage() {
       setHistory(hist.data)
       setAnnounces(ann.data)
       setOfferPacks(packs.data)
+      setPurchases(purch.data)
     } catch (e: any) {
       if (e?.response?.status === 401) { localStorage.removeItem('token'); router.push('/auth/login') }
     } finally {
@@ -224,6 +238,74 @@ export default function EspacePublicitairePage() {
   }
 
   useEffect(() => { load() }, [])
+
+  // Filtre période — ne recharge que l'historique de consommation (les achats/solde restent
+  // affichés en cumul global, indépendamment de la période choisie).
+  useEffect(() => {
+    if (!dateFrom && !dateTo) return
+    const token = localStorage.getItem('token')
+    if (!token) return
+    setHistoryLoading(true)
+    const params = new URLSearchParams()
+    if (dateFrom) params.set('from', dateFrom)
+    if (dateTo) params.set('to', dateTo)
+    axios.get(`${API_URL}/points/history?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setHistory(r.data))
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false))
+  }, [dateFrom, dateTo])
+
+  const resetPeriod = () => { setDateFrom(""); setDateTo(""); setHistoryPage(1); load() }
+
+  // Revenir à la 1ère page dès que le filtre d'action ou les données changent, pour ne jamais
+  // rester bloqué sur une page devenue vide.
+  useEffect(() => { setHistoryPage(1) }, [actionFilter, history])
+
+  const filteredHistory = history.filter((h: any) => actionFilter === 'ALL' || h.action === actionFilter)
+  const historyTotalPages = Math.max(1, Math.ceil(filteredHistory.length / HISTORY_PAGE_SIZE))
+  const pagedHistory = filteredHistory.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE)
+
+  const pointPackLabel = (pack: string) => {
+    const live = offerPacks.find((p) => p.kind === 'POINTS' && p.key === pack)
+    if (live) return live.title
+    const fallback: Record<string, string> = {
+      PACK_50: t("pointPackStarterLabel"),
+      PACK_100: t("pointPackProLabel"),
+      PACK_200: t("pointPackPremiumLabel"),
+    }
+    return fallback[pack] || pack
+  }
+
+  // Formule de points actuellement choisie = dernier achat validé (le plus récent).
+  const latestValidatedPurchase = purchases.find((p) => p.status === 'VALIDATED')
+  const totalPointsEarned = purchases.filter((p) => p.status === 'VALIDATED').reduce((sum, p) => sum + p.points, 0)
+  const consumedInPeriod = history.reduce((sum: number, h: any) => sum + h.pointsUsed, 0)
+
+  // Ce que rapportent concrètement N points, dérivé des mécaniques réelles (1 pt = actualiser,
+  // 2 pts/jour = publicité accueil) — pas de fonctionnalité inventée.
+  const pointPackFeatures = (points: number) => [
+    t("packFeaturePoints", { points }),
+    t("packFeatureBoosts", { count: points }),
+    t("packFeatureDays", { days: Math.floor(points / 2) }),
+  ]
+
+  // Grille des formules de points disponibles, affichée en ligne sur la page (même logique que
+  // la grille des formules boutique sur "Ma boutique") — pas seulement dans la modale d'achat.
+  const INLINE_POINT_FALLBACK = [
+    { id: "PACK_50", label: t("pointPackStarterLabel"), points: 50, price: 1500, ...POINT_PACK_STYLE.PACK_50 },
+    { id: "PACK_100", label: t("pointPackProLabel"), points: 100, price: 2500, ...POINT_PACK_STYLE.PACK_100 },
+    { id: "PACK_200", label: t("pointPackPremiumLabel"), points: 200, price: 3500, ...POINT_PACK_STYLE.PACK_200 },
+  ]
+  const livePointPacks = offerPacks.filter((p) => p.kind === 'POINTS')
+  const inlinePointPacks = livePointPacks.length > 0
+    ? livePointPacks.map((p, i) => ({
+        id: p.key,
+        label: p.title,
+        points: p.points,
+        price: p.price,
+        ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
+      }))
+    : INLINE_POINT_FALLBACK
 
   const boost = async (id: number) => {
     if (balance < 1) { showToast(t("insufficientBalanceBoutique")); return }
@@ -279,23 +361,79 @@ export default function EspacePublicitairePage() {
           </div>
         </div>
 
-        {/* Renvoi vers la page dédiée "Type de Vitrine" — réservée aux comptes professionnels.
-            Le détail des formules boutique (offres, abonnement actif, historique) y vit désormais,
-            pour ne pas mélanger deux sujets distincts (points d'un côté, formule boutique de l'autre). */}
-        {isPro && (
-          <Link href="/profile/vitrine" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between hover:border-[#00BFA6]/40 transition-colors group">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center">
-                <Store className="h-6 w-6 text-[#00BFA6]" />
-              </div>
-              <div>
-                <p className="font-black text-gray-900">{t("vitrineCrossSellTitle")}</p>
-                <p className="text-sm text-gray-500">{t("vitrineCrossSellText")}</p>
-              </div>
+        {/* Résumé formule choisie / total / consommés / restants */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><Coins className="h-5 w-5 text-[#00BFA6]" /> {t("summaryTitle")}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+              <p className="text-xs text-gray-500 font-medium mb-1">{t("chosenFormula")}</p>
+              <p className="font-black text-gray-900 text-sm truncate">{latestValidatedPurchase ? pointPackLabel(latestValidatedPurchase.pack) : t("noFormulaYet")}</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-[#00BFA6] transition-colors shrink-0" />
-          </Link>
-        )}
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+              <p className="text-xs text-gray-500 font-medium mb-1">{t("totalPointsLabel")}</p>
+              <p className="font-black text-gray-900 text-xl">{totalPointsEarned}</p>
+            </div>
+            <div className="p-4 rounded-xl bg-red-50 border border-red-100">
+              <p className="text-xs text-red-500 font-medium mb-1">{t("consumedPointsLabel")}</p>
+              <p className="font-black text-red-600 text-xl">{consumedInPeriod}</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[#00BFA6]/5 border border-[#00BFA6]/20">
+              <p className="text-xs text-[#00BFA6] font-medium mb-1">{t("remainingPointsLabel")}</p>
+              <p className={`font-black text-xl ${expired ? 'text-red-400' : 'text-[#00BFA6]'}`}>{balance}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Formules de points disponibles — toujours visible, comme la grille des formules
+            boutique sur "Ma boutique" (les packs de points s'additionnent, ne se remplacent pas :
+            pas de badge "formule actuelle" désactivant les autres). */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="mb-5">
+            <h2 className="font-black text-gray-900 text-lg flex items-center gap-2"><Coins className="h-5 w-5 text-[#00BFA6]" /> {t("pointPacksAvailableTitle")}</h2>
+            <p className="text-sm text-gray-500 mt-1">{t("pointPacksAvailableSubtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {inlinePointPacks.map(pack => {
+              const Icon = pack.icon
+              const isLatest = latestValidatedPurchase?.pack === pack.id
+              return (
+                <div key={pack.id} className={`relative bg-white rounded-2xl border-2 overflow-hidden flex flex-col ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : pack.border}`}>
+                  {isLatest ? (
+                    <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6] flex items-center justify-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5" /> {t("lastPurchasedBadge")}
+                    </div>
+                  ) : pack.popular && (
+                    <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
+                  )}
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: pack.color + '20' }}>
+                        <Icon className="h-5 w-5" style={{ color: pack.color }} />
+                      </div>
+                      <div className="font-black text-gray-900 text-sm">{pack.label}</div>
+                    </div>
+                    <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
+                    <div className="text-xl font-black text-gray-900 mb-3">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500">{t("oneTimePayment")}</span></div>
+                    <ul className="space-y-1.5 mb-4 flex-1">
+                      {pointPackFeatures(pack.points).map(f => (
+                        <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                          <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => setShowPointPackModal(true)}
+                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all"
+                      style={{ backgroundColor: pack.color }}
+                    >
+                      <Coins className="h-4 w-4" /> {t("order")}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
         {/* Comment utiliser */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -359,26 +497,89 @@ export default function EspacePublicitairePage() {
           </div>
         )}
 
-        {/* Historique utilisation points */}
-        {history.length > 0 && (
+        {/* Historique utilisation points, avec filtre période + type d'action + pagination */}
+        {(history.length > 0 || dateFrom || dateTo) && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><ArrowDownCircle className="h-5 w-5 text-gray-400" /> {t("pointsUsageTitle")}</h2>
-            <div className="space-y-3">
-              {history.map((h: any) => (
-                <div key={h.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                  <div>
-                    <span className="font-bold text-gray-900 text-sm">
-                      {h.action === 'BOOST' ? t("actionBoost") : t("actionFeature")}
-                    </span>
-                    <span className="text-gray-500 text-xs ml-2">— {t("refLabel", { ref: h.announce?.reference || `#${h.announceId}` })}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400">{new Date(h.usageDate).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
-                    <span className="font-bold text-red-600 text-sm">{t("minusPoints", { points: h.pointsUsed })}</span>
-                  </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h2 className="font-black text-gray-900 flex items-center gap-2 text-base"><ArrowDownCircle className="h-5 w-5 text-gray-400" /> {t("pointsUsageTitle")}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                  <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#00BFA6]" />
+                  <span>→</span>
+                  <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#00BFA6]" />
                 </div>
+                {(dateFrom || dateTo) && (
+                  <button onClick={resetPeriod} className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition-colors">
+                    <X className="h-3 w-3" /> {t("resetFilterBtn")}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Filtre par type d'action */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {([
+                { id: 'ALL' as const, label: t("historyFilterAll") },
+                { id: 'BOOST' as const, label: t("actionBoost") },
+                { id: 'FEATURE' as const, label: t("actionFeature") },
+              ]).map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setActionFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${actionFilter === f.id ? 'bg-[#00BFA6] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  {f.label}
+                </button>
               ))}
             </div>
+
+            {historyLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-[#00BFA6]" /></div>
+            ) : filteredHistory.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">{t("noHistoryForPeriod")}</p>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {pagedHistory.map((h: any) => (
+                    <div key={h.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                      <div>
+                        <span className="font-bold text-gray-900 text-sm">
+                          {h.action === 'BOOST' ? t("actionBoost") : t("actionFeature")}
+                        </span>
+                        <span className="text-gray-500 text-xs ml-2">— {t("refLabel", { ref: h.announce?.reference || `#${h.announceId}` })}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">{new Date(h.usageDate).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
+                        <span className="font-bold text-red-600 text-sm">{t("minusPoints", { points: h.pointsUsed })}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {historyTotalPages > 1 && (
+                  <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
+                    <span className="text-xs text-gray-400">{t("historyPageIndicator", { page: historyPage, total: historyTotalPages })}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                        disabled={historyPage === 1}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                      >
+                        {t("historyPrevBtn")}
+                      </button>
+                      <button
+                        onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
+                        disabled={historyPage === historyTotalPages}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                      >
+                        {t("historyNextBtn")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

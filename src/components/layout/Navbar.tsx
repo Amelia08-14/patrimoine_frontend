@@ -319,7 +319,7 @@ export function Navbar() {
                                 <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
                                     <Coins className="h-4 w-4 mr-3" /> {t('myPoints')}
                                 </Link>
-                                <Link href="/profile/points" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
+                                <Link href="/profile/advertising" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">
                                     <Megaphone className="h-4 w-4 mr-3" /> {t('adSpace')}
                                 </Link>
                                 <Link href="/profile/stats" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#00BFA6]">

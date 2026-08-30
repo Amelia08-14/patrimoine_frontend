@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
-import { Camera, Eye, Heart, MapPin, Building2, Info } from "lucide-react";
+import { Camera, Eye, Heart, MapPin, Building2, Info, Play, Images } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROPERTY_TYPES } from "@/data/propertyTypes";
 
@@ -74,7 +74,7 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     )
 }
 
-export const PropertyCard = ({ announce }: { announce: any }) => {
+export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; autoPlay?: boolean }) => {
   const t = useTranslations("PropertyCard");
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
 
@@ -91,11 +91,44 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
   const fullTitle = announce.title || t("titleFallback", { category: categoryName, location: locationLabel });
   const shortTitle = fullTitle.length > 15 ? `${fullTitle.slice(0, 15).trimEnd()}…` : fullTitle;
 
-  // Get main image (first image with isMain = true, fallback to first image)
   const images = announce.property?.images || [];
-  const mainImage = images.find((img: any) => img.isMain) || images[0];
+
+  // Média principal — mélange photos + vidéos (vidéo de couverture en tête si le déposant en a
+  // choisi une), pour un aperçu qui défile au survol de la carte, comme sur la fiche annonce.
+  const coverVideoIndex: number | null = typeof announce.property?.coverVideoIndex === 'number' ? announce.property.coverVideoIndex : null;
+  let videosList: string[] = [];
+  try { videosList = announce.property?.videos ? JSON.parse(announce.property.videos) : []; } catch { videosList = []; }
+
+  const mediaList = useMemo(() => {
+    const orderedImages = [...images];
+    const mainIdx = orderedImages.findIndex((img: any) => img.isMain);
+    if (mainIdx > 0) orderedImages.unshift(orderedImages.splice(mainIdx, 1)[0]);
+    const photos = orderedImages.map((img: any) => ({ type: 'photo' as const, url: img.url }));
+    const videos = videosList.map((v) => ({ type: 'video' as const, url: v }));
+    if (coverVideoIndex !== null && videos[coverVideoIndex]) {
+      const cover = videos[coverVideoIndex];
+      const rest = videos.filter((_, i) => i !== coverVideoIndex);
+      return [cover, ...photos, ...rest];
+    }
+    return [...photos, ...videos];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images, videosList.join('|'), coverVideoIndex]);
 
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  // Défile pendant le survol partout, et en continu (sans survol) là où `autoPlay` est activé —
+  // réservé aux carrousels vitrine (accueil) qui n'affichent qu'une poignée de cartes à la fois,
+  // pour ne pas faire tourner des dizaines de minuteurs/vidéos sur une grande grille.
+  const isCycling = autoPlay || isHovering;
+  useEffect(() => {
+    if (!isCycling || mediaList.length <= 1) return;
+    const id = setInterval(() => setHeroIndex((i) => (i + 1) % mediaList.length), 1600);
+    return () => clearInterval(id);
+  }, [isCycling, mediaList.length]);
+
+  const currentMedia = mediaList[heroIndex] || mediaList[0];
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -122,17 +155,47 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
       <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 group cursor-pointer border border-gray-100 h-full w-full flex flex-col overflow-hidden">
 
         {/* Image */}
-        <div className="relative h-[240px] min-h-[240px] overflow-hidden bg-gray-100">
-          {mainImage ? (
-            <img
-                src={getImageUrl(mainImage.url) || ''}
-                alt={announce.reference}
+        <div
+          className="relative h-[240px] min-h-[240px] overflow-hidden bg-gray-100"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => { setIsHovering(false); setHeroIndex(0) }}
+        >
+          {currentMedia ? (
+            currentMedia.type === 'video' ? (
+              <video
+                key={currentMedia.url}
+                src={getImageUrl(currentMedia.url) || ''}
+                autoPlay muted loop playsInline
                 className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
-            />
+              />
+            ) : (
+              <img
+                  key={currentMedia.url}
+                  src={getImageUrl(currentMedia.url) || ''}
+                  alt={announce.reference}
+                  className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+              />
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300">
                 <Camera className="h-10 w-10" strokeWidth={1.5} />
             </div>
+          )}
+
+          {/* Aperçu galerie au survol — mélange photos et vidéos, comme sur la fiche annonce */}
+          {isHovering && mediaList.length > 1 && (
+            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white gap-2 pointer-events-none">
+              <span className="text-2xl font-black [text-shadow:0_1px_3px_rgb(0_0_0_/_0.4)]">+{mediaList.length - 1}</span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-gray-900 text-xs font-bold shadow-lg">
+                <Images className="h-3.5 w-3.5" /> {t("seeGallery")}
+              </span>
+            </div>
+          )}
+
+          {currentMedia?.type === 'video' && (
+            <span className="absolute bottom-3 left-3 flex items-center gap-1 h-6 w-6 rounded-full bg-black/55 backdrop-blur-sm text-white justify-center">
+              <Play className="h-3 w-3 fill-white" />
+            </span>
           )}
 
           {/* Transaction — un seul badge, aux couleurs de la marque */}
@@ -145,9 +208,9 @@ export const PropertyCard = ({ announce }: { announce: any }) => {
 
           {/* Photos, vues puis favori — regroupés en haut à droite */}
           <div className="absolute top-3 right-3 flex items-center gap-1.5">
-              {images.length > 0 && (
+              {mediaList.length > 0 && (
                 <span className="flex items-center gap-1 h-8 px-2.5 rounded-full bg-black/45 backdrop-blur-sm text-white text-[11px] font-bold">
-                  <Camera className="h-3.5 w-3.5" /> {images.length}
+                  <Camera className="h-3.5 w-3.5" /> {mediaList.length}
                 </span>
               )}
               <span className="flex items-center gap-1 h-8 px-2.5 rounded-full bg-black/45 backdrop-blur-sm text-white text-[11px] font-bold">

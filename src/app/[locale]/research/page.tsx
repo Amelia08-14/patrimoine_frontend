@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,17 +10,16 @@ import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import {
   Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
-  Ruler, MapPin, Handshake, Compass, ShieldCheck, Sparkles,
+  Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
-  OUTDOOR_SPACE_OPTIONS, PROXIMITY_OPTIONS, BUREAUX_EQUIPMENT_OPTIONS, VIABILISATION_OPTIONS,
+  BUREAUX_EQUIPMENT_OPTIONS, VIABILISATION_OPTIONS,
   HOTELIER_EQUIPMENT_OPTIONS, ResearchBranchId,
-  SITUATION_OPTIONS, ACHAT_INTERLOCUTOR_OPTIONS, REALISATION_STAGE_OPTIONS, DELIVERY_STATE_OPTIONS,
-  ACHAT_DESTINATION_OPTIONS, FLOOR_APPLICABLE_TYPES, FLOOR_PREFERENCE_OPTIONS, APARTMENTS_PER_FLOOR_OPTIONS,
-  ORIENTATION_OPTIONS, VIEW_OPTIONS, AIRPORT_PROXIMITY_OPTIONS, CURRENCY_OPTIONS, FINANCING_OPTIONS,
-  ENVIRONMENT_OPTIONS, RESIDENCE_AMENITIES_OPTIONS, PARENTAL_SUITE_OPTIONS, KITCHEN_TYPE_OPTIONS,
-  KITCHEN_EQUIPMENT_OPTIONS, HEATING_OPTIONS, AC_OPTIONS, SECURITY_OPTIONS, CONNECTIVITY_OPTIONS,
+  SITUATION_OPTIONS, ACHAT_INTERLOCUTOR_OPTIONS, REALISATION_STAGE_OPTIONS,
+  AIRPORT_PROXIMITY_OPTIONS, CURRENCY_OPTIONS, FINANCING_OPTIONS,
+  ENVIRONMENT_OPTIONS,
+  RESIDENTIEL_TYPE_IDS, VILLA_LEVEL_ENTRANCE_OPTIONS, BUILDING_APARTMENT_STYLE_OPTIONS,
 } from '@/data/researchConfig';
 
 const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
@@ -31,6 +30,15 @@ enum TransactionType {
 }
 
 const inputCls = 'w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-800';
+
+// Séparateur de milliers à la saisie (budget) — n'affiche que le formatage, la valeur stockée
+// dans le formulaire reste un nombre propre sans espaces.
+const formatThousands = (value: number | string | undefined) => {
+  if (value === undefined || value === null || value === '') return '';
+  const digits = String(value).replace(/[^\d]/g, '');
+  if (!digits) return '';
+  return Number(digits).toLocaleString('fr-FR');
+};
 
 // Pastille ronde sélectionnable (charte du dépôt d'annonce) — pour choix uniques (branche, type, transaction)
 const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md' }: { active: boolean; onClick: () => void; icon: any; label: string; size?: 'lg' | 'md' | 'sm' }) => {
@@ -82,7 +90,7 @@ function Field({ label, children, full }: { label: string; children: React.React
 
 function Section({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
   return (
-    <section className="space-y-6">
+    <section className="space-y-4">
       <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
         <Icon className="h-5 w-5 text-[#00BFA6]" />
         {title}
@@ -111,6 +119,64 @@ function OptionGroup({
           <PillOption key={opt.id} checked={selected.includes(opt.id)} label={opt.label} icon={icons[opt.id]} onChange={() => toggle(field, opt.id)} />
         ))}
       </div>
+    </div>
+  );
+}
+
+// Liste déroulante à choix multiple (charte du site : bordure teal au focus, coins arrondis,
+// même apparence que les autres champs) — remplace le <select multiple> natif et la grille de
+// pastilles, trop denses pour une liste pouvant compter plusieurs dizaines de communes.
+function MultiSelectDropdown({
+  options, selected, onToggle, placeholder, selectedLabel, emptyHint,
+}: {
+  options: { id: string | number; label: string }[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  placeholder: string;
+  selectedLabel: (count: number) => string;
+  emptyHint?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={cn(inputCls, 'flex items-center justify-between text-left cursor-pointer')}
+      >
+        <span className={selected.length > 0 ? 'text-gray-800 font-medium' : 'text-gray-400'}>
+          {selected.length > 0 ? selectedLabel(selected.length) : placeholder}
+        </span>
+        <ChevronDown className={cn('h-4 w-4 text-gray-400 shrink-0 transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-2 w-full bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+          {options.length === 0 ? (
+            <p className="p-4 text-sm text-gray-400">{emptyHint}</p>
+          ) : (
+            options.map((opt) => {
+              const id = String(opt.id);
+              const checked = selected.includes(id);
+              return (
+                <label key={id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
+                  <input type="checkbox" checked={checked} onChange={() => onToggle(id)} className="h-4 w-4 accent-[#00BFA6] rounded shrink-0" />
+                  <span className={cn('text-sm', checked ? 'font-bold text-[#00BFA6]' : 'font-medium text-gray-700')}>{opt.label}</span>
+                </label>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -162,11 +228,13 @@ export default function ResearchPage() {
     interlocutors: z.array(z.string()).optional(),
 
     cityId: z.coerce.number().optional(),
+    cityIds: z.array(z.string()).optional(),
     towns: z.array(z.string()).optional(),
 
     minBudget: z.coerce.number().optional(),
     maxBudget: z.coerce.number().optional(),
     currency: z.enum(['DA', 'EUR', 'USD']).optional(),
+    budgetUnit: z.enum(['DA', 'DA_M2', 'MILLION', 'MILLION_M2', 'MILLIARD']).optional(),
     installationDate: z.string().optional(),
     comment: z.string().min(10, t('zodCommentRequired')),
 
@@ -192,6 +260,27 @@ export default function ResearchPage() {
     connectivity: z.array(z.string()).optional(),
     outdoorPrivate: z.boolean().optional(),
 
+    // Fiche détaillée Résidentiel — Location / Achat
+    resPropertyTypes: z.array(z.string()).optional(),
+    villaLevelEntrance: z.enum(['SEPAREE', 'COMMUNE']).optional(),
+    typologyMin: z.string().optional(),
+    typologyMax: z.string().optional(),
+    floorMin: z.string().optional(),
+    floorMax: z.string().optional(),
+
+    // Résidentiel — choix entre fiche "Recherche Groupée" (ci-dessus) et fiche dédiée à la
+    // recherche d'un immeuble d'appartements entier (ci-dessous).
+    searchScope: z.enum(['GROUPEE', 'IMMEUBLE']).optional(),
+    buildingTypologyMin: z.string().optional(),
+    buildingTypologyMax: z.string().optional(),
+    buildingFloorsMin: z.string().optional(),
+    buildingFloorsMax: z.string().optional(),
+    buildingApartmentsMin: z.string().optional(),
+    buildingApartmentsMax: z.string().optional(),
+    buildingSurfaceMin: z.coerce.number().optional(),
+    buildingSurfaceMax: z.coerce.number().optional(),
+    buildingApartmentStyles: z.array(z.string()).optional(),
+
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     email: z.string().optional(),
@@ -207,12 +296,16 @@ export default function ResearchPage() {
   type ResearchFormInput = z.input<typeof researchSchema>;
   type ResearchFormValues = z.output<typeof researchSchema>;
 
-  const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
+  const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
   type StepKey = typeof STEP_KEYS[number];
+  // Étapes à choix unique et immédiat (une grande pastille) : on avance dès le clic, sans passer
+  // par le bouton "Continuer" — contrairement au dépôt d'annonces.
+  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE'];
 
   const STEP_LABELS: Record<StepKey, string> = {
     BRANCH: t('stepBranch'),
     TRANSACTION: t('stepTransaction'),
+    RES_SEARCH_SCOPE: t('stepSearchScope'),
     CRITERIA: t('stepCriteria'),
     BUDGET: t('stepBudget'),
     INTERLOCUTOR: t('stepInterlocutor'),
@@ -233,20 +326,37 @@ export default function ResearchPage() {
       userType: 'PARTICULIER',
       surfaceUnit: 'M2',
       currency: 'DA',
+      budgetUnit: 'DA',
       views: [],
       environment: [],
       residenceAmenities: [],
       security: [],
       connectivity: [],
+      resPropertyTypes: [],
+      cityIds: [],
+      buildingApartmentStyles: [],
     },
   });
 
   const branch = watch('branch') as ResearchBranchId | '';
   const isResidentielAchat = branch === 'RESIDENTIEL' && watch('transaction') === TransactionType.SALE;
-  const selectedPropertyType = watch('propertyType');
+  const isResidentielLocation = branch === 'RESIDENTIEL' && watch('transaction') === TransactionType.RENTAL;
+  const selectedResPropertyTypes: string[] = watch('resPropertyTypes') || [];
 
-  const steps: StepKey[] = [...STEP_KEYS];
+  // Résidentiel Location et Achat : un choix supplémentaire "Recherche groupée / Recherche
+  // immeuble d'appartements" (pastille auto-avancée), puis fiche unique (critères + localisation
+  // + budget + interlocuteur) et contact direct. Les autres branches gardent le parcours complet
+  // pour le moment, sans cette étape de choix qui ne les concerne pas.
+  const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
+    ? ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE');
   const currentStep = steps[currentStepIndex];
+
+  // Si le parcours se raccourcit (ex: on vient de choisir Résidentiel + Location) alors qu'on
+  // était déjà plus loin dans l'ancien parcours plus long, on ramène l'index dans les clous.
+  useEffect(() => {
+    if (currentStepIndex > steps.length - 1) setCurrentStepIndex(steps.length - 1);
+  }, [steps.length, currentStepIndex]);
 
   useEffect(() => {
     axios.get(`${apiUrl}/cities`).then((res) => setCities(res.data)).catch(() => {});
@@ -261,12 +371,42 @@ export default function ResearchPage() {
     }
   }, []);
 
+  // Communes rattachées à la/les wilaya(s) sélectionnée(s) — une seule wilaya (cityId) sur le
+  // parcours générique, plusieurs (cityIds) sur la fiche Résidentiel Location.
   const selectedCityId = watch('cityId');
+  const selectedCityIds: string[] = watch('cityIds') || [];
   useEffect(() => {
-    if (selectedCityId) {
-      axios.get(`${apiUrl}/cities/${selectedCityId}/towns`).then((res) => setTowns(res.data)).catch(() => {});
+    const ids = isResidentielLocation ? selectedCityIds : (selectedCityId ? [String(selectedCityId)] : []);
+    if (ids.length === 0) { setTowns([]); return; }
+    Promise.all(ids.map((id) => axios.get(`${apiUrl}/cities/${id}/towns`).then((res) => res.data).catch(() => [])))
+      .then((results) => setTowns(results.flat()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isResidentielLocation, selectedCityId, selectedCityIds.join(',')]);
+
+  // Étape Contact : les champs restent toujours visibles/modifiables (plus de bloc masqué quand
+  // on est connecté) — "Utiliser mes informations" les pré-remplit juste, pour laisser le temps
+  // de les relire/ajuster avant l'envoi plutôt que de foncer droit sur le bouton "Envoyer".
+  useEffect(() => {
+    if (useMyInfo && loggedInUser) {
+      setValue('lastName', loggedInUser.lastName || '');
+      setValue('firstName', loggedInUser.firstName || '');
+      setValue('email', loggedInUser.email || '');
+      setValue('phone', loggedInUser.phone || '');
+      setValue('address', loggedInUser.address || '');
+      setValue('companyName', loggedInUser.companyName || '');
+      setValue('activity', loggedInUser.activity || '');
+      setValue('userType', loggedInUser.userType === 'SOCIETE' ? 'SOCIETE' : 'PARTICULIER');
     }
-  }, [selectedCityId]);
+  }, [useMyInfo, loggedInUser, setValue]);
+
+  // Le critère "type d'entrée" n'a de sens que si "Niveau de Villa" fait partie des types
+  // recherchés — on l'efface dès qu'il est décoché pour ne pas envoyer une valeur orpheline.
+  useEffect(() => {
+    if (!selectedResPropertyTypes.includes('NIVEAU_VILLA')) {
+      setValue('villaLevelEntrance', undefined as any);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedResPropertyTypes.join('|')]);
 
   const toggleArrayValue = (field: keyof ResearchFormValues, value: string) => {
     const current = (watch(field) as string[]) || [];
@@ -274,10 +414,15 @@ export default function ResearchPage() {
     setValue(field as any, next as any);
   };
 
-  const nextStep = () => setCurrentStepIndex((p) => Math.min(p + 1, steps.length - 1));
-  const prevStep = () => setCurrentStepIndex((p) => Math.max(p - 1, 0));
+  // La fiche Résidentiel Location est longue (plusieurs sections) — sans ce reset, avancer
+  // depuis le bas de cette page laisse le scroll où il était : l'étape Contact, bien plus
+  // courte, se retrouve alors affichée hors-écran (on ne voit plus que le bouton du bas, déjà
+  // passé de "Continuer" à "Envoyer") et on a l'impression que la recherche part toute seule.
+  const scrollFormToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const nextStep = () => { setCurrentStepIndex((p) => Math.min(p + 1, steps.length - 1)); scrollFormToTop(); };
+  const prevStep = () => { setCurrentStepIndex((p) => Math.max(p - 1, 0)); scrollFormToTop(); };
   const goToStep = (index: number) => {
-    if (index <= currentStepIndex) setCurrentStepIndex(index);
+    if (index <= currentStepIndex) { setCurrentStepIndex(index); scrollFormToTop(); }
   };
 
   const onSubmit = async (data: ResearchFormValues) => {
@@ -292,29 +437,55 @@ export default function ResearchPage() {
       const amenities: any = { interlocutors: data.interlocutors || [], currency: data.currency };
       switch (data.branch) {
         case 'RESIDENTIEL':
-          amenities.residentiel = { outdoorSpaces: data.outdoorSpaces, proximity: data.proximity };
+          amenities.residentiel = { outdoorSpaces: data.outdoorSpaces, proximity: data.proximity, searchScope: data.searchScope || 'GROUPEE' };
+          if (data.searchScope === 'IMMEUBLE') {
+            amenities.residentiel.immeuble = {
+              typologyMin: data.buildingTypologyMin,
+              typologyMax: data.buildingTypologyMax,
+              floorsMin: data.buildingFloorsMin,
+              floorsMax: data.buildingFloorsMax,
+              apartmentsMin: data.buildingApartmentsMin,
+              apartmentsMax: data.buildingApartmentsMax,
+              surfaceMin: data.buildingSurfaceMin,
+              surfaceMax: data.buildingSurfaceMax,
+              apartmentStyles: data.buildingApartmentStyles || [],
+              cityIds: data.cityIds || [],
+              environment: data.environment,
+              realisationStage: data.transaction === TransactionType.SALE ? data.realisationStage : undefined,
+            };
+            break;
+          }
+          if (data.transaction === TransactionType.RENTAL) {
+            amenities.residentiel.location = {
+              propertyTypes: data.resPropertyTypes || [],
+              villaLevelEntrance: data.villaLevelEntrance,
+              typologyMin: data.typologyMin,
+              typologyMax: data.typologyMax,
+              floorMin: data.floorMin,
+              floorMax: data.floorMax,
+              minSurface: data.minSurface,
+              maxSurface: data.maxSurface,
+              budgetUnit: data.budgetUnit,
+              cityIds: data.cityIds || [],
+              environment: data.environment,
+            };
+          }
           if (data.transaction === TransactionType.SALE) {
             amenities.residentiel.achatHabitation = {
-              situation: data.situation,
-              realisationStage: data.realisationStage,
-              deliveryState: data.deliveryState,
-              achatDestination: data.achatDestination,
-              floorPreference: data.floorPreference,
-              apartmentsPerFloor: data.apartmentsPerFloor,
-              orientation: data.orientation,
-              views: data.views,
-              airportProximity: data.airportProximity,
-              financingMode: data.financingMode,
+              // Mêmes champs que la fiche Location (mêmes composants) — seul ajout propre à
+              // l'achat : l'état de réalisation.
+              propertyTypes: data.resPropertyTypes || [],
+              villaLevelEntrance: data.villaLevelEntrance,
+              typologyMin: data.typologyMin,
+              typologyMax: data.typologyMax,
+              floorMin: data.floorMin,
+              floorMax: data.floorMax,
+              minSurface: data.minSurface,
+              maxSurface: data.maxSurface,
+              budgetUnit: data.budgetUnit,
+              cityIds: data.cityIds || [],
               environment: data.environment,
-              residenceAmenities: data.residenceAmenities,
-              parentalSuite: data.parentalSuite,
-              kitchenType: data.kitchenType,
-              kitchenEquipment: data.kitchenEquipment,
-              heating: data.heating,
-              ac: data.ac,
-              security: data.security,
-              connectivity: data.connectivity,
-              outdoorPrivate: !!data.outdoorPrivate,
+              realisationStage: data.realisationStage,
             };
           }
           break;
@@ -352,26 +523,18 @@ export default function ResearchPage() {
           break;
       }
 
-      const useProfile = !!loggedInUser && useMyInfo;
-      const contact = useProfile
-        ? {
-            firstName: loggedInUser.firstName,
-            lastName: loggedInUser.lastName,
-            email: loggedInUser.email,
-            phone: loggedInUser.phone,
-            address: loggedInUser.address,
-            companyName: loggedInUser.companyName,
-            activity: loggedInUser.activity,
-          }
-        : {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            address: data.address,
-            companyName: data.companyName,
-            activity: data.activity,
-          };
+      // Les champs restent toujours visibles/modifiables sur l'étape Contact (pré-remplis depuis
+      // le profil si "Utiliser mes informations" est choisi) — on envoie donc ce qui est
+      // effectivement affiché, pour respecter d'éventuelles corrections de dernière minute.
+      const contact = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        companyName: data.companyName,
+        activity: data.activity,
+      };
 
       const payload = {
         transaction: data.transaction,
@@ -382,13 +545,18 @@ export default function ResearchPage() {
         minBudget: data.minBudget || 0,
         maxBudget: data.maxBudget || 0,
         installationDate: data.installationDate,
-        cityId: data.cityId,
+        // Résidentiel Location permet plusieurs wilayas (cityIds) — la première sert de wilaya
+        // "principale" pour l'affichage existant, la liste complète part dans `amenities`.
+        cityId: data.cityId || (data.cityIds && data.cityIds.length > 0 ? Number(data.cityIds[0]) : undefined),
         towns: JSON.stringify(data.towns || []),
         comment: data.comment,
         ...contact,
         userId: loggedInUser?.id,
         realEstateType: data.branch,
-        propertyType: data.propertyType,
+        // Fiche Résidentiel Location : choix multiple — on le reflète aussi dans le champ plat
+        // `propertyType` (comme du temps du choix unique) pour que /demandes et l'admin restent
+        // cohérents, en plus du détail complet dans `amenities`.
+        propertyType: (data.resPropertyTypes && data.resPropertyTypes.length > 0) ? data.resPropertyTypes.join(',') : data.propertyType,
         amenities: JSON.stringify(amenities),
       };
 
@@ -414,149 +582,339 @@ export default function ResearchPage() {
       return;
     }
     if (formErrors.comment) {
-      const idx = steps.indexOf('BUDGET');
+      // Le commentaire vit sur l'étape Budget dans le parcours complet, mais sur la fiche
+      // Critères pour Résidentiel Location (parcours raccourci sans étape Budget dédiée).
+      const idx = steps.includes('BUDGET') ? steps.indexOf('BUDGET') : steps.indexOf('CRITERIA');
       if (idx !== -1) setCurrentStepIndex(idx);
       alert(t('alertCommentRequired'));
       return;
     }
-    alert(t('alertCheckInfo'));
+    // Repli : au lieu d'un message générique qui ne dit rien, on liste précisément le(s) champ(s)
+    // en cause — un champ à choix (enum) rempli avec une valeur inattendue lève une erreur ici
+    // même s'il est "optionnel", et le message générique masquait totalement ce genre de cas.
+    const lines = Object.entries(formErrors).map(([key, err]: [string, any]) => {
+      const message = err?.message
+        || err?.root?.message
+        || (Array.isArray(err) ? err.find((e: any) => e?.message)?.message : undefined)
+        || 'Valeur invalide';
+      return `- ${key}: ${message}`;
+    });
+    const idx = steps.includes('BUDGET') ? steps.indexOf('BUDGET') : steps.indexOf('CRITERIA');
+    if (idx !== -1) setCurrentStepIndex(idx);
+    alert(`${t('alertCheckInfo')}\n${lines.join('\n')}`);
   };
 
   const renderResidentielAchatCriteria = () => {
-    const floorApplicable = FLOOR_APPLICABLE_TYPES.includes(selectedPropertyType || '');
+    const interlocutorOptions = RESEARCH_INTERLOCUTORS.RESIDENTIEL;
     return (
       <>
-        <Section title={t('sqNatureTitle')} icon={Sparkles}>
+        {renderPropertyTypeSection()}
+        {renderTypologyFloorSurfaceBudgetSection()}
+        {renderEnvironmentSection()}
+
+        {/* Seul ajout propre à l'achat par rapport à la fiche Location : l'état de réalisation,
+            sur une seule ligne, sans texte de description. */}
+        <Section title={t('sqRealisationStage')} icon={Sparkles}>
+          <div className="flex flex-wrap gap-3">
+            {REALISATION_STAGE_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={opt.label} onChange={() => setValue('realisationStage', opt.id as any)} />
+            ))}
+          </div>
+        </Section>
+
+        {renderLocalisationSection()}
+
+        <Section title={t('stepInterlocutor')} icon={Handshake}>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {interlocutorOptions.map((opt) => (
+                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+              ))}
+            </div>
+          </div>
+        </Section>
+
+        {renderCommentSection()}
+      </>
+    );
+  };
+
+  // Fiche résidentiel — Location : types de bien en choix multiple (studio → villa, avec le
+  // critère "type d'entrée" spécifique au Niveau de Villa), typologie/étage/surface exprimés
+  // en "jusqu'à", et cadre/environnement en choix multiple.
+  // Ligne compacte "De [x] à [y]" réutilisée pour typologie / étage / surface / budget — même
+  // gabarit visuel partout (titre au-dessus, chip d'unité collé au champ).
+  const renderRangeRow = (
+    minField: 'typologyMin' | 'typologyMax' | 'floorMin' | 'floorMax' | 'minSurface' | 'maxSurface' | 'minBudget' | 'maxBudget'
+      | 'buildingTypologyMin' | 'buildingTypologyMax' | 'buildingFloorsMin' | 'buildingFloorsMax'
+      | 'buildingApartmentsMin' | 'buildingApartmentsMax' | 'buildingSurfaceMin' | 'buildingSurfaceMax',
+    maxField: typeof minField,
+    opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; width?: string; useMinMaxLabels?: boolean },
+  ) => {
+    const unit = opts?.unit;
+    const unitPosition = opts?.unitPosition || 'prefix';
+    const width = opts?.width || 'w-16';
+    const fromLabel = opts?.useMinMaxLabels ? t('resLocMin') : t('resLocTypologyFrom');
+    const toLabel = opts?.useMinMaxLabels ? t('resLocMax') : t('resLocTypologyTo');
+    const chip = unit ? (
+      <span className={cn(
+        'h-11 flex items-center justify-center font-black text-gray-400 text-xs bg-gray-100 whitespace-nowrap px-1.5',
+        unitPosition === 'prefix' ? 'border-r-2 border-gray-300' : 'border-l-2 border-gray-300'
+      )}>
+        {unit}
+      </span>
+    ) : null;
+    return (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-sm font-bold text-gray-700 shrink-0">{fromLabel}</span>
+        <div className="flex items-center rounded-xl border-2 border-gray-300 bg-gray-50 overflow-hidden shrink-0">
+          {unitPosition === 'prefix' && chip}
+          <input type="number" inputMode="numeric" {...register(minField)} className={cn(width, 'h-11 px-2 text-center font-bold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-[#00BFA6]')} />
+          {unitPosition === 'suffix' && chip}
+        </div>
+        <span className="text-sm font-bold text-gray-700 shrink-0">{toLabel}</span>
+        <div className="flex items-center rounded-xl border-2 border-gray-300 bg-gray-50 overflow-hidden shrink-0">
+          {unitPosition === 'prefix' && chip}
+          <input type="number" inputMode="numeric" {...register(maxField)} className={cn(width, 'h-11 px-2 text-center font-bold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-[#00BFA6]')} />
+          {unitPosition === 'suffix' && chip}
+        </div>
+      </div>
+    );
+  };
+
+  // --- Blocs partagés entre "Résidentiel Location" et "Résidentiel Achat" (même fiche, mêmes
+  // champs pour tout ce qui est commun aux deux transactions). ---
+
+  const renderPropertyTypeSection = () => {
+    const hasNiveauVilla = selectedResPropertyTypes.includes('NIVEAU_VILLA');
+    return (
+      <Section title={t('resLocTypeSectionTitle')} icon={Home}>
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-3">{t('resLocPropertyTypeSought')}</label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.filter((rt) => (RESIDENTIEL_TYPE_IDS as readonly string[]).includes(rt.id)).map((rt) => (
+              <PillOption key={rt.id} checked={selectedResPropertyTypes.includes(rt.id)} label={rt.label} onChange={() => toggleArrayValue('resPropertyTypes', rt.id)} />
+            ))}
+          </div>
+        </div>
+        {hasNiveauVilla && (
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqRealisationStage')}</label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('resLocVillaEntrance')}</label>
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              {VILLA_LEVEL_ENTRANCE_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('villaLevelEntrance') === opt.id} label={opt.label} onChange={() => setValue('villaLevelEntrance', opt.id as any)} />
+              ))}
+            </div>
+          </div>
+        )}
+      </Section>
+    );
+  };
+
+  const renderTypologyFloorSurfaceBudgetSection = () => (
+    <Section title={t('resLocTypologyTitle')} icon={Ruler}>
+      {/* Un seul enfant direct pour ce Section afin de contrôler l'espacement vertical nous-mêmes
+          (plus serré que l'espacement par défaut) — plus de place pour écrire. */}
+      <div className="space-y-3">
+        {/* Champs élargis + répartis sur toute la ligne (justify-between), plus de tiers de
+            grille figé ni de petits blocs tassés à gauche avec du vide à droite. */}
+        <div className="flex flex-wrap justify-between gap-x-6 gap-y-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocTypologyRange')}</label>
+            {renderRangeRow('typologyMin', 'typologyMax', { unit: 'F', unitPosition: 'prefix', width: 'w-20' })}
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocFloorMax')}</label>
+            {renderRangeRow('floorMin', 'floorMax', { width: 'w-24' })}
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocSurfaceMax')}</label>
+            {renderRangeRow('minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', width: 'w-20' })}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocBudgetRangeTitle')}</label>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-bold text-gray-700 shrink-0">{t('resLocMin')}</span>
+            <input
+              type="text" inputMode="numeric"
+              value={formatThousands(watch('minBudget') as any)}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/[^\d]/g, '');
+                setValue('minBudget', (digits ? Number(digits) : undefined) as any);
+              }}
+              className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
+            />
+            <span className="text-sm font-bold text-gray-700 shrink-0">{t('resLocMax')}</span>
+            <input
+              type="text" inputMode="numeric"
+              value={formatThousands(watch('maxBudget') as any)}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/[^\d]/g, '');
+                setValue('maxBudget', (digits ? Number(digits) : undefined) as any);
+              }}
+              className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
+            />
+            <select
+              {...register('budgetUnit')}
+              className="h-11 px-3 rounded-xl border-2 border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#00BFA6] cursor-pointer"
+            >
+              <option value="DA">DA</option>
+              <option value="DA_M2">DA / m²</option>
+              <option value="MILLION">Millions</option>
+              <option value="MILLION_M2">Millions / m²</option>
+              <option value="MILLIARD">Milliards</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+
+  const renderLocalisationSection = (opts?: { showAirportProximity?: boolean }) => (
+    <Section title={t('budgetTitle')} icon={MapPin}>
+      {/* Wilaya(s) - Commune(s) - Date souhaitée sur une seule ligne */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Field label={t('budgetCity')}>
+          <MultiSelectDropdown
+            options={cities.map((c) => ({ id: c.id, label: c.nameFr || c.name }))}
+            selected={watch('cityIds') || []}
+            onToggle={(id) => toggleArrayValue('cityIds', id)}
+            placeholder={t('optSelect')}
+            selectedLabel={(count) => t('wilayasSelectedCount', { count })}
+          />
+        </Field>
+        <Field label={t('budgetTowns')}>
+          <MultiSelectDropdown
+            options={towns.map((tw) => ({ id: tw.id, label: tw.nameFr || tw.name }))}
+            selected={watch('towns') || []}
+            onToggle={(id) => toggleArrayValue('towns', id)}
+            placeholder={t('optSelect')}
+            selectedLabel={(count) => t('townsSelectedCount', { count })}
+            emptyHint={t('budgetTownsHint')}
+          />
+        </Field>
+        <Field label={t('budgetDesiredDate')}>
+          <input type="date" {...register('installationDate')} className={inputCls} />
+        </Field>
+      </div>
+      {opts?.showAirportProximity && (
+        <div className="mt-6">
+          <label className="block text-sm font-bold text-gray-900 mb-3">{t('budgetAirportProximity')}</label>
+          <div className="flex flex-wrap gap-3">
+            {AIRPORT_PROXIMITY_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={opt.label} onChange={() => setValue('airportProximity', opt.id)} />
+            ))}
+          </div>
+        </div>
+      )}
+    </Section>
+  );
+
+  const renderEnvironmentSection = () => (
+    <Section title={t('resLocEnvironmentTitle')} icon={Compass}>
+      <OptionGroup label={t('resLocEnvironment')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
+    </Section>
+  );
+
+  const renderCommentSection = () => (
+    <Section title={t('resLocCommentTitle')} icon={Sparkles}>
+      <textarea {...register('comment')} rows={3} className={inputCls} placeholder={t('resLocCommentPlaceholder')}></textarea>
+      {errors.comment && <span className="text-red-500 text-sm">{errors.comment.message}</span>}
+    </Section>
+  );
+
+  // Fiche "Recherche Immeuble d'appartements" — alternative à la fiche Résidentiel classique
+  // quand on cherche l'immeuble entier plutôt qu'un lot précis. Localisation/date/commentaire
+  // restent les mêmes blocs partagés que les autres fiches.
+  const renderImmeubleCriteria = () => {
+    const interlocutorOptions = RESEARCH_INTERLOCUTORS.RESIDENTIEL;
+    return (
+      <>
+        {renderLocalisationSection()}
+
+        <Section title={t('immeubleTypologyTitle')} icon={Ruler}>
+          <div className="space-y-3">
+            <div className="flex flex-wrap justify-between gap-x-6 gap-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocTypologyRange')}</label>
+                {renderRangeRow('buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', width: 'w-20' })}
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleFloorsRange')}</label>
+                {renderRangeRow('buildingFloorsMin', 'buildingFloorsMax', { width: 'w-20' })}
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleApartmentsRange')}</label>
+                {renderRangeRow('buildingApartmentsMin', 'buildingApartmentsMax', { width: 'w-20' })}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleSurfaceRange')}</label>
+              {renderRangeRow('buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', width: 'w-20' })}
+            </div>
+          </div>
+        </Section>
+
+        <Section title={t('immeubleStyleTitle')} icon={Home}>
+          <OptionGroup label={t('immeubleStyleLabel')} options={BUILDING_APARTMENT_STYLE_OPTIONS} field="buildingApartmentStyles" watch={watch} toggle={toggleArrayValue} />
+        </Section>
+
+        <Section title={t('immeubleCadreDeVieTitle')} icon={Compass}>
+          <OptionGroup label={t('immeubleCadreDeVieLabel')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
+        </Section>
+
+        <Section title={t('stepInterlocutor')} icon={Handshake}>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {interlocutorOptions.map((opt) => (
+                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+              ))}
+            </div>
+          </div>
+        </Section>
+
+        {/* Stade de réalisation — uniquement pour l'achat d'un immeuble (une location d'immeuble
+            entier ne se conçoit pas "sur plan"). */}
+        {isResidentielAchat && (
+          <Section title={t('sqRealisationStage')} icon={Sparkles}>
+            <div className="flex flex-wrap gap-3">
               {REALISATION_STAGE_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={`${opt.label} — ${opt.description}`} onChange={() => setValue('realisationStage', opt.id as any)} />
+                <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={opt.label} onChange={() => setValue('realisationStage', opt.id as any)} />
               ))}
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqDeliveryState')}</label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {DELIVERY_STATE_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('deliveryState') === opt.id} label={opt.description ? `${opt.label} — ${opt.description}` : opt.label} onChange={() => setValue('deliveryState', opt.id as any)} />
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqAchatDestination')}</label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {ACHAT_DESTINATION_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('achatDestination') === opt.id} label={opt.label} onChange={() => setValue('achatDestination', opt.id as any)} />
+          </Section>
+        )}
+
+        {renderCommentSection()}
+      </>
+    );
+  };
+
+  const renderResidentielLocationCriteria = () => {
+    const interlocutorOptions = RESEARCH_INTERLOCUTORS.RESIDENTIEL;
+    return (
+      <>
+        {renderPropertyTypeSection()}
+        {renderTypologyFloorSurfaceBudgetSection()}
+        {renderLocalisationSection()}
+        {renderEnvironmentSection()}
+
+        <Section title={t('stepInterlocutor')} icon={Handshake}>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {interlocutorOptions.map((opt) => (
+                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
               ))}
             </div>
           </div>
         </Section>
 
-        <Section title={t('sqTypologyTitle')} icon={Ruler}>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqPropertyTypeSought')}</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.map((t) => (
-                <PillOption key={t.id} checked={watch('propertyType') === t.id} label={t.label} onChange={() => setValue('propertyType', watch('propertyType') === t.id ? '' : t.id)} />
-              ))}
-            </div>
-          </div>
-          {floorApplicable && (
-            <>
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqFloorPreference')}</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {FLOOR_PREFERENCE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('floorPreference') === opt.id} label={opt.label} onChange={() => setValue('floorPreference', opt.id)} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqApartmentsPerFloor')}</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {APARTMENTS_PER_FLOOR_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('apartmentsPerFloor') === opt.id} label={opt.label} onChange={() => setValue('apartmentsPerFloor', opt.id)} />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Field label={t('sqHabitableSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-            <Field label={t('sqHabitableSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-          </div>
-        </Section>
-
-        <Section title={t('sqOrientationTitle')} icon={Compass}>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqOrientationPref')}</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {ORIENTATION_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('orientation') === opt.id} label={opt.label} onChange={() => setValue('orientation', opt.id)} />
-              ))}
-            </div>
-          </div>
-          <OptionGroup label={t('sqViewType')} options={VIEW_OPTIONS} field="views" watch={watch} toggle={toggleArrayValue} />
-        </Section>
-
-        <Section title={t('sqNonNegotiableTitle')} icon={ShieldCheck}>
-          <p className="text-sm text-gray-500 -mt-2">{t('sqNonNegotiableHint')}</p>
-          <OptionGroup label={t('sqEnvironment')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
-          <OptionGroup label={t('sqResidenceAmenities')} options={RESIDENCE_AMENITIES_OPTIONS} field="residenceAmenities" watch={watch} toggle={toggleArrayValue} />
-
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqParentalSuite')}</label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {PARENTAL_SUITE_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('parentalSuite') === opt.id} label={opt.label} onChange={() => setValue('parentalSuite', opt.id)} />
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqKitchenType')}</label>
-              <div className="grid grid-cols-1 gap-3">
-                {KITCHEN_TYPE_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={watch('kitchenType') === opt.id} label={opt.label} onChange={() => setValue('kitchenType', opt.id)} />
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqKitchenEquipment')}</label>
-              <div className="grid grid-cols-1 gap-3">
-                {KITCHEN_EQUIPMENT_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={watch('kitchenEquipment') === opt.id} label={opt.label} onChange={() => setValue('kitchenEquipment', opt.id)} />
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqHeating')}</label>
-              <div className="grid grid-cols-1 gap-3">
-                {HEATING_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={watch('heating') === opt.id} label={opt.label} onChange={() => setValue('heating', opt.id)} />
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">{t('sqAc')}</label>
-              <div className="grid grid-cols-1 gap-3">
-                {AC_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={watch('ac') === opt.id} label={opt.label} onChange={() => setValue('ac', opt.id)} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <OptionGroup label={t('sqSecurity')} options={SECURITY_OPTIONS} field="security" watch={watch} toggle={toggleArrayValue} />
-          <OptionGroup label={t('sqConnectivity')} options={CONNECTIVITY_OPTIONS} field="connectivity" watch={watch} toggle={toggleArrayValue} />
-
-          <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
-            <input type="checkbox" {...register('outdoorPrivate')} className="h-4 w-4 accent-[#00BFA6]" />
-            {t('sqOutdoorPrivate')}
-          </label>
-        </Section>
+        {renderCommentSection()}
       </>
     );
   };
@@ -564,26 +922,9 @@ export default function ResearchPage() {
   const renderCriteriaStep = () => {
     switch (branch) {
       case 'RESIDENTIEL':
+        if (watch('searchScope') === 'IMMEUBLE') return renderImmeubleCriteria();
         if (isResidentielAchat) return renderResidentielAchatCriteria();
-        return (
-          <Section title={t('mainCriteria')} icon={Home}>
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-3">{t('resPropertyTypeSought')}</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.map((rt) => (
-                  <PillOption key={rt.id} checked={watch('propertyType') === rt.id} label={rt.label} onChange={() => setValue('propertyType', watch('propertyType') === rt.id ? '' : rt.id)} />
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Field label={t('resNbPieces')}><input type="number" {...register('nbPieces')} className={inputCls} /></Field>
-              <Field label={t('resSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label={t('resSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-            </div>
-            <OptionGroup label={t('resOutdoorSpaces')} options={OUTDOOR_SPACE_OPTIONS} field="outdoorSpaces" watch={watch} toggle={toggleArrayValue} />
-            <OptionGroup label={t('resProximity')} options={PROXIMITY_OPTIONS} field="proximity" watch={watch} toggle={toggleArrayValue} />
-          </Section>
-        );
+        return renderResidentielLocationCriteria();
 
       case 'INDUSTRIEL':
         return (
@@ -704,10 +1045,19 @@ export default function ResearchPage() {
           </select>
         </Field>
 
-        <Field label={t('budgetTowns')}>
-          <select multiple {...register('towns')} className={cn(inputCls, 'h-32')}>
-            {towns.map((tw) => <option key={tw.id} value={tw.id}>{tw.nameFr || tw.name}</option>)}
-          </select>
+        <Field label={t('budgetDesiredDate')}>
+          <input type="date" {...register('installationDate')} className={inputCls} />
+        </Field>
+
+        <Field label={t('budgetTowns')} full>
+          <MultiSelectDropdown
+            options={towns.map((tw) => ({ id: tw.id, label: tw.nameFr || tw.name }))}
+            selected={watch('towns') || []}
+            onToggle={(id) => toggleArrayValue('towns', id)}
+            placeholder={t('optSelect')}
+            selectedLabel={(count) => t('townsSelectedCount', { count })}
+            emptyHint={t('budgetTownsHint')}
+          />
         </Field>
 
         {isResidentielAchat && (
@@ -720,17 +1070,29 @@ export default function ResearchPage() {
           </Field>
         )}
 
-        <Field label={t('budgetDesiredDate')}>
-          <input type="date" {...register('installationDate')} className={inputCls} />
+        {/* Budget — la devise est une unité affichée à part (pastilles), pas un champ séparé */}
+        <Field label={t('budgetMin')}>
+          <input type="number" {...register('minBudget')} className={inputCls} />
         </Field>
-
-        <Field label={t('budgetMin')}><input type="number" {...register('minBudget')} className={inputCls} /></Field>
-        <Field label={t('budgetMax')}><input type="number" {...register('maxBudget')} className={inputCls} /></Field>
-
-        <Field label={t('budgetCurrency')}>
-          <select {...register('currency')} className={inputCls}>
-            {CURRENCY_OPTIONS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-          </select>
+        <Field label={t('budgetMax')}>
+          <input type="number" {...register('maxBudget')} className={inputCls} />
+        </Field>
+        <Field label={t('budgetCurrency')} full>
+          <div className="flex gap-3">
+            {CURRENCY_OPTIONS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setValue('currency', c.id as any)}
+                className={cn(
+                  'h-11 px-6 rounded-xl border-2 font-black text-sm transition-all',
+                  watch('currency') === c.id ? 'border-[#00BFA6] bg-green-50/50 text-[#00BFA6]' : 'border-gray-300 text-gray-600 hover:border-gray-400 bg-gray-50'
+                )}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
         </Field>
 
         {isResidentielAchat && (
@@ -766,7 +1128,13 @@ export default function ResearchPage() {
                   onClick={() => {
                     setValue('branch', b.id);
                     setValue('propertyType', '');
+                    setValue('resPropertyTypes', []);
                     setValue('interlocutors', []);
+                    setValue('searchScope', undefined as any);
+                    // Fluide comme une sélection de carte : on avance directement à l'étape
+                    // suivante au clic, pas besoin du bouton "Continuer" (contrairement au dépôt
+                    // d'annonces) pour un choix aussi simple.
+                    nextStep();
                   }}
                 />
               ))}
@@ -779,14 +1147,39 @@ export default function ResearchPage() {
         return (
           <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
             <div className="flex justify-center gap-8 md:gap-32">
-              <CircleOption active={watch('transaction') === TransactionType.RENTAL} icon={Home} label={t('transactionRental')} size="lg" onClick={() => setValue('transaction', TransactionType.RENTAL)} />
-              <CircleOption active={watch('transaction') === TransactionType.SALE} icon={Key} label={t('transactionSale')} size="lg" onClick={() => setValue('transaction', TransactionType.SALE)} />
+              <CircleOption active={watch('transaction') === TransactionType.RENTAL} icon={Home} label={t('transactionRental')} size="lg" onClick={() => { setValue('transaction', TransactionType.RENTAL); nextStep(); }} />
+              <CircleOption active={watch('transaction') === TransactionType.SALE} icon={Key} label={t('transactionSale')} size="lg" onClick={() => { setValue('transaction', TransactionType.SALE); nextStep(); }} />
+            </div>
+          </div>
+        );
+
+      case 'RES_SEARCH_SCOPE':
+        return (
+          <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
+            {/* Pas de flex-wrap : sur une pastille "w-full", ça repasse les deux options en
+                colonne dès que le conteneur autorise le retour à la ligne — comme pour l'étape
+                Transaction, elles doivent rester côte à côte sur une seule ligne. */}
+            <div className="flex justify-center gap-8 md:gap-24">
+              <CircleOption
+                active={watch('searchScope') === 'GROUPEE'}
+                icon={Home}
+                label={t('resSearchScopeGroupee')}
+                size="lg"
+                onClick={() => { setValue('searchScope', 'GROUPEE'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('searchScope') === 'IMMEUBLE'}
+                icon={Building2}
+                label={t('resSearchScopeImmeuble')}
+                size="lg"
+                onClick={() => { setValue('searchScope', 'IMMEUBLE'); nextStep(); }}
+              />
             </div>
           </div>
         );
 
       case 'CRITERIA':
-        return <div className="w-full max-w-4xl animate-fade-in space-y-10">{renderCriteriaStep()}</div>;
+        return <div className="w-full max-w-4xl animate-fade-in space-y-6">{renderCriteriaStep()}</div>;
 
       case 'BUDGET':
         return <div className="w-full max-w-4xl animate-fade-in space-y-10">{renderBudgetStep()}</div>;
@@ -822,6 +1215,9 @@ export default function ResearchPage() {
       }
 
       case 'CONTACT': {
+        // Champs masqués quand "Utiliser mes informations" est choisi (déjà pré-remplis en
+        // silence par l'effet ci-dessus, inutile de les réafficher) — visibles seulement pour
+        // saisir les coordonnées d'une autre personne/société.
         const showManualForm = !loggedInUser || !useMyInfo;
         return (
           <div className="w-full max-w-4xl animate-fade-in space-y-10">
@@ -846,6 +1242,36 @@ export default function ResearchPage() {
                     <div className="font-bold text-gray-900 text-sm">{t('contactEnterOtherInfo')}</div>
                     <div className="text-xs text-gray-500 mt-1">{t('contactForOtherPersonOrCompany')}</div>
                   </button>
+                </div>
+              )}
+
+              {/* Récapitulatif lisible de ce qui sera envoyé quand on utilise son propre profil —
+                  pas un formulaire à remplir, mais un vrai contenu à relire avant "Envoyer" (pas
+                  juste 2 boutons puis le bouton d'envoi). */}
+              {!showManualForm && (
+                <div className="rounded-xl border-2 border-gray-100 bg-gray-50 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactLastName')} / {t('contactFirstName')}</div>
+                    <div className="font-bold text-gray-900">{`${loggedInUser?.firstName || ''} ${loggedInUser?.lastName || ''}`.trim() || '—'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactEmail')}</div>
+                    <div className="font-bold text-gray-900">{loggedInUser?.email || '—'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactPhone')}</div>
+                    <div className="font-bold text-gray-900">{loggedInUser?.phone || '—'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactAddress')}</div>
+                    <div className="font-bold text-gray-900">{loggedInUser?.address || '—'}</div>
+                  </div>
+                  {loggedInUser?.userType === 'SOCIETE' && loggedInUser?.companyName && (
+                    <div className="sm:col-span-2">
+                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactCompanyName')}</div>
+                      <div className="font-bold text-gray-900">{loggedInUser.companyName}</div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -928,7 +1354,17 @@ export default function ResearchPage() {
 
         {/* Main Card */}
         <form
-          onSubmit={handleSubmit(onSubmit, onInvalid)}
+          onSubmit={(e) => {
+            // Verrou dur : quelle que soit la cause d'un événement submit (Entrée dans un champ,
+            // clic hasardeux, bouton mal typé...), on refuse d'envoyer tant qu'on n'est pas
+            // effectivement sur la toute dernière étape. C'est ça qui empêchait "Continuer"
+            // d'envoyer la recherche à la place de faire avancer l'étape.
+            if (currentStepIndex !== steps.length - 1) {
+              e.preventDefault();
+              return;
+            }
+            handleSubmit(onSubmit, onInvalid)(e);
+          }}
           onKeyDown={(e) => {
             // Empêche la touche Entrée dans un champ de soumettre le formulaire (et donc de
             // sauter les étapes suivantes) : le seul bouton de soumission réel n'existe que
@@ -958,26 +1394,28 @@ export default function ResearchPage() {
             {renderStep()}
           </div>
 
-          <div className="p-6 md:p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50 rounded-b-2xl md:rounded-b-3xl">
-            {currentStepIndex < steps.length - 1 ? (
-              <button
-                type="button"
-                onClick={nextStep}
-                disabled={isNextDisabled}
-                className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
-              >
-                {t('continueBtn')}
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
-              >
-                {loading ? t('sending') : t('submit')}
-              </button>
-            )}
-          </div>
+          {!AUTO_ADVANCE_STEPS.includes(currentStep) && (
+            <div className="p-6 md:p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50 rounded-b-2xl md:rounded-b-3xl">
+              {currentStepIndex < steps.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={isNextDisabled}
+                  className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
+                >
+                  {t('continueBtn')}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
+                >
+                  {loading ? t('sending') : t('submit')}
+                </button>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>

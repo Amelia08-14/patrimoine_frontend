@@ -1618,6 +1618,7 @@ function DepositPageComponent() {
   ])
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([])
   const [mainPhoto, setMainPhoto] = useState<File | null>(null)
+  const [mainVideo, setMainVideo] = useState<File | null>(null) // Couverture vidéo — exclusive avec mainPhoto
   const [photoOrganizationStep, setPhotoOrganizationStep] = useState<"upload" | "organize">("upload")
   const [userType, setUserType] = useState<string>(forcedUserType || "PARTICULIER")
   const [userCompanyActivity, setUserCompanyActivity] = useState<string | null>(null)
@@ -2034,6 +2035,11 @@ function DepositPageComponent() {
   useEffect(() => {
     if (!isVillaDemolition) return
 
+    // Le bloc "Cadre et mode de vie" (dont ces cases "Environnement / type d'habitat") disparaît
+    // en mode démolition — sans ce reset, une case cochée puis décochée (ou un état intermédiaire
+    // laissé par react-hook-form quand les inputs se démontent) peut rester en mémoire et faire
+    // échouer la validation finale avec une erreur "buildingUsageTypes" sans message visible.
+    setValue("buildingUsageTypes", [], { shouldValidate: false })
     setValue("usageType", undefined as any, { shouldValidate: false })
     setValue("bedrooms", "", { shouldValidate: false })
     setValue("nbSuites", "", { shouldValidate: false })
@@ -2054,6 +2060,7 @@ function DepositPageComponent() {
     setValue("acType", undefined as any, { shouldValidate: false })
 
     clearErrors([
+      "buildingUsageTypes",
       "usageType",
       "bedrooms",
       "nbSuites",
@@ -2096,6 +2103,9 @@ function DepositPageComponent() {
     setValue("parkingCount", "", { shouldValidate: false })
     setValue("outdoorParking", "", { shouldValidate: false })
 
+    // Voir le commentaire du bloc isVillaDemolition ci-dessus — même bloc "Cadre et mode de vie"
+    // masqué en mode démolition, même risque d'erreur "buildingUsageTypes" fantôme au submit.
+    setValue("buildingUsageTypes", [], { shouldValidate: false })
     setValue("usageType", undefined as any, { shouldValidate: false })
     setValue("bedrooms", "", { shouldValidate: false })
     setValue("nbSuites", "", { shouldValidate: false })
@@ -2124,6 +2134,7 @@ function DepositPageComponent() {
       "buildingApartmentTypologies",
       "buildingApartmentTypologyOther",
       "buildingApartmentStyle",
+      "buildingUsageTypes",
       "buildingCountF3",
       "buildingCountF4",
       "buildingCountF5",
@@ -2254,6 +2265,8 @@ function DepositPageComponent() {
   }
 
   const removeVideo = (index: number) => {
+    const fileToRemove = selectedVideos[index]
+    if (fileToRemove === mainVideo) setMainVideo(null)
     setSelectedVideos((prev) => prev.filter((_, i) => i !== index))
   }
 
@@ -3049,6 +3062,12 @@ function DepositPageComponent() {
         selectedVideos.forEach(video => {
             formData.append('videos', video)
         })
+        // Couverture vidéo — index dans `selectedVideos`, envoyé seulement si le déposant a
+        // choisi une vidéo comme couverture (exclusif avec la couverture photo).
+        if (mainVideo) {
+            const coverVideoIndex = selectedVideos.indexOf(mainVideo)
+            if (coverVideoIndex >= 0) formData.append('coverVideoIndex', String(coverVideoIndex))
+        }
     }
 
     // 2c. Métadonnées des images (Catégories)
@@ -8466,8 +8485,8 @@ function DepositPageComponent() {
                                                         
                                                         {/* Actions Overlay */}
                                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                                                            <button 
-                                                                onClick={() => setMainPhoto(file)}
+                                                            <button
+                                                                onClick={() => { setMainPhoto(file); setMainVideo(null) }}
                                                                 className={cn(
                                                                     "px-2 py-1 rounded-md text-[10px] font-bold w-full transition-colors",
                                                                     mainPhoto === file ? "bg-[#00BFA6] text-white" : "bg-white text-gray-900 hover:bg-gray-100"
@@ -8532,17 +8551,29 @@ function DepositPageComponent() {
                                         {selectedVideos.length > 0 && (
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {selectedVideos.map((file, idx) => (
-                                                    <div key={idx} className="relative bg-black rounded-lg overflow-hidden border border-gray-200 aspect-video group">
-                                                        <video 
-                                                            src={URL.createObjectURL(file)} 
+                                                    <div key={idx} className={cn(
+                                                        "relative bg-black rounded-lg overflow-hidden border-2 aspect-video group",
+                                                        mainVideo === file ? "border-[#00BFA6] ring-2 ring-[#00BFA6] ring-offset-2" : "border-gray-200"
+                                                    )}>
+                                                        <video
+                                                            src={URL.createObjectURL(file)}
                                                             className="w-full h-full object-contain"
                                                             controls
                                                         />
-                                                        <button 
+                                                        <button
                                                             onClick={() => removeVideo(idx)}
                                                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
                                                         >
                                                             <X className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setMainVideo(file); setMainPhoto(null) }}
+                                                            className={cn(
+                                                                "absolute top-2 left-2 px-2 py-1 rounded-md text-[10px] font-bold transition-colors",
+                                                                mainVideo === file ? "bg-[#00BFA6] text-white" : "bg-white/90 text-gray-900 opacity-0 group-hover:opacity-100 hover:bg-white"
+                                                            )}
+                                                        >
+                                                            {mainVideo === file ? "Couverture" : "Définir couverture"}
                                                         </button>
                                                         <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                                                             {(file.size / (1024 * 1024)).toFixed(1)} MB
@@ -8666,7 +8697,17 @@ function DepositPageComponent() {
                                         <Button
                                             onClick={handleSubmit(onSubmit as any, (errors) => {
                                                 console.error("Erreurs de validation:", errors);
-                                                alert(`${t("fixErrorsPrefix")}\n${Object.keys(errors).map(key => `- ${key}: ${(errors as any)[key]?.message}`).join('\n')}`);
+                                                // Pour un champ de type tableau (cases à cocher), react-hook-form range l'erreur sous
+                                                // forme de tableau (le message réel est sur l'un des éléments, pas sur le tableau lui-
+                                                // même) — sans ce repli, ça affichait juste "undefined".
+                                                const lines = Object.entries(errors).map(([key, err]: [string, any]) => {
+                                                    const message = err?.message
+                                                        || err?.root?.message
+                                                        || (Array.isArray(err) ? err.find((e: any) => e?.message)?.message : undefined)
+                                                        || "Champ invalide"
+                                                    return `- ${key}: ${message}`
+                                                });
+                                                alert(`${t("fixErrorsPrefix")}\n${lines.join('\n')}`);
                                             })}
                                             disabled={isSubmitting}
                                             className="bg-[#00BFA6] hover:bg-[#00908A] text-white px-8 py-3 text-lg font-bold"

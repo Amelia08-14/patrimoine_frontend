@@ -4,19 +4,21 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { Search, MapPin, Calendar, Wallet, Ruler, ArrowRight, Home, Handshake, User, Store } from "lucide-react"
+import { Search, MapPin, Calendar, Wallet, Ruler, ArrowRight, Home, User, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
-import { RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS, ACHAT_INTERLOCUTOR_OPTIONS } from "@/data/researchConfig"
+import { RESEARCH_PROPERTY_TYPES, ENVIRONMENT_OPTIONS, VILLA_LEVEL_ENTRANCE_OPTIONS } from "@/data/researchConfig"
 
 // Table de correspondance id -> libellé, construite à partir de toutes les branches (recherche + dépôt)
 const PROPERTY_TYPE_LABELS: Record<string, string> = {}
 Object.values(RESEARCH_PROPERTY_TYPES).forEach((list) => list.forEach((t) => { PROPERTY_TYPE_LABELS[t.id] ||= t.label }))
 PROPERTY_TYPES.forEach((t) => { PROPERTY_TYPE_LABELS[t.id] ||= t.label })
 
-const INTERLOCUTOR_LABELS: Record<string, string> = {}
-Object.values(RESEARCH_INTERLOCUTORS).forEach((list) => list.forEach((o) => { INTERLOCUTOR_LABELS[o.id] ||= o.label }))
-ACHAT_INTERLOCUTOR_OPTIONS.forEach((o) => { INTERLOCUTOR_LABELS[o.id] ||= o.label })
+const ENVIRONMENT_LABELS: Record<string, string> = {}
+ENVIRONMENT_OPTIONS.forEach((o) => { ENVIRONMENT_LABELS[o.id] = o.label })
+
+const VILLA_ENTRANCE_LABELS: Record<string, string> = {}
+VILLA_LEVEL_ENTRANCE_OPTIONS.forEach((o) => { VILLA_ENTRANCE_LABELS[o.id] = o.label })
 
 export default function DemandesPage() {
   const t = useTranslations("Demandes")
@@ -43,16 +45,6 @@ export default function DemandesPage() {
   const getLocationLabel = (r: any) => {
     const parts = [r.cityName, ...(r.townNames || [])].filter(Boolean)
     return parts.length ? parts.join(' — ') : null
-  }
-
-  const getInterlocutors = (r: any): string[] => {
-    try {
-      const parsed = r.amenities ? JSON.parse(r.amenities) : null
-      const ids: string[] = parsed?.interlocutors || []
-      return ids.map((id) => INTERLOCUTOR_LABELS[id] || id)
-    } catch {
-      return []
-    }
   }
 
   return (
@@ -83,11 +75,61 @@ export default function DemandesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {requests.map((r) => {
               const locationLabel = getLocationLabel(r)
-              const interlocutors = getInterlocutors(r)
-              const propertyTypeLabel = r.propertyType
-                ? r.propertyType.split(',').map((id: string) => PROPERTY_TYPE_LABELS[id] || id).join(', ')
-                : null
+
+              let amenities: any = {}
+              try { amenities = r.amenities ? JSON.parse(r.amenities) : {} } catch { amenities = {} }
+              const locationCriteria = amenities?.residentiel?.location
+
+              // Type(s) de bien — plusieurs choix possibles depuis la fiche "Résidentiel Location"
+              // (amenities.residentiel.location.propertyTypes), sinon le champ historique unique.
+              const propertyTypeIds: string[] = locationCriteria?.propertyTypes?.length
+                ? locationCriteria.propertyTypes
+                : (r.propertyType ? r.propertyType.split(',') : [])
+              const propertyTypeLabels: string[] = propertyTypeIds.map((id: string) => PROPERTY_TYPE_LABELS[id] || id)
+
               const requesterName = r.user?.companyName || r.user?.firstName || null
+
+              // Budget / surface — affichés en "jusqu'à X" quand seul le max est renseigné (fiche
+              // Résidentiel Location), en fourchette complète sinon, jamais de "0 - X" trompeur.
+              const budgetLabel = r.minBudget && r.maxBudget
+                ? `${new Intl.NumberFormat('fr-DZ').format(r.minBudget)} - ${new Intl.NumberFormat('fr-DZ').format(r.maxBudget)} DA`
+                : r.maxBudget
+                ? `${t("upTo")} ${new Intl.NumberFormat('fr-DZ').format(r.maxBudget)} DA`
+                : r.minBudget
+                ? `${t("from")} ${new Intl.NumberFormat('fr-DZ').format(r.minBudget)} DA`
+                : null
+
+              const surfaceMin = locationCriteria?.minSurface || r.minSurface
+              const surfaceMax = locationCriteria?.maxSurface || r.maxSurface
+              const surfaceLabel = surfaceMin && surfaceMax
+                ? (surfaceMin === surfaceMax ? `${surfaceMax} m²` : `${surfaceMin} - ${surfaceMax} m²`)
+                : surfaceMax
+                ? `${t("upTo")} ${surfaceMax} m²`
+                : surfaceMin
+                ? `${t("from")} ${surfaceMin} m²`
+                : null
+
+              // Tolère les deux formats stockés (anciens tests avec "F6", nouveau champ avec "6" brut)
+              const cleanTypology = (v?: string) => v ? v.replace(/^F/i, '') : v
+              const typMin = cleanTypology(locationCriteria?.typologyMin)
+              const typMax = cleanTypology(locationCriteria?.typologyMax)
+              const typologyLabel = typMin || typMax
+                ? (typMin && typMax
+                  ? (typMin === typMax ? `F${typMin}` : `F${typMin} - F${typMax}`)
+                  : `F${typMin || typMax}`)
+                : null
+
+              const floorMin = locationCriteria?.floorMin
+              const floorMax = locationCriteria?.floorMax
+              const floorLabel = floorMin && floorMax
+                ? (floorMin === floorMax ? `${t("floor")} ${floorMax}` : `${t("floor")} ${floorMin} - ${floorMax}`)
+                : floorMax
+                ? `${t("upTo")} ${t("floor")} ${floorMax}`
+                : floorMin
+                ? `${t("from")} ${t("floor")} ${floorMin}`
+                : null
+              const villaEntranceLabel = locationCriteria?.villaLevelEntrance ? VILLA_ENTRANCE_LABELS[locationCriteria.villaLevelEntrance] : null
+              const environmentLabels: string[] = (locationCriteria?.environment || []).map((id: string) => ENVIRONMENT_LABELS[id] || id).filter(Boolean)
 
               return (
                 <div key={r.id} className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 p-6 flex flex-col gap-4">
@@ -102,11 +144,22 @@ export default function DemandesPage() {
                     )}
                   </div>
 
-                  {propertyTypeLabel && (
-                    <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
-                      <Home className="h-4 w-4 text-[#00BFA6] shrink-0" />
-                      {propertyTypeLabel}
-                    </div>
+                  {propertyTypeLabels.length > 0 && (
+                    propertyTypeLabels.length === 1 ? (
+                      <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                        <Home className="h-4 w-4 text-[#00BFA6] shrink-0" />
+                        {propertyTypeLabels[0]}
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <Home className="h-4 w-4 text-[#00BFA6] shrink-0 mt-1" />
+                        <div className="flex flex-wrap gap-1.5">
+                          {propertyTypeLabels.map((label, i) => (
+                            <span key={i} className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#00BFA6]/10 text-[#00908A]">{label}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   )}
 
                   {r.comment && (
@@ -114,16 +167,34 @@ export default function DemandesPage() {
                   )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 border-t border-gray-50 pt-4">
-                    {(r.minBudget || r.maxBudget) && (
+                    {budgetLabel && (
                       <div className="flex items-center gap-2">
                         <Wallet className="h-4 w-4 text-[#00BFA6] shrink-0" />
-                        {r.minBudget ? new Intl.NumberFormat('fr-DZ').format(r.minBudget) : '0'} - {r.maxBudget ? new Intl.NumberFormat('fr-DZ').format(r.maxBudget) : '?'} DA
+                        {budgetLabel}
                       </div>
                     )}
-                    {(r.minSurface || r.maxSurface) && (
+                    {surfaceLabel && (
                       <div className="flex items-center gap-2">
                         <Ruler className="h-4 w-4 text-[#00BFA6] shrink-0" />
-                        {r.minSurface || 0} - {r.maxSurface || '?'} m²
+                        {surfaceLabel}
+                      </div>
+                    )}
+                    {typologyLabel && (
+                      <div className="flex items-center gap-2">
+                        <Home className="h-4 w-4 text-[#00BFA6] shrink-0" />
+                        {typologyLabel}
+                      </div>
+                    )}
+                    {floorLabel && (
+                      <div className="flex items-center gap-2">
+                        <Ruler className="h-4 w-4 text-[#00BFA6] shrink-0" />
+                        {floorLabel}
+                      </div>
+                    )}
+                    {villaEntranceLabel && (
+                      <div className="flex items-center gap-2">
+                        <Home className="h-4 w-4 text-[#00BFA6] shrink-0" />
+                        {villaEntranceLabel}
                       </div>
                     )}
                     {locationLabel && (
@@ -140,10 +211,11 @@ export default function DemandesPage() {
                     )}
                   </div>
 
-                  {interlocutors.length > 0 && (
-                    <div className="flex items-start gap-2 text-sm text-gray-600">
-                      <Handshake className="h-4 w-4 text-[#00BFA6] shrink-0 mt-0.5" />
-                      <span>{interlocutors.join(' · ')}</span>
+                  {environmentLabels.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {environmentLabels.map((label) => (
+                        <span key={label} className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600">{label}</span>
+                      ))}
                     </div>
                   )}
 

@@ -155,7 +155,7 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
           {items.map((item) => (
             <div key={item.id} className="min-w-[280px] md:min-w-[300px] lg:w-[calc(23%-1.1rem)] lg:min-w-[calc(23%-1.1rem)] flex-shrink-0 snap-start flex">
               <div className="w-full">
-                <PropertyCard announce={item} />
+                <PropertyCard announce={item} autoPlay />
               </div>
             </div>
           ))}

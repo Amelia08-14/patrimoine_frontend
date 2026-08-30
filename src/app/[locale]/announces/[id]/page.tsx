@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,7 @@ import {
   ArrowLeft, MapPin, BedDouble, Square, Heart, Share2,
   Phone, Mail, User, Check, Building2, Car, Wind, Sun,
   Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, X, Layers, Users, FileText, Handshake,
-  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search
+  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search, Play
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
@@ -315,6 +315,28 @@ export default function AnnounceDetailsPage() {
   } catch (e) {
       console.error("Failed to parse videos", e);
   }
+
+  // Média principal — mélange photos + vidéos (vidéo de couverture en tête si le déposant en a
+  // choisi une), pour un slot "image" qui défile rapidement entre les deux, comme demandé.
+  const coverVideoIndex: number | null = typeof announce?.property?.coverVideoIndex === 'number' ? announce.property.coverVideoIndex : null
+  const mediaList = useMemo(() => {
+    const photos = orderedAllImages.map((img: any) => ({ type: 'photo' as const, url: img.url }))
+    const videos = videosList.map((v) => ({ type: 'video' as const, url: v }))
+    if (coverVideoIndex !== null && videos[coverVideoIndex]) {
+      const cover = videos[coverVideoIndex]
+      const rest = videos.filter((_, i) => i !== coverVideoIndex)
+      return [cover, ...photos, ...rest]
+    }
+    return [...photos, ...videos]
+  }, [orderedAllImages, videosList.join('|'), coverVideoIndex])
+
+  const [heroIndex, setHeroIndex] = useState(0)
+  useEffect(() => {
+    setHeroIndex(0)
+    if (mediaList.length <= 1) return
+    const id = setInterval(() => setHeroIndex((i) => (i + 1) % mediaList.length), 3500)
+    return () => clearInterval(id)
+  }, [mediaList.length, announce?.id])
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -721,28 +743,44 @@ export default function AnnounceDetailsPage() {
             </div>
 
             <div className="h-[280px] sm:h-[320px] lg:h-[360px] rounded-2xl overflow-hidden relative bg-gray-50">
-                {activeTab === 'VIDEO' && videosList.length > 0 ? (
-                    <div className="w-full h-full flex items-center justify-center bg-black">
-                        <video
-                            src={getImageUrl(videosList[0]) || ''}
-                            controls
-                            className="w-full h-full object-contain"
-                        />
-                    </div>
-                ) : displayImages.length === 0 ? (
+                {mediaList.length === 0 && displayImages.length === 0 ? (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">{t("noImageAvailable")}</div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-2 h-full">
-                        {/* Main Image (Left Half) */}
-                        <div 
-                            className="col-span-1 md:col-span-2 row-span-2 relative cursor-pointer group h-full"
+                        {/* Média principal (Gauche) — défile automatiquement entre photos et vidéos */}
+                        <div
+                            className="col-span-1 md:col-span-2 row-span-2 relative cursor-pointer group h-full overflow-hidden rounded-l-2xl bg-black"
                             onClick={() => { setActiveImage(0); setShowGallery(true); }}
                         >
-                            <img 
-                                src={getImageUrl(displayImages[0]?.url) || ''} 
-                                alt="Main view" 
-                                className="w-full h-full object-cover hover:opacity-95 transition-opacity rounded-l-2xl"
-                            />
+                            {mediaList.length > 0 && (
+                                mediaList[heroIndex]?.type === 'video' ? (
+                                    <video
+                                        key={mediaList[heroIndex].url}
+                                        src={getImageUrl(mediaList[heroIndex].url) || ''}
+                                        autoPlay muted loop playsInline
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <img
+                                        key={mediaList[heroIndex]?.url}
+                                        src={getImageUrl(mediaList[heroIndex]?.url) || ''}
+                                        alt="Main view"
+                                        className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                                    />
+                                )
+                            )}
+                            {mediaList[heroIndex]?.type === 'video' && (
+                                <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-[10px] font-bold">
+                                    <Play className="h-3 w-3 fill-white" /> {t("videoLabel")}
+                                </span>
+                            )}
+                            {mediaList.length > 1 && (
+                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                    {mediaList.map((_, i) => (
+                                        <span key={i} className={`h-1.5 rounded-full transition-all ${i === heroIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`} />
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Middle Column (Stacked - previously top middle) */}

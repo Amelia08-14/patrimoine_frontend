@@ -14,10 +14,11 @@ export type ResearchBranchId = typeof RESEARCH_BRANCHES[number]["id"];
 export const RESEARCH_PROPERTY_TYPES: Record<ResearchBranchId, { id: string; label: string }[]> = {
   RESIDENTIEL: [
     { id: "STUDIO", label: "Studio" },
-    { id: "APPARTEMENT_SIMPLEX", label: "Appartement Simplex" },
-    { id: "APPARTEMENT_DUPLEX_TRIPLEX", label: "Appartement Duplex / Triplex" },
+    { id: "APPARTEMENT", label: "Appartement" },
+    { id: "DUPLEX", label: "Duplex" },
+    { id: "TRIPLEX", label: "Triplex" },
+    { id: "VILLA", label: "Villa" },
     { id: "NIVEAU_VILLA", label: "Niveau de Villa" },
-    { id: "VILLA_INDIVIDUELLE_JUMELEE", label: "Villa individuelle / Jumelée" },
     { id: "IMMEUBLE_COMPLET", label: "Immeuble complet" },
   ],
   INDUSTRIEL: [
@@ -56,9 +57,9 @@ export const RESEARCH_PROPERTY_TYPES: Record<ResearchBranchId, { id: string; lab
 // Interlocuteurs souhaités, par branche
 export const RESEARCH_INTERLOCUTORS: Record<ResearchBranchId, { id: string; label: string }[]> = {
   RESIDENTIEL: [
-    { id: "PARTICULIER", label: "Particulier" },
-    { id: "AGENCE_IMMOBILIERE", label: "Agence immobilière" },
     { id: "PROMOTEUR_IMMOBILIER", label: "Promoteur immobilier" },
+    { id: "AGENCE_IMMOBILIERE", label: "Agence immobilière" },
+    { id: "PARTICULIER", label: "Propriétaire particulier" },
   ],
   INDUSTRIEL: [
     { id: "PARTICULIER", label: "Particulier" },
@@ -261,4 +262,45 @@ export const SECURITY_OPTIONS = [
 export const CONNECTIVITY_OPTIONS = [
   { id: "FIBRE", label: "Fibre optique (Internet Très Haut Débit)" },
   { id: "LIGNE_FIXE", label: "Ligne téléphonique fixe" },
+];
+
+// --- Fiche "Résidentiel" (Location et Achat partagent la même fiche) ---
+
+// Types de bien réunis en choix multiple (le studio jusqu'à la villa, plus le niveau de villa
+// qui a son propre critère d'entrée ci-dessous) — utilisé par Location ET Achat.
+export const RESIDENTIEL_TYPE_IDS = [
+  "STUDIO",
+  "APPARTEMENT",
+  "DUPLEX",
+  "TRIPLEX",
+  "VILLA",
+  "NIVEAU_VILLA",
+];
+
+// --- Fiche "Recherche Immeuble d'appartements" (Résidentiel — recherche d'un immeuble entier) ---
+
+export const BUILDING_APARTMENT_STYLE_OPTIONS = [
+  { id: "SIMPLEX", label: "Simplex" },
+  { id: "DUPLEX", label: "Duplex" },
+  { id: "TRIPLEX", label: "Triplex" },
+];
+
+// Critère spécifique affiché uniquement quand "Niveau de Villa" est sélectionné
+export const VILLA_LEVEL_ENTRANCE_OPTIONS = [
+  { id: "SEPAREE", label: "Entrée séparée" },
+  { id: "COMMUNE", label: "Entrée commune" },
+];
+
+// Typologie recherchée, exprimée en fourchette "de F? à F?" — le préfixe "F" est affiché une
+// seule fois à part (unité), ces libellés ne portent que le chiffre.
+export const TYPOLOGY_RANGE_OPTIONS = [
+  { id: "F1", label: "1" },
+  { id: "F2", label: "2" },
+  { id: "F3", label: "3" },
+  { id: "F4", label: "4" },
+  { id: "F5", label: "5" },
+  { id: "F6", label: "6" },
+  { id: "F7", label: "7" },
+  { id: "F8", label: "8" },
+  { id: "F9_PLUS", label: "9+" },
 ];

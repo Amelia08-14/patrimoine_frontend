@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import axios from "axios"
-import { Calendar, MapPin, Zap, Star, Loader2, AlertCircle, Check, X, Coins, Edit, Eye, Filter, RotateCcw, ListChecks, TrendingUp } from "lucide-react"
+import { Calendar, MapPin, Zap, Star, Loader2, AlertCircle, Check, X, Coins, Edit, Eye, Filter, RotateCcw, ListChecks, TrendingUp, Images } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -295,15 +295,23 @@ export default function MyAnnouncesPage() {
                 const commune = a.property?.address?.town?.nameFr || ''
                 const featured = isCurrentlyFeatured(a)
                 const refreshed = isRecentlyRefreshed(a)
+                let videoCount = 0
+                try { videoCount = a.property?.videos ? JSON.parse(a.property.videos).length : 0 } catch { videoCount = 0 }
+                const mediaCount = (a.property?.images?.length || 0) + videoCount
 
                 return (
                   <div key={a.id} className="flex flex-wrap sm:flex-nowrap items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
                     {/* ID */}
                     <span className="text-xs text-gray-400 font-mono w-8 shrink-0 pt-1">#{a.id}</span>
 
-                    {/* Image */}
-                    <div className="h-14 w-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
+                    {/* Image — badge galerie si plusieurs photos/vidéos */}
+                    <div className="relative h-14 w-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
                       {img ? <img src={getImageUrl(img.url)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />}
+                      {mediaCount > 1 && (
+                        <span className="absolute bottom-0.5 right-0.5 flex items-center gap-0.5 px-1 py-0.5 rounded bg-black/60 text-white text-[9px] font-bold leading-none">
+                          <Images className="h-2.5 w-2.5" /> {mediaCount}
+                        </span>
+                      )}
                     </div>
 
                     {/* Info : titre, méta, puis badges sur leur propre ligne pour ne rien chevaucher */}
