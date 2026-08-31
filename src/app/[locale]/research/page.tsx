@@ -22,7 +22,7 @@ import {
   OFFICE_SPACE_TYPE_OPTIONS, OFFICE_ENERGY_OPTIONS, GENERAL_STATE_OPTIONS, ZONE_TYPE_OPTIONS,
   VISIBILITY_OPTIONS, LOCAL_STYLE_ETAT_OPTIONS, LOCAL_ENVIRONMENT_OPTIONS, LOCAL_USAGE_OPTIONS,
   ENVIRONMENT_OPTIONS,
-  RESIDENTIEL_TYPE_IDS, VILLA_LEVEL_ENTRANCE_OPTIONS, BUILDING_APARTMENT_STYLE_OPTIONS,
+  RESIDENTIEL_TYPE_IDS, VILLA_LEVEL_ENTRANCE_OPTIONS,
 } from '@/data/researchConfig';
 
 const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
@@ -274,15 +274,18 @@ export default function ResearchPage() {
     // Résidentiel — choix entre fiche "Recherche Groupée" (ci-dessus) et fiche dédiée à la
     // recherche d'un immeuble d'appartements entier (ci-dessous).
     searchScope: z.enum(['GROUPEE', 'IMMEUBLE']).optional(),
+    // Type(s) d'immeuble recherché — choix multiple entre "typologies similaires" et "typologies
+    // différentes" ; chacun a ses propres champs Typologie/Surface, Étage et Budget étant partagés.
+    buildingTypeChoices: z.array(z.enum(['SIMILAIRES', 'DIFFERENTES'])).optional(),
+    buildingTypologySimilaire: z.string().optional(),
+    buildingSurfaceSimilaireMin: z.coerce.number().optional(),
+    buildingSurfaceSimilaireMax: z.coerce.number().optional(),
     buildingTypologyMin: z.string().optional(),
     buildingTypologyMax: z.string().optional(),
     buildingFloorsMin: z.string().optional(),
     buildingFloorsMax: z.string().optional(),
-    buildingApartmentsMin: z.string().optional(),
-    buildingApartmentsMax: z.string().optional(),
     buildingSurfaceMin: z.coerce.number().optional(),
     buildingSurfaceMax: z.coerce.number().optional(),
-    buildingApartmentStyles: z.array(z.string()).optional(),
 
     // Bureaux et Commerces — choix entre 3 fiches dédiées (même concept que Résidentiel).
     bureauxSearchScope: z.enum(['GROUPEE', 'IMMEUBLE', 'BLOC_ADMINISTRATIF', 'BLOC_COMMERCIAL', 'LOCAL_COMMERCIAL']).optional(),
@@ -356,7 +359,7 @@ export default function ResearchPage() {
       connectivity: [],
       resPropertyTypes: [],
       cityIds: [],
-      buildingApartmentStyles: [],
+      buildingTypeChoices: [],
       baSpaceTypes: [],
       baEnergie: [],
       bcEtatGeneral: [],
@@ -477,15 +480,20 @@ export default function ResearchPage() {
           amenities.residentiel = { outdoorSpaces: data.outdoorSpaces, proximity: data.proximity, searchScope: data.searchScope || 'GROUPEE' };
           if (data.searchScope === 'IMMEUBLE') {
             amenities.residentiel.immeuble = {
-              typologyMin: data.buildingTypologyMin,
-              typologyMax: data.buildingTypologyMax,
+              typeChoices: data.buildingTypeChoices || [],
+              similaire: (data.buildingTypeChoices || []).includes('SIMILAIRES') ? {
+                typology: data.buildingTypologySimilaire,
+                surfaceMin: data.buildingSurfaceSimilaireMin,
+                surfaceMax: data.buildingSurfaceSimilaireMax,
+              } : undefined,
+              differente: (data.buildingTypeChoices || []).includes('DIFFERENTES') ? {
+                typologyMin: data.buildingTypologyMin,
+                typologyMax: data.buildingTypologyMax,
+                surfaceMin: data.buildingSurfaceMin,
+                surfaceMax: data.buildingSurfaceMax,
+              } : undefined,
               floorsMin: data.buildingFloorsMin,
               floorsMax: data.buildingFloorsMax,
-              apartmentsMin: data.buildingApartmentsMin,
-              apartmentsMax: data.buildingApartmentsMax,
-              surfaceMin: data.buildingSurfaceMin,
-              surfaceMax: data.buildingSurfaceMax,
-              apartmentStyles: data.buildingApartmentStyles || [],
               cityIds: data.cityIds || [],
               environment: data.environment,
               realisationStage: data.transaction === TransactionType.SALE ? data.realisationStage : undefined,
@@ -558,15 +566,20 @@ export default function ResearchPage() {
             // Fiche "Recherche Immeuble" identique à celle du Résidentiel (mêmes champs, réutilisés
             // tels quels), simplement stockée sous amenities.bureaux.immeuble.
             amenities.bureaux.immeuble = {
-              typologyMin: data.buildingTypologyMin,
-              typologyMax: data.buildingTypologyMax,
+              typeChoices: data.buildingTypeChoices || [],
+              similaire: (data.buildingTypeChoices || []).includes('SIMILAIRES') ? {
+                typology: data.buildingTypologySimilaire,
+                surfaceMin: data.buildingSurfaceSimilaireMin,
+                surfaceMax: data.buildingSurfaceSimilaireMax,
+              } : undefined,
+              differente: (data.buildingTypeChoices || []).includes('DIFFERENTES') ? {
+                typologyMin: data.buildingTypologyMin,
+                typologyMax: data.buildingTypologyMax,
+                surfaceMin: data.buildingSurfaceMin,
+                surfaceMax: data.buildingSurfaceMax,
+              } : undefined,
               floorsMin: data.buildingFloorsMin,
               floorsMax: data.buildingFloorsMax,
-              apartmentsMin: data.buildingApartmentsMin,
-              apartmentsMax: data.buildingApartmentsMax,
-              surfaceMin: data.buildingSurfaceMin,
-              surfaceMax: data.buildingSurfaceMax,
-              apartmentStyles: data.buildingApartmentStyles || [],
               cityIds: data.cityIds || [],
               environment: data.environment,
             };
@@ -730,9 +743,7 @@ export default function ResearchPage() {
   // Ligne compacte "De [x] à [y]" réutilisée pour typologie / étage / surface / budget — même
   // gabarit visuel partout (titre au-dessus, chip d'unité collé au champ).
   const renderRangeRow = (
-    minField: 'typologyMin' | 'typologyMax' | 'floorMin' | 'floorMax' | 'minSurface' | 'maxSurface' | 'minBudget' | 'maxBudget'
-      | 'buildingTypologyMin' | 'buildingTypologyMax' | 'buildingFloorsMin' | 'buildingFloorsMax'
-      | 'buildingApartmentsMin' | 'buildingApartmentsMax' | 'buildingSurfaceMin' | 'buildingSurfaceMax',
+    minField: 'typologyMin' | 'typologyMax' | 'floorMin' | 'floorMax' | 'minSurface' | 'maxSurface' | 'minBudget' | 'maxBudget',
     maxField: typeof minField,
     opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; width?: string; useMinMaxLabels?: boolean },
   ) => {
@@ -855,8 +866,10 @@ export default function ResearchPage() {
   // encadré au lieu de la pastille grise compacte utilisée ailleurs sur la fiche.
   const renderBoxedRange = (
     label: string,
-    minField: 'typologyMin' | 'floorMin' | 'minSurface',
-    maxField: 'typologyMax' | 'floorMax' | 'maxSurface',
+    minField: 'typologyMin' | 'floorMin' | 'minSurface'
+      | 'buildingTypologyMin' | 'buildingFloorsMin' | 'buildingSurfaceMin' | 'buildingSurfaceSimilaireMin',
+    maxField: 'typologyMax' | 'floorMax' | 'maxSurface'
+      | 'buildingTypologyMax' | 'buildingFloorsMax' | 'buildingSurfaceMax' | 'buildingSurfaceSimilaireMax',
     opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; placeholderMin?: string; placeholderMax?: string },
   ) => (
     <div className="min-w-0">
@@ -873,6 +886,26 @@ export default function ResearchPage() {
         <input
           type="number" inputMode="numeric" {...register(maxField)}
           placeholder={opts?.placeholderMax}
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base text-center"
+        />
+        {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
+      </div>
+    </div>
+  );
+
+  // Variante à une seule valeur (pas de "de/à") — Typologie unique pour "typologies similaires".
+  const renderBoxedSingle = (
+    label: string,
+    field: 'buildingTypologySimilaire',
+    opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; placeholder?: string },
+  ) => (
+    <div className="min-w-0">
+      <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
+      <div className="flex items-center gap-1.5">
+        {opts?.unit && opts.unitPosition !== 'suffix' && <span className="font-bold text-gray-700 text-base shrink-0">{opts.unit}</span>}
+        <input
+          type="number" inputMode="numeric" {...register(field)}
+          placeholder={opts?.placeholder}
           className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
@@ -1002,42 +1035,90 @@ export default function ResearchPage() {
   // Fiche "Recherche Immeuble d'appartements" — alternative à la fiche Résidentiel classique
   // quand on cherche l'immeuble entier plutôt qu'un lot précis. Localisation/date/commentaire
   // restent les mêmes blocs partagés que les autres fiches.
+  // Ligne partagée Étage (uniquement si un seul type est choisi — sinon il est déjà affiché comme
+  // "commun aux deux") / Budget min / Budget max / Date — jamais dupliquée même si les deux types
+  // d'immeuble sont cochés à la fois.
+  const renderImmeubleSharedRow = (includeFloor: boolean) => (
+    <div className={cn('grid grid-cols-1 sm:grid-cols-2 gap-5', includeFloor ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
+      {includeFloor && renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+      {renderBoxedBudgetField(t('budgetMin'), 'minBudget')}
+      {renderBoxedBudgetField(t('budgetMax'), 'maxBudget', { withUnit: true })}
+      <div className="min-w-0">
+        <label className="block text-sm font-bold text-gray-900 mb-2">{t('resLocInstallationDateTitle')}</label>
+        <input
+          type="date" {...register('installationDate')}
+          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base"
+        />
+      </div>
+    </div>
+  );
+
   const renderImmeubleCriteria = () => {
+    const typeChoices: string[] = watch('buildingTypeChoices') || [];
+    const hasSimilaires = typeChoices.includes('SIMILAIRES');
+    const hasDifferentes = typeChoices.includes('DIFFERENTES');
+    const hasBoth = hasSimilaires && hasDifferentes;
+
     return (
       <>
-        {renderLocalisationSection()}
-
-        <Section title={t('immeubleTypologyTitle')} icon={Ruler}>
-          <div className="space-y-3">
-            <div className="flex flex-wrap justify-between gap-x-6 gap-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocTypologyRange')}</label>
-                {renderRangeRow('buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', width: 'w-20' })}
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleFloorsRange')}</label>
-                {renderRangeRow('buildingFloorsMin', 'buildingFloorsMax', { width: 'w-20' })}
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleApartmentsRange')}</label>
-                {renderRangeRow('buildingApartmentsMin', 'buildingApartmentsMax', { width: 'w-20' })}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('immeubleSurfaceRange')}</label>
-              {renderRangeRow('buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', width: 'w-20' })}
-            </div>
+        {/* Type d'immeuble recherché — choix multiple, détermine les champs Typologie/Surface
+            affichés juste en dessous (Étage/Budget/Date restent communs, jamais dupliqués). */}
+        <Section title={t('immeubleTypeSectionTitle')} icon={Building2}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <PillOption checked={hasSimilaires} label={t('immeubleTypeSimilaires')} onChange={() => toggleArrayValue('buildingTypeChoices', 'SIMILAIRES')} />
+            <PillOption checked={hasDifferentes} label={t('immeubleTypeDifferentes')} onChange={() => toggleArrayValue('buildingTypeChoices', 'DIFFERENTES')} />
           </div>
         </Section>
 
-        <Section title={t('immeubleStyleTitle')} icon={Home}>
-          <OptionGroup label={t('immeubleStyleLabel')} options={BUILDING_APARTMENT_STYLE_OPTIONS} field="buildingApartmentStyles" watch={watch} toggle={toggleArrayValue} />
-        </Section>
+        {(hasSimilaires || hasDifferentes) && (
+          <Section title={t('resLocTypologyTitle')} icon={Ruler}>
+            <div className="space-y-5">
+              {hasBoth ? (
+                <>
+                  <div>
+                    <h3 className="text-sm font-black text-gray-700 mb-3">{t('immeubleCaracSimilairesTitle')}</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl">
+                      {renderBoxedSingle(t('resLocTypologyRange'), 'buildingTypologySimilaire', { unit: 'F', unitPosition: 'prefix', placeholder: 'Ex: 3' })}
+                      {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceSimilaireMin', 'buildingSurfaceSimilaireMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-gray-700 mb-3">{t('immeubleCaracDifferentesTitle')}</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                      {renderBoxedRange(t('resLocTypologyRange'), 'buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: 'Ex: 3', placeholderMax: 'Ex: 5' })}
+                      {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
+                      {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+                    </div>
+                  </div>
+                  {renderImmeubleSharedRow(false)}
+                </>
+              ) : hasSimilaires ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    {renderBoxedSingle(t('resLocTypologyRange'), 'buildingTypologySimilaire', { unit: 'F', unitPosition: 'prefix', placeholder: 'Ex: 3' })}
+                    {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceSimilaireMin', 'buildingSurfaceSimilaireMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
+                    {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+                  </div>
+                  {renderImmeubleSharedRow(false)}
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    {renderBoxedRange(t('resLocTypologyRange'), 'buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: 'Ex: 3', placeholderMax: 'Ex: 5' })}
+                    {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
+                    {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+                  </div>
+                  {renderImmeubleSharedRow(false)}
+                </>
+              )}
+            </div>
+          </Section>
+        )}
 
-        <Section title={t('immeubleCadreDeVieTitle')} icon={Compass}>
-          <OptionGroup label={t('immeubleCadreDeVieLabel')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
-        </Section>
-
+        {/* Localisation / Cadre de vie et Environnement / Interlocuteur / Message — exactement les
+            mêmes blocs partagés que la fiche "Recherche Appartement, Villa, Niveau de Villa". */}
+        {renderLocalisationSection({ hideDate: true })}
+        {renderEnvironmentSection()}
         {renderSharedInterlocutorSection()}
 
         {/* Stade de réalisation — uniquement pour l'achat d'un immeuble (une location d'immeuble
