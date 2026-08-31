@@ -1123,6 +1123,7 @@ const formSchema = z.object({
   cfLength: z.string().optional(),
   cfWidth: z.string().optional(),
   cfHeight: z.string().optional(),
+  cfCapacity: z.string().optional(),
   cfEtatGlobal: z.enum(["NEUF", "BON_ETAT_MARCHE", "ANCIEN"]).optional(),
   cfTypeFroid: stringArrayOptional,
   cfModeDiffusion: stringArrayOptional,
@@ -2793,6 +2794,7 @@ function DepositPageComponent() {
                     length: toNum(data.cfLength),
                     width: toNum(data.cfWidth),
                     height: toNum(data.cfHeight),
+                    capacity: toNum(data.cfCapacity),
                 },
                 etatGlobal: data.cfEtatGlobal,
                 localisation: data.cfLocalisation?.length ? data.cfLocalisation : undefined,
@@ -4284,7 +4286,7 @@ function DepositPageComponent() {
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                     Infrastructure &amp; Surfaces
                                 </h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (ml)</label>
                                         <input {...register("cfLength")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
@@ -4296,6 +4298,10 @@ function DepositPageComponent() {
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur (ml)</label>
                                         <input {...register("cfHeight")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (m³)</label>
+                                        <input {...register("cfCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 80" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">État global</label>

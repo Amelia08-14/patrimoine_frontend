@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import {
   Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
   Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2, Store, Zap,
-  Warehouse, Snowflake,
+  Warehouse, Snowflake, Wrench, Users, Thermometer,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -23,6 +23,9 @@ import {
   VISIBILITY_OPTIONS, LOCAL_STYLE_ETAT_OPTIONS, LOCAL_ENVIRONMENT_OPTIONS, LOCAL_USAGE_OPTIONS,
   ENVIRONMENT_OPTIONS,
   RESIDENTIEL_TYPE_IDS, VILLA_LEVEL_ENTRANCE_OPTIONS,
+  HANGAR_USAGE_OPTIONS, INDUSTRIAL_ZONE_OPTIONS, USINE_EQUIPMENT_OPTIONS, USINE_ACTIVITY_OPTIONS,
+  CF_ACTIVITY_OPTIONS, CF_TYPE_FROID_OPTIONS, CF_MODE_GESTION_OPTIONS,
+  INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS,
 } from '@/data/researchConfig';
 
 const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
@@ -104,7 +107,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
 }
 
 function OptionGroup({
-  label, options, field, watch, toggle, icons = {},
+  label, options, field, watch, toggle, icons = {}, gridClassName,
 }: {
   label: string;
   options: { id: string; label: string }[];
@@ -112,12 +115,13 @@ function OptionGroup({
   watch: any;
   toggle: (field: any, value: string) => void;
   icons?: Record<string, any>;
+  gridClassName?: string;
 }) {
   const selected: string[] = watch(field) || [];
   return (
     <div>
       <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className={gridClassName || 'grid grid-cols-2 md:grid-cols-3 gap-3'}>
         {options.map((opt) => (
           <PillOption key={opt.id} checked={selected.includes(opt.id)} label={opt.label} icon={icons[opt.id]} onChange={() => toggle(field, opt.id)} />
         ))}
@@ -214,6 +218,34 @@ export default function ResearchPage() {
     ceilingHeight: z.coerce.number().optional(),
     truckAccess: z.boolean().optional(),
     technicalSpecs: z.string().optional(),
+
+    // Industriel (Location) — fiches dédiées Hangar / Usine / Chambre Froide.
+    hgUsageType: z.array(z.string()).optional(),
+    hgSurfaceTerrainMin: z.coerce.number().optional(),
+    hgSurfaceTerrainMax: z.coerce.number().optional(),
+    hgSurfaceCouverteMin: z.coerce.number().optional(),
+    hgSurfaceCouverteMax: z.coerce.number().optional(),
+    hgHauteurMin: z.coerce.number().optional(),
+    hgHauteurMax: z.coerce.number().optional(),
+    hgZone: z.array(z.string()).optional(),
+    hgEnergie: z.array(z.string()).optional(),
+
+    usNature: z.array(z.string()).optional(),
+    usNatureOther: z.string().optional(),
+    usEquipement: z.array(z.string()).optional(),
+    usSurfaceTerrainMin: z.coerce.number().optional(),
+    usSurfaceTerrainMax: z.coerce.number().optional(),
+    usSurfaceBatieMin: z.coerce.number().optional(),
+    usSurfaceBatieMax: z.coerce.number().optional(),
+    usZone: z.array(z.string()).optional(),
+    usEnergie: z.array(z.string()).optional(),
+
+    cfActivite: z.array(z.string()).optional(),
+    cfActiviteOther: z.string().optional(),
+    cfCapaciteMin: z.coerce.number().optional(),
+    cfCapaciteMax: z.coerce.number().optional(),
+    cfTypeFroidChoices: z.array(z.string()).optional(),
+    cfModeGestionChoices: z.array(z.string()).optional(),
 
     nbOffices: z.coerce.number().optional(),
     streetWindow: z.boolean().optional(),
@@ -368,6 +400,16 @@ export default function ResearchPage() {
       lcStyleEtat: [],
       lcEnvironnement: [],
       lcUsage: [],
+      hgUsageType: [],
+      hgZone: [],
+      hgEnergie: [],
+      usNature: [],
+      usEquipement: [],
+      usZone: [],
+      usEnergie: [],
+      cfActivite: [],
+      cfTypeFroidChoices: [],
+      cfModeGestionChoices: [],
     },
   });
 
@@ -378,15 +420,21 @@ export default function ResearchPage() {
 
   const isBureauxCommerces = branch === 'BUREAUX_COMMERCES';
   const isIndustriel = branch === 'INDUSTRIEL';
+  // Les 3 fiches dédiées (Hangar/Usine/Chambre Froide) n'existent pour l'instant qu'en Location —
+  // en Achat, l'ancien formulaire générique (avec Budget/Interlocuteur en étapes à part) reste
+  // utilisé, donc le parcours court ne s'applique qu'à la Location.
+  const isIndustrielLocation = isIndustriel && watch('transaction') === TransactionType.RENTAL;
 
   // Résidentiel (Location/Achat) et Bureaux et Commerces : un choix supplémentaire de fiche
   // dédiée (pastille auto-avancée), puis fiche unique (critères + localisation + interlocuteur)
-  // et contact direct. Industriel garde le parcours complet (Budget/Interlocuteur en étapes à
-  // part) mais avec le même choix de catégorie en plus. Les autres branches restent inchangées.
+  // et contact direct. Industriel Location suit le même principe ; Industriel Achat et les autres
+  // branches gardent le parcours complet (Budget/Interlocuteur en étapes à part).
   const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
     ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isBureauxCommerces
     ? ['TRANSACTION', 'BRANCH', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    : isIndustrielLocation
+    ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isIndustriel
     ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT']
     : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE');
@@ -535,14 +583,54 @@ export default function ResearchPage() {
           }
           break;
         case 'INDUSTRIEL':
-          amenities.industriel = {
-            searchScope: data.industrielSearchScope,
-            storageSurfaceMin: data.storageSurfaceMin,
-            storageSurfaceMax: data.storageSurfaceMax,
-            ceilingHeight: data.ceilingHeight,
-            truckAccess: !!data.truckAccess,
-            technicalSpecs: data.technicalSpecs,
-          };
+          if (data.transaction === TransactionType.RENTAL) {
+            amenities.industriel = { searchScope: data.industrielSearchScope };
+            if (data.industrielSearchScope === 'USINE') {
+              amenities.industriel.usine = {
+                nature: data.usNature || [],
+                natureOther: data.usNatureOther,
+                equipement: data.usEquipement || [],
+                surfaceTerrainMin: data.usSurfaceTerrainMin,
+                surfaceTerrainMax: data.usSurfaceTerrainMax,
+                surfaceBatieMin: data.usSurfaceBatieMin,
+                surfaceBatieMax: data.usSurfaceBatieMax,
+                zone: data.usZone || [],
+                energie: data.usEnergie || [],
+                cityIds: data.cityIds || [],
+              };
+            } else if (data.industrielSearchScope === 'CHAMBRE_FROIDE') {
+              amenities.industriel.chambreFroide = {
+                activite: data.cfActivite || [],
+                activiteOther: data.cfActiviteOther,
+                capaciteMin: data.cfCapaciteMin,
+                capaciteMax: data.cfCapaciteMax,
+                typeFroid: data.cfTypeFroidChoices || [],
+                modeGestion: data.cfModeGestionChoices || [],
+                cityIds: data.cityIds || [],
+              };
+            } else {
+              amenities.industriel.hangar = {
+                usageType: data.hgUsageType || [],
+                surfaceTerrainMin: data.hgSurfaceTerrainMin,
+                surfaceTerrainMax: data.hgSurfaceTerrainMax,
+                surfaceCouverteMin: data.hgSurfaceCouverteMin,
+                surfaceCouverteMax: data.hgSurfaceCouverteMax,
+                hauteurMin: data.hgHauteurMin,
+                hauteurMax: data.hgHauteurMax,
+                zone: data.hgZone || [],
+                energie: data.hgEnergie || [],
+                cityIds: data.cityIds || [],
+              };
+            }
+          } else {
+            amenities.industriel = {
+              storageSurfaceMin: data.storageSurfaceMin,
+              storageSurfaceMax: data.storageSurfaceMax,
+              ceilingHeight: data.ceilingHeight,
+              truckAccess: !!data.truckAccess,
+              technicalSpecs: data.technicalSpecs,
+            };
+          }
           break;
         case 'BUREAUX_COMMERCES':
           amenities.bureaux = { searchScope: data.bureauxSearchScope };
@@ -861,15 +949,34 @@ export default function ResearchPage() {
     );
   };
 
+  // Interlocuteur — seulement 2 choix (Agence immobilière / Particulier) pour les fiches
+  // Industriel Location (Hangar/Usine/Chambre Froide), contrairement aux 3 choix du Résidentiel.
+  const renderIndustrielLocationInterlocutorSection = () => (
+    <Section title={t('stepInterlocutor')} icon={Handshake}>
+      <div className="space-y-3">
+        <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
+          {INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+          ))}
+        </div>
+      </div>
+    </Section>
+  );
+
   // Champ "boxé" façon création d'annonce (label en gras au-dessus, encadré gris, "Ex:" en
   // placeholder) réutilisé pour Typologie/Surface/Étage — deux entrées (de/à) dans le même
   // encadré au lieu de la pastille grise compacte utilisée ailleurs sur la fiche.
   const renderBoxedRange = (
     label: string,
     minField: 'typologyMin' | 'floorMin' | 'minSurface'
-      | 'buildingTypologyMin' | 'buildingFloorsMin' | 'buildingSurfaceMin' | 'buildingSurfaceSimilaireMin',
+      | 'buildingTypologyMin' | 'buildingFloorsMin' | 'buildingSurfaceMin' | 'buildingSurfaceSimilaireMin'
+      | 'hgSurfaceTerrainMin' | 'hgSurfaceCouverteMin' | 'hgHauteurMin'
+      | 'usSurfaceTerrainMin' | 'usSurfaceBatieMin' | 'cfCapaciteMin',
     maxField: 'typologyMax' | 'floorMax' | 'maxSurface'
-      | 'buildingTypologyMax' | 'buildingFloorsMax' | 'buildingSurfaceMax' | 'buildingSurfaceSimilaireMax',
+      | 'buildingTypologyMax' | 'buildingFloorsMax' | 'buildingSurfaceMax' | 'buildingSurfaceSimilaireMax'
+      | 'hgSurfaceTerrainMax' | 'hgSurfaceCouverteMax' | 'hgHauteurMax'
+      | 'usSurfaceTerrainMax' | 'usSurfaceBatieMax' | 'cfCapaciteMax',
     opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; placeholderMin?: string; placeholderMax?: string },
   ) => (
     <div className="min-w-0">
@@ -1266,6 +1373,172 @@ export default function ResearchPage() {
     </>
   );
 
+  // --- Industriel (Location) — fiches "Hangar" / "Usine" / "Chambre Froide" (même concept que
+  // Bureaux et Commerces). Interlocuteur réduit à 2 choix (Agence/Particulier), spécifique à ces
+  // 3 fiches. Budget/Date sur une ligne partagée, comme partout ailleurs sur ce formulaire. ---
+
+  const renderIndustrielBudgetDateRow = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      {renderBoxedBudgetField(t('budgetMin'), 'minBudget')}
+      {renderBoxedBudgetField(t('budgetMax'), 'maxBudget', { withUnit: true })}
+      <div className="min-w-0">
+        <label className="block text-sm font-bold text-gray-900 mb-2">{t('indLocDateTitle')}</label>
+        <input
+          type="date" {...register('installationDate')}
+          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base"
+        />
+      </div>
+    </div>
+  );
+
+  const renderHangarLocationCriteria = () => (
+    <>
+      <Section title={t('hgUsageTitle')} icon={Warehouse}>
+        <div className="flex flex-wrap gap-3">
+          {HANGAR_USAGE_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('hgUsageType') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('hgUsageType', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title={t('resLocTypologyTitle')} icon={Ruler}>
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {renderBoxedRange(t('hgSurfaceTerrainLabel'), 'hgSurfaceTerrainMin', 'hgSurfaceTerrainMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 500', placeholderMax: 'Ex: 1000' })}
+            {renderBoxedRange(t('hgSurfaceCouverteLabel'), 'hgSurfaceCouverteMin', 'hgSurfaceCouverteMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 300', placeholderMax: 'Ex: 800' })}
+            {renderBoxedRange(t('hgHauteurLabel'), 'hgHauteurMin', 'hgHauteurMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: 'Ex: 5', placeholderMax: 'Ex: 8' })}
+          </div>
+          {renderIndustrielBudgetDateRow()}
+        </div>
+      </Section>
+
+      <Section title={t('indEmplacementTitle')} icon={Compass}>
+        <div className="flex flex-wrap gap-3">
+          {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('hgZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('hgZone', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title={t('burEnergyTitle')} icon={Zap}>
+        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="hgEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
+      </Section>
+
+      {renderLocalisationSection({ hideDate: true })}
+      {renderIndustrielLocationInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
+  const renderUsineLocationCriteria = () => {
+    const natureList: string[] = watch('usNature') || [];
+    return (
+      <>
+        <Section title={t('usNatureTitle')} icon={Factory}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {USINE_ACTIVITY_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={natureList.includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('usNature', opt.id)} />
+              ))}
+            </div>
+            {natureList.includes('AUTRE_ACTIVITE') && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">{t('usNatureOtherLabel')}</label>
+                <input type="text" {...register('usNatureOther')} className={inputCls} placeholder={t('usNatureOtherPlaceholder')} />
+              </div>
+            )}
+          </div>
+        </Section>
+
+        <Section title={t('usEquipmentTitle')} icon={Wrench}>
+          <div className="flex flex-wrap gap-3">
+            {USINE_EQUIPMENT_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('usEquipement') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('usEquipement', opt.id)} />
+            ))}
+          </div>
+        </Section>
+
+        <Section title={t('resLocTypologyTitle')} icon={Ruler}>
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl">
+              {renderBoxedRange(t('usSurfaceTerrainLabel'), 'usSurfaceTerrainMin', 'usSurfaceTerrainMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 500', placeholderMax: 'Ex: 1500' })}
+              {renderBoxedRange(t('usSurfaceBatieLabel'), 'usSurfaceBatieMin', 'usSurfaceBatieMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 300', placeholderMax: 'Ex: 1000' })}
+            </div>
+            {renderIndustrielBudgetDateRow()}
+          </div>
+        </Section>
+
+        <Section title={t('indEmplacementTitle')} icon={Compass}>
+          <div className="flex flex-wrap gap-3">
+            {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('usZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('usZone', opt.id)} />
+            ))}
+          </div>
+        </Section>
+
+        <Section title={t('burEnergyTitle')} icon={Zap}>
+          <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="usEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
+        </Section>
+
+        {renderLocalisationSection({ hideDate: true })}
+        {renderIndustrielLocationInterlocutorSection()}
+        {renderCommentSection()}
+      </>
+    );
+  };
+
+  const renderChambreFroideLocationCriteria = () => {
+    const activiteList: string[] = watch('cfActivite') || [];
+    return (
+      <>
+        <Section title={t('cfActiviteTitle')} icon={Snowflake}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {CF_ACTIVITY_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={activiteList.includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('cfActivite', opt.id)} />
+              ))}
+            </div>
+            {activiteList.includes('AUTRE_CF') && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">{t('cfActiviteOtherLabel')}</label>
+                <input type="text" {...register('cfActiviteOther')} className={inputCls} placeholder={t('cfActiviteOtherPlaceholder')} />
+              </div>
+            )}
+          </div>
+        </Section>
+
+        <Section title={t('cfInfraTitle')} icon={Ruler}>
+          <div className="space-y-5">
+            <div className="max-w-xs">
+              {renderBoxedRange(t('cfCapaciteLabel'), 'cfCapaciteMin', 'cfCapaciteMax', { unit: 'm³', unitPosition: 'suffix', placeholderMin: 'Ex: 50', placeholderMax: 'Ex: 200' })}
+            </div>
+            {renderIndustrielBudgetDateRow()}
+          </div>
+        </Section>
+
+        <Section title={t('cfTypeFroidTitle')} icon={Thermometer}>
+          <div className="flex flex-wrap gap-3">
+            {CF_TYPE_FROID_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('cfTypeFroidChoices') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('cfTypeFroidChoices', opt.id)} />
+            ))}
+          </div>
+        </Section>
+
+        <Section title={t('cfModeGestionTitle')} icon={Users}>
+          <div className="flex flex-wrap gap-3">
+            {CF_MODE_GESTION_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('cfModeGestionChoices') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('cfModeGestionChoices', opt.id)} />
+            ))}
+          </div>
+        </Section>
+
+        {renderLocalisationSection({ hideDate: true })}
+        {renderIndustrielLocationInterlocutorSection()}
+        {renderCommentSection()}
+      </>
+    );
+  };
+
   const renderCriteriaStep = () => {
     switch (branch) {
       case 'RESIDENTIEL':
@@ -1274,6 +1547,17 @@ export default function ResearchPage() {
         return renderResidentielLocationCriteria();
 
       case 'INDUSTRIEL':
+        // Fiches dédiées (Hangar/Usine/Chambre Froide) uniquement en Location pour le moment —
+        // l'Achat garde l'ancien formulaire générique en attendant une spécification dédiée.
+        if (watch('transaction') === TransactionType.RENTAL) {
+          switch (watch('industrielSearchScope')) {
+            case 'USINE': return renderUsineLocationCriteria();
+            case 'CHAMBRE_FROIDE': return renderChambreFroideLocationCriteria();
+            case 'HANGAR':
+            default:
+              return renderHangarLocationCriteria();
+          }
+        }
         return (
           <Section title={t('mainCriteria')} icon={Factory}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -360,3 +360,70 @@ export const TYPOLOGY_RANGE_OPTIONS = [
   { id: "F8", label: "8" },
   { id: "F9_PLUS", label: "9+" },
 ];
+
+// --- Fiches "Industriel" (Location) — Hangar / Usine / Chambre Froide ---
+
+export const HANGAR_USAGE_OPTIONS = [
+  { id: "STOCKAGE", label: "Stockage" },
+  { id: "PRODUCTION", label: "Production" },
+];
+
+export const INDUSTRIAL_ZONE_OPTIONS = [
+  { id: "ZONE_INDUSTRIELLE", label: "Zone industrielle" },
+  { id: "ZONE_URBAINE", label: "Zone urbaine" },
+];
+
+// Même liste que "Énergie et fluide" des fiches Bureaux (Électricité/Gaz/Eau/Assainissement) —
+// réutilisée telle quelle via OFFICE_ENERGY_OPTIONS, pas de doublon ici.
+
+// Même liste que "Type de location" du dépôt d'annonce Usine (Murs nus / Équipée).
+export const USINE_EQUIPMENT_OPTIONS = [
+  { id: "MURS_NUS", label: "Murs nus (Vide)" },
+  { id: "EQUIPEE", label: "Équipée (Clé en main avec lignes)" },
+];
+
+// Même liste que "Secteur d'activité" du dépôt d'annonce Usine (INDUSTRIAL_SECTORS).
+export const USINE_ACTIVITY_OPTIONS = [
+  { id: "AGROALIMENTAIRE", label: "Agroalimentaire" },
+  { id: "PHARMACEUTIQUE_COSMETIQUE", label: "Pharmaceutique / Cosmétique" },
+  { id: "CHIMIQUE", label: "Chimique" },
+  { id: "MATERIAUX_CONSTRUCTION", label: "Matériaux de construction" },
+  { id: "PLASTURGIE_EMBALLAGE", label: "Plasturgie & Emballage" },
+  { id: "SIDERURGIE_METALLURGIE", label: "Sidérurgie & Métallurgie" },
+  { id: "TEXTILE_CUIR", label: "Textile & Cuir" },
+  { id: "ELECTROMENAGER_ELECTRONIQUE", label: "Électroménager & Électronique" },
+  { id: "MECANIQUE_AUTOMOBILE", label: "Mécanique & Automobile" },
+  { id: "RECYCLAGE_ENVIRONNEMENT", label: "Recyclage & Environnement" },
+  { id: "PAPIER_EDITION", label: "Papier & Édition" },
+  { id: "AUTRE_ACTIVITE", label: "Autre activité" },
+];
+
+// Même liste que "Secteur compatible" du dépôt d'annonce Chambre Froide (CF_SECTORS).
+export const CF_ACTIVITY_OPTIONS = [
+  { id: "AGROALIMENTAIRE_CF", label: "Agroalimentaire" },
+  { id: "GLACES_SURGELES", label: "Glaces & Surgelés" },
+  { id: "PHARMACEUTIQUE_CF", label: "Pharmaceutique" },
+  { id: "CHIMIQUE_CF", label: "Chimique" },
+  { id: "HORTICOLE_AGRICOLE", label: "Horticole & Agricole" },
+  { id: "AUTRE_CF", label: "Autre activité" },
+];
+
+// Même liste que "Type de froid" du dépôt d'annonce Chambre Froide.
+export const CF_TYPE_FROID_OPTIONS = [
+  { id: "POSITIF", label: "Positif" },
+  { id: "NEGATIF", label: "Négatif" },
+  { id: "ULTRA_FROID", label: "Ultra Froid (Tunnel de congélation)" },
+];
+
+// Même liste que "Mode de gestion" du dépôt d'annonce Chambre Froide (CF_MODE_GESTION).
+export const CF_MODE_GESTION_OPTIONS = [
+  { id: "SANS_GESTION", label: "Sans gestion (Murs seuls)" },
+  { id: "AVEC_GESTION", label: "Avec gestion (Service complet)" },
+];
+
+// Interlocuteur — seulement 2 choix pour les fiches Industriel (Location), contrairement au
+// Résidentiel/Bureaux qui en proposent 3.
+export const INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS = [
+  { id: "AGENCE_IMMOBILIERE", label: "Agence immobilière" },
+  { id: "PARTICULIER", label: "Particulier" },
+];
