@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import {
   Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
   Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2, Store, Zap,
+  Warehouse, Snowflake,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -294,6 +295,10 @@ export default function ResearchPage() {
     lcEnvironnement: z.array(z.string()).optional(),
     lcUsage: z.array(z.string()).optional(),
 
+    // Industriel — choix entre 3 catégories (même concept que Bureaux et Commerces), fiche de
+    // critères identique pour les 3 pour le moment.
+    industrielSearchScope: z.enum(['HANGAR', 'USINE', 'CHAMBRE_FROIDE']).optional(),
+
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     email: z.string().optional(),
@@ -309,17 +314,20 @@ export default function ResearchPage() {
   type ResearchFormInput = z.input<typeof researchSchema>;
   type ResearchFormValues = z.output<typeof researchSchema>;
 
-  const STEP_KEYS = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
+  // Ordre : Transaction (Location/Achat) d'abord, puis catégorie d'annonce (Branche) — l'inverse
+  // de l'ordre initial.
+  const STEP_KEYS = ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
   type StepKey = typeof STEP_KEYS[number];
   // Étapes à choix unique et immédiat (une grande pastille) : on avance dès le clic, sans passer
   // par le bouton "Continuer" — contrairement au dépôt d'annonces.
-  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE'];
+  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE'];
 
   const STEP_LABELS: Record<StepKey, string> = {
     BRANCH: t('stepBranch'),
     TRANSACTION: t('stepTransaction'),
     RES_SEARCH_SCOPE: t('stepSearchScope'),
     BUR_SEARCH_SCOPE: t('stepSearchScope'),
+    IND_SEARCH_SCOPE: t('stepSearchScope'),
     CRITERIA: t('stepCriteria'),
     BUDGET: t('stepBudget'),
     INTERLOCUTOR: t('stepInterlocutor'),
@@ -366,15 +374,19 @@ export default function ResearchPage() {
   const selectedResPropertyTypes: string[] = watch('resPropertyTypes') || [];
 
   const isBureauxCommerces = branch === 'BUREAUX_COMMERCES';
+  const isIndustriel = branch === 'INDUSTRIEL';
 
   // Résidentiel (Location/Achat) et Bureaux et Commerces : un choix supplémentaire de fiche
   // dédiée (pastille auto-avancée), puis fiche unique (critères + localisation + interlocuteur)
-  // et contact direct. Les autres branches gardent le parcours complet pour le moment.
+  // et contact direct. Industriel garde le parcours complet (Budget/Interlocuteur en étapes à
+  // part) mais avec le même choix de catégorie en plus. Les autres branches restent inchangées.
   const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
-    ? ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isBureauxCommerces
-    ? ['BRANCH', 'TRANSACTION', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
-    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE');
+    ? ['TRANSACTION', 'BRANCH', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    : isIndustriel
+    ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT']
+    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE');
   const currentStep = steps[currentStepIndex];
 
   // Si le parcours se raccourcit (ex: on vient de choisir Résidentiel + Location) alors qu'on
@@ -516,6 +528,7 @@ export default function ResearchPage() {
           break;
         case 'INDUSTRIEL':
           amenities.industriel = {
+            searchScope: data.industrielSearchScope,
             storageSurfaceMin: data.storageSurfaceMin,
             storageSurfaceMax: data.storageSurfaceMax,
             ceilingHeight: data.ceilingHeight,
@@ -704,7 +717,7 @@ export default function ResearchPage() {
           </div>
         </Section>
 
-        {renderLocalisationSection()}
+        {renderLocalisationSection({ hideDate: true })}
         {renderSharedInterlocutorSection()}
         {renderCommentSection()}
       </>
@@ -837,40 +850,104 @@ export default function ResearchPage() {
     );
   };
 
+  // Champ "boxé" façon création d'annonce (label en gras au-dessus, encadré gris, "Ex:" en
+  // placeholder) réutilisé pour Typologie/Surface/Étage — deux entrées (de/à) dans le même
+  // encadré au lieu de la pastille grise compacte utilisée ailleurs sur la fiche.
+  const renderBoxedRange = (
+    label: string,
+    minField: 'typologyMin' | 'floorMin' | 'minSurface',
+    maxField: 'typologyMax' | 'floorMax' | 'maxSurface',
+    opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; placeholderMin?: string; placeholderMax?: string },
+  ) => (
+    <div className="min-w-0">
+      <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
+      <div className="flex items-center gap-1.5">
+        {opts?.unit && opts.unitPosition !== 'suffix' && <span className="font-bold text-gray-700 text-base shrink-0">{opts.unit}</span>}
+        <input
+          type="number" inputMode="numeric" {...register(minField)}
+          placeholder={opts?.placeholderMin}
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base text-center"
+        />
+        {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
+        <span className="text-xs font-bold text-gray-400 shrink-0">{t('resLocTypologyTo')}</span>
+        <input
+          type="number" inputMode="numeric" {...register(maxField)}
+          placeholder={opts?.placeholderMax}
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base text-center"
+        />
+        {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
+      </div>
+    </div>
+  );
+
+  // Champ "boxé" façon création d'annonce pour un montant unique (Budget min / Budget max).
+  // L'unité (DA / m² / Millions...) est repliée dans le champ Budget Max lui-même (chip collée à
+  // droite, dans le même encadré) au lieu d'une colonne "Devise" à part — gagne une colonne.
+  const renderBoxedBudgetField = (label: string, field: 'minBudget' | 'maxBudget', opts?: { withUnit?: boolean }) => (
+    <div className="min-w-0">
+      <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
+      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#00BFA6] focus-within:border-[#00BFA6] transition-all">
+        <input
+          type="text" inputMode="numeric"
+          value={formatThousands(watch(field) as any)}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/[^\d]/g, '');
+            setValue(field, (digits ? Number(digits) : undefined) as any);
+          }}
+          className="w-full min-w-0 p-2 outline-none bg-transparent font-medium text-gray-900 text-base text-center"
+        />
+        {opts?.withUnit && (
+          <select
+            {...register('budgetUnit')}
+            className="h-full shrink-0 pl-1.5 pr-1 border-l-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-700 outline-none cursor-pointer"
+          >
+            <option value="DA">DA</option>
+            <option value="DA_M2">DA/m²</option>
+            <option value="MILLION">M DA</option>
+            <option value="MILLION_M2">M/m²</option>
+            <option value="MILLIARD">Md DA</option>
+          </select>
+        )}
+      </div>
+    </div>
+  );
+
+  // Caractéristiques et Budget — sur deux lignes pour laisser de la place à chaque champ :
+  // Typologie / Surface / Étage sur la première, Budget min / Budget max sur la seconde (plus
+  // large), design aligné sur les champs de la création d'annonce (encadré gris, label en gras
+  // au-dessus) plutôt que la pastille compacte grise.
   const renderTypologyFloorSurfaceBudgetSection = () => (
     <Section title={t('resLocTypologyTitle')} icon={Ruler}>
-      {/* Un seul enfant direct pour ce Section afin de contrôler l'espacement vertical nous-mêmes
-          (plus serré que l'espacement par défaut) — plus de place pour écrire. */}
-      <div className="space-y-3">
-        {/* Champs élargis + répartis sur toute la ligne (justify-between), plus de tiers de
-            grille figé ni de petits blocs tassés à gauche avec du vide à droite. */}
-        <div className="flex flex-wrap justify-between gap-x-6 gap-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocTypologyRange')}</label>
-            {renderRangeRow('typologyMin', 'typologyMax', { unit: 'F', unitPosition: 'prefix', width: 'w-20' })}
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocFloorMax')}</label>
-            {renderRangeRow('floorMin', 'floorMax', { width: 'w-24' })}
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocSurfaceMax')}</label>
-            {renderRangeRow('minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', width: 'w-20' })}
-          </div>
+      <div className="space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {renderBoxedRange(t('resLocTypologyRange'), 'typologyMin', 'typologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: 'Ex: 3', placeholderMax: 'Ex: 5' })}
+          {renderBoxedRange(t('resLocSurfaceMax'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
+          {renderBoxedRange(t('resLocFloorMax'), 'floorMin', 'floorMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
         </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-900 mb-1.5">{t('resLocBudgetRangeTitle')}</label>
-          {renderBudgetInputs()}
+        {/* Date d'installation envisagée — sur la même ligne que le budget, après Budget Min/Max
+            (elle vivait avant dans la section Localisation, sous le nom "Date souhaitée"). */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {renderBoxedBudgetField(t('budgetMin'), 'minBudget')}
+          {renderBoxedBudgetField(t('budgetMax'), 'maxBudget', { withUnit: true })}
+          <div className="min-w-0">
+            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resLocInstallationDateTitle')}</label>
+            <input
+              type="date" {...register('installationDate')}
+              className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base"
+            />
+          </div>
         </div>
       </div>
     </Section>
   );
 
-  const renderLocalisationSection = (opts?: { showAirportProximity?: boolean }) => (
-    <Section title={t('budgetTitle')} icon={MapPin}>
-      {/* Wilaya(s) - Commune(s) - Date souhaitée sur une seule ligne */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+  const renderLocalisationSection = (opts?: { showAirportProximity?: boolean; hideDate?: boolean }) => (
+    <Section title={t('resLocLocalisationTitle')} icon={MapPin}>
+      {/* Wilaya(s) - Commune(s) - Date souhaitée. Sur la fiche Résidentiel (Location/Achat, donc
+          aussi Bureaux "Recherche Groupée" qui réutilise la même fiche), la date est déplacée dans
+          la section Caractéristiques et Budget (hideDate) — les autres fiches (Immeuble, Bloc
+          Administratif, Bloc Commercial, Local Commercial) gardent la date ici. */}
+      <div className={cn('grid grid-cols-1 gap-6', opts?.hideDate ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
         <Field label={t('budgetCity')}>
           <MultiSelectDropdown
             options={cities.map((c) => ({ id: c.id, label: c.nameFr || c.name }))}
@@ -890,9 +967,11 @@ export default function ResearchPage() {
             emptyHint={t('budgetTownsHint')}
           />
         </Field>
-        <Field label={t('budgetDesiredDate')}>
-          <input type="date" {...register('installationDate')} className={inputCls} />
-        </Field>
+        {!opts?.hideDate && (
+          <Field label={t('budgetDesiredDate')}>
+            <input type="date" {...register('installationDate')} className={inputCls} />
+          </Field>
+        )}
       </div>
       {opts?.showAirportProximity && (
         <div className="mt-6">
@@ -983,7 +1062,7 @@ export default function ResearchPage() {
       <>
         {renderPropertyTypeSection()}
         {renderTypologyFloorSurfaceBudgetSection()}
-        {renderLocalisationSection()}
+        {renderLocalisationSection({ hideDate: true })}
         {renderEnvironmentSection()}
         {renderSharedInterlocutorSection()}
         {renderCommentSection()}
@@ -1302,6 +1381,7 @@ export default function ResearchPage() {
                     setValue('interlocutors', []);
                     setValue('searchScope', undefined as any);
                     setValue('bureauxSearchScope', undefined as any);
+                    setValue('industrielSearchScope', undefined as any);
                     // Fluide comme une sélection de carte : on avance directement à l'étape
                     // suivante au clic, pas besoin du bouton "Continuer" (contrairement au dépôt
                     // d'annonces) pour un choix aussi simple.
@@ -1389,6 +1469,35 @@ export default function ResearchPage() {
                 label={t('burScopeLocalCommercial')}
                 size="md"
                 onClick={() => { setValue('bureauxSearchScope', 'LOCAL_COMMERCIAL'); nextStep(); }}
+              />
+            </div>
+          </div>
+        );
+
+      case 'IND_SEARCH_SCOPE':
+        return (
+          <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-10 gap-x-6 justify-items-center">
+              <CircleOption
+                active={watch('industrielSearchScope') === 'HANGAR'}
+                icon={Warehouse}
+                label={t('indScopeHangar')}
+                size="md"
+                onClick={() => { setValue('industrielSearchScope', 'HANGAR'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('industrielSearchScope') === 'USINE'}
+                icon={Factory}
+                label={t('indScopeUsine')}
+                size="md"
+                onClick={() => { setValue('industrielSearchScope', 'USINE'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('industrielSearchScope') === 'CHAMBRE_FROIDE'}
+                icon={Snowflake}
+                label={t('indScopeChambreFroide')}
+                size="md"
+                onClick={() => { setValue('industrielSearchScope', 'CHAMBRE_FROIDE'); nextStep(); }}
               />
             </div>
           </div>
