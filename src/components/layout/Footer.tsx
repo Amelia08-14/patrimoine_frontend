@@ -23,7 +23,7 @@ export function Footer() {
   const hasContact = settings.CONTACT_PHONE || settings.CONTACT_EMAIL || settings.CONTACT_ADDRESS;
 
   return (
-    <footer className="bg-[#022229] text-white relative overflow-hidden">
+    <footer className="bg-[#022229] text-white relative overflow-hidden dark:border-t dark:border-white/10">
       <div className="absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-[#00BFA6]/[0.06] blur-3xl" />
       <div className="max-w-7xl mx-auto py-14 sm:py-16 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className={cn("grid grid-cols-2 gap-x-8 gap-y-10", usefulLinks.length > 0 ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-3 lg:grid-cols-5")}>

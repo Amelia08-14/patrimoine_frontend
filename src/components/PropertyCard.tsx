@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Camera, Eye, Heart, MapPin, Building2, Info, Play, Images } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROPERTY_TYPES } from "@/data/propertyTypes";
+import { getCategoryColor } from "@/data/categoryColors";
 
 // Helper for Image URLs
 const getImageUrl = (url: string) => {
@@ -26,10 +27,12 @@ const TERRAIN_TOPOGRAPHIE_LABELS: Record<string, string> = {
 // Fondu par domaine (dégradé, pas un aplat) — donne un repère visuel par catégorie tout en
 // gardant les infos lisibles sans écraser la photo. Indépendant du badge vente/location.
 const CATEGORY_OVERLAY_COLOR: Record<string, string> = {
-    RESIDENTIEL: "from-emerald-950/90",
-    BUREAUX_COMMERCES: "from-sky-950/90",
-    INDUSTRIEL: "from-slate-950/90",
-    TERRAIN_FONCIER: "from-amber-950/90",
+    RESIDENTIEL: getCategoryColor("RESIDENTIEL").overlayFrom,
+    BUREAUX_COMMERCES: getCategoryColor("BUREAUX_COMMERCES").overlayFrom,
+    INDUSTRIEL: getCategoryColor("INDUSTRIEL").overlayFrom,
+    TERRAIN_FONCIER: getCategoryColor("TERRAIN_FONCIER").overlayFrom,
+    HOTELIER: getCategoryColor("HOTELIER").overlayFrom,
+    HEBERGEMENT: getCategoryColor("HEBERGEMENT").overlayFrom,
 };
 
 // Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
@@ -124,7 +127,7 @@ export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; au
   const isCycling = autoPlay || isHovering;
   useEffect(() => {
     if (!isCycling || mediaList.length <= 1) return;
-    const id = setInterval(() => setHeroIndex((i) => (i + 1) % mediaList.length), 1600);
+    const id = setInterval(() => setHeroIndex((i) => (i + 1) % mediaList.length), 3200);
     return () => clearInterval(id);
   }, [isCycling, mediaList.length]);
 
@@ -163,17 +166,17 @@ export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; au
           {currentMedia ? (
             currentMedia.type === 'video' ? (
               <video
-                key={currentMedia.url}
+                key={heroIndex}
                 src={getImageUrl(currentMedia.url) || ''}
                 autoPlay muted loop playsInline
-                className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 animate-media-fade"
               />
             ) : (
               <img
-                  key={currentMedia.url}
+                  key={heroIndex}
                   src={getImageUrl(currentMedia.url) || ''}
                   alt={announce.reference}
-                  className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 animate-media-fade"
               />
             )
           ) : (

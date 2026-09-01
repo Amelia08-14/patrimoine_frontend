@@ -12,10 +12,11 @@ import {
   Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
   Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2, Store, Zap,
   Warehouse, Snowflake, Wrench, Users, Thermometer,
+  Shield, Utensils, Wallet, CreditCard,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
-  BUREAUX_EQUIPMENT_OPTIONS, VIABILISATION_OPTIONS,
+  BUREAUX_EQUIPMENT_OPTIONS,
   HOTELIER_EQUIPMENT_OPTIONS, ResearchBranchId,
   SITUATION_OPTIONS, ACHAT_INTERLOCUTOR_OPTIONS, REALISATION_STAGE_OPTIONS,
   AIRPORT_PROXIMITY_OPTIONS, CURRENCY_OPTIONS, FINANCING_OPTIONS,
@@ -26,7 +27,17 @@ import {
   HANGAR_USAGE_OPTIONS, INDUSTRIAL_ZONE_OPTIONS, USINE_EQUIPMENT_OPTIONS, USINE_ACTIVITY_OPTIONS,
   CF_ACTIVITY_OPTIONS, CF_TYPE_FROID_OPTIONS, CF_MODE_GESTION_OPTIONS,
   INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS,
+  HTL_PROFIL_GROUPE_OPTIONS, HTL_CLASSEMENT_OPTIONS, HTL_TYPE_ETABLISSEMENT_OPTIONS,
+  HTL_FORMULE_OPTIONS, HTL_GAMME_CHAMBRE_OPTIONS, HTL_TYPE_COUCHAGE_OPTIONS,
+  HTL_NATURE_BIEN_OPTIONS, HTL_ACCESSIBILITE_OPTIONS, HTL_AMBIANCE_OPTIONS,
+  HTL_BALNEAIRE_OPTIONS, HTL_URBAIN_OPTIONS, HTL_SAHARIEN_OPTIONS, HTL_THERMAL_OPTIONS,
+  HTL_CLIMATIQUE_OPTIONS, HTL_VUE_OPTIONS, HTL_SERVICES_REPAS_OPTIONS, HTL_CUISINE_OPTIONS,
+  HTL_CONFORT_OPTIONS, HTL_FLUIDES_OPTIONS, HTL_LOISIRS_OPTIONS,
+  HTL_PAIEMENTS_LOCAUX_OPTIONS, HTL_PAIEMENTS_INTL_OPTIONS,
+  TER_AGRI_CULTURE_OPTIONS, TER_AGRI_ETAT_OPTIONS, TER_IND_ZONE_OPTIONS,
+  TER_RES_ZONE_OPTIONS, TER_TOU_VOCATION_OPTIONS,
 } from '@/data/researchConfig';
+import { getCategoryColor } from '@/data/categoryColors';
 
 const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
 
@@ -35,7 +46,7 @@ enum TransactionType {
   SALE = 'SALE',
 }
 
-const inputCls = 'w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-800';
+const inputCls = 'w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0094BD] outline-none transition-all bg-white font-medium text-gray-800';
 
 // Séparateur de milliers à la saisie (budget) — n'affiche que le formatage, la valeur stockée
 // dans le formulaire reste un nombre propre sans espaces.
@@ -46,24 +57,38 @@ const formatThousands = (value: number | string | undefined) => {
   return Number(digits).toLocaleString('fr-FR');
 };
 
-// Pastille ronde sélectionnable (charte du dépôt d'annonce) — pour choix uniques (branche, type, transaction)
-const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md' }: { active: boolean; onClick: () => void; icon: any; label: string; size?: 'lg' | 'md' | 'sm' }) => {
+// Pastille ronde sélectionnable (charte du dépôt d'annonce) — pour choix uniques (branche, type, transaction).
+// `color` permute la teinte (hex + "R,G,B") pour les choix de catégorie — sinon bleu de marque par défaut.
+const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md', color }: { active: boolean; onClick: () => void; icon: any; label: string; size?: 'lg' | 'md' | 'sm'; color?: { hex: string; rgb: string } }) => {
+  const [hovered, setHovered] = useState(false);
   const outer = size === 'lg' ? 'w-28 h-28 md:w-40 md:h-40' : size === 'md' ? 'w-32 h-32' : 'w-24 h-24';
   const inner = size === 'lg' ? 'w-20 h-20 md:w-32 md:h-32' : size === 'md' ? 'w-24 h-24' : 'w-16 h-16';
   const iconSize = size === 'lg' ? 'h-10 w-10 md:h-16 md:w-16' : size === 'md' ? 'h-10 w-10' : 'h-8 w-8';
+  const hex = color?.hex || '#0094BD';
+  const rgb = color?.rgb || '0,148,189';
+  const lit = active || hovered;
   return (
-    <div onClick={onClick} className="flex flex-col items-center gap-3 cursor-pointer group w-full">
-      <div className={cn(
-        outer, 'rounded-full flex items-center justify-center transition-all duration-300 border-4 relative',
-        active
-          ? 'bg-white border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.3)] transform -translate-y-2'
-          : 'bg-white border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1'
-      )}>
-        <div className={cn(inner, 'rounded-full flex items-center justify-center transition-colors duration-300', active ? 'bg-[#00BFA6] text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]')}>
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex flex-col items-center gap-3 cursor-pointer group w-full"
+    >
+      <div
+        className={cn(
+          outer, 'rounded-full flex items-center justify-center transition-all duration-300 border-4 relative bg-white',
+          active ? 'transform -translate-y-2' : hovered ? '-translate-y-1' : 'border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)]'
+        )}
+        style={active ? { borderColor: hex, boxShadow: `0 8px 16px rgba(${rgb},0.35)` } : hovered ? { borderColor: `${hex}4D` } : undefined}
+      >
+        <div
+          className={cn(inner, 'rounded-full flex items-center justify-center transition-colors duration-300', lit ? 'text-white' : 'bg-gray-50 text-gray-400')}
+          style={lit ? { backgroundColor: active ? hex : `${hex}1A`, color: active ? '#fff' : hex } : undefined}
+        >
           <Icon className={iconSize} />
         </div>
       </div>
-      <span className={cn('font-bold text-center max-w-[160px] transition-colors', size === 'sm' ? 'text-sm' : 'text-base md:text-lg', active ? 'text-[#00BFA6]' : 'text-gray-500 group-hover:text-[#00BFA6]')}>
+      <span className={cn('font-bold text-center max-w-[160px] transition-colors', size === 'sm' ? 'text-sm' : 'text-base md:text-lg', !lit && 'text-gray-500')} style={lit ? { color: hex } : undefined}>
         {label}
       </span>
     </div>
@@ -76,7 +101,7 @@ const PillOption = ({ checked, onChange, label, icon: Icon }: { checked: boolean
     <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
     <div className={cn(
       'w-full min-h-[52px] flex items-center gap-3 px-4 py-3 border-2 rounded-xl font-bold transition-all bg-white shadow-sm',
-      checked ? 'border-[#00BFA6] bg-green-50/50 text-[#00BFA6]' : 'border-gray-300 text-gray-900 hover:border-gray-400'
+      checked ? 'border-[#0094BD] bg-[#0094BD]/[0.06] text-[#0094BD]' : 'border-gray-300 text-gray-900 hover:border-gray-400'
     )}>
       {Icon && <Icon className="h-4 w-4 shrink-0" />}
       <span className="text-sm leading-snug">{label}</span>
@@ -98,7 +123,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-        <Icon className="h-5 w-5 text-[#00BFA6]" />
+        <Icon className="h-5 w-5 text-[#0094BD]" />
         {title}
       </h2>
       {children}
@@ -176,8 +201,8 @@ function MultiSelectDropdown({
               const checked = selected.includes(id);
               return (
                 <label key={id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
-                  <input type="checkbox" checked={checked} onChange={() => onToggle(id)} className="h-4 w-4 accent-[#00BFA6] rounded shrink-0" />
-                  <span className={cn('text-sm', checked ? 'font-bold text-[#00BFA6]' : 'font-medium text-gray-700')}>{opt.label}</span>
+                  <input type="checkbox" checked={checked} onChange={() => onToggle(id)} className="h-4 w-4 accent-[#0094BD] rounded shrink-0" />
+                  <span className={cn('text-sm', checked ? 'font-bold text-[#0094BD]' : 'font-medium text-gray-700')}>{opt.label}</span>
                 </label>
               );
             })
@@ -260,6 +285,57 @@ export default function ResearchPage() {
     hotelierEquipments: z.array(z.string()).optional(),
     classification: z.string().optional(),
 
+    // Fiche "Confier votre recherche — Hébergement et Séjour"
+    htlProfilGroupe: z.string().optional(),
+    htlGarantieDocs: z.boolean().optional(),
+    htlStatutHebergeur: z.enum(['PARTICULIER', 'PROFESSIONNEL']).optional(),
+    htlClassement: z.array(z.string()).optional(),
+    htlTypeEtablissement: z.array(z.string()).optional(),
+    htlFormule: z.string().optional(),
+    htlGammeChambre: z.string().optional(),
+    htlTypeCouchage: z.array(z.string()).optional(),
+    htlNatureBien: z.array(z.string()).optional(),
+    htlSurfaceMin: z.coerce.number().optional(),
+    htlNbChambresMin: z.string().optional(),
+    htlNbSalonsMin: z.string().optional(),
+    htlNbSdbMin: z.string().optional(),
+    htlSuiteParentale: z.enum(['OUI', 'NON']).optional(),
+    htlAccessibilite: z.string().optional(),
+    htlAmbiances: z.array(z.string()).optional(),
+    htlBalneaire: z.string().optional(),
+    htlUrbain: z.array(z.string()).optional(),
+    htlSaharien: z.array(z.string()).optional(),
+    htlThermal: z.array(z.string()).optional(),
+    htlClimatique: z.array(z.string()).optional(),
+    htlVue: z.array(z.string()).optional(),
+    htlServicesRepas: z.array(z.string()).optional(),
+    htlCuisine: z.array(z.string()).optional(),
+    htlConfort: z.array(z.string()).optional(),
+    htlFluides: z.array(z.string()).optional(),
+    htlLoisirs: z.array(z.string()).optional(),
+    htlBudgetMaxNuit: z.coerce.number().optional(),
+    htlDevise: z.enum(['DZD', 'ETRANGERE']).optional(),
+    htlAnnulation: z.enum(['FLEXIBLE', 'NON_REMBOURSABLE']).optional(),
+    htlPaiementsLocaux: z.array(z.string()).optional(),
+    htlPaiementsIntl: z.array(z.string()).optional(),
+
+    // Fiches "Confier votre recherche — Terrains et Foncier" (4 fiches dédiées, même concept
+    // que Bureaux/Industriel). Surface partagée (minSurface/maxSurface/surfaceUnit) avec le reste
+    // de l'app ; façades partagé entre les 4 fiches.
+    terrainSearchScope: z.enum(['AGRICOLE', 'INDUSTRIEL', 'RESIDENTIEL', 'TOURISTIQUE']).optional(),
+    facadesMin: z.string().optional(),
+    facadesMax: z.string().optional(),
+    terAgriAltitudeMin: z.string().optional(),
+    terAgriAltitudeMax: z.string().optional(),
+    terAgriCulture: z.array(z.string()).optional(),
+    terAgriEtat: z.array(z.string()).optional(),
+    terIndZone: z.array(z.string()).optional(),
+    terResZone: z.array(z.string()).optional(),
+    terTouZet: z.enum(['OUI', 'NON']).optional(),
+    terTouVocation: z.array(z.string()).optional(),
+    terAgriCultureOther: z.string().optional(),
+    terTouVocationOther: z.string().optional(),
+
     interlocutors: z.array(z.string()).optional(),
 
     cityId: z.coerce.number().optional(),
@@ -329,6 +405,8 @@ export default function ResearchPage() {
     lcStyleEtat: z.array(z.string()).optional(),
     lcEnvironnement: z.array(z.string()).optional(),
     lcUsage: z.array(z.string()).optional(),
+    lcEnvironnementOther: z.string().optional(),
+    lcUsageOther: z.string().optional(),
 
     // Industriel — choix entre 3 catégories (même concept que Bureaux et Commerces), fiche de
     // critères identique pour les 3 pour le moment.
@@ -351,11 +429,11 @@ export default function ResearchPage() {
 
   // Ordre : Transaction (Location/Achat) d'abord, puis catégorie d'annonce (Branche) — l'inverse
   // de l'ordre initial.
-  const STEP_KEYS = ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
+  const STEP_KEYS = ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'TER_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
   type StepKey = typeof STEP_KEYS[number];
   // Étapes à choix unique et immédiat (une grande pastille) : on avance dès le clic, sans passer
   // par le bouton "Continuer" — contrairement au dépôt d'annonces.
-  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE'];
+  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'TER_SEARCH_SCOPE'];
 
   const STEP_LABELS: Record<StepKey, string> = {
     BRANCH: t('stepBranch'),
@@ -363,13 +441,14 @@ export default function ResearchPage() {
     RES_SEARCH_SCOPE: t('stepSearchScope'),
     BUR_SEARCH_SCOPE: t('stepSearchScope'),
     IND_SEARCH_SCOPE: t('stepSearchScope'),
+    TER_SEARCH_SCOPE: t('stepSearchScope'),
     CRITERIA: t('stepCriteria'),
     BUDGET: t('stepBudget'),
     INTERLOCUTOR: t('stepInterlocutor'),
     CONTACT: t('stepContact'),
   };
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ResearchFormInput, any, ResearchFormValues>({
+  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ResearchFormInput, any, ResearchFormValues>({
     resolver: zodResolver(researchSchema),
     defaultValues: {
       branch: '',
@@ -378,6 +457,28 @@ export default function ResearchPage() {
       bureauxEquipments: [],
       viabilisation: [],
       hotelierEquipments: [],
+      htlClassement: [],
+      htlTypeEtablissement: [],
+      htlTypeCouchage: [],
+      htlNatureBien: [],
+      htlAmbiances: [],
+      htlUrbain: [],
+      htlSaharien: [],
+      htlThermal: [],
+      htlClimatique: [],
+      htlVue: [],
+      htlServicesRepas: [],
+      htlCuisine: [],
+      htlConfort: [],
+      htlFluides: [],
+      htlLoisirs: [],
+      htlPaiementsLocaux: [],
+      htlPaiementsIntl: [],
+      terAgriCulture: [],
+      terAgriEtat: [],
+      terIndZone: [],
+      terResZone: [],
+      terTouVocation: [],
       interlocutors: [],
       towns: [],
       userType: 'PARTICULIER',
@@ -413,6 +514,65 @@ export default function ResearchPage() {
     },
   });
 
+  // Brouillon auto-enregistré — si l'utilisateur quitte accidentellement (fermeture d'onglet,
+  // coupure réseau...), il retrouve sa saisie en revenant sur la page. Stocké localement
+  // (aucune pièce jointe ici, donc rien d'impossible à sérialiser), expire après 7 jours.
+  const DRAFT_KEY = 'research-draft-v1';
+  const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+  const [draftAvailable, setDraftAvailable] = useState<{ savedAt: number } | null>(null);
+  const draftCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (draftCheckedRef.current) return;
+    draftCheckedRef.current = true;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!parsed?.savedAt || Date.now() - parsed.savedAt > DRAFT_MAX_AGE_MS) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      setDraftAvailable({ savedAt: parsed.savedAt });
+    } catch { /* brouillon corrompu — on l'ignore silencieusement */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const subscription = watch((values) => {
+      const timeout = setTimeout(() => {
+        try {
+          // Rien de saisi (juste les valeurs par défaut) : inutile d'enregistrer un brouillon vide.
+          if (!values.branch) return;
+          localStorage.setItem(DRAFT_KEY, JSON.stringify({ values, step: currentStepIndex, savedAt: Date.now() }));
+        } catch { /* quota localStorage dépassé ou navigation privée — on ignore */ }
+      }, 800);
+      return () => clearTimeout(timeout);
+    });
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watch, currentStepIndex]);
+
+  const resumeDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      reset(parsed.values);
+      if (typeof parsed.step === 'number') setCurrentStepIndex(parsed.step);
+    } catch { /* ignore */ }
+    setDraftAvailable(null);
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setDraftAvailable(null);
+  };
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+  };
+
   const branch = watch('branch') as ResearchBranchId | '';
   const isResidentielAchat = branch === 'RESIDENTIEL' && watch('transaction') === TransactionType.SALE;
   const isResidentielLocation = branch === 'RESIDENTIEL' && watch('transaction') === TransactionType.RENTAL;
@@ -424,11 +584,13 @@ export default function ResearchPage() {
   // en Achat, l'ancien formulaire générique (avec Budget/Interlocuteur en étapes à part) reste
   // utilisé, donc le parcours court ne s'applique qu'à la Location.
   const isIndustrielLocation = isIndustriel && watch('transaction') === TransactionType.RENTAL;
+  const isHotelier = branch === 'HOTELIER';
+  const isTerrain = branch === 'TERRAIN_FONCIER';
 
-  // Résidentiel (Location/Achat) et Bureaux et Commerces : un choix supplémentaire de fiche
-  // dédiée (pastille auto-avancée), puis fiche unique (critères + localisation + interlocuteur)
-  // et contact direct. Industriel Location suit le même principe ; Industriel Achat et les autres
-  // branches gardent le parcours complet (Budget/Interlocuteur en étapes à part).
+  // Résidentiel (Location/Achat), Bureaux et Commerces, Industriel Location, Hébergement et
+  // Séjour et Terrains et Foncier : fiche unique dédiée (critères + localisation + message) et
+  // contact direct. Industriel Achat et les autres branches gardent le parcours complet
+  // (Budget/Interlocuteur en étapes à part).
   const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
     ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isBureauxCommerces
@@ -437,7 +599,11 @@ export default function ResearchPage() {
     ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isIndustriel
     ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT']
-    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE');
+    : isHotelier
+    ? ['TRANSACTION', 'BRANCH', 'CRITERIA', 'CONTACT']
+    : isTerrain
+    ? ['TRANSACTION', 'BRANCH', 'TER_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE' && s !== 'TER_SEARCH_SCOPE');
   const currentStep = steps[currentStepIndex];
 
   // Si le parcours se raccourcit (ex: on vient de choisir Résidentiel + Location) alors qu'on
@@ -688,7 +854,9 @@ export default function ResearchPage() {
               floorMax: data.floorMax,
               styleEtat: data.lcStyleEtat || [],
               environnement: data.lcEnvironnement || [],
+              environnementOther: (data.lcEnvironnement || []).includes('AUTRE') ? data.lcEnvironnementOther : undefined,
               usage: data.lcUsage || [],
+              usageOther: (data.lcUsage || []).includes('AUTRE') ? data.lcUsageOther : undefined,
               cityIds: data.cityIds || [],
             };
           } else {
@@ -705,17 +873,64 @@ export default function ResearchPage() {
           }
           break;
         case 'TERRAIN_FONCIER':
-          amenities.terrain = {
-            surfaceUnit: data.surfaceUnit,
-            constructibility: data.constructibility,
-            viabilisation: data.viabilisation,
-            topography: data.topography,
-          };
+          amenities.terrain = { searchScope: data.terrainSearchScope || 'AGRICOLE', surfaceUnit: data.surfaceUnit, facadesMin: data.facadesMin, facadesMax: data.facadesMax };
+          if (data.terrainSearchScope === 'INDUSTRIEL') {
+            amenities.terrain.industriel = { zone: data.terIndZone || [] };
+          } else if (data.terrainSearchScope === 'RESIDENTIEL') {
+            amenities.terrain.residentiel = { zone: data.terResZone || [] };
+          } else if (data.terrainSearchScope === 'TOURISTIQUE') {
+            amenities.terrain.touristique = {
+              zet: data.terTouZet,
+              vocation: data.terTouVocation || [],
+              vocationOther: (data.terTouVocation || []).includes('AUTRE') ? data.terTouVocationOther : undefined,
+            };
+          } else {
+            amenities.terrain.agricole = {
+              altitudeMin: data.terAgriAltitudeMin,
+              altitudeMax: data.terAgriAltitudeMax,
+              culture: data.terAgriCulture || [],
+              cultureOther: (data.terAgriCulture || []).includes('AUTRE') ? data.terAgriCultureOther : undefined,
+              etat: data.terAgriEtat || [],
+            };
+          }
           break;
         case 'HOTELIER':
           amenities.hotelier = {
-            equipments: data.hotelierEquipments,
-            classification: data.classification,
+            profilGroupe: data.htlProfilGroupe,
+            garantieDocs: !!data.htlGarantieDocs,
+            statutHebergeur: data.htlStatutHebergeur,
+            classement: data.htlStatutHebergeur === 'PROFESSIONNEL' ? (data.htlClassement || []) : undefined,
+            typeEtablissement: data.htlStatutHebergeur === 'PROFESSIONNEL' ? (data.htlTypeEtablissement || []) : undefined,
+            formule: data.htlFormule,
+            gammeChambre: data.htlFormule === 'CHAMBRE_PRIVEE' ? data.htlGammeChambre : undefined,
+            typeCouchage: data.htlFormule === 'A_LA_PLACE' ? (data.htlTypeCouchage || []) : undefined,
+            natureBien: data.htlNatureBien || [],
+            exigences: {
+              surfaceMin: data.htlSurfaceMin,
+              nbChambresMin: data.htlNbChambresMin,
+              nbSalonsMin: data.htlNbSalonsMin,
+              nbSdbMin: data.htlNbSdbMin,
+              suiteParentale: data.htlSuiteParentale,
+              accessibilite: data.htlAccessibilite,
+            },
+            ambiances: data.htlAmbiances || [],
+            balneaire: data.htlBalneaire,
+            urbain: data.htlUrbain || [],
+            saharien: data.htlSaharien || [],
+            thermal: data.htlThermal || [],
+            climatique: data.htlClimatique || [],
+            vue: data.htlVue || [],
+            servicesRepas: data.htlServicesRepas || [],
+            cuisine: data.htlCuisine || [],
+            confort: data.htlConfort || [],
+            fluides: data.htlFluides || [],
+            loisirs: data.htlLoisirs || [],
+            budgetMaxNuit: data.htlBudgetMaxNuit,
+            devise: data.htlDevise,
+            annulation: data.htlAnnulation,
+            paiementsLocaux: data.htlPaiementsLocaux || [],
+            paiementsIntl: data.htlPaiementsIntl || [],
+            cityIds: data.cityIds || [],
           };
           break;
       }
@@ -758,6 +973,7 @@ export default function ResearchPage() {
       };
 
       await axios.post(`${apiUrl}/entrusted-research`, payload);
+      clearDraft();
       alert(t('alertSuccess'));
       router.push('/demandes');
     } catch (err) {
@@ -853,13 +1069,13 @@ export default function ResearchPage() {
         <span className="text-sm font-bold text-gray-700 shrink-0">{fromLabel}</span>
         <div className="flex items-center rounded-xl border-2 border-gray-300 bg-gray-50 overflow-hidden shrink-0">
           {unitPosition === 'prefix' && chip}
-          <input type="number" inputMode="numeric" {...register(minField)} className={cn(width, 'h-11 px-2 text-center font-bold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-[#00BFA6]')} />
+          <input type="number" inputMode="numeric" {...register(minField)} className={cn(width, 'h-11 px-2 text-center font-bold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-[#0094BD]')} />
           {unitPosition === 'suffix' && chip}
         </div>
         <span className="text-sm font-bold text-gray-700 shrink-0">{toLabel}</span>
         <div className="flex items-center rounded-xl border-2 border-gray-300 bg-gray-50 overflow-hidden shrink-0">
           {unitPosition === 'prefix' && chip}
-          <input type="number" inputMode="numeric" {...register(maxField)} className={cn(width, 'h-11 px-2 text-center font-bold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-[#00BFA6]')} />
+          <input type="number" inputMode="numeric" {...register(maxField)} className={cn(width, 'h-11 px-2 text-center font-bold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-[#0094BD]')} />
           {unitPosition === 'suffix' && chip}
         </div>
       </div>
@@ -906,7 +1122,7 @@ export default function ResearchPage() {
           const digits = e.target.value.replace(/[^\d]/g, '');
           setValue('minBudget', (digits ? Number(digits) : undefined) as any);
         }}
-        className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
+        className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#0094BD]"
       />
       <span className="text-sm font-bold text-gray-700 shrink-0">{t('resLocMax')}</span>
       <input
@@ -916,11 +1132,11 @@ export default function ResearchPage() {
           const digits = e.target.value.replace(/[^\d]/g, '');
           setValue('maxBudget', (digits ? Number(digits) : undefined) as any);
         }}
-        className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#00BFA6]"
+        className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#0094BD]"
       />
       <select
         {...register('budgetUnit')}
-        className="h-11 px-3 rounded-xl border-2 border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#00BFA6] cursor-pointer"
+        className="h-11 px-3 rounded-xl border-2 border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#0094BD] cursor-pointer"
       >
         <option value="DA">DA</option>
         <option value="DA_M2">DA / m²</option>
@@ -972,11 +1188,13 @@ export default function ResearchPage() {
     minField: 'typologyMin' | 'floorMin' | 'minSurface'
       | 'buildingTypologyMin' | 'buildingFloorsMin' | 'buildingSurfaceMin' | 'buildingSurfaceSimilaireMin'
       | 'hgSurfaceTerrainMin' | 'hgSurfaceCouverteMin' | 'hgHauteurMin'
-      | 'usSurfaceTerrainMin' | 'usSurfaceBatieMin' | 'cfCapaciteMin',
+      | 'usSurfaceTerrainMin' | 'usSurfaceBatieMin' | 'cfCapaciteMin'
+      | 'facadesMin' | 'terAgriAltitudeMin',
     maxField: 'typologyMax' | 'floorMax' | 'maxSurface'
       | 'buildingTypologyMax' | 'buildingFloorsMax' | 'buildingSurfaceMax' | 'buildingSurfaceSimilaireMax'
       | 'hgSurfaceTerrainMax' | 'hgSurfaceCouverteMax' | 'hgHauteurMax'
-      | 'usSurfaceTerrainMax' | 'usSurfaceBatieMax' | 'cfCapaciteMax',
+      | 'usSurfaceTerrainMax' | 'usSurfaceBatieMax' | 'cfCapaciteMax'
+      | 'facadesMax' | 'terAgriAltitudeMax',
     opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; placeholderMin?: string; placeholderMax?: string },
   ) => (
     <div className="min-w-0">
@@ -986,14 +1204,14 @@ export default function ResearchPage() {
         <input
           type="number" inputMode="numeric" {...register(minField)}
           placeholder={opts?.placeholderMin}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
         <span className="text-xs font-bold text-gray-400 shrink-0">{t('resLocTypologyTo')}</span>
         <input
           type="number" inputMode="numeric" {...register(maxField)}
           placeholder={opts?.placeholderMax}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
       </div>
@@ -1013,7 +1231,7 @@ export default function ResearchPage() {
         <input
           type="number" inputMode="numeric" {...register(field)}
           placeholder={opts?.placeholder}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
       </div>
@@ -1026,7 +1244,7 @@ export default function ResearchPage() {
   const renderBoxedBudgetField = (label: string, field: 'minBudget' | 'maxBudget', opts?: { withUnit?: boolean }) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
-      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#00BFA6] focus-within:border-[#00BFA6] transition-all">
+      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all">
         <input
           type="text" inputMode="numeric"
           value={formatThousands(watch(field) as any)}
@@ -1073,7 +1291,7 @@ export default function ResearchPage() {
             <label className="block text-sm font-bold text-gray-900 mb-2">{t('resLocInstallationDateTitle')}</label>
             <input
               type="date" {...register('installationDate')}
-              className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base"
+              className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
             />
           </div>
         </div>
@@ -1154,7 +1372,7 @@ export default function ResearchPage() {
         <label className="block text-sm font-bold text-gray-900 mb-2">{t('resLocInstallationDateTitle')}</label>
         <input
           type="date" {...register('installationDate')}
-          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base"
+          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
         />
       </div>
     </div>
@@ -1360,11 +1578,27 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burLocalEnvironmentTitle')} icon={Compass}>
-        <OptionGroup label={t('burLocalEnvironmentLabel')} options={LOCAL_ENVIRONMENT_OPTIONS} field="lcEnvironnement" watch={watch} toggle={toggleArrayValue} />
+        <div className="space-y-3">
+          <OptionGroup label={t('burLocalEnvironmentLabel')} options={LOCAL_ENVIRONMENT_OPTIONS} field="lcEnvironnement" watch={watch} toggle={toggleArrayValue} />
+          {(watch('lcEnvironnement') || []).includes('AUTRE') && (
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
+              <input type="text" {...register('lcEnvironnementOther')} className={inputCls} placeholder={t('autrePrecisezPlaceholder')} />
+            </div>
+          )}
+        </div>
       </Section>
 
       <Section title={t('burLocalUsageTitle')} icon={Briefcase}>
-        <OptionGroup label={t('burLocalUsageLabel')} options={LOCAL_USAGE_OPTIONS} field="lcUsage" watch={watch} toggle={toggleArrayValue} />
+        <div className="space-y-3">
+          <OptionGroup label={t('burLocalUsageLabel')} options={LOCAL_USAGE_OPTIONS} field="lcUsage" watch={watch} toggle={toggleArrayValue} />
+          {(watch('lcUsage') || []).includes('AUTRE') && (
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
+              <input type="text" {...register('lcUsageOther')} className={inputCls} placeholder={t('autrePrecisezPlaceholder')} />
+            </div>
+          )}
+        </div>
       </Section>
 
       {renderLocalisationSection()}
@@ -1385,7 +1619,7 @@ export default function ResearchPage() {
         <label className="block text-sm font-bold text-gray-900 mb-2">{t('indLocDateTitle')}</label>
         <input
           type="date" {...register('installationDate')}
-          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 text-base"
+          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
         />
       </div>
     </div>
@@ -1539,6 +1773,440 @@ export default function ResearchPage() {
     );
   };
 
+  // Champ boxé générique à valeur unique (même style que renderBoxedRange/renderBoxedSingle mais
+  // pas lié à un champ typé précis) — réutilisé pour les quelques champs numériques uniques de la
+  // fiche Hébergement et Séjour (surface min, budget max/nuitée...).
+  const renderHtlBoxedNumber = (label: string, field: any, opts?: { unit?: string; placeholder?: string }) => (
+    <div className="min-w-0">
+      <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
+      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all">
+        <input
+          type="number" inputMode="numeric" {...register(field)}
+          placeholder={opts?.placeholder}
+          className="w-full min-w-0 p-2 outline-none bg-transparent font-medium text-gray-900 text-base text-center"
+        />
+        {opts?.unit && <span className="h-full flex items-center px-2 border-l-2 border-gray-300 bg-gray-100 font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
+      </div>
+    </div>
+  );
+
+  // Fiche "Confier votre recherche — Hébergement et Séjour" : profil du demandeur, statut légal
+  // de l'hébergeur souhaité (particulier déclaré vs établissement classé), formule et type de
+  // bien, cadre/ambiance/vue, équipements & services, puis budget et modalités de paiement.
+  const renderHotelierCriteria = () => {
+    const statutHebergeur = watch('htlStatutHebergeur');
+    const formule = watch('htlFormule');
+    const ambiances: string[] = watch('htlAmbiances') || [];
+    return (
+      <>
+        {/* 1. Profil du Demandeur & Validité Civile */}
+        <Section title={t('htlProfilTitle')} icon={Users}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlProfilGroupeLabel')}</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {HTL_PROFIL_GROUPE_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={watch('htlProfilGroupe') === opt.id} label={opt.label} onChange={() => setValue('htlProfilGroupe', opt.id as any)} />
+                ))}
+              </div>
+            </div>
+            <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl bg-white hover:border-gray-300">
+              <input type="checkbox" {...register('htlGarantieDocs')} className="mt-0.5 h-4 w-4 accent-[#0094BD] shrink-0" />
+              <span className="text-sm font-medium text-gray-700">{t('htlGarantieDocsLabel')}</span>
+            </label>
+          </div>
+        </Section>
+
+        {/* 2. Statut Légal de l'Hébergeur Souhaité */}
+        <Section title={t('htlStatutTitle')} icon={Shield}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <PillOption checked={statutHebergeur === 'PARTICULIER'} label={t('htlStatutParticulierLabel')} onChange={() => setValue('htlStatutHebergeur', 'PARTICULIER')} />
+              <PillOption checked={statutHebergeur === 'PROFESSIONNEL'} label={t('htlStatutProLabel')} onChange={() => setValue('htlStatutHebergeur', 'PROFESSIONNEL')} />
+            </div>
+            {statutHebergeur === 'PROFESSIONNEL' && (
+              <>
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlClassementLabel')}</label>
+                  <div className="flex flex-wrap gap-3">
+                    {HTL_CLASSEMENT_OPTIONS.map((opt) => (
+                      <PillOption key={opt.id} checked={(watch('htlClassement') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlClassement', opt.id)} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlTypeEtablissementLabel')}</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {HTL_TYPE_ETABLISSEMENT_OPTIONS.map((opt) => (
+                      <PillOption key={opt.id} checked={(watch('htlTypeEtablissement') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlTypeEtablissement', opt.id)} />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </Section>
+
+        {/* 3. Formule de Location & Type de Structure Souhaitée */}
+        <Section title={t('htlFormuleSectionTitle')} icon={Home}>
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlFormuleLabel')}</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {HTL_FORMULE_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={formule === opt.id} label={opt.label} onChange={() => setValue('htlFormule', opt.id as any)} />
+                ))}
+              </div>
+            </div>
+
+            {formule === 'CHAMBRE_PRIVEE' && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlGammeChambreLabel')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_GAMME_CHAMBRE_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={watch('htlGammeChambre') === opt.id} label={opt.label} onChange={() => setValue('htlGammeChambre', opt.id as any)} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {formule === 'A_LA_PLACE' && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlTypeCouchageLabel')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_TYPE_COUCHAGE_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={(watch('htlTypeCouchage') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlTypeCouchage', opt.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlNatureBienLabel')}</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {HTL_NATURE_BIEN_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={(watch('htlNatureBien') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlNatureBien', opt.id)} />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-sm font-bold text-gray-900">{t('htlExigencesTitle')}</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {renderHtlBoxedNumber(t('htlSurfaceMinLabel'), 'htlSurfaceMin', { unit: 'm²', placeholder: 'Ex: 60' })}
+                {renderHtlBoxedNumber(t('htlNbChambresMinLabel'), 'htlNbChambresMin', { placeholder: 'Ex: 2' })}
+                {renderHtlBoxedNumber(t('htlNbSalonsMinLabel'), 'htlNbSalonsMin', { placeholder: 'Ex: 1' })}
+                {renderHtlBoxedNumber(t('htlNbSdbMinLabel'), 'htlNbSdbMin', { placeholder: 'Ex: 1' })}
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlSuiteParentaleLabel')}</label>
+                <div className="flex gap-3">
+                  <PillOption checked={watch('htlSuiteParentale') === 'OUI'} label={t('optYes')} onChange={() => setValue('htlSuiteParentale', 'OUI')} />
+                  <PillOption checked={watch('htlSuiteParentale') === 'NON'} label={t('optNo')} onChange={() => setValue('htlSuiteParentale', 'NON')} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAccessibiliteLabel')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_ACCESSIBILITE_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={watch('htlAccessibilite') === opt.id} label={opt.label} onChange={() => setValue('htlAccessibilite', opt.id as any)} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        {/* 4. Cadre, Ambiance & Attractions de Proximité */}
+        <Section title={t('htlCadreTitle')} icon={Compass}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAmbianceLabel')}</label>
+              <div className="flex flex-wrap gap-3">
+                {HTL_AMBIANCE_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={ambiances.includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlAmbiances', opt.id)} />
+                ))}
+              </div>
+            </div>
+
+            {ambiances.includes('BALNEAIRE') && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlBalneaireTitle')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_BALNEAIRE_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={watch('htlBalneaire') === opt.id} label={opt.label} onChange={() => setValue('htlBalneaire', opt.id as any)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {ambiances.includes('URBAIN') && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlUrbainTitle')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_URBAIN_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={(watch('htlUrbain') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlUrbain', opt.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {ambiances.includes('SAHARIEN') && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlSaharienTitle')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_SAHARIEN_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={(watch('htlSaharien') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlSaharien', opt.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {ambiances.includes('THERMAL') && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlThermalTitle')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_THERMAL_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={(watch('htlThermal') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlThermal', opt.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {ambiances.includes('CLIMATIQUE') && (
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlClimatiqueTitle')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_CLIMATIQUE_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={(watch('htlClimatique') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlClimatique', opt.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlVueLabel')}</label>
+              <div className="flex flex-wrap gap-3">
+                {HTL_VUE_OPTIONS.map((opt) => (
+                  <PillOption key={opt.id} checked={(watch('htlVue') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlVue', opt.id)} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        {/* 5. Équipements, Services & Secours Autonome */}
+        <Section title={t('htlEquipementsTitle')} icon={Utensils}>
+          <div className="space-y-4">
+            <OptionGroup label={t('htlServicesRepasLabel')} options={HTL_SERVICES_REPAS_OPTIONS} field="htlServicesRepas" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('htlCuisineLabel')} options={HTL_CUISINE_OPTIONS} field="htlCuisine" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
+            <OptionGroup label={t('htlConfortLabel')} options={HTL_CONFORT_OPTIONS} field="htlConfort" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
+            <OptionGroup label={t('htlFluidesLabel')} options={HTL_FLUIDES_OPTIONS} field="htlFluides" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('htlLoisirsLabel')} options={HTL_LOISIRS_OPTIONS} field="htlLoisirs" watch={watch} toggle={toggleArrayValue} />
+          </div>
+        </Section>
+
+        {/* 6. Budget, Modalités Financières & Paiement */}
+        <Section title={t('htlBudgetSectionTitle')} icon={Wallet}>
+          <div className="space-y-5">
+            <div className="max-w-xs">
+              {renderHtlBoxedNumber(t('htlBudgetMaxNuitLabel'), 'htlBudgetMaxNuit', { unit: 'DZD', placeholder: 'Ex: 8000' })}
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlDeviseLabel')}</label>
+              <div className="flex flex-wrap gap-3">
+                <PillOption checked={watch('htlDevise') === 'DZD'} label={t('htlDeviseDzd')} onChange={() => setValue('htlDevise', 'DZD')} />
+                <PillOption checked={watch('htlDevise') === 'ETRANGERE'} label={t('htlDeviseEtrangere')} onChange={() => setValue('htlDevise', 'ETRANGERE')} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAnnulationLabel')}</label>
+              <div className="flex flex-wrap gap-3">
+                <PillOption checked={watch('htlAnnulation') === 'FLEXIBLE'} label={t('htlAnnulationFlexible')} onChange={() => setValue('htlAnnulation', 'FLEXIBLE')} />
+                <PillOption checked={watch('htlAnnulation') === 'NON_REMBOURSABLE'} label={t('htlAnnulationNonRemb')} onChange={() => setValue('htlAnnulation', 'NON_REMBOURSABLE')} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#0094BD]" /> {t('htlPaiementsLocauxLabel')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_PAIEMENTS_LOCAUX_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={(watch('htlPaiementsLocaux') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlPaiementsLocaux', opt.id)} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#0094BD]" /> {t('htlPaiementsIntlLabel')}</label>
+                <div className="flex flex-wrap gap-3">
+                  {HTL_PAIEMENTS_INTL_OPTIONS.map((opt) => (
+                    <PillOption key={opt.id} checked={(watch('htlPaiementsIntl') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlPaiementsIntl', opt.id)} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        {renderLocalisationSection()}
+        {renderCommentSection()}
+      </>
+    );
+  };
+
+  // --- Terrains et Foncier : fiches "Terrain Agricole" / "Terrain Industriel" / "Terrain
+  // Résidentiel" / "Terrain Touristique" (même concept que Bureaux/Industriel). Surface et
+  // façades sont des champs génériques partagés entre les 4 fiches. ---
+
+  const renderTerSurfaceWithUnit = () => (
+    <div className="min-w-0">
+      <label className="block text-sm font-bold text-gray-900 mb-2">{t('terSurfaceLabel')}</label>
+      <div className="flex items-center gap-1.5">
+        <input
+          type="number" inputMode="numeric" {...register('minSurface')}
+          placeholder="Ex: 500"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
+        />
+        <span className="text-xs font-bold text-gray-400 shrink-0">{t('resLocTypologyTo')}</span>
+        <input
+          type="number" inputMode="numeric" {...register('maxSurface')}
+          placeholder="Ex: 2000"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
+        />
+        <select
+          {...register('surfaceUnit')}
+          className="h-[42px] shrink-0 px-2 border-2 border-gray-300 rounded-lg bg-gray-100 font-bold text-xs text-gray-700 outline-none cursor-pointer"
+        >
+          <option value="M2">m²</option>
+          <option value="HA">{t('optHectares')}</option>
+        </select>
+      </div>
+    </div>
+  );
+
+  const renderTerrainAgricoleCriteria = () => (
+    <>
+      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {renderTerSurfaceWithUnit()}
+          {renderBoxedRange(t('terAltitudeLabel'), 'terAgriAltitudeMin', 'terAgriAltitudeMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: 'Ex: 100', placeholderMax: 'Ex: 500' })}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+        </div>
+      </Section>
+
+      <Section title={t('terAgriCultureTitle')} icon={Trees}>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-3">
+            {TER_AGRI_CULTURE_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('terAgriCulture') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terAgriCulture', opt.id)} />
+            ))}
+          </div>
+          {(watch('terAgriCulture') || []).includes('AUTRE') && (
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
+              <input type="text" {...register('terAgriCultureOther')} className={inputCls} placeholder={t('autrePrecisezPlaceholder')} />
+            </div>
+          )}
+        </div>
+      </Section>
+
+      <Section title={t('terAgriEtatTitle')} icon={Sparkles}>
+        <div className="flex flex-wrap gap-3">
+          {TER_AGRI_ETAT_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('terAgriEtat') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terAgriEtat', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      {renderIndustrielBudgetDateRow()}
+      {renderLocalisationSection({ hideDate: true })}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
+  const renderTerrainIndustrielCriteria = () => (
+    <>
+      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 500', placeholderMax: 'Ex: 2000' })}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+        </div>
+      </Section>
+
+      <Section title={t('terIndZoneTitle')} icon={Compass}>
+        <div className="flex flex-wrap gap-3">
+          {TER_IND_ZONE_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('terIndZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terIndZone', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      {renderIndustrielBudgetDateRow()}
+      {renderLocalisationSection({ hideDate: true })}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
+  const renderTerrainResidentielCriteria = () => (
+    <>
+      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 200', placeholderMax: 'Ex: 600' })}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+        </div>
+      </Section>
+
+      <Section title={t('terResZoneTitle')} icon={Compass}>
+        <div className="flex flex-wrap gap-3">
+          {TER_RES_ZONE_OPTIONS.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('terResZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terResZone', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      {renderIndustrielBudgetDateRow()}
+      {renderLocalisationSection({ hideDate: true })}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
+  const renderTerrainTouristiqueCriteria = () => (
+    <>
+      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {renderTerSurfaceWithUnit()}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+        </div>
+      </Section>
+
+      <Section title={t('terTouZetTitle')} icon={Sparkles}>
+        <div className="flex gap-3">
+          <PillOption checked={watch('terTouZet') === 'OUI'} label={t('optYes')} onChange={() => setValue('terTouZet', 'OUI')} />
+          <PillOption checked={watch('terTouZet') === 'NON'} label={t('optNo')} onChange={() => setValue('terTouZet', 'NON')} />
+        </div>
+      </Section>
+
+      <Section title={t('terTouVocationTitle')} icon={Compass}>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-3">
+            {TER_TOU_VOCATION_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('terTouVocation') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terTouVocation', opt.id)} />
+            ))}
+          </div>
+          {(watch('terTouVocation') || []).includes('AUTRE') && (
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
+              <input type="text" {...register('terTouVocationOther')} className={inputCls} placeholder={t('autrePrecisezPlaceholder')} />
+            </div>
+          )}
+        </div>
+      </Section>
+
+      {renderIndustrielBudgetDateRow()}
+      {renderLocalisationSection({ hideDate: true })}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
   const renderCriteriaStep = () => {
     switch (branch) {
       case 'RESIDENTIEL':
@@ -1571,7 +2239,7 @@ export default function ResearchPage() {
               </Field>
             </div>
             <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
-              <input type="checkbox" {...register('truckAccess')} className="h-4 w-4 accent-[#00BFA6]" />
+              <input type="checkbox" {...register('truckAccess')} className="h-4 w-4 accent-[#0094BD]" />
               {t('indTruckAccess')}
             </label>
           </Section>
@@ -1592,57 +2260,17 @@ export default function ResearchPage() {
         }
 
       case 'TERRAIN_FONCIER':
-        return (
-          <Section title={t('mainCriteria')} icon={Trees}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label={t('terSurfaceUnit')}>
-                <select {...register('surfaceUnit')} className={inputCls}>
-                  <option value="M2">m²</option>
-                  <option value="HA">{t('optHectares')}</option>
-                </select>
-              </Field>
-              <Field label={t('terTopography')}>
-                <select {...register('topography')} className={inputCls}>
-                  <option value="">{t('optIndifferent')}</option>
-                  <option value="PLAT">{t('optFlat')}</option>
-                  <option value="PENTE">{t('optSlope')}</option>
-                </select>
-              </Field>
-              <Field label={t('terSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label={t('terSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-              <Field label={t('terConstructibility')} full>
-                <input type="text" placeholder={t('terConstructibilityPlaceholder')} {...register('constructibility')} className={inputCls} />
-              </Field>
-            </div>
-            <OptionGroup label={t('terViabilisation')} options={VIABILISATION_OPTIONS} field="viabilisation" watch={watch} toggle={toggleArrayValue} />
-          </Section>
-        );
+        switch (watch('terrainSearchScope')) {
+          case 'INDUSTRIEL': return renderTerrainIndustrielCriteria();
+          case 'RESIDENTIEL': return renderTerrainResidentielCriteria();
+          case 'TOURISTIQUE': return renderTerrainTouristiqueCriteria();
+          case 'AGRICOLE':
+          default:
+            return renderTerrainAgricoleCriteria();
+        }
 
       case 'HOTELIER':
-        return (
-          <Section title={t('mainCriteria')} icon={Hotel}>
-            <p className="text-sm text-gray-500 -mt-2">
-              {t('hotHint')}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Field label={t('burSurfaceMin')}><input type="number" {...register('minSurface')} className={inputCls} /></Field>
-              <Field label={t('burSurfaceMax')}><input type="number" {...register('maxSurface')} className={inputCls} /></Field>
-              <Field label={t('hotNbRooms')}><input type="number" {...register('nbRooms')} className={inputCls} /></Field>
-            </div>
-            <Field label={t('hotClassification')}>
-              <select {...register('classification')} className={inputCls}>
-                <option value="">{t('optIndifferent')}</option>
-                <option value="NON_CLASSE">{t('optUnclassified')}</option>
-                <option value="1">{t('optStar1')}</option>
-                <option value="2">{t('optStar2')}</option>
-                <option value="3">{t('optStar3')}</option>
-                <option value="4">{t('optStar4')}</option>
-                <option value="5">{t('optStar5')}</option>
-              </select>
-            </Field>
-            <OptionGroup label={t('optDesiredEquipment')} options={HOTELIER_EQUIPMENT_OPTIONS} field="hotelierEquipments" watch={watch} toggle={toggleArrayValue} />
-          </Section>
-        );
+        return renderHotelierCriteria();
 
       default:
         return null;
@@ -1700,7 +2328,7 @@ export default function ResearchPage() {
                 onClick={() => setValue('currency', c.id as any)}
                 className={cn(
                   'h-11 px-6 rounded-xl border-2 font-black text-sm transition-all',
-                  watch('currency') === c.id ? 'border-[#00BFA6] bg-green-50/50 text-[#00BFA6]' : 'border-gray-300 text-gray-600 hover:border-gray-400 bg-gray-50'
+                  watch('currency') === c.id ? 'border-[#0094BD] bg-[#0094BD]/[0.06] text-[#0094BD]' : 'border-gray-300 text-gray-600 hover:border-gray-400 bg-gray-50'
                 )}
               >
                 {c.label}
@@ -1739,6 +2367,7 @@ export default function ResearchPage() {
                   active={branch === b.id}
                   icon={BRANCH_ICONS[b.iconName] || Home}
                   label={b.label}
+                  color={getCategoryColor(b.id)}
                   onClick={() => {
                     setValue('branch', b.id);
                     setValue('propertyType', '');
@@ -1747,6 +2376,7 @@ export default function ResearchPage() {
                     setValue('searchScope', undefined as any);
                     setValue('bureauxSearchScope', undefined as any);
                     setValue('industrielSearchScope', undefined as any);
+                    setValue('terrainSearchScope', undefined as any);
                     // Fluide comme une sélection de carte : on avance directement à l'étape
                     // suivante au clic, pas besoin du bouton "Continuer" (contrairement au dépôt
                     // d'annonces) pour un choix aussi simple.
@@ -1761,8 +2391,8 @@ export default function ResearchPage() {
 
       case 'TRANSACTION':
         return (
-          <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
-            <div className="flex justify-center gap-8 md:gap-32">
+          <div className="w-full max-w-sm md:max-w-md mx-auto animate-fade-in py-4 md:py-6">
+            <div className="flex justify-center gap-8 md:gap-14">
               <CircleOption active={watch('transaction') === TransactionType.RENTAL} icon={Home} label={t('transactionRental')} size="lg" onClick={() => { setValue('transaction', TransactionType.RENTAL); nextStep(); }} />
               <CircleOption active={watch('transaction') === TransactionType.SALE} icon={Key} label={t('transactionSale')} size="lg" onClick={() => { setValue('transaction', TransactionType.SALE); nextStep(); }} />
             </div>
@@ -1771,11 +2401,11 @@ export default function ResearchPage() {
 
       case 'RES_SEARCH_SCOPE':
         return (
-          <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
+          <div className="w-full max-w-sm md:max-w-md mx-auto animate-fade-in py-4 md:py-6">
             {/* Pas de flex-wrap : sur une pastille "w-full", ça repasse les deux options en
                 colonne dès que le conteneur autorise le retour à la ligne — comme pour l'étape
                 Transaction, elles doivent rester côte à côte sur une seule ligne. */}
-            <div className="flex justify-center gap-8 md:gap-24">
+            <div className="flex justify-center gap-8 md:gap-14">
               <CircleOption
                 active={watch('searchScope') === 'GROUPEE'}
                 icon={Home}
@@ -1868,6 +2498,42 @@ export default function ResearchPage() {
           </div>
         );
 
+      case 'TER_SEARCH_SCOPE':
+        return (
+          <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-10 gap-x-6 justify-items-center">
+              <CircleOption
+                active={watch('terrainSearchScope') === 'AGRICOLE'}
+                icon={Trees}
+                label={t('terScopeAgricole')}
+                size="md"
+                onClick={() => { setValue('terrainSearchScope', 'AGRICOLE'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('terrainSearchScope') === 'INDUSTRIEL'}
+                icon={Factory}
+                label={t('terScopeIndustriel')}
+                size="md"
+                onClick={() => { setValue('terrainSearchScope', 'INDUSTRIEL'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('terrainSearchScope') === 'RESIDENTIEL'}
+                icon={Home}
+                label={t('terScopeResidentiel')}
+                size="md"
+                onClick={() => { setValue('terrainSearchScope', 'RESIDENTIEL'); nextStep(); }}
+              />
+              <CircleOption
+                active={watch('terrainSearchScope') === 'TOURISTIQUE'}
+                icon={Hotel}
+                label={t('terScopeTouristique')}
+                size="md"
+                onClick={() => { setValue('terrainSearchScope', 'TOURISTIQUE'); nextStep(); }}
+              />
+            </div>
+          </div>
+        );
+
       case 'CRITERIA':
         return <div className="w-full max-w-4xl animate-fade-in space-y-6">{renderCriteriaStep()}</div>;
 
@@ -1891,7 +2557,7 @@ export default function ResearchPage() {
             )}
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-2">
-                <Handshake className="h-5 w-5 text-[#00BFA6]" />
+                <Handshake className="h-5 w-5 text-[#0094BD]" />
                 <p className="text-gray-600 text-sm">
                   {isResidentielAchat ? t('interlocutorPreferredType') : t('interlocutorChooseWho')}
                 </p>
@@ -1917,7 +2583,7 @@ export default function ResearchPage() {
                   <button
                     type="button"
                     onClick={() => setUseMyInfo(true)}
-                    className={cn('p-4 rounded-xl border-2 text-left transition-all', useMyInfo ? 'border-[#00BFA6] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
+                    className={cn('p-4 rounded-xl border-2 text-left transition-all', useMyInfo ? 'border-[#0094BD] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
                   >
                     <div className="font-bold text-gray-900 text-sm">{t('contactUseMyInfo')}</div>
                     <div className="text-xs text-gray-500 mt-1 truncate">
@@ -1927,7 +2593,7 @@ export default function ResearchPage() {
                   <button
                     type="button"
                     onClick={() => setUseMyInfo(false)}
-                    className={cn('p-4 rounded-xl border-2 text-left transition-all', !useMyInfo ? 'border-[#00BFA6] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
+                    className={cn('p-4 rounded-xl border-2 text-left transition-all', !useMyInfo ? 'border-[#0094BD] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
                   >
                     <div className="font-bold text-gray-900 text-sm">{t('contactEnterOtherInfo')}</div>
                     <div className="text-xs text-gray-500 mt-1">{t('contactForOtherPersonOrCompany')}</div>
@@ -1969,10 +2635,10 @@ export default function ResearchPage() {
                 <>
                   <div className="flex justify-center gap-4 mb-2">
                     <label className="flex items-center gap-2 font-bold text-gray-900">
-                      <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#00BFA6]" /> {t('contactParticulier')}
+                      <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#0094BD]" /> {t('contactParticulier')}
                     </label>
                     <label className="flex items-center gap-2 font-bold text-gray-900">
-                      <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#00BFA6]" /> {t('contactSociete')}
+                      <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#0094BD]" /> {t('contactSociete')}
                     </label>
                   </div>
 
@@ -1995,11 +2661,11 @@ export default function ResearchPage() {
 
               <div className="space-y-3 mt-2">
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                  <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 accent-[#00BFA6]" />
+                  <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 accent-[#0094BD]" />
                   {t('contactIsDelegate')}
                 </label>
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                  <input type="checkbox" {...register('receiveAlert')} className="h-4 w-4 accent-[#00BFA6]" />
+                  <input type="checkbox" {...register('receiveAlert')} className="h-4 w-4 accent-[#0094BD]" />
                   {t('contactReceiveAlert')}
                 </label>
               </div>
@@ -2013,13 +2679,39 @@ export default function ResearchPage() {
   const isNextDisabled = currentStep === 'BRANCH' && !branch;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-[#00908A] h-[200px] w-full absolute top-0 left-0 z-0"></div>
+    <div className="min-h-screen bg-gray-50 dark:bg-[#022229] flex flex-col">
+      <div className="h-[220px] w-full absolute top-0 left-0 z-0 overflow-hidden bg-[#003B4A]">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#04566B] via-[#003B4A] to-[#00181E]" />
+        <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-white/[0.06] blur-3xl" />
+        <div className="absolute top-1/3 -left-20 w-64 h-64 rounded-full bg-white/[0.04] blur-3xl" />
+      </div>
 
       <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-[96px] md:pt-4">
 
+        {draftAvailable && (
+          <div className="w-full max-w-5xl mb-4 md:mb-6 bg-white border-2 border-[#0094BD]/30 rounded-2xl shadow-lg px-4 py-3 md:px-6 md:py-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="h-9 w-9 rounded-full bg-[#0094BD]/10 flex items-center justify-center shrink-0">
+                <Sparkles className="h-4.5 w-4.5 text-[#0094BD]" />
+              </span>
+              <div>
+                <p className="font-bold text-gray-900 text-sm">{t('draftFoundTitle')}</p>
+                <p className="text-xs text-gray-500">{t('draftFoundDesc', { time: new Date(draftAvailable.savedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button type="button" onClick={discardDraft} className="text-sm font-bold text-gray-500 hover:text-gray-700 px-3 py-2">
+                {t('draftDiscard')}
+              </button>
+              <button type="button" onClick={resumeDraft} className="bg-[#0094BD] hover:bg-[#003B4A] text-white rounded-full px-5 py-2 text-sm font-bold transition-all">
+                {t('draftResume')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Progress Stepper */}
-        <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-5xl flex justify-center overflow-x-auto">
+        <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#0094BD]/25 shadow-lg mb-4 md:mb-8 w-full max-w-5xl flex justify-center overflow-x-auto">
           <div className="flex items-center w-full max-w-4xl">
             {steps.map((key, idx) => (
               <div key={key} className="flex items-center flex-1 min-w-0">
@@ -2027,15 +2719,15 @@ export default function ResearchPage() {
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all',
                     idx <= currentStepIndex ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-50',
-                    currentStepIndex > idx ? 'bg-[#00BFA6] border-[#00BFA6] text-white' :
-                    currentStepIndex === idx ? 'border-[#00BFA6] text-[#00BFA6]' : 'border-gray-400 text-gray-600'
+                    currentStepIndex > idx ? 'bg-[#0094BD] border-[#0094BD] text-white' :
+                    currentStepIndex === idx ? 'border-[#0094BD] text-[#0094BD]' : 'border-gray-400 text-gray-600'
                   )}
                   onClick={() => goToStep(idx)}
                 >
                   {currentStepIndex > idx ? <Check className="h-4 w-4" /> : idx + 1}
                 </div>
                 {idx < steps.length - 1 && (
-                  <div className={cn('flex-1 min-w-0 h-0.5 mx-2', currentStepIndex > idx ? 'bg-[#00BFA6]' : 'bg-gray-300')}></div>
+                  <div className={cn('flex-1 min-w-0 h-0.5 mx-2', currentStepIndex > idx ? 'bg-[#0094BD]' : 'bg-gray-300')}></div>
                 )}
               </div>
             ))}
@@ -2071,7 +2763,7 @@ export default function ResearchPage() {
               <button
                 type="button"
                 onClick={prevStep}
-                className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium mr-4"
+                className="flex items-center gap-2 text-gray-500 hover:text-[#0094BD] transition-colors font-medium mr-4"
               >
                 <ArrowLeft className="h-5 w-5" />
                 {t('back')}
@@ -2079,6 +2771,28 @@ export default function ResearchPage() {
             )}
             <h1 className="text-lg md:text-2xl font-bold text-gray-800">{STEP_LABELS[currentStep]}</h1>
           </div>
+
+          {/* Repère de contexte — rappelle catégorie/transaction en cours pour ne pas se perdre
+              dans un parcours à plusieurs étapes ; n'apparaît qu'une fois la branche choisie. */}
+          {branch && (
+            <div className="px-4 md:px-8 pt-4 flex flex-wrap items-center gap-2">
+              <span
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ backgroundColor: `${getCategoryColor(branch).hex}14`, color: getCategoryColor(branch).hex }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(branch).hex }} />
+                {RESEARCH_BRANCHES.find((b) => b.id === branch)?.label}
+              </span>
+              {watch('transaction') && (
+                <>
+                  <span className="text-gray-300">/</span>
+                  <span className="text-xs font-bold text-gray-500 px-3 py-1.5 rounded-full bg-gray-100">
+                    {watch('transaction') === TransactionType.RENTAL ? t('transactionRental') : t('transactionSale')}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-left">
             {renderStep()}
@@ -2091,7 +2805,7 @@ export default function ResearchPage() {
                   type="button"
                   onClick={nextStep}
                   disabled={isNextDisabled}
-                  className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
+                  className="bg-[#0094BD] hover:bg-[#003B4A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#0094BD]/20 transition-all disabled:opacity-50"
                 >
                   {t('continueBtn')}
                 </button>
@@ -2099,7 +2813,7 @@ export default function ResearchPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all disabled:opacity-50"
+                  className="bg-[#0094BD] hover:bg-[#003B4A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#0094BD]/20 transition-all disabled:opacity-50"
                 >
                   {loading ? t('sending') : t('submit')}
                 </button>

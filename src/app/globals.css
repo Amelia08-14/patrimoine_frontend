@@ -4,6 +4,13 @@
 @import "@fontsource/montserrat/600.css";
 @import "@fontsource/montserrat/700.css";
 
+/* Mode sombre piloté par next-themes (attribute="class" sur <html>) — active les utilitaires
+   `dark:` uniquement sous une classe `.dark`, jamais automatiquement via l'OS seul (voir
+   ThemeProvider). Le déploiement du mode sombre reste progressif : seules les surfaces qui
+   déclarent explicitement des `dark:` en profitent, le reste garde son apparence claire actuelle
+   pour éviter tout texte illisible sur un fond resté blanc en dur. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -12,12 +19,15 @@
   --font-sans: "Montserrat";
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-serif-brand), Georgia, serif;
-  /* Le site (public + admin) n'a aucune variante sombre (aucune classe `dark:` dans le
-     projet, tous les fonds de carte sont codés en dur en blanc/gris clair) : on force donc
-     le thème clair même si l'OS/navigateur du visiteur est en mode sombre. Auparavant, une
-     règle @media (prefers-color-scheme: dark) passait le texte en gris quasi blanc sur des
-     fonds restés blancs -> texte illisible pour qui a le mode sombre activé sur son PC. */
   color-scheme: light;
+}
+
+.dark {
+  /* Bleu marine du footer — même teinte que la bande sombre du site, réutilisée comme fond du
+     mode sombre pour rester dans l'identité visuelle existante plutôt qu'un noir générique. */
+  --background: #022229;
+  --foreground: #E7F1F3;
+  color-scheme: dark;
 }
 
 /* Écho serif du logo (mot-symbole "Patrimoine") — réservé aux titres de page de
@@ -74,3 +84,14 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 .animate-rotate-word-in { animation: rotate-word-in 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Fondu doux entre les photos d'une galerie qui défile seule (cartes annonces, page d'accueil) —
+   remontée via `key` à chaque changement d'image, l'animation rejoue seule à chaque fois. */
+@keyframes media-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-media-fade { animation: media-fade-in 0.9s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-media-fade { animation: none; }
+}

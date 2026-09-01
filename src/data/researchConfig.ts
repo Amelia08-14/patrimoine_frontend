@@ -361,6 +361,189 @@ export const TYPOLOGY_RANGE_OPTIONS = [
   { id: "F9_PLUS", label: "9+" },
 ];
 
+// --- Fiche "Confier votre recherche — Hébergement et Séjour" ---
+
+export const HTL_PROFIL_GROUPE_OPTIONS = [
+  { id: "FAMILIAL", label: "Exclusivement Familial" },
+  { id: "PROFESSIONNEL", label: "Professionnel / Affaires" },
+  { id: "GROUPE_AMIS", label: "Groupe d'amis" },
+];
+
+export const HTL_CLASSEMENT_OPTIONS = [
+  { id: "5", label: "5★" },
+  { id: "4", label: "4★" },
+  { id: "3", label: "3★" },
+  { id: "2", label: "2★" },
+  { id: "1", label: "1★" },
+];
+
+export const HTL_TYPE_ETABLISSEMENT_OPTIONS = [
+  { id: "HOTEL", label: "Hôtel" },
+  { id: "COMPLEXE_TOURISTIQUE", label: "Complexe touristique" },
+  { id: "APPART_HOTEL", label: "Appart-hôtel" },
+  { id: "MOTEL_RELAIS", label: "Motel / Relais" },
+  { id: "CAMPING_CLASSE", label: "Camping classé" },
+];
+
+export const HTL_FORMULE_OPTIONS = [
+  { id: "LOGEMENT_ENTIER", label: "Logement complet / Entier", description: "Accès exclusif à la totalité du logement et de ses équipements." },
+  { id: "CHAMBRE_PRIVEE", label: "Chambre privée", description: "Chambre personnelle privative, mais certains espaces (cuisine, salon) sont partagés." },
+  { id: "A_LA_PLACE", label: "À la place / Au lit", description: "Location partagée type dortoir ou espace traditionnel." },
+];
+
+export const HTL_GAMME_CHAMBRE_OPTIONS = [
+  { id: "STANDARD", label: "Standard" },
+  { id: "SUITE", label: "Suite" },
+  { id: "PREMIUM", label: "Premium / Présidentielle" },
+];
+
+export const HTL_TYPE_COUCHAGE_OPTIONS = [
+  { id: "LIT_SIMPLE", label: "Lit simple individuel" },
+  { id: "LIT_SUPERPOSE", label: "Lit superposé" },
+  { id: "MATELAS_SOL", label: "Matelas au sol (Style traditionnel saharien)" },
+];
+
+export const HTL_NATURE_BIEN_OPTIONS = [
+  { id: "VILLA_NIVEAU", label: "Villa / Niveau de Villa" },
+  { id: "APPARTEMENT", label: "Appartement" },
+  { id: "STUDIO", label: "Studio" },
+  { id: "DUPLEX_TRIPLEX", label: "Duplex / Triplex" },
+  { id: "BUNGALOW_CHALET", label: "Bungalow / Chalet" },
+  { id: "INSOLITE", label: "Hébergement insolite" },
+];
+
+export const HTL_ACCESSIBILITE_OPTIONS = [
+  { id: "INDIFFERENT", label: "Indifférent" },
+  { id: "PLAIN_PIED", label: "Plain-pied (RDC)" },
+  { id: "ETAGE_ASCENSEUR", label: "Étage AVEC ascenseur obligatoire" },
+];
+
+export const HTL_AMBIANCE_OPTIONS = [
+  { id: "BALNEAIRE", label: "Balnéaire" },
+  { id: "URBAIN", label: "Urbain" },
+  { id: "SAHARIEN", label: "Saharien" },
+  { id: "THERMAL", label: "Thermal" },
+  { id: "CLIMATIQUE", label: "Climatique" },
+];
+
+export const HTL_BALNEAIRE_OPTIONS = [
+  { id: "PLAGE_PRIVEE", label: "Proximité plage privée obligatoirement" },
+  { id: "PLAGE_PUBLIQUE", label: "Plage publique acceptée" },
+];
+
+export const HTL_URBAIN_OPTIONS = [
+  { id: "COMMERCES", label: "Commerces" },
+  { id: "RESTAURANTS", label: "Restaurants" },
+  { id: "CENTRES_COMMERCIAUX", label: "Centres commerciaux / Souks" },
+];
+
+export const HTL_SAHARIEN_OPTIONS = [
+  { id: "CIRCUITS_4X4", label: "Circuits 4x4 / Quad" },
+  { id: "MEHAREE", label: "Méharée" },
+  { id: "BIVOUAC", label: "Bivouac sous les étoiles" },
+];
+
+export const HTL_THERMAL_OPTIONS = [
+  { id: "SOURCE_PROXIMITE", label: "Source thermale à proximité" },
+  { id: "HAMMAM_INTEGRE", label: "Hammam intégré à l'établissement obligatoire" },
+];
+
+export const HTL_CLIMATIQUE_OPTIONS = [
+  { id: "FORET_MONTAGNE_PIED", label: "Forêt / Montagne accessible à pied" },
+  { id: "PISTE_SKI_MATERIEL", label: "Piste de ski + location de matériel" },
+];
+
+export const HTL_VUE_OPTIONS = [
+  { id: "MER", label: "Vue sur mer" },
+  { id: "DUNES_OASIS", label: "Vue sur les Dunes / Oasis" },
+  { id: "MONTAGNE", label: "Vue sur montagne" },
+  { id: "JARDIN_PISCINE", label: "Vue sur jardin / Piscine" },
+  { id: "SANS_IMPORTANCE", label: "Sans importance" },
+];
+
+export const HTL_SERVICES_REPAS_OPTIONS = [
+  { id: "PETIT_DEJEUNER", label: "Petit-déjeuner inclus" },
+  { id: "DEMI_PENSION", label: "Demi-pension / Pension complète" },
+  { id: "LINGE_FOURNI", label: "Linge de maison fourni" },
+];
+
+export const HTL_CUISINE_OPTIONS = [
+  { id: "CUISINE_EQUIPEE", label: "Cuisine équipée autonome" },
+  { id: "REFRIGERATEUR", label: "Réfrigérateur" },
+  { id: "MICRO_ONDES", label: "Micro-ondes" },
+  { id: "MACHINE_CAFE", label: "Machine à café" },
+];
+
+export const HTL_CONFORT_OPTIONS = [
+  { id: "CLIMATISATION", label: "Climatisation" },
+  { id: "CHAUFFAGE", label: "Chauffage" },
+  { id: "WIFI", label: "Connexion Wi-Fi Internet" },
+  { id: "MACHINE_LAVER", label: "Machine à laver" },
+];
+
+export const HTL_FLUIDES_OPTIONS = [
+  { id: "CITERNE", label: "Citerne / Réservoir avec pompe (Eau H24)" },
+  { id: "GROUPE_ELECTROGENE", label: "Groupe électrogène (Secours électricité)" },
+  { id: "CHAUFFE_EAU", label: "Chauffe-eau opérationnel (Eau chaude en permanence)" },
+];
+
+export const HTL_LOISIRS_OPTIONS = [
+  { id: "PISCINE", label: "Piscine privée / résidents" },
+  { id: "SPA_SAUNA", label: "Espace Spa / Sauna" },
+  { id: "AIRE_JEUX", label: "Aire de jeux enfants" },
+  { id: "BARBECUE", label: "Zone Barbecue" },
+];
+
+export const HTL_PAIEMENTS_LOCAUX_OPTIONS = [
+  { id: "ESPECES", label: "Espèces" },
+  { id: "BARIDIMOB", label: "BaridiMob" },
+  { id: "CCP", label: "CCP" },
+  { id: "EDAHABIA", label: "Carte Edahabia" },
+];
+
+export const HTL_PAIEMENTS_INTL_OPTIONS = [
+  { id: "VISA", label: "Carte VISA" },
+  { id: "MASTERCARD", label: "MasterCard" },
+];
+
+// --- Fiches "Confier votre recherche — Terrains et Foncier" ---
+
+export const TER_AGRI_CULTURE_OPTIONS = [
+  { id: "MARAICHAGE", label: "Maraîchage" },
+  { id: "ARBORICULTURE", label: "Arboriculture" },
+  { id: "VITICULTURE", label: "Viticulture" },
+  { id: "CEREALICULTURE", label: "Céréaliculture" },
+  { id: "ELEVAGE", label: "Élevage" },
+  { id: "AUTRE", label: "Autre" },
+];
+
+export const TER_AGRI_ETAT_OPTIONS = [
+  { id: "VIDE", label: "Terrain vide" },
+  { id: "PLANTE", label: "Terrain planté" },
+  { id: "EXPLOITE", label: "Exploité" },
+];
+
+export const TER_IND_ZONE_OPTIONS = [
+  { id: "INDUSTRIELLE", label: "Industrielle" },
+  { id: "URBAINE", label: "Urbaine" },
+  { id: "ACTIVITE", label: "Activité" },
+];
+
+export const TER_RES_ZONE_OPTIONS = [
+  { id: "LOTISSEMENT_CLASSIQUE", label: "Lotissement classique" },
+  { id: "COOPERATIVE_IMMOBILIERE", label: "Coopérative immobilière" },
+  { id: "RESIDENCE_FERMEE", label: "Résidence fermée" },
+];
+
+export const TER_TOU_VOCATION_OPTIONS = [
+  { id: "BALNEAIRE", label: "Balnéaire" },
+  { id: "URBAINE", label: "Urbaine" },
+  { id: "CLIMATIQUE", label: "Climatique" },
+  { id: "SAHARIENNE", label: "Saharienne" },
+  { id: "THERMALE", label: "Thermale" },
+  { id: "AUTRE", label: "Autre situation" },
+];
+
 // --- Fiches "Industriel" (Location) — Hangar / Usine / Chambre Froide ---
 
 export const HANGAR_USAGE_OPTIONS = [

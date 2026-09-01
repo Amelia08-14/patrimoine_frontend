@@ -48,7 +48,7 @@ export default function DemandesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#022229]">
       <div className="bg-[#003B4A] text-white py-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold">{t("title")}</h1>
@@ -56,7 +56,7 @@ export default function DemandesPage() {
             {t("subtitle")}
           </p>
           <Link href="/research">
-            <Button className="mt-6 bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-6 py-5 font-bold">
+            <Button className="mt-6 bg-[#0094BD] hover:bg-[#00B4E5] text-white rounded-full px-6 py-5 font-bold">
               {t("entrustMySearch")}
             </Button>
           </Link>
@@ -65,11 +65,11 @@ export default function DemandesPage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {loading ? (
-          <div className="text-center py-12 text-gray-500">{t("loading")}</div>
+          <div className="text-center py-12 text-gray-500 dark:text-white/50">{t("loading")}</div>
         ) : requests.length === 0 ? (
           <div className="text-center py-16">
-            <Search className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">{t("noResults")}</p>
+            <Search className="h-10 w-10 mx-auto text-gray-300 dark:text-white/20 mb-3" />
+            <p className="text-gray-500 dark:text-white/60 font-medium">{t("noResults")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -132,13 +132,13 @@ export default function DemandesPage() {
               const environmentLabels: string[] = (locationCriteria?.environment || []).map((id: string) => ENVIRONMENT_LABELS[id] || id).filter(Boolean)
 
               return (
-                <div key={r.id} className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 p-6 flex flex-col gap-4">
+                <div key={r.id} className="bg-white dark:bg-white/5 rounded-3xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 dark:border-white/10 p-6 flex flex-col gap-4">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#00BFA6]/10 text-[#00908A]">
+                    <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#00BFA6]/10 text-[#00908A] dark:text-[#5EEAD4]">
                       {r.transaction === 'SALE' ? t("sale") : r.transaction === 'RENTAL' ? t("rental") : t("holiday")}
                     </span>
                     {r.realEstateType && (
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                      <span className="text-xs font-bold text-gray-500 dark:text-white/50 uppercase tracking-wide">
                         {getCategoryLabel(r.realEstateType) || r.realEstateType}
                       </span>
                     )}
@@ -146,7 +146,7 @@ export default function DemandesPage() {
 
                   {propertyTypeLabels.length > 0 && (
                     propertyTypeLabels.length === 1 ? (
-                      <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                      <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-white/90">
                         <Home className="h-4 w-4 text-[#00BFA6] shrink-0" />
                         {propertyTypeLabels[0]}
                       </div>
@@ -155,7 +155,7 @@ export default function DemandesPage() {
                         <Home className="h-4 w-4 text-[#00BFA6] shrink-0 mt-1" />
                         <div className="flex flex-wrap gap-1.5">
                           {propertyTypeLabels.map((label, i) => (
-                            <span key={i} className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#00BFA6]/10 text-[#00908A]">{label}</span>
+                            <span key={i} className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#00BFA6]/10 text-[#00908A] dark:text-[#5EEAD4]">{label}</span>
                           ))}
                         </div>
                       </div>
@@ -163,10 +163,10 @@ export default function DemandesPage() {
                   )}
 
                   {r.comment && (
-                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-4">{r.comment}</p>
+                    <p className="text-gray-600 dark:text-white/60 text-sm leading-relaxed line-clamp-4">{r.comment}</p>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 border-t border-gray-50 pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-white/60 border-t border-gray-50 dark:border-white/10 pt-4">
                     {budgetLabel && (
                       <div className="flex items-center gap-2">
                         <Wallet className="h-4 w-4 text-[#00BFA6] shrink-0" />
@@ -214,13 +214,13 @@ export default function DemandesPage() {
                   {environmentLabels.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {environmentLabels.map((label) => (
-                        <span key={label} className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600">{label}</span>
+                        <span key={label} className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/60">{label}</span>
                       ))}
                     </div>
                   )}
 
                   {requesterName && (
-                    <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-wide">
+                    <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">
                       {r.user?.companyName ? <Store className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
                       {requesterName}
                     </div>

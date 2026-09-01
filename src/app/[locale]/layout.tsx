@@ -6,6 +6,7 @@ import "../globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { routing } from "@/i18n/routing";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
 
 // Geist Sans en local (version .ttf)
 const geistSans = localFont({
@@ -43,9 +44,11 @@ export default async function LocaleLayout({
         className="antialiased min-h-screen flex flex-col"
       >
         <NextIntlClientProvider>
-          <Navbar />
-          <main className="flex-grow">{children}</main>
-          <Footer />
+          <ThemeProvider>
+            <Navbar />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

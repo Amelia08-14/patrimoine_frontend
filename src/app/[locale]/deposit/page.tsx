@@ -30,6 +30,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { getCategoryColor } from "@/data/categoryColors"
 import { useRouter, usePathname } from "@/i18n/navigation"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
@@ -1227,6 +1228,7 @@ const formSchema = z.object({
   // Hébergement chez l'habitant
   habClientProfile: z.string().optional(),
   habFormule: z.string().optional(),
+  habTypeChambre: z.string().optional(),
   habUnitType: z.string().optional(),
   habUnitTypeInsolite: z.string().optional(),
   habArea: z.string().optional(),
@@ -1780,6 +1782,64 @@ function DepositPageComponent() {
     resolver: zodResolver(formSchema) as any,
     defaultValues: initialDefaultValues as any,
   })
+
+  // Brouillon auto-enregistré — si l'utilisateur quitte accidentellement (fermeture d'onglet,
+  // coupure réseau...), il retrouve sa saisie en revenant sur la page. Les photos/vidéos (objets
+  // File) ne peuvent pas être sérialisées dans localStorage : seuls les champs texte/choix sont
+  // restaurés, il faudra ré-ajouter les médias. Expire après 7 jours.
+  const DEPOSIT_DRAFT_KEY = 'deposit-draft-v1'
+  const DEPOSIT_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+  const [depositDraftAvailable, setDepositDraftAvailable] = useState<{ savedAt: number } | null>(null)
+  const depositDraftCheckedRef = useRef(false)
+
+  useEffect(() => {
+    if (depositDraftCheckedRef.current) return
+    depositDraftCheckedRef.current = true
+    try {
+      const raw = localStorage.getItem(DEPOSIT_DRAFT_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (!parsed?.savedAt || Date.now() - parsed.savedAt > DEPOSIT_DRAFT_MAX_AGE_MS) {
+        localStorage.removeItem(DEPOSIT_DRAFT_KEY)
+        return
+      }
+      setDepositDraftAvailable({ savedAt: parsed.savedAt })
+    } catch { /* brouillon corrompu — on l'ignore silencieusement */ }
+  }, [])
+
+  useEffect(() => {
+    const subscription = watch((values) => {
+      const timeout = setTimeout(() => {
+        try {
+          if (!values.realEstateType) return
+          localStorage.setItem(DEPOSIT_DRAFT_KEY, JSON.stringify({ values, step: currentStep, savedAt: Date.now() }))
+        } catch { /* quota localStorage dépassé ou navigation privée — on ignore */ }
+      }, 800)
+      return () => clearTimeout(timeout)
+    })
+    return () => subscription.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watch, currentStep])
+
+  const resumeDepositDraft = () => {
+    try {
+      const raw = localStorage.getItem(DEPOSIT_DRAFT_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      reset(parsed.values)
+      if (typeof parsed.step === 'number') setCurrentStep(parsed.step)
+    } catch { /* ignore */ }
+    setDepositDraftAvailable(null)
+  }
+
+  const discardDepositDraft = () => {
+    localStorage.removeItem(DEPOSIT_DRAFT_KEY)
+    setDepositDraftAvailable(null)
+  }
+
+  const clearDepositDraft = () => {
+    try { localStorage.removeItem(DEPOSIT_DRAFT_KEY) } catch { /* ignore */ }
+  }
 
    const transactionType = watch("transactionType")
   const realEstateType = watch("realEstateType")
@@ -2998,6 +3058,123 @@ function DepositPageComponent() {
         formData.append("amenities", JSON.stringify(amenitiesPayload))
     }
 
+    // Hébergement chez l'habitant — bien plus de champs (~65) que ce que le backend accepte
+    // individuellement (CreateAnnounceDto + ValidationPipe whitelist:true) : sans ce bloc, tous les
+    // champs habXxx envoyés à plat seraient silencieusement supprimés avant même d'atteindre le
+    // contrôleur. On les regroupe donc dans amenities.hebergement, comme pour les autres catégories.
+    const isHebergementHabitantPayload =
+        data.transactionType === "RENTAL" &&
+        data.propertyType === "HEBERGEMENT_HABITANT"
+    if (isHebergementHabitantPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const amenitiesPayload: any = {
+            hebergement: {
+                clientProfile: data.habClientProfile || undefined,
+                formule: data.habFormule || undefined,
+                typeChambre: data.habTypeChambre || undefined,
+                unitType: data.habUnitType || undefined,
+                unitTypeInsolite: data.habUnitTypeInsolite || undefined,
+                caracteristiques: {
+                    area: toNum(data.habArea),
+                    floor: toNum(data.habFloor),
+                    nbNiveaux: toNum(data.habNbNiveaux),
+                    nbChambres: toNum(data.habNbChambres),
+                    nbSalons: toNum(data.habNbSalons),
+                    nbSdb: toNum(data.habNbSdb),
+                    suiteParentale: (data.habSuiteParentale as any) === true,
+                },
+                lits: {
+                    kingPremium: toNum(data.habBedKingPremium),
+                    king: toNum(data.habBedKing),
+                    queen: toNum(data.habBedQueen),
+                    doubleStd: toNum(data.habBedDoubleStd),
+                    simpleAdulte: toNum(data.habBedSimpleAdulte),
+                    simpleEnfant: toNum(data.habBedSimpleEnfant),
+                    superpose: toNum(data.habBedSuperpose),
+                    matelasSol: toNum(data.habBedMatelasSol),
+                    bebe: toNum(data.habBedBebe),
+                },
+                cadre: {
+                    ambiances: data.habAmbiances?.length ? data.habAmbiances : undefined,
+                    plageAcces: data.habPlageAcces || undefined,
+                    urbainCommodites: data.habUrbainCommodites?.length ? data.habUrbainCommodites : undefined,
+                    saharienActivites: data.habSaharienActivites?.length ? data.habSaharienActivites : undefined,
+                    thermalLocalisation: data.habThermalLocalisation || undefined,
+                    thermalDistance: data.habThermalDistance || undefined,
+                    thermalAcces: data.habThermalAcces || undefined,
+                    climatAcces: data.habClimatAcces || undefined,
+                    climatTempsVoiture: toNum(data.habClimatTempsVoiture),
+                    climatVisitesGuidees: (data.habClimatVisitesGuidees as any) === true,
+                    climatPisteSki: (data.habClimatPisteSki as any) === true,
+                    vues: data.habVues?.length ? data.habVues : undefined,
+                },
+                transports: {
+                    airport: data.habAirport || undefined,
+                    airportKm: toNum(data.habAirportKm),
+                    transportCommuns: data.habTransportCommuns || undefined,
+                    attractions: data.habAttractions?.length ? data.habAttractions : undefined,
+                },
+                services: {
+                    repas: data.habRepas?.length ? data.habRepas : undefined,
+                    linge: data.habLinge?.length ? data.habLinge : undefined,
+                    hygiene: (data.habHygiene as any) === true,
+                    livraison: (data.habLivraison as any) === true,
+                    cuisineEquipements: data.habCuisineEquipements?.length ? data.habCuisineEquipements : undefined,
+                    confort: data.habConfort?.length ? data.habConfort : undefined,
+                    loisirs: data.habLoisirs?.length ? data.habLoisirs : undefined,
+                    secours: data.habSecours?.length ? data.habSecours : undefined,
+                },
+                parking: {
+                    options: data.habParking?.length ? data.habParking : undefined,
+                    accessibilite: data.habAccessibilite || undefined,
+                },
+                reglement: {
+                    ageMin: data.habAgeMin || undefined,
+                    fumeurs: (data.habFumeurs as any) === true,
+                    animaux: (data.habAnimaux as any) === true,
+                    fetes: (data.habFetes as any) === true,
+                    checkIn: data.habCheckIn || undefined,
+                    checkOut: data.habCheckOut || undefined,
+                    receptionMode: data.habReceptionMode || undefined,
+                    receptionStart: data.habReceptionStart || undefined,
+                    receptionEnd: data.habReceptionEnd || undefined,
+                    remiseCles: data.habRemiseCles || undefined,
+                    controleIdentite: data.habControleIdentite || undefined,
+                },
+                paiement: {
+                    condition: data.habConditionPaiement || undefined,
+                    acompte: data.habAcompte || undefined,
+                    annulation: data.habAnnulation || undefined,
+                    delaiAnnulation: data.habDelaiAnnulation || undefined,
+                    nonRespect: data.habNonRespect || undefined,
+                    caution: (data.habCaution as any) === true,
+                    cautionMontant: data.habCautionMontant || undefined,
+                    fraisMenage: data.habFraisMenage || undefined,
+                    fraisMenageMontant: data.habFraisMenageMontant || undefined,
+                    modes: data.habPaiements?.length ? data.habPaiements : undefined,
+                },
+                disponibilite: {
+                    dureeMin: toNum(data.habDureeMin),
+                    delaiPreparation: data.habDelaiPreparation || undefined,
+                    periodeOuverture: data.habPeriodeOuverture || undefined,
+                    debutSaison: data.habDebutSaison || undefined,
+                    finSaison: data.habFinSaison || undefined,
+                },
+            },
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+
+        // area/rooms génériques (requis par le backend) — mappés depuis habArea/habNbChambres,
+        // comme le fait déjà le cas spécial VILLA plus haut.
+        if (!data.area && data.habArea) formData.append('area', data.habArea)
+        else if (data.area) formData.append('area', data.area)
+        else formData.append('area', '0')
+
+        if (!data.rooms && data.habNbChambres) formData.append('rooms', data.habNbChambres)
+        else if (data.rooms) formData.append('rooms', data.rooms)
+        else formData.append('rooms', '0')
+    }
+
     const shouldSkipIndustrialFields = isFactoryRentalPayload || isColdRoomRentalPayload || isHangarRentalPayload
 
     // Usage Autorisé (affiché dans la carte "Conditions" de l'annonce, location uniquement) — dérivé
@@ -3027,7 +3204,8 @@ function DepositPageComponent() {
       if (isShowroomPayload && key.startsWith("showroom")) return;
       if (isLocalCommercialPayload && key.startsWith("local")) return;
       if (isBlocAdministratifPayload && key.startsWith("bloc")) return;
-      
+      if (isHebergementHabitantPayload && (key.startsWith("hab") || key === "area" || key === "rooms")) return;
+
       // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
       // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend
       // les lit individuellement (parseJsonArray(kitchenEquipment)) pour les remettre dans amenities.
@@ -3106,6 +3284,7 @@ function DepositPageComponent() {
       })
 
       if (response.ok) {
+        clearDepositDraft()
         setIsSuccess(true)
       } else {
         let errorData;
@@ -3141,7 +3320,7 @@ function DepositPageComponent() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#022229] flex flex-col items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md w-full animate-fade-in-up">
           <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="h-10 w-10" />
@@ -3237,11 +3416,33 @@ function DepositPageComponent() {
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#022229] flex flex-col">
         <div className="bg-[#00908A] h-[200px] w-full absolute top-0 left-0 z-0"></div>
 
         <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-[96px] md:pt-4">
-            
+
+            {depositDraftAvailable && (
+                <div className="w-full max-w-5xl mb-4 md:mb-6 bg-white border-2 border-[#0094BD]/30 rounded-2xl shadow-lg px-4 py-3 md:px-6 md:py-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <span className="h-9 w-9 rounded-full bg-[#0094BD]/10 flex items-center justify-center shrink-0">
+                            <Sparkles className="h-4.5 w-4.5 text-[#0094BD]" />
+                        </span>
+                        <div>
+                            <p className="font-bold text-gray-900 text-sm">{t("draftFoundTitle")}</p>
+                            <p className="text-xs text-gray-500">{t("draftFoundDesc", { time: new Date(depositDraftAvailable.savedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <button type="button" onClick={discardDepositDraft} className="text-sm font-bold text-gray-500 hover:text-gray-700 px-3 py-2">
+                            {t("draftDiscard")}
+                        </button>
+                        <button type="button" onClick={resumeDepositDraft} className="bg-[#0094BD] hover:bg-[#003B4A] text-white rounded-full px-5 py-2 text-sm font-bold transition-all">
+                            {t("draftResume")}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Progress Stepper */}
             <div className="bg-white rounded-xl px-3 py-2 md:rounded-full md:px-6 md:py-3 border border-[#00BFA6]/25 shadow-lg mb-4 md:mb-8 w-full max-w-5xl flex justify-center">
                 <div className="flex items-center w-full max-w-4xl">
@@ -3280,6 +3481,28 @@ function DepositPageComponent() {
                     )}
                     <h1 className="text-lg md:text-2xl font-bold text-gray-800">{getStepTitle()}</h1>
                 </div>
+
+                {/* Repère de contexte — rappelle catégorie/transaction en cours pour ne pas se
+                    perdre dans un parcours à plusieurs étapes ; n'apparaît qu'une fois choisis. */}
+                {realEstateType && (
+                    <div className="px-4 md:px-8 pt-4 flex flex-wrap items-center gap-2">
+                        <span
+                            className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
+                            style={{ backgroundColor: `${getCategoryColor(realEstateType).hex}14`, color: getCategoryColor(realEstateType).hex }}
+                        >
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(realEstateType).hex }} />
+                            {BASE_REAL_ESTATE_CATEGORIES.find((c) => c.id === realEstateType)?.label}
+                        </span>
+                        {transactionType && (
+                            <>
+                                <span className="text-gray-300">/</span>
+                                <span className="text-xs font-bold text-gray-500 px-3 py-1.5 rounded-full bg-gray-100">
+                                    {transactionType === "RENTAL" ? t("rentalOption") : t("saleOption")}
+                                </span>
+                            </>
+                        )}
+                    </div>
+                )}
 
                 <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-left">
                     {!isFormAvailable && currentStep > 3 ? (
@@ -3372,29 +3595,34 @@ function DepositPageComponent() {
                                 {filteredCategories.map((cat) => {
                                     const Icon = IconMap[cat.iconName] || Home
                                     const isSelected = realEstateType === cat.id
+                                    const catColor = getCategoryColor(cat.id)
                                     return (
-                                        <div 
+                                        <div
                                             key={cat.id}
                                             onClick={() => handleCategoryClick(cat.id)}
                                             className="flex flex-col items-center gap-4 cursor-pointer group w-full"
                                         >
-                                            <div className={cn(
-                                                "w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
-                                                isSelected 
-                                                    ? "bg-white border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.3)] transform -translate-y-2" 
-                                                    : "bg-white border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
-                                            )}>
-                                                <div className={cn(
-                                                    "w-24 h-24 rounded-full flex items-center justify-center transition-colors duration-300",
-                                                    isSelected ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
-                                                )}>
+                                            <div
+                                                className={cn(
+                                                    "w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative bg-white",
+                                                    isSelected ? "transform -translate-y-2" : "border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:-translate-y-1"
+                                                )}
+                                                style={isSelected ? { borderColor: catColor.hex, boxShadow: `0 8px 16px rgba(${catColor.rgb},0.3)` } : undefined}
+                                            >
+                                                <div
+                                                    className={cn(
+                                                        "w-24 h-24 rounded-full flex items-center justify-center transition-colors duration-300",
+                                                        isSelected ? "text-white" : "bg-gray-50 text-gray-400 group-hover:bg-gray-100"
+                                                    )}
+                                                    style={isSelected ? { backgroundColor: catColor.hex } : undefined}
+                                                >
                                                     <Icon className="h-10 w-10" />
                                                 </div>
                                             </div>
-                                            <span className={cn(
-                                                "text-lg font-bold text-center max-w-[180px] transition-colors",
-                                                isSelected ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
-                                            )}>
+                                            <span
+                                                className={cn("text-lg font-bold text-center max-w-[180px] transition-colors", !isSelected && "text-gray-500")}
+                                                style={isSelected ? { color: catColor.hex } : undefined}
+                                            >
                                                 {cat.label}
                                             </span>
                                         </div>
@@ -6677,7 +6905,8 @@ function DepositPageComponent() {
                         isChambreFroideRentalParticulier ||
                         isHangarRentalParticulier ||
                         isTerrainRentalParticulier ||
-                        isBureauCommerceSpecialParticulier
+                        isBureauCommerceSpecialParticulier ||
+                        isHebergementHabitant
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             <div className="space-y-8">
@@ -7095,15 +7324,15 @@ function DepositPageComponent() {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Nb. chambres</label>
-                                                <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 3" />
+                                                <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 3" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Nb. salons</label>
-                                                <input {...register("habNbSalons")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 1" />
+                                                <input {...register("habNbSalons")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 1" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Nb. WC / Salles de bain</label>
-                                                <input {...register("habNbSdb")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 2" />
+                                                <input {...register("habNbSdb")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 2" />
                                             </div>
                                             <div className="flex flex-col justify-end">
                                                 <label className="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl bg-white hover:border-[#00BFA6] transition-all h-[46px]">
@@ -7111,6 +7340,26 @@ function DepositPageComponent() {
                                                     <span className="text-xs font-bold text-gray-700">Suite parentale</span>
                                                 </label>
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Détails Chambre privée / Lit seul */}
+                                {(habFormule === "CHAMBRE_PRIVEE" || habFormule === "LIT_SEUL") && (
+                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
+                                        <div className="font-bold text-gray-800 text-sm">Type de chambre proposée</div>
+                                        <div className="flex flex-wrap gap-3">
+                                            {[
+                                                { id: "STANDARD", label: "Standard" },
+                                                { id: "SUITE", label: "Suite" },
+                                                { id: "PREMIUM", label: "Premium / Présidentielle" },
+                                                { id: "DORTOIR", label: "Dortoir" },
+                                            ].map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer">
+                                                    <input type="radio" value={opt.id} {...register("habTypeChambre")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{opt.label}</div>
+                                                </label>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
@@ -7134,8 +7383,8 @@ function DepositPageComponent() {
                                 </div>
                                 {habUnitType === "INSOLITE" && (
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Précisez le type d'hébergement insolite</label>
-                                        <input {...register("habUnitTypeInsolite")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Roulotte, Yourte, Cabane dans les arbres..." />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Précisez le type d'hébergement insolite</label>
+                                        <input {...register("habUnitTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Roulotte, Yourte, Cabane dans les arbres..." />
                                     </div>
                                 )}
                                 {errors.habUnitType && <p className="text-red-500 text-sm">{errors.habUnitType.message as any}</p>}
@@ -7149,16 +7398,16 @@ function DepositPageComponent() {
                                 </h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Surface habitable (m²)</label>
-                                        <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 80" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface habitable (m²)</label>
+                                        <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 80" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Étage (0 = RDC)</label>
-                                        <input {...register("habFloor")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="0" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Étage (0 = RDC)</label>
+                                        <input {...register("habFloor")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="0" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de niveaux</label>
-                                        <input {...register("habNbNiveaux")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 1" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de niveaux</label>
+                                        <input {...register("habNbNiveaux")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 1" />
                                     </div>
                                 </div>
 
@@ -7187,7 +7436,7 @@ function DepositPageComponent() {
                                                     min="0"
                                                     max="20"
                                                     onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()}
-                                                    className="w-20 p-2 border-2 border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-[#00BFA6] font-bold text-center text-sm"
+                                                    className="w-20 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-bold text-gray-900 text-center text-sm"
                                                     placeholder="0"
                                                 />
                                             </div>
@@ -7277,8 +7526,8 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 mb-2">Distance (si à proximité)</label>
-                                            <input {...register("habThermalDistance")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 500 mètres / 2 km" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Distance (si à proximité)</label>
+                                            <input {...register("habThermalDistance")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 500 mètres / 2 km" />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-gray-700 mb-2">Conditions d'accès pour les clients</label>
@@ -7317,8 +7566,8 @@ function DepositPageComponent() {
                                         </div>
                                         {habClimatAcces === "EN_VOITURE" && (
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-2">Temps de trajet estimé (min)</label>
-                                                <input {...register("habClimatTempsVoiture")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 15" />
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">Temps de trajet estimé (min)</label>
+                                                <input {...register("habClimatTempsVoiture")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 15" />
                                             </div>
                                         )}
                                         <div className="space-y-2">
@@ -7356,17 +7605,17 @@ function DepositPageComponent() {
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Aéroport le plus proche</label>
-                                        <input {...register("habAirport")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Aéroport d'Oran Es Sénia" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Aéroport le plus proche</label>
+                                        <input {...register("habAirport")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Aéroport d'Oran Es Sénia" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Distance de l'aéroport (km)</label>
-                                        <input {...register("habAirportKm")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Distance de l'aéroport (km)</label>
+                                        <input {...register("habAirportKm")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 12" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Transports en commun proches (Bus, Tram, Métro)</label>
-                                    <input {...register("habTransportCommuns")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Bus ligne 12, Tramway arrêt Centre-ville..." />
+                                    <label className="block text-sm font-bold text-gray-900 mb-2">Transports en commun proches (Bus, Tram, Métro)</label>
+                                    <input {...register("habTransportCommuns")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Bus ligne 12, Tramway arrêt Centre-ville..." />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">À moins de 20 minutes du logement</label>
@@ -7558,12 +7807,12 @@ function DepositPageComponent() {
                                     <div className="font-bold text-gray-900">Réception, Arrivée et Départ</div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Check-in à partir de</label>
-                                            <input {...register("habCheckIn")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Check-in à partir de</label>
+                                            <input {...register("habCheckIn")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Check-out avant</label>
-                                            <input {...register("habCheckOut")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Check-out avant</label>
+                                            <input {...register("habCheckOut")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                         </div>
                                     </div>
 
@@ -7585,11 +7834,11 @@ function DepositPageComponent() {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-0">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Ouverte de</label>
-                                                <input {...register("habReceptionStart")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                                <input {...register("habReceptionStart")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Jusqu'à</label>
-                                                <input {...register("habReceptionEnd")} type="time" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" />
+                                                <input {...register("habReceptionEnd")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                             </div>
                                         </div>
                                     )}
@@ -7692,7 +7941,7 @@ function DepositPageComponent() {
                                                     </label>
                                                 ))}
                                                 <div className="flex items-center gap-2">
-                                                    <input {...register("habAcompte")} type="text" placeholder="Autre %" className="p-2 border-2 border-gray-200 rounded-xl w-24 font-medium text-sm focus:ring-2 focus:ring-[#00BFA6]" />
+                                                    <input {...register("habAcompte")} type="text" placeholder="Autre %" className="p-2 border-2 border-gray-300 rounded-lg w-24 font-medium text-gray-900 text-sm focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6]" />
                                                 </div>
                                             </div>
                                         </div>
@@ -7757,7 +8006,7 @@ function DepositPageComponent() {
                                         {habCaution && (
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Montant (DZD)</label>
-                                                <input {...register("habCautionMontant")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 10 000" />
+                                                <input {...register("habCautionMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 10 000" />
                                             </div>
                                         )}
                                     </div>
@@ -7776,7 +8025,7 @@ function DepositPageComponent() {
                                         {habFraisMenage === "SUPPLEMENT" && (
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">Montant (DZD)</label>
-                                                <input {...register("habFraisMenageMontant")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="ex: 2 000" />
+                                                <input {...register("habFraisMenageMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 2 000" />
                                             </div>
                                         )}
                                     </div>
@@ -7819,8 +8068,8 @@ function DepositPageComponent() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Durée minimale de séjour (nuits)</label>
-                                        <input {...register("habDureeMin")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">Durée minimale de séjour (nuits)</label>
+                                        <input {...register("habDureeMin")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 2" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Délai de préparation entre réservations</label>
@@ -7849,12 +8098,12 @@ function DepositPageComponent() {
                                 {habPeriodeOuverture === "SAISONNIER" && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Début de saison</label>
-                                            <input {...register("habDebutSaison")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Juin" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Début de saison</label>
+                                            <input {...register("habDebutSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Juin" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Fin de saison</label>
-                                            <input {...register("habFinSaison")} type="text" className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: Septembre" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">Fin de saison</label>
+                                            <input {...register("habFinSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Septembre" />
                                         </div>
                                     </div>
                                 )}
@@ -7873,7 +8122,7 @@ function DepositPageComponent() {
                     )}
 
                     {/* Step 5: Prix & Modalités */}
-                    {currentStep === 5 && (
+                    {currentStep === 5 && !isHebergementHabitant && (
                         (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? (
                         <div className="w-full max-w-2xl animate-fade-in">
                             <div className="space-y-8">
@@ -8106,7 +8355,7 @@ function DepositPageComponent() {
                                                             type="number" 
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                            className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
+                                                            className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900" 
                                                             placeholder="1" 
                                                         />
                                                     </div>

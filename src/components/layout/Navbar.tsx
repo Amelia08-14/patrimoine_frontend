@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
-import { User, LogOut, Plus, ChevronDown, List, Coins, Megaphone, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2, Store, ClipboardList, Handshake, LifeBuoy, LayoutTemplate, Check } from 'lucide-react';
+import { User, LogOut, Plus, ChevronDown, List, Coins, Megaphone, Search, PieChart, Bell, Globe, Heart, MessageSquare, Building2, Store, ClipboardList, Handshake, LifeBuoy, LayoutTemplate, Check, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
 
 const LOCALE_LABELS: Record<string, string> = { fr: 'Français', en: 'English', ar: 'العربية' };
 
@@ -24,6 +25,9 @@ export function Navbar() {
   const actionsRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
   const desktopLangRef = useRef<HTMLDivElement>(null);
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const getCompanyActivityLabel = (companyActivity?: string) => {
     if (!companyActivity) return null
@@ -154,7 +158,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50 h-[72px] md:h-[80px]">
+    <nav className="bg-white dark:bg-[#022229] dark:border-b dark:border-white/10 shadow-sm sticky top-0 z-50 h-[72px] md:h-[80px] transition-colors">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 h-full">
         <div className="flex justify-between items-center h-full">
           
@@ -173,12 +177,12 @@ export function Navbar() {
                </Button>
              </Link>
              <Link href="/research">
-               <Button variant="outline" className="border-[#00BFA6] text-[#00BFA6] hover:bg-[#E6F8F6] hover:text-[#00908A] rounded-full px-5 py-4 text-sm font-bold border-2 transition-all duration-300">
+               <Button variant="outline" className="border-[#0094BD] text-[#0094BD] hover:bg-[#E3F4FA] hover:text-[#003B4A] rounded-full px-5 py-4 text-sm font-bold border-2 transition-all duration-300">
                  <Plus className="h-4 w-4 mr-2 stroke-[3]" />
                  {t('entrustSearch')}
                </Button>
              </Link>
-             <Link href="/demandes" className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#00BFA6] transition-colors px-2">
+             <Link href="/demandes" className="flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-white/70 hover:text-[#00BFA6] dark:hover:text-[#0094BD] transition-colors px-2">
                <ClipboardList className="h-4 w-4" />
                {t('pendingRequests')}
              </Link>
@@ -208,7 +212,7 @@ export function Navbar() {
              <Link
                href="/research"
                title={t('entrustSearch')}
-               className="hidden md:flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-600 hover:border-[#00BFA6] hover:text-[#00908A] transition-colors"
+               className="hidden md:flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-600 hover:border-[#0094BD] hover:text-[#003B4A] transition-colors"
              >
                <Handshake className="h-3.5 w-3.5" />
                {t('entrustQuick')}
@@ -359,14 +363,24 @@ export function Navbar() {
                </div>
              )}
 
+             {/* Bascule thème clair / sombre */}
+             <button
+               type="button"
+               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+               aria-label={t('toggleTheme')}
+               className="hidden md:flex items-center justify-center h-8 w-8 rounded-full border border-gray-200 dark:border-white/20 text-gray-500 dark:text-white/70 hover:border-[#0094BD] hover:text-[#0094BD] transition-colors"
+             >
+               {mounted && resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+             </button>
+
              {/* Language Selector */}
              <div className="relative hidden md:block" ref={desktopLangRef}>
                <div
-                 className="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1.5 cursor-pointer hover:border-[#00BFA6] transition-colors group"
+                 className="flex items-center gap-1 border border-gray-200 dark:border-white/20 rounded-full px-3 py-1.5 cursor-pointer hover:border-[#00BFA6] transition-colors group"
                  onClick={() => setIsLangOpen(!isLangOpen)}
                >
-                  <span className="text-xs font-bold text-gray-600 group-hover:text-[#00908A]">{LOCALE_LABELS[locale]}</span>
-                  <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-[#00908A]" />
+                  <span className="text-xs font-bold text-gray-600 dark:text-white/70 group-hover:text-[#00908A]">{LOCALE_LABELS[locale]}</span>
+                  <ChevronDown className="h-3 w-3 text-gray-400 dark:text-white/50 group-hover:text-[#00908A]" />
                </div>
                {isLangOpen && (
                  <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">

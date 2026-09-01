@@ -11,6 +11,7 @@ import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
+import { getCategoryColor } from "@/data/categoryColors"
 
 // Helper for Icons
 const getIcon = (name: string) => {
@@ -23,41 +24,17 @@ const getIcon = (name: string) => {
 }
 
 // Mapping des couleurs par ID de catégorie
-const getCategoryColorById = (categoryId: string) => {
-  switch (categoryId) {
-    case "HEBERGEMENT": return "bg-yellow-400";
-    case "BUREAUX_COMMERCES": return "bg-blue-500";
-    case "HOTELIER": return "bg-orange-500";
-    case "EVENEMENTIEL": return "bg-red-500";
-    case "INDUSTRIEL": return "bg-gray-500";
-    case "RESIDENTIEL": return "bg-green-500";
-    default: return "bg-[#00BFA6]";
-  }
-}
+const getCategoryColorById = (categoryId: string) => getCategoryColor(categoryId).bg500;
 
 // Mapping des couleurs d'icônes
-const getIconColorById = (categoryId: string) => {
-  switch (categoryId) {
-    case "HEBERGEMENT": return "text-yellow-500";
-    case "BUREAUX_COMMERCES": return "text-blue-500";
-    case "HOTELIER": return "text-orange-500";
-    case "EVENEMENTIEL": return "text-red-500";
-    case "INDUSTRIEL": return "text-gray-500";
-    case "RESIDENTIEL": return "text-green-500";
-    default: return "text-[#00BFA6]";
-  }
-}
+const getIconColorById = (categoryId: string) => getCategoryColor(categoryId).text500;
 
+// Dégradé du hero par catégorie — couleur dynamique par id, donc appliqué via style inline
+// (Tailwind ne peut pas générer une classe arbitraire construite au runtime) : à consommer comme
+// style={{ backgroundImage: getCategoryHeroGradientById(id) }}.
 const getCategoryHeroGradientById = (categoryId: string) => {
-  switch (categoryId) {
-    case "HEBERGEMENT": return "from-yellow-500 to-amber-400";
-    case "BUREAUX_COMMERCES": return "from-blue-600 to-sky-400";
-    case "HOTELIER": return "from-orange-600 to-amber-400";
-    case "EVENEMENTIEL": return "from-red-600 to-rose-400";
-    case "INDUSTRIEL": return "from-gray-700 to-gray-500";
-    case "RESIDENTIEL": return "from-green-700 to-emerald-500";
-    default: return "from-[#00BFA6] to-emerald-400";
-  }
+  const c = getCategoryColor(categoryId);
+  return `linear-gradient(135deg, ${c.hex} 0%, ${c.hex}B3 100%)`;
 }
 
 const getCategoryHeroImageById = (categoryId: string) => {
@@ -113,35 +90,40 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
   }
 
   if (items.length === 0) return null;
+  const catColor = getCategoryColor(categoryId);
 
   return (
-    <section 
-      className="py-8 bg-white border-b border-gray-100"
+    <section
+      className="py-8 bg-white dark:bg-transparent border-b border-gray-100 dark:border-white/10"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-gray-900 capitalize">{title}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">{title}</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => scroll('left')}
-                className="p-2 rounded-full border border-gray-200 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] text-gray-600 transition-all shadow-sm"
+                className="p-2 rounded-full border border-gray-200 dark:border-white/15 text-gray-600 dark:text-white/60 hover:text-white transition-all shadow-sm"
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = catColor.hex; e.currentTarget.style.borderColor = catColor.hex }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '' }}
                 aria-label="Défiler à gauche"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={() => scroll('right')}
-                className="p-2 rounded-full border border-gray-200 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] text-gray-600 transition-all shadow-sm"
+                className="p-2 rounded-full border border-gray-200 dark:border-white/15 text-gray-600 dark:text-white/60 hover:text-white transition-all shadow-sm"
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = catColor.hex; e.currentTarget.style.borderColor = catColor.hex }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '' }}
                 aria-label="Défiler à droite"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
-          <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
+          <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex items-center gap-1.5 text-sm font-bold hover:underline whitespace-nowrap" style={{ color: catColor.hex }}>
             {t("viewAllListings")} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -377,8 +359,8 @@ function HeroSearchBar() {
   }
 
   return (
-    <div className="w-full bg-white rounded-[26px] shadow-xl shadow-black/[0.06] border border-gray-100 p-2 sm:p-2.5 flex flex-col lg:flex-row items-stretch gap-2">
-      <div className="flex bg-gray-50 rounded-2xl p-1 shrink-0">
+    <div className="w-full bg-white dark:bg-[#03303c] rounded-[26px] shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-2 sm:p-2.5 flex flex-col lg:flex-row items-stretch gap-2">
+      <div className="flex bg-gray-50 dark:bg-white/5 rounded-2xl p-1 shrink-0">
         {([{ id: "SALE", label: t("searchBuy") }, { id: "RENTAL", label: t("searchRent") }] as const).map((o) => (
           <button
             key={o.id}
@@ -386,7 +368,7 @@ function HeroSearchBar() {
             onClick={() => setTransactionType(transactionType === o.id ? "" : (o.id as "SALE" | "RENTAL"))}
             className={cn(
               "px-4 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
-              transactionType === o.id ? "bg-[#003B4A] text-white shadow-sm" : "text-gray-500 hover:text-[#003B4A]"
+              transactionType === o.id ? "bg-[#003B4A] text-white shadow-sm" : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"
             )}
           >
             {o.label}
@@ -394,9 +376,9 @@ function HeroSearchBar() {
         ))}
       </div>
 
-      <div className="flex-1 flex items-center gap-2 px-3 border-y lg:border-y-0 lg:border-x border-gray-100 min-w-0">
+      <div className="flex-1 flex items-center gap-2 px-3 border-y lg:border-y-0 lg:border-x border-gray-100 dark:border-white/10 min-w-0">
         <Building2 className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate">
           <option value="">{t("searchCategoryPlaceholder")}</option>
           {REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).map((c) => (
             <option key={c.id} value={c.id}>{tc(c.id)}</option>
@@ -404,9 +386,9 @@ function HeroSearchBar() {
         </select>
       </div>
 
-      <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 min-w-0">
+      <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-white/10 min-w-0">
         <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={wilaya} onChange={(e) => { setWilaya(e.target.value); setCommune("") }} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate">
+        <select value={wilaya} onChange={(e) => { setWilaya(e.target.value); setCommune("") }} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate">
           <option value="">{t("searchWilayaPlaceholder")}</option>
           {WILAYAS.map((w) => <option key={w.code} value={w.code}>{w.name}</option>)}
         </select>
@@ -414,7 +396,7 @@ function HeroSearchBar() {
 
       <div className="flex-1 flex items-center gap-2 px-3 min-w-0">
         <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={commune} onChange={(e) => setCommune(e.target.value)} disabled={!wilaya} className="w-full bg-transparent text-sm font-semibold text-gray-800 outline-none py-2.5 truncate disabled:text-gray-400">
+        <select value={commune} onChange={(e) => setCommune(e.target.value)} disabled={!wilaya} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate disabled:text-gray-400">
           <option value="">{t("searchCommunePlaceholder")}</option>
           {filteredCommunes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -544,10 +526,10 @@ export default function HomePage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   return (
-    <div className="flex flex-col min-h-screen font-sans bg-gray-50">
+    <div className="flex flex-col min-h-screen font-sans bg-gray-50 dark:bg-transparent">
 
       {/* HERO SECTION — plein écran, photo edge-to-edge avec fondu texte/image */}
-      <div className="bg-white">
+      <div className="bg-white dark:bg-transparent">
         <div className="relative h-[400px] sm:h-[440px] lg:h-[480px] overflow-hidden group">
           {/* Photo plein cadre, rotation par catégorie */}
           {activeSlides.map((slide, index) => (
@@ -638,26 +620,29 @@ export default function HomePage() {
       </div>
 
       {/* EXPLORER PAR TYPE DE BIEN — comptes réels, rangées compactes pour libérer de la hauteur */}
-      <div className="bg-gray-50 pt-6 lg:pt-8 pb-8">
+      <div className="bg-gray-50 dark:bg-transparent pt-6 lg:pt-8 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
-          <h2 className="font-brand text-xl text-[#003B4A] mb-4">{t("exploreTypesTitle")}</h2>
+          <h2 className="font-brand text-xl text-[#003B4A] dark:text-white mb-4">{t("exploreTypesTitle")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {orderedCategoryIds.map(catId => {
               const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
               if (!catDef) return null
               const Icon = getIcon(catDef.iconName)
+              const catColor = getCategoryColor(catId)
               return (
                 <Link
                   key={catId}
                   href={`/announces?realEstateCategory=${catId}`}
-                  className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-3.5 py-3 hover:border-[#00BFA6] hover:shadow-sm transition-all"
+                  className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-sm transition-all group"
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = catColor.hex }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '' }}
                 >
-                  <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center">
-                    <Icon className="h-4.5 w-4.5 text-[#00BFA6]" />
+                  <span className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${catColor.hex}1A` }}>
+                    <Icon className="h-4.5 w-4.5" style={{ color: catColor.hex }} />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm font-bold text-gray-800 truncate">{tc(catId)}</span>
-                    <span className="block text-[11px] text-gray-400 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
+                    <span className="block text-sm font-bold text-gray-800 dark:text-white/90 truncate">{tc(catId)}</span>
+                    <span className="block text-[11px] text-gray-400 dark:text-white/40 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
                   </span>
                 </Link>
               )
@@ -668,14 +653,14 @@ export default function HomePage() {
 
       {/* PROPERTIES BY CATEGORY */}
       {loading ? (
-        <div className="py-12 text-center text-gray-500">{t("loadingListings")}</div>
+        <div className="py-12 text-center text-gray-500 dark:text-white/50">{t("loadingListings")}</div>
       ) : (
         <>
           {Object.keys(groupedAnnounces).length === 0 ? (
             <div className="py-16 text-center">
               <div className="text-5xl mb-4">🏙️</div>
-              <p className="text-gray-500 font-medium">{t("noFeaturedListings")}</p>
-              <p className="text-gray-400 text-sm mt-1">{t("browseByCategory")}</p>
+              <p className="text-gray-500 dark:text-white/60 font-medium">{t("noFeaturedListings")}</p>
+              <p className="text-gray-400 dark:text-white/40 text-sm mt-1">{t("browseByCategory")}</p>
             </div>
           ) : (
             orderedCategoryIds.map((catId) => {
@@ -738,10 +723,10 @@ export default function HomePage() {
       </section>
 
       {/* JE CONFIE MON PROJET — le mot de catégorie défile dans le titre, deux profils distincts */}
-      <section className="py-16 sm:py-20 bg-gray-50">
+      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="font-brand text-3xl text-[#003B4A]">
+            <h2 className="font-brand text-3xl text-[#003B4A] dark:text-white">
               {t("entrustProjectTitle")}{" "}
               <RotatingCategoryWord
                 categories={orderedCategoryIds.map(id => REAL_ESTATE_CATEGORIES.find(c => c.id === id)).filter(Boolean) as { id: string, iconName: string }[]}
@@ -750,20 +735,20 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative bg-white rounded-3xl border border-gray-100 p-8 sm:p-10 overflow-hidden">
+            <div className="relative bg-white dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#00BFA6]" />
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Building2 className="h-6 w-6 text-[#00BFA6]" />
               </div>
-              <h3 className="text-xl font-bold text-[#003B4A] mb-3">{t("ownerTitle")}</h3>
-              <p className="text-gray-500 leading-relaxed mb-7">{t("ownerDesc")}</p>
+              <h3 className="text-xl font-bold text-[#003B4A] dark:text-white mb-3">{t("ownerTitle")}</h3>
+              <p className="text-gray-500 dark:text-white/60 leading-relaxed mb-7">{t("ownerDesc")}</p>
               <Link href="/deposit">
                 <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white font-bold py-5 px-7 rounded-full">
                   {t("entrustMyProperty")} <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
             </div>
-            <div className="relative bg-[#003B4A] rounded-3xl p-8 sm:p-10 overflow-hidden">
+            <div className="relative bg-[#003B4A] dark:border dark:border-white/10 rounded-3xl p-8 sm:p-10 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#5EEAD4]" />
               <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
                 <HandHeart className="h-6 w-6 text-[#5EEAD4]" />
@@ -781,20 +766,20 @@ export default function HomePage() {
       </section>
 
       {/* NOS OFFRES POINTS & BOUTIQUES — la boutique se montre plutôt que de se décrire */}
-      <section className="py-16 sm:py-20 bg-white">
+      <section className="py-16 sm:py-20 bg-white dark:bg-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="font-brand text-3xl text-[#003B4A]">{t("pointsSectionTitle")}</h2>
-            <p className="text-gray-500 mt-3 max-w-xl mx-auto">{t("pointsSectionSubtitle")}</p>
+            <h2 className="font-brand text-3xl text-[#003B4A] dark:text-white">{t("pointsSectionTitle")}</h2>
+            <p className="text-gray-500 dark:text-white/60 mt-3 max-w-xl mx-auto">{t("pointsSectionSubtitle")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Points — visualisation d'une annonce qui gagne en visibilité */}
-            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10 flex flex-col">
+            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col">
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Coins className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsParticulierTitle")}</span>
-              <p className="text-gray-500 leading-relaxed mt-3 mb-7">{t("pointsParticulierDesc")}</p>
+              <p className="text-gray-500 dark:text-white/60 leading-relaxed mt-3 mb-7">{t("pointsParticulierDesc")}</p>
 
               {/* Mini-visuel : annonce standard vs annonce boostée par les points */}
               <div className="mt-auto flex items-end gap-4 pt-4">
@@ -811,18 +796,18 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <Link href="/profile/points" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
+              <Link href="/profile/points" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#00BFA6] transition-colors">
                 {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
             {/* Boutique — aperçu schématique de la vraie vitrine personnalisable (logo, bannière, réseaux) */}
-            <div className="rounded-3xl border border-gray-100 p-8 sm:p-10 flex flex-col">
+            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col">
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Store className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsProTitle")}</span>
-              <p className="text-gray-500 leading-relaxed mt-3 mb-7">{t("pointsProDesc")}</p>
+              <p className="text-gray-500 dark:text-white/60 leading-relaxed mt-3 mb-7">{t("pointsProDesc")}</p>
 
               {/* Mini-maquette de la boutique : barre de navigateur + logo + bannière + réseaux */}
               <div className="mt-auto rounded-xl border border-gray-100 overflow-hidden shadow-sm">
@@ -852,7 +837,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <Link href="/profile/boutique" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
+              <Link href="/profile/boutique" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#00BFA6] transition-colors">
                 {t("pointsProCta")} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -862,20 +847,20 @@ export default function HomePage() {
 
       {/* NOS PARTENAIRES — défilement continu confiné au cadre du titre, n'apparaît que s'il y a des partenaires publiés */}
       {partners.length > 0 && (
-        <section className="py-16 sm:py-20 bg-gray-50">
+        <section className="py-16 sm:py-20 bg-gray-50 dark:bg-transparent">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
               <div>
-                <h2 className="font-brand text-3xl text-[#003B4A]">{t("partnersSectionTitle")}</h2>
-                <p className="text-gray-500 mt-2">{t("partnersSectionSubtitle")}</p>
+                <h2 className="font-brand text-3xl text-[#003B4A] dark:text-white">{t("partnersSectionTitle")}</h2>
+                <p className="text-gray-500 dark:text-white/60 mt-2">{t("partnersSectionSubtitle")}</p>
               </div>
               <Link href="/partenaires" className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
                 {t("partnersSeeAll")} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white py-10">
-              <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+            <div className="relative overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 py-10">
+              <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white dark:from-[#022229] to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white dark:from-[#022229] to-transparent z-10 pointer-events-none" />
               <div className="flex w-max animate-marquee">
                 {[...partners, ...partners, ...partners, ...partners].map((p, i) => (
                   <div key={`${p.id}-${i}`} className="w-52 sm:w-64 shrink-0 flex items-center justify-center px-8">
@@ -886,7 +871,7 @@ export default function HomePage() {
                         className="h-20 sm:h-24 max-w-full object-contain opacity-90 hover:opacity-100 hover:scale-105 transition-all"
                       />
                     ) : (
-                      <span className="text-gray-400 font-bold text-sm text-center">{p.name}</span>
+                      <span className="text-gray-400 dark:text-white/40 font-bold text-sm text-center">{p.name}</span>
                     )}
                   </div>
                 ))}
