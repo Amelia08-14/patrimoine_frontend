@@ -42,7 +42,37 @@
     "particulierAccount": "Compte Particulier",
     "societeAccount": "Compte Société",
     "administrator": "Administrateur",
-    "clientSpace": "Espace Client"
+    "clientSpace": "Espace Client",
+    "navHome": "Accueil",
+    "navSearch": "Rechercher",
+    "navMessages": "Messages",
+    "navProfile": "Profil",
+    "navAddSheetTitle": "Que voulez-vous faire ?",
+    "markAllRead": "Tout marquer comme lu",
+    "viewAllNotifications": "Voir toutes les notifications",
+    "noNotifications": "Aucune notification"
+  },
+  "QuickSearchBar": {
+    "rental": "Location",
+    "sale": "Achat",
+    "booking": "Vacances",
+    "immobilier": "Immobilier",
+    "hospitality": "Hôtellerie",
+    "event": "Événementiel",
+    "storage": "Entrepôt",
+    "comingSoon": "Bientôt disponible",
+    "search": "Rechercher"
+  },
+  "SearchForm": {
+    "rent": "Location",
+    "buy": "Achat",
+    "wilaya": "Wilaya",
+    "allWilayas": "Toutes les wilayas",
+    "commune": "Commune",
+    "allCommunes": "Toutes les communes",
+    "budgetMax": "Budget Max",
+    "max": "Max",
+    "search": "Rechercher"
   },
   "Footer": {
     "ctaTitle": "Vous avez un bien à louer ou à vendre ?",
@@ -227,7 +257,9 @@
     "titleFallback": "{category} à {location}",
     "rooms": "{count} pièces",
     "bedrooms": "{count} chambres",
-    "seeGallery": "Voir la galerie"
+    "seeGallery": "Voir la galerie",
+    "privateSeller": "Particulier",
+    "professionalSeller": "Professionnel"
   },
   "Contact": {
     "title": "Nous Contacter",
@@ -306,7 +338,25 @@
     "formSubmitting": "Envoi en cours...",
     "formSuccessTitle": "Candidature envoyée !",
     "formSuccessText": "Merci, notre équipe étudie votre candidature et vous recontacte rapidement.",
-    "formErrorText": "Une erreur est survenue. Merci de réessayer."
+    "formErrorText": "Une erreur est survenue. Merci de réessayer.",
+    "loadingPartners": "Chargement des partenaires...",
+    "noPartners": "Aucun partenaire à afficher pour le moment.",
+    "allPartners": "Tous les partenaires",
+    "visitWebsite": "Visiter le site",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "activityImmobilier": "Activité immobilière",
+    "activityHotellerie": "Activité hôtelière et hébergement",
+    "activityEvenementiel": "Activité évènementiel",
+    "activityEntreposage": "Activité d'entreposage et stockage"
+  },
+  "Boutique": {
+    "loadingStore": "Chargement de la boutique...",
+    "storeUnavailable": "Boutique non disponible",
+    "storeUnavailableDesc": "Cette vitrine n'est pas encore activée ou son abonnement a expiré.",
+    "backHome": "Retour à l'accueil",
+    "storeNotFound": "Boutique introuvable",
+    "storeNotFoundDesc": "Cette boutique n'existe pas ou n'est plus disponible."
   },
   "Cgu": {
     "title": "Conditions Générales d'Utilisation",
@@ -333,7 +383,8 @@
     "upTo": "Jusqu'à",
     "from": "À partir de",
     "floor": "étage",
-    "contactToRespond": "Contacter pour répondre à cette demande"
+    "contactToRespond": "Contacter pour répondre à cette demande",
+    "submittedOn": "Confiée le {date}"
   },
   "Research": {
     "zodBranchRequired": "Choisissez une branche",
@@ -626,11 +677,20 @@
   "ProfileFavorites": {
     "title": "Mes Favoris",
     "noFavorites": "Vous n'avez pas encore de favoris.",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "subtitle": "Retrouvez ici tous les biens que vous avez ajoutés à vos favoris.",
+    "count": "{count} bien(s) en favoris",
+    "filterAll": "Tout",
+    "filterSale": "Vente",
+    "filterRental": "Location",
+    "browseListings": "Parcourir les annonces"
   },
   "ProfileNotifications": {
     "title": "Notifications",
-    "noNotifications": "Vous n'avez aucune nouvelle notification."
+    "noNotifications": "Vous n'avez aucune nouvelle notification.",
+    "subtitle": "Toute l'activité liée à votre compte : messages, recherches qui correspondent à vos annonces, validations...",
+    "markAllRead": "Tout marquer comme lu",
+    "unreadCount": "{count} non lue(s)"
   },
   "ProfileAdvertising": {
     "title": "Espace Publicitaire",
@@ -682,13 +742,27 @@
   "ProfileResearches": {
     "title": "Mes Recherches Confiées",
     "noResearches": "Vous n'avez pas encore confié de recherche.",
-    "list": "Liste des recherches..."
+    "list": "Liste des recherches...",
+    "subtitle": "Retrouvez ici les recherches que vous avez confiées, et leur statut.",
+    "count": "{count} recherche(s) confiée(s)",
+    "entrustNew": "Confier une nouvelle recherche",
+    "filterAll": "Toutes",
+    "filterSale": "Achat",
+    "filterRental": "Location"
   },
   "ProfileMessages": {
     "title": "Ma Messagerie",
     "noMessages": "Vous n'avez pas encore de messages.",
     "loading": "Chargement...",
-    "reference": "Réf: {reference}"
+    "reference": "Réf: {reference}",
+    "subtitle": "Vos échanges avec les annonceurs et les personnes intéressées par vos biens.",
+    "unknownUser": "Utilisateur",
+    "selectConversation": "Sélectionnez une conversation pour l'afficher ici.",
+    "replyPlaceholder": "Écrire un message...",
+    "send": "Envoyer",
+    "browseListings": "Parcourir les annonces",
+    "noConversationsHint": "Contactez un annonceur depuis une fiche annonce pour démarrer une conversation.",
+    "youPrefix": "Vous : "
   },
   "ProfilePacks": {
     "title": "Nos Packs de Points",
@@ -1124,7 +1198,13 @@
     "sending": "Envoi...",
     "reportError": "Erreur lors de l'envoi du signalement. Réessayez.",
     "callTitle": "Appeler",
-    "emailTitle": "Email"
+    "emailTitle": "Email",
+    "messageLoginPrompt": "Connectez-vous pour envoyer un message à l'annonceur.",
+    "messageLoginCta": "Se connecter",
+    "messageSentTitle": "Message envoyé !",
+    "messageSentText": "L'annonceur pourra vous répondre directement dans votre messagerie.",
+    "messageErrorGeneric": "Impossible d'envoyer le message. Réessayez.",
+    "viewMyMessages": "Voir ma messagerie"
   },
   "Deposit": {
     "draftFoundTitle": "Un brouillon vous attend",
@@ -1161,6 +1241,8 @@
   },
   "HomePage": {
     "categoryLabel": "Catégorie",
+    "scrollLeft": "Défiler à gauche",
+    "scrollRight": "Défiler à droite",
     "heroDescription": "Découvrez les meilleures opportunités en {category} : annonces vérifiées, photos, prix clair.",
     "viewListings": "Voir les annonces",
     "loadingListings": "Chargement des annonces...",
@@ -1228,5 +1310,174 @@
     "mobileAppStatListings": "annonces en ligne",
     "mobileAppStatWilayas": "wilayas couvertes",
     "mobileAppStatCategories": "catégories de biens"
+  },
+  "ResearchOptions": {
+    "RESEARCH_PROPERTY_TYPES": {
+      "RESIDENTIEL": {
+        "STUDIO": "Studio",
+        "APPARTEMENT": "Appartement",
+        "DUPLEX": "Duplex",
+        "TRIPLEX": "Triplex",
+        "VILLA": "Villa",
+        "NIVEAU_VILLA": "Niveau de Villa",
+        "IMMEUBLE_COMPLET": "Immeuble complet"
+      }
+    },
+    "RESEARCH_INTERLOCUTORS": {
+      "RESIDENTIEL": {
+        "PROMOTEUR_IMMOBILIER": "Promoteur immobilier",
+        "AGENCE_IMMOBILIERE": "Agence immobilière",
+        "PARTICULIER": "Propriétaire particulier"
+      }
+    },
+    "SITUATION_OPTIONS": {
+      "RESIDENT_NATIONAL": "Résident national",
+      "DIASPORA": "Membre de la diaspora (résident à l’étranger)"
+    },
+    "ACHAT_INTERLOCUTOR_OPTIONS": {
+      "PROMOTEUR_IMMOBILIER": "Promoteur immobilier",
+      "AGENCE_IMMOBILIERE": "Agence immobilière",
+      "PARTICULIER": "Particulier",
+      "PEU_IMPORTE": "Peu importe"
+    },
+    "REALISATION_STAGE_OPTIONS": {
+      "FINI": "Bien fini (Clé en main)",
+      "EN_FINALISATION": "En cours de finalisation",
+      "SUR_PLAN": "Projet sur plan (VSP)"
+    },
+    "REALISATION_STAGE_OPTIONS_DESC": {
+      "FINI": "Prêt à habiter ou à louer immédiatement.",
+      "EN_FINALISATION": "Travaux avancés (finitions, équipements), emménagement à court terme.",
+      "SUR_PLAN": "Prix préférentiels avant lancement et choix de l’étage/vue."
+    },
+    "AIRPORT_PROXIMITY_OPTIONS": {
+      "MOINS_15": "Moins de 15 min",
+      "MOINS_30": "Moins de 30 min",
+      "MOINS_45": "Moins de 45 min",
+      "PEU_IMPORTE": "Peu importe"
+    },
+    "CURRENCY_OPTIONS": {
+      "DA": "DA",
+      "EUR": "€",
+      "USD": "$"
+    },
+    "FINANCING_OPTIONS": {
+      "CASH": "Autofinancement (Cash)",
+      "CREDIT": "Crédit immobilier",
+      "MIXTE": "Mixte"
+    },
+    "ENVIRONMENT_OPTIONS": {
+      "PROMOTION_IMMOBILIERE": "Promotion immobilière",
+      "RESIDENCE_CLOTUREE": "Résidence clôturée",
+      "QUARTIER_CLASSIQUE": "Quartier classique"
+    },
+    "VILLA_LEVEL_ENTRANCE_OPTIONS": {
+      "SEPAREE": "Entrée séparée",
+      "COMMUNE": "Entrée commune"
+    }
+  },
+  "DepositOptions": {
+    "PROPERTY_STATES": {
+      "NEUF": "Neuf (Jamais habité)",
+      "RENOVE": "Rénové",
+      "BON_ETAT": "Bon état",
+      "A_DEMOLIR": "À démolir"
+    },
+    "BUILDING_TYPOLOGY_MODES": {
+      "SIMILAIRES": "Immeuble avec Appartements de typologies similaires",
+      "DIFFERENTES": "Immeuble avec Appartements de typologies différentes"
+    },
+    "BUILDING_SURFACE_MODES": {
+      "UNIQUE": "Surface unique",
+      "MULTI": "Multi-surfaces"
+    },
+    "BUILDING_APARTMENT_STYLES": {
+      "SIMPLEX": "Simplex",
+      "DUPLEX": "Duplex",
+      "TRIPLEX": "Triplex"
+    },
+    "APARTMENT_LIFESTYLE_TYPES": {
+      "QUARTIER_OUVERT": "Quartier classique",
+      "RESIDENCE_CLOTUREE": "Résidence clôturée",
+      "PROMOTION_IMMOBILIERE": "Promotion immobilière"
+    },
+    "USAGE_TYPES": {
+      "UNIQUE": {
+        "label": "Usage unique (Communicante)",
+        "description": "les étages de la villa communiquent de l'intérieur"
+      },
+      "SEPARE": {
+        "label": "Usage séparé (appartement)",
+        "description": "chaque étage est indépendant"
+      }
+    },
+    "ENTRY_ACCESS_TYPES": {
+      "ENTREE_INDEPENDANTE": {
+        "label": "Entrée indépendante",
+        "description": "Accès indépendant au niveau de villa"
+      },
+      "ENTREE_COMMUNE": {
+        "label": "Entrée commune",
+        "description": "Accès partagé (entrée commune)"
+      }
+    },
+    "KITCHEN_TYPES": {
+      "AMERICAINE": {
+        "label": "Ouverte",
+        "description": "Cuisine ouverte sur le salon (style américain)"
+      },
+      "FERMEE": {
+        "label": "Fermée",
+        "description": "Cuisine séparée par des murs et une porte"
+      },
+      "SEMI_OUVERTE": {
+        "label": "Semi-ouverte",
+        "description": "Partiellement ouverte (verrière, bar, passe-plat)"
+      }
+    },
+    "HEATING_TYPES": {
+      "CENTRAL": "Central",
+      "SOL": "Au Sol",
+      "GAZ": "À Gaz"
+    },
+    "AC_TYPES": {
+      "CENTRAL": "Centrale",
+      "SPLIT": "Split",
+      "SANS": "Sans"
+    },
+    "VILLA_EQUIPMENTS_KITCHEN": {
+      "plates": "Plaques",
+      "oven": "Four",
+      "hood": "Hotte",
+      "dishwasher": "Lave-vaisselle",
+      "microwave": "Micro-onde",
+      "fridge": "Frigo",
+      "washing_machine": "Machine à laver",
+      "no_appliances": "Vide"
+    },
+    "VILLA_EQUIPMENTS_EXTERIOR": {
+      "garden": "Jardin",
+      "terrace": "Terrasse",
+      "balcony": "Balcon",
+      "pool": "Piscine",
+      "playground": "Espace extérieur",
+      "barbecue": "Barbecue",
+      "elevator": "Ascenseur"
+    },
+    "VILLA_EQUIPMENTS_UTILITIES": {
+      "water_tank": "Bâche à eau",
+      "generator": "Groupe électrogène",
+      "central_heating": "Chauffage central"
+    },
+    "VILLA_EQUIPMENTS_SECURITY": {
+      "cameras": "Caméras",
+      "alarm": "Alarme",
+      "guardian": "Gardiennage 24/7"
+    },
+    "VILLA_EQUIPMENTS_CONNECTIVITY": {
+      "fiber": "Fibre",
+      "adsl": "ADSL",
+      "phone_line": "Ligne fixe"
+    }
   }
 }

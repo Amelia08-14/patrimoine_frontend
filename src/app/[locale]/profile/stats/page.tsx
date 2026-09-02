@@ -48,15 +48,15 @@ function StatCard({ icon: Icon, value, title, desc, color = "#00BFA6", sub }: {
   icon: any; value: number; title: string; desc: string; color?: string; sub?: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+    <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
       <div className="flex items-start gap-3">
         <span className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: color + '1A' }}>
           <Icon className="h-5 w-5" style={{ color }} />
         </span>
         <div className="min-w-0">
-          <div className="text-2xl font-black text-gray-900 leading-none">{value.toLocaleString()}</div>
-          <p className="font-bold text-gray-900 text-sm mt-1.5">{title}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+          <div className="text-2xl font-black text-gray-900 dark:text-white leading-none">{value.toLocaleString()}</div>
+          <p className="font-bold text-gray-900 dark:text-white text-sm mt-1.5">{title}</p>
+          <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">{desc}</p>
         </div>
       </div>
       {sub}
@@ -306,17 +306,17 @@ export default function StatsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold mb-2 flex items-center gap-3 text-gray-900">
+      <h1 className="text-3xl font-bold mb-2 flex items-center gap-3 text-gray-900 dark:text-white">
         <PieChartIcon className="text-[#00BFA6] fill-current" /> {t("title")}
       </h1>
-      <p className="text-gray-500 mb-8 text-sm">{t("subtitle")}</p>
+      <p className="text-gray-500 dark:text-white/50 mb-8 text-sm">{t("subtitle")}</p>
 
       {!stats ? (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 py-20 flex flex-col items-center gap-3">
+        <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 py-20 flex flex-col items-center gap-3">
           <div className="h-14 w-14 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center">
             <PieChartIcon className="h-6 w-6 text-[#00BFA6]" />
           </div>
-          <p className="text-gray-500 font-medium">{t("noData")}</p>
+          <p className="text-gray-500 dark:text-white/50 font-medium">{t("noData")}</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -336,18 +336,18 @@ export default function StatsPage() {
               desc={t("callsDesc")}
               color="#1E40AF"
               sub={
-                <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-3 gap-2 text-center">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/10 grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <div className="font-black text-gray-900">{stats.calls.byChannel.CALL}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{t("callChannelCall")}</div>
+                    <div className="font-black text-gray-900 dark:text-white">{stats.calls.byChannel.CALL}</div>
+                    <div className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">{t("callChannelCall")}</div>
                   </div>
                   <div>
-                    <div className="font-black text-gray-900">{stats.calls.byChannel.WHATSAPP}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{t("callChannelWhatsapp")}</div>
+                    <div className="font-black text-gray-900 dark:text-white">{stats.calls.byChannel.WHATSAPP}</div>
+                    <div className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">{t("callChannelWhatsapp")}</div>
                   </div>
                   <div>
-                    <div className="font-black text-gray-900">{stats.calls.byChannel.TELEGRAM}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{t("callChannelTelegram")}</div>
+                    <div className="font-black text-gray-900 dark:text-white">{stats.calls.byChannel.TELEGRAM}</div>
+                    <div className="text-[10px] text-gray-400 dark:text-white/40 mt-0.5">{t("callChannelTelegram")}</div>
                   </div>
                 </div>
               }
@@ -378,7 +378,7 @@ export default function StatsPage() {
           {/* Statistiques boutique — professionnel uniquement */}
           {isPro && (
             <div>
-              <h2 className="font-black text-gray-900 text-lg flex items-center gap-2 mb-4">
+              <h2 className="font-black text-gray-900 dark:text-white text-lg flex items-center gap-2 mb-4">
                 <Store className="h-5 w-5 text-[#00BFA6]" /> {t("boutiqueSectionTitle")}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -411,22 +411,22 @@ export default function StatsPage() {
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
-                <h2 className="font-black text-gray-900 text-lg flex items-center gap-2">
+                <h2 className="font-black text-gray-900 dark:text-white text-lg flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-[#00BFA6]" /> {t("chartsTitle")}
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">{t("chartsSubtitle")}</p>
+                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">{t("chartsSubtitle")}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={exportExcel} disabled={exporting !== null || !timeseries}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-xs font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] disabled:opacity-50 transition-colors">
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 text-xs font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] disabled:opacity-50 transition-colors">
                   <FileSpreadsheet className="h-3.5 w-3.5" /> {exporting === 'excel' ? t("exporting") : 'Excel'}
                 </button>
                 <button onClick={exportPDF} disabled={exporting !== null || !timeseries}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-xs font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] disabled:opacity-50 transition-colors">
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 text-xs font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] disabled:opacity-50 transition-colors">
                   <FileDown className="h-3.5 w-3.5" /> {exporting === 'pdf' ? t("exporting") : 'PDF'}
                 </button>
                 <button onClick={exportPPTX} disabled={exporting !== null || !timeseries}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-xs font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] disabled:opacity-50 transition-colors">
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 text-xs font-bold hover:border-[#00BFA6] hover:text-[#00BFA6] disabled:opacity-50 transition-colors">
                   <Presentation className="h-3.5 w-3.5" /> {exporting === 'pptx' ? t("exporting") : 'PowerPoint'}
                 </button>
               </div>
@@ -444,14 +444,14 @@ export default function StatsPage() {
             {chartsLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-[#00BFA6]" /></div>
             ) : !hasChartData ? (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-16 flex flex-col items-center gap-2">
-                <TrendingUp className="h-8 w-8 text-gray-300" />
-                <p className="text-gray-400 text-sm">{t("noChartData")}</p>
+              <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm py-16 flex flex-col items-center gap-2">
+                <TrendingUp className="h-8 w-8 text-gray-300 dark:text-white/30" />
+                <p className="text-gray-400 dark:text-white/40 text-sm">{t("noChartData")}</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <h3 className="font-bold text-gray-900 text-sm mb-4">{t("chartViewsClicksTitle")}</h3>
+                <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+                  <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-4">{t("chartViewsClicksTitle")}</h3>
                   <ResponsiveContainer width="100%" height={280}>
                     <AreaChart data={chartData}>
                       <defs>
@@ -483,8 +483,8 @@ export default function StatsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <h3 className="font-bold text-gray-900 text-sm mb-4">{t("chartAnnouncesTitle")}</h3>
+                  <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-4">{t("chartAnnouncesTitle")}</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <BarChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
@@ -498,10 +498,10 @@ export default function StatsPage() {
                     </ResponsiveContainer>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <h3 className="font-bold text-gray-900 text-sm mb-4">{t("chartDistributionTitle")}</h3>
+                  <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-4">{t("chartDistributionTitle")}</h3>
                     {distributionData.length === 0 ? (
-                      <div className="h-[240px] flex items-center justify-center text-sm text-gray-400">{t("noChartData")}</div>
+                      <div className="h-[240px] flex items-center justify-center text-sm text-gray-400 dark:text-white/40">{t("noChartData")}</div>
                     ) : (
                       <ResponsiveContainer width="100%" height={240}>
                         <PieChart>

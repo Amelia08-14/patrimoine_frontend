@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, use, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import axios from "axios"
 import {
@@ -478,11 +479,13 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     })
   }, [announces, txType, categoryFilter, wilayas, commune])
 
+  const t = useTranslations('Boutique')
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="h-12 w-12 border-4 border-gray-200 border-t-[#00BFA6] rounded-full animate-spin" />
-        <p className="text-gray-500 font-medium">Chargement de la boutique...</p>
+        <p className="text-gray-500 font-medium">{t('loadingStore')}</p>
       </div>
     </div>
   )
@@ -493,10 +496,10 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         <div className="h-20 w-20 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
           <Store className="h-10 w-10 text-amber-400" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Boutique non disponible</h1>
-        <p className="text-gray-500 mt-2 text-sm">Cette vitrine n&apos;est pas encore activée ou son abonnement a expiré.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('storeUnavailable')}</h1>
+        <p className="text-gray-500 mt-2 text-sm">{t('storeUnavailableDesc')}</p>
         <Link href="/" className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">
-          Retour à l&apos;accueil <ArrowRight className="h-4 w-4" />
+          {t('backHome')} <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
     </div>
@@ -506,10 +509,10 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <Store className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900">Boutique introuvable</h1>
-        <p className="text-gray-500 mt-2">Cette boutique n&apos;existe pas ou n&apos;est plus disponible.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('storeNotFound')}</h1>
+        <p className="text-gray-500 mt-2">{t('storeNotFoundDesc')}</p>
         <Link href="/" className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#00BFA6] text-white rounded-xl font-bold">
-          Retour à l&apos;accueil <ArrowRight className="h-4 w-4" />
+          {t('backHome')} <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
     </div>

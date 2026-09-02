@@ -17,7 +17,7 @@ export default function SupportPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent">
       <div className="bg-[#003B4A] text-white py-14">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <LifeBuoy className="h-10 w-10 mx-auto mb-4 text-[#00BFA6]" />
@@ -26,27 +26,27 @@ export default function SupportPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 space-y-8">
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 p-8">
           {loading ? (
-            <p className="text-gray-400 text-center">{t("loading")}</p>
+            <p className="text-gray-400 dark:text-white/40 text-center">{t("loading")}</p>
           ) : (
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{settings.SUPPORT_CONTENT}</p>
+            <p className="text-gray-700 dark:text-white/70 leading-relaxed whitespace-pre-line">{settings.SUPPORT_CONTENT}</p>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link href="/faq" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow">
+          <Link href="/faq" className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow">
             <HelpCircle className="h-6 w-6 text-[#00BFA6]" />
-            <p className="font-bold text-gray-900 text-sm">{t("faq")}</p>
+            <p className="font-bold text-gray-900 dark:text-white text-sm">{t("faq")}</p>
           </Link>
-          <Link href="/contact" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow">
+          <Link href="/contact" className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow">
             <MessageSquare className="h-6 w-6 text-[#00BFA6]" />
-            <p className="font-bold text-gray-900 text-sm">{t("contactForm")}</p>
+            <p className="font-bold text-gray-900 dark:text-white text-sm">{t("contactForm")}</p>
           </Link>
           {settings.CONTACT_PHONE && (
-            <a href={`tel:${settings.CONTACT_PHONE}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow">
+            <a href={`tel:${settings.CONTACT_PHONE}`} className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow">
               <Phone className="h-6 w-6 text-[#00BFA6]" />
-              <p className="font-bold text-gray-900 text-sm">{settings.CONTACT_PHONE}</p>
+              <p className="font-bold text-gray-900 dark:text-white text-sm">{settings.CONTACT_PHONE}</p>
             </a>
           )}
         </div>

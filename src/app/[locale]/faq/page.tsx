@@ -33,7 +33,7 @@ export default function FAQPage() {
   }, [items, query])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent">
       {/* Hero */}
       <div className="bg-[#003B4A] relative overflow-hidden">
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#00BFA6]/10 blur-3xl" />
@@ -48,26 +48,26 @@ export default function FAQPage() {
 
       {/* Barre de recherche — chevauche le hero */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 -mt-9 relative z-10">
-        <div className="bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 flex items-center gap-3 px-5 py-4">
-          <Search className="h-4 w-4 text-gray-400 shrink-0" />
+        <div className="bg-white dark:bg-white/5 rounded-2xl shadow-xl shadow-black/10 border border-gray-100 dark:border-white/10 flex items-center gap-3 px-5 py-4">
+          <Search className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full outline-none text-sm text-gray-800 placeholder:text-gray-400"
+            className="w-full outline-none text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400"
           />
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {loading ? (
-          <p className="text-center text-gray-400">{t("loading")}</p>
+          <p className="text-center text-gray-400 dark:text-white/40">{t("loading")}</p>
         ) : items.length === 0 ? (
-          <p className="text-center text-gray-400">{t("noItems")}</p>
+          <p className="text-center text-gray-400 dark:text-white/40">{t("noItems")}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-center text-gray-400">{t("noResults")}</p>
+          <p className="text-center text-gray-400 dark:text-white/40">{t("noResults")}</p>
         ) : (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm divide-y divide-gray-100 overflow-hidden">
+          <div className="bg-white dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm divide-y divide-gray-100 overflow-hidden">
             {filtered.map((f) => {
               const isOpen = openId === f.id
               return (
@@ -77,13 +77,13 @@ export default function FAQPage() {
                     className="w-full flex items-center justify-between gap-4 text-left px-5 sm:px-7 py-5 hover:bg-gray-50/70 transition-colors"
                     aria-expanded={isOpen}
                   >
-                    <span className={cn("font-bold text-[15px] transition-colors", isOpen ? "text-[#00BFA6]" : "text-gray-900")}>
+                    <span className={cn("font-bold text-[15px] transition-colors", isOpen ? "text-[#00BFA6]" : "text-gray-900 dark:text-white")}>
                       {f.question}
                     </span>
                     <span
                       className={cn(
                         "shrink-0 h-7 w-7 rounded-full flex items-center justify-center border transition-all duration-300",
-                        isOpen ? "bg-[#00BFA6] border-[#00BFA6] rotate-45" : "bg-white border-gray-200 text-gray-400"
+                        isOpen ? "bg-[#00BFA6] border-[#00BFA6] rotate-45" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-400 dark:text-white/40"
                       )}
                     >
                       <Plus className={cn("h-3.5 w-3.5", isOpen && "text-white")} />
@@ -94,7 +94,7 @@ export default function FAQPage() {
                     style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                   >
                     <div className="overflow-hidden">
-                      <p className="px-5 sm:px-7 pb-6 text-gray-600 whitespace-pre-line leading-relaxed text-sm">
+                      <p className="px-5 sm:px-7 pb-6 text-gray-600 dark:text-white/60 whitespace-pre-line leading-relaxed text-sm">
                         {f.answer}
                       </p>
                     </div>
@@ -106,9 +106,9 @@ export default function FAQPage() {
         )}
 
         {!loading && items.length > 0 && (
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-dashed border-gray-200 bg-white p-6">
-            <p className="text-sm text-gray-500 flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-gray-400 shrink-0" /> {t("stillNeedHelp")}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-6">
+            <p className="text-sm text-gray-500 dark:text-white/50 flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" /> {t("stillNeedHelp")}
             </p>
             <Link href="/contact" className="shrink-0 text-sm font-bold text-[#00BFA6] hover:underline">
               {t("contactSupport")} →

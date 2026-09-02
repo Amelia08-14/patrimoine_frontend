@@ -21,7 +21,7 @@ type ContactFormValues = {
   message: string;
 };
 
-const inputCls = 'w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-800';
+const inputCls = 'w-full p-4 border border-gray-300 dark:border-white/15 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white dark:bg-white/5 font-medium text-gray-800 dark:text-white/90';
 
 const SUBJECT_PREFIX: Record<Motif, string> = {
   COMMERCIAL: '[COMMERCIAL]',
@@ -64,7 +64,7 @@ function ChannelBadge({ icon: Icon, text, href, colorClass, external }: { icon: 
       href={href}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:border-[#00BFA6] hover:shadow-sm transition-all text-sm font-semibold text-gray-700 hover:text-[#00BFA6]"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-[#00BFA6] hover:shadow-sm transition-all text-sm font-semibold text-gray-700 dark:text-white/70 hover:text-[#00BFA6]"
     >
       <Icon className={`h-4 w-4 shrink-0 ${colorClass}`} /> {text}
     </a>
@@ -168,7 +168,7 @@ function ContactPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent">
       <div className="bg-[#003B4A] text-white py-14">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold">{t('title')}</h1>
@@ -180,8 +180,8 @@ function ContactPageContent() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
         {/* Sélection du motif */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">{t('motifTitle')}</h2>
+        <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 p-6 sm:p-8">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t('motifTitle')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {MOTIFS.map((m) => {
               const Icon = m.icon;
@@ -192,26 +192,26 @@ function ContactPageContent() {
                   type="button"
                   onClick={() => setMotif(m.id)}
                   className={`flex flex-col items-center text-center gap-2 p-4 rounded-2xl border-2 transition-all ${
-                    isActive ? 'border-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-100 hover:border-gray-200'
+                    isActive ? 'border-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-100 dark:border-white/10 hover:border-gray-200'
                   }`}
                 >
-                  <Icon className={`h-6 w-6 ${isActive ? 'text-[#00BFA6]' : 'text-gray-400'}`} />
-                  <span className={`text-sm font-bold ${isActive ? 'text-[#00BFA6]' : 'text-gray-700'}`}>{m.label}</span>
+                  <Icon className={`h-6 w-6 ${isActive ? 'text-[#00BFA6]' : 'text-gray-400 dark:text-white/40'}`} />
+                  <span className={`text-sm font-bold ${isActive ? 'text-[#00BFA6]' : 'text-gray-700 dark:text-white/70'}`}>{m.label}</span>
                 </button>
               );
             })}
           </div>
-          <p className="text-sm text-gray-500 mt-4">{activeMotif.desc}</p>
+          <p className="text-sm text-gray-500 dark:text-white/50 mt-4">{activeMotif.desc}</p>
 
-          <div className="mt-5 pt-5 border-t border-gray-100">
+          <div className="mt-5 pt-5 border-t border-gray-100 dark:border-white/10">
             <ChannelBadgeRow prefix={MOTIF_PREFIX[motif]} settings={settings} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Contact Form */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 p-6 sm:p-8">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-[#00BFA6]" /> {t('formTitle')}
             </h2>
             <p className="text-sm text-[#00BFA6] font-semibold mb-6">{activeMotif.label}</p>
@@ -219,8 +219,8 @@ function ContactPageContent() {
             {success ? (
               <div className="flex flex-col items-center text-center py-10">
                 <CheckCircle2 className="h-12 w-12 text-[#00BFA6] mb-4" />
-                <p className="font-bold text-gray-900">{t('successTitle')}</p>
-                <p className="text-gray-500 text-sm mt-1">{t('successDescription')}</p>
+                <p className="font-bold text-gray-900 dark:text-white">{t('successTitle')}</p>
+                <p className="text-gray-500 dark:text-white/50 text-sm mt-1">{t('successDescription')}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -231,36 +231,36 @@ function ContactPageContent() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">{t('nameLabel')}</label>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">{t('nameLabel')}</label>
                   <input type="text" {...register('name')} className={inputCls} placeholder={t('namePlaceholder')} />
                   {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">{t('emailLabel')}</label>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">{t('emailLabel')}</label>
                   <input type="email" {...register('email')} className={inputCls} placeholder={t('emailPlaceholder')} />
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">{t('subjectLabel')}</label>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">{t('subjectLabel')}</label>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-400 shrink-0">{SUBJECT_PREFIX[motif]}</span>
+                    <span className="text-xs font-bold text-gray-400 dark:text-white/40 shrink-0">{SUBJECT_PREFIX[motif]}</span>
                     <input type="text" {...register('subject')} className={inputCls} placeholder={t('subjectPlaceholder')} />
                   </div>
                   {errors.subject && <p className="text-red-500 text-sm mt-1">{errors.subject.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">{t('messageLabel')}</label>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">{t('messageLabel')}</label>
                   <textarea {...register('message')} rows={5} className={inputCls} placeholder={t('messagePlaceholder')}></textarea>
                   {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">{t('attachmentLabel')}</label>
-                  <label className="flex items-center gap-2 w-full text-sm border border-gray-300 rounded-xl p-4 bg-white cursor-pointer text-gray-500 font-medium">
-                    <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">{t('attachmentLabel')}</label>
+                  <label className="flex items-center gap-2 w-full text-sm border border-gray-300 dark:border-white/15 rounded-xl p-4 bg-white dark:bg-white/5 cursor-pointer text-gray-500 dark:text-white/50 font-medium">
+                    <Paperclip className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
                     {attachment ? attachment.name : t('attachmentHint')}
                     <input
                       type="file"
@@ -285,8 +285,8 @@ function ContactPageContent() {
 
           {/* Contact Info & Map */}
           <div className="space-y-6">
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-5">{t('infoTitle')}</h2>
+            <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5">{t('infoTitle')}</h2>
               <div className="space-y-4">
                 {generalChannels.phone && (
                   <a href={telHref(generalChannels.phone)} className="flex items-center gap-4 group">
@@ -294,8 +294,8 @@ function ContactPageContent() {
                       <Phone className="h-5 w-5 text-[#00BFA6]" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">{t('phoneLabel')}</p>
-                      <p className="text-gray-500 text-sm group-hover:text-[#00BFA6] transition-colors">{generalChannels.phone}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{t('phoneLabel')}</p>
+                      <p className="text-gray-500 dark:text-white/50 text-sm group-hover:text-[#00BFA6] transition-colors">{generalChannels.phone}</p>
                     </div>
                   </a>
                 )}
@@ -305,8 +305,8 @@ function ContactPageContent() {
                       <Mail className="h-5 w-5 text-[#00BFA6]" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">{t('emailInfoLabel')}</p>
-                      <p className="text-gray-500 text-sm group-hover:text-[#00BFA6] transition-colors">{generalChannels.email}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{t('emailInfoLabel')}</p>
+                      <p className="text-gray-500 dark:text-white/50 text-sm group-hover:text-[#00BFA6] transition-colors">{generalChannels.email}</p>
                     </div>
                   </a>
                 )}
@@ -316,8 +316,8 @@ function ContactPageContent() {
                       <MapPin className="h-5 w-5 text-[#00BFA6]" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">{t('addressLabel')}</p>
-                      <p className="text-gray-500 text-sm">{settings.CONTACT_ADDRESS}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{t('addressLabel')}</p>
+                      <p className="text-gray-500 dark:text-white/50 text-sm">{settings.CONTACT_ADDRESS}</p>
                     </div>
                   </div>
                 )}
@@ -327,8 +327,8 @@ function ContactPageContent() {
                       <MessageCircle className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">WhatsApp</p>
-                      <p className="text-gray-500 text-sm group-hover:text-green-600 transition-colors">{generalChannels.whatsapp}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">WhatsApp</p>
+                      <p className="text-gray-500 dark:text-white/50 text-sm group-hover:text-green-600 transition-colors">{generalChannels.whatsapp}</p>
                     </div>
                   </a>
                 )}
@@ -338,8 +338,8 @@ function ContactPageContent() {
                       <MessageCircle className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">Viber</p>
-                      <p className="text-gray-500 text-sm group-hover:text-purple-600 transition-colors">{generalChannels.viber}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">Viber</p>
+                      <p className="text-gray-500 dark:text-white/50 text-sm group-hover:text-purple-600 transition-colors">{generalChannels.viber}</p>
                     </div>
                   </a>
                 )}
@@ -349,15 +349,15 @@ function ContactPageContent() {
                       <Send className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">Telegram</p>
-                      <p className="text-gray-500 text-sm group-hover:text-blue-600 transition-colors">{generalChannels.telegram}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">Telegram</p>
+                      <p className="text-gray-500 dark:text-white/50 text-sm group-hover:text-blue-600 transition-colors">{generalChannels.telegram}</p>
                     </div>
                   </a>
                 )}
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden h-56 flex items-center justify-center text-gray-400 text-sm font-medium">
+            <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden h-56 flex items-center justify-center text-gray-400 dark:text-white/40 text-sm font-medium">
               {t('mapPlaceholder')}
             </div>
           </div>

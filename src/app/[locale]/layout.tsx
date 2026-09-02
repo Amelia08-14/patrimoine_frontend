@@ -5,6 +5,7 @@ import { setRequestLocale } from "next-intl/server";
 import "../globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 
@@ -38,7 +39,7 @@ export default async function LocaleLayout({
   const dir = RTL_LOCALES.includes(locale) ? "rtl" : "ltr";
 
   return (
-    <html lang={locale} dir={dir} className={geistSans.variable}>
+    <html lang={locale} dir={dir} className={geistSans.variable} suppressHydrationWarning>
       <body
         suppressHydrationWarning
         className="antialiased min-h-screen flex flex-col"
@@ -48,6 +49,9 @@ export default async function LocaleLayout({
             <Navbar />
             <main className="flex-grow">{children}</main>
             <Footer />
+            {/* Réserve la hauteur de la bottom tab bar mobile pour qu'elle ne recouvre pas le bas du footer */}
+            <div className="h-16 lg:hidden" aria-hidden="true" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
+            <MobileBottomNav />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

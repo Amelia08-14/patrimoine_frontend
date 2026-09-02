@@ -65,7 +65,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex bg-white">
+    <div className="min-h-screen w-full flex bg-white dark:bg-transparent">
       
       {/* Left Side - Visual (Full height, 45% width) */}
       <div className="hidden lg:flex w-[45%] relative overflow-hidden">
@@ -118,12 +118,12 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Form (Full height, 55% width) */}
-      <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 overflow-y-auto bg-white">
+      <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 overflow-y-auto bg-white dark:bg-white/5">
         <div className="w-full max-w-md space-y-8">
           
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t("title")}</h2>
-            <p className="mt-2 text-gray-500">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t("title")}</h2>
+            <p className="mt-2 text-gray-500 dark:text-white/50">
               {t("subtitle")}
             </p>
           </div>
@@ -132,12 +132,12 @@ export default function LoginPage() {
             <div className="space-y-4">
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-[#00BFA6]">
-                    <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-[#00BFA6]" />
+                    <Mail className="h-5 w-5 text-gray-400 dark:text-white/40 group-focus-within:text-[#00BFA6]" />
                   </div>
                   <input
                     {...register("email")}
                     type="email"
-                    className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                    className="w-full pl-12 px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                     placeholder={t("emailPlaceholder")}
                   />
                   {errors.email && <p className="text-red-500 text-xs pl-1">{errors.email.message}</p>}
@@ -145,12 +145,12 @@ export default function LoginPage() {
 
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-[#00BFA6]">
-                    <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-[#00BFA6]" />
+                    <Lock className="h-5 w-5 text-gray-400 dark:text-white/40 group-focus-within:text-[#00BFA6]" />
                   </div>
                   <input
                     {...register("password")}
                     type="password"
-                    className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                    className="w-full pl-12 px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                     placeholder={t("passwordPlaceholder")}
                   />
                   {errors.password && <p className="text-red-500 text-xs pl-1">{errors.password.message}</p>}
@@ -163,9 +163,9 @@ export default function LoginPage() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-[#00BFA6] focus:ring-[#00BFA6] border-gray-300 rounded cursor-pointer"
+                  className="h-4 w-4 text-[#00BFA6] focus:ring-[#00BFA6] border-gray-300 dark:border-white/15 rounded cursor-pointer"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600 cursor-pointer select-none">
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600 dark:text-white/60 cursor-pointer select-none">
                   {t("rememberMe")}
                 </label>
               </div>
@@ -183,7 +183,7 @@ export default function LoginPage() {
           </form>
 
           <div className="text-center mt-6">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-white/50">
               {t("noAccount")}{' '}
               <Link href="/auth/register" className="font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
                 {t("createAccount")}

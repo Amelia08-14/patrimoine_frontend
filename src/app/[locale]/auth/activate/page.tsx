@@ -36,20 +36,20 @@ function ActivatePageContent() {
   }, [key])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white dark:bg-white/5 rounded-2xl shadow-xl p-8 text-center">
         {status === "loading" && (
           <div className="flex flex-col items-center">
             <Loader2 className="h-16 w-16 text-[#00BFA6] animate-spin mb-4" />
-            <h2 className="text-xl font-bold text-gray-900">{t("loading")}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t("loading")}</h2>
           </div>
         )}
 
         {status === "success" && (
           <div className="flex flex-col items-center">
             <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("successTitle")}</h2>
-            <p className="text-gray-500 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t("successTitle")}</h2>
+            <p className="text-gray-500 dark:text-white/50 mb-6">
               {t("successDescription")}
             </p>
             <Link href="/auth/login" className="w-full">
@@ -63,8 +63,8 @@ function ActivatePageContent() {
         {status === "error" && (
           <div className="flex flex-col items-center">
             <XCircle className="h-16 w-16 text-red-500 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("errorTitle")}</h2>
-            <p className="text-gray-500 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t("errorTitle")}</h2>
+            <p className="text-gray-500 dark:text-white/50 mb-6">
               {t("errorDescription")}
             </p>
             <Link href="/" className="w-full">
@@ -84,11 +84,11 @@ export default function ActivatePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+        <div className="min-h-screen bg-gray-50 dark:bg-transparent flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white dark:bg-white/5 rounded-2xl shadow-xl p-8 text-center">
             <div className="flex flex-col items-center">
               <Loader2 className="h-16 w-16 text-[#00BFA6] animate-spin mb-4" />
-              <h2 className="text-xl font-bold text-gray-900">{t("loading")}</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t("loading")}</h2>
             </div>
           </div>
         </div>

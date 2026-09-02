@@ -132,7 +132,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
 }
 
 function OptionGroup({
-  label, options, field, watch, toggle, icons = {}, gridClassName,
+  label, options, field, watch, toggle, icons = {}, gridClassName, translateNs,
 }: {
   label: string;
   options: { id: string; label: string }[];
@@ -141,14 +141,23 @@ function OptionGroup({
   toggle: (field: any, value: string) => void;
   icons?: Record<string, any>;
   gridClassName?: string;
+  /** Nom du groupe dans le namespace i18n ResearchOptions (ex. "ENVIRONMENT_OPTIONS") — si fourni,
+      remplace `opt.label` (français en dur) par sa traduction quand elle existe. */
+  translateNs?: string;
 }) {
   const selected: string[] = watch(field) || [];
+  const tOpt = useTranslations('ResearchOptions');
+  const resolveLabel = (opt: { id: string; label: string }) => {
+    if (!translateNs) return opt.label;
+    const key = `${translateNs}.${opt.id}`;
+    return tOpt.has(key) ? tOpt(key) : opt.label;
+  };
   return (
     <div>
       <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
       <div className={gridClassName || 'grid grid-cols-2 md:grid-cols-3 gap-3'}>
         {options.map((opt) => (
-          <PillOption key={opt.id} checked={selected.includes(opt.id)} label={opt.label} icon={icons[opt.id]} onChange={() => toggle(field, opt.id)} />
+          <PillOption key={opt.id} checked={selected.includes(opt.id)} label={resolveLabel(opt)} icon={icons[opt.id]} onChange={() => toggle(field, opt.id)} />
         ))}
       </div>
     </div>
@@ -215,6 +224,19 @@ function MultiSelectDropdown({
 
 export default function ResearchPage() {
   const t = useTranslations('Research');
+  // RESEARCH_BRANCHES (data/researchConfig.ts) porte des `label` en français en dur, à ne jamais
+  // rendre directement — Categories a déjà la traduction de chaque branche (mêmes ids), déjà
+  // utilisée ailleurs sur le site (accueil, /announces...).
+  const tc = useTranslations('Categories');
+  // Les tableaux d'options de researchConfig.ts (SITUATION_OPTIONS, CURRENCY_OPTIONS...) portent un
+  // `label` français en dur — ResearchOptions les traduit, converti branche par branche (Résidentiel
+  // en premier) ; `.has()` retombe sur le label français tant qu'une branche n'est pas encore migrée,
+  // pour ne jamais casser l'affichage d'une branche pas encore traitée.
+  const tOpt = useTranslations('ResearchOptions');
+  const optLabel = (ns: string, item: { id: string; label: string }) => {
+    const key = `${ns}.${item.id}`;
+    return tOpt.has(key) ? tOpt(key) : item.label;
+  };
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -1029,7 +1051,7 @@ export default function ResearchPage() {
         <Section title={t('sqRealisationStage')} icon={Sparkles}>
           <div className="flex flex-wrap gap-3">
             {REALISATION_STAGE_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={opt.label} onChange={() => setValue('realisationStage', opt.id as any)} />
+              <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={optLabel('REALISATION_STAGE_OPTIONS', opt)} onChange={() => setValue('realisationStage', opt.id as any)} />
             ))}
           </div>
         </Section>
@@ -1093,7 +1115,7 @@ export default function ResearchPage() {
           <label className="block text-sm font-bold text-gray-900 mb-3">{t('resLocPropertyTypeSought')}</label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {RESEARCH_PROPERTY_TYPES.RESIDENTIEL.filter((rt) => (RESIDENTIEL_TYPE_IDS as readonly string[]).includes(rt.id)).map((rt) => (
-              <PillOption key={rt.id} checked={selectedResPropertyTypes.includes(rt.id)} label={rt.label} onChange={() => toggleArrayValue('resPropertyTypes', rt.id)} />
+              <PillOption key={rt.id} checked={selectedResPropertyTypes.includes(rt.id)} label={optLabel('RESEARCH_PROPERTY_TYPES.RESIDENTIEL', rt)} onChange={() => toggleArrayValue('resPropertyTypes', rt.id)} />
             ))}
           </div>
         </div>
@@ -1102,7 +1124,7 @@ export default function ResearchPage() {
             <label className="block text-sm font-bold text-gray-900 mb-3">{t('resLocVillaEntrance')}</label>
             <div className="grid grid-cols-2 gap-3 max-w-md">
               {VILLA_LEVEL_ENTRANCE_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('villaLevelEntrance') === opt.id} label={opt.label} onChange={() => setValue('villaLevelEntrance', opt.id as any)} />
+                <PillOption key={opt.id} checked={watch('villaLevelEntrance') === opt.id} label={optLabel('VILLA_LEVEL_ENTRANCE_OPTIONS', opt)} onChange={() => setValue('villaLevelEntrance', opt.id as any)} />
               ))}
             </div>
           </div>
@@ -1336,7 +1358,7 @@ export default function ResearchPage() {
           <label className="block text-sm font-bold text-gray-900 mb-3">{t('budgetAirportProximity')}</label>
           <div className="flex flex-wrap gap-3">
             {AIRPORT_PROXIMITY_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={opt.label} onChange={() => setValue('airportProximity', opt.id)} />
+              <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={optLabel('AIRPORT_PROXIMITY_OPTIONS', opt)} onChange={() => setValue('airportProximity', opt.id)} />
             ))}
           </div>
         </div>
@@ -1346,7 +1368,7 @@ export default function ResearchPage() {
 
   const renderEnvironmentSection = () => (
     <Section title={t('resLocEnvironmentTitle')} icon={Compass}>
-      <OptionGroup label={t('resLocEnvironment')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} />
+      <OptionGroup label={t('resLocEnvironment')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} translateNs="ENVIRONMENT_OPTIONS" />
     </Section>
   );
 
@@ -2306,7 +2328,7 @@ export default function ResearchPage() {
           <Field label={t('budgetAirportProximity')} full>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {AIRPORT_PROXIMITY_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={opt.label} onChange={() => setValue('airportProximity', opt.id)} />
+                <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={optLabel('AIRPORT_PROXIMITY_OPTIONS', opt)} onChange={() => setValue('airportProximity', opt.id)} />
               ))}
             </div>
           </Field>
@@ -2331,7 +2353,7 @@ export default function ResearchPage() {
                   watch('currency') === c.id ? 'border-[#0094BD] bg-[#0094BD]/[0.06] text-[#0094BD]' : 'border-gray-300 text-gray-600 hover:border-gray-400 bg-gray-50'
                 )}
               >
-                {c.label}
+                {optLabel('CURRENCY_OPTIONS', c)}
               </button>
             ))}
           </div>
@@ -2341,7 +2363,7 @@ export default function ResearchPage() {
           <Field label={t('budgetFinancingMode')}>
             <div className="grid grid-cols-1 gap-3">
               {FINANCING_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('financingMode') === opt.id} label={opt.label} onChange={() => setValue('financingMode', opt.id as any)} />
+                <PillOption key={opt.id} checked={watch('financingMode') === opt.id} label={optLabel('FINANCING_OPTIONS', opt)} onChange={() => setValue('financingMode', opt.id as any)} />
               ))}
             </div>
           </Field>
@@ -2366,7 +2388,7 @@ export default function ResearchPage() {
                   key={b.id}
                   active={branch === b.id}
                   icon={BRANCH_ICONS[b.iconName] || Home}
-                  label={b.label}
+                  label={tc(b.id)}
                   color={getCategoryColor(b.id)}
                   onClick={() => {
                     setValue('branch', b.id);
@@ -2543,6 +2565,7 @@ export default function ResearchPage() {
       case 'INTERLOCUTOR': {
         if (!branch) return null;
         const options = isResidentielAchat ? ACHAT_INTERLOCUTOR_OPTIONS : (RESEARCH_INTERLOCUTORS[branch as ResearchBranchId] || []);
+        const optionsNs = isResidentielAchat ? 'ACHAT_INTERLOCUTOR_OPTIONS' : `RESEARCH_INTERLOCUTORS.${branch}`;
         return (
           <div className="w-full max-w-2xl animate-fade-in space-y-8">
             {isResidentielAchat && (
@@ -2550,7 +2573,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('interlocutorSituation')}</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {SITUATION_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('situation') === opt.id} label={opt.label} onChange={() => setValue('situation', opt.id as any)} />
+                    <PillOption key={opt.id} checked={watch('situation') === opt.id} label={optLabel('SITUATION_OPTIONS', opt)} onChange={() => setValue('situation', opt.id as any)} />
                   ))}
                 </div>
               </div>
@@ -2563,7 +2586,7 @@ export default function ResearchPage() {
                 </p>
               </div>
               {options.map((opt) => (
-                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={optLabel(optionsNs, opt)} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
               ))}
             </div>
           </div>
@@ -2781,7 +2804,7 @@ export default function ResearchPage() {
                 style={{ backgroundColor: `${getCategoryColor(branch).hex}14`, color: getCategoryColor(branch).hex }}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(branch).hex }} />
-                {RESEARCH_BRANCHES.find((b) => b.id === branch)?.label}
+                {tc(branch)}
               </span>
               {watch('transaction') && (
                 <>

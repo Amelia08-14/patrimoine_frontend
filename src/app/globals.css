@@ -48,6 +48,53 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Surfaces du navigateur reprises dans la charte — sélection de texte, focus clavier, scrollbar —
+   sinon ce sont les seuls éléments de la page qui restent en gris système par défaut. */
+::selection {
+  background: #00BFA6;
+  color: #ffffff;
+}
+
+/* Anneau de focus clavier commun à toute la page ; les composants qui définissent déjà leur
+   propre `focus:ring-*`/`focus-visible:*` gardent la priorité (spécificité CSS plus élevée). */
+:focus-visible {
+  outline: 2px solid #0094BD;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Scrollbar fine aux couleurs de la marque (Chromium/WebKit + Firefox) pour tout défilement
+   vertical normal de page ou de panneau (dropdowns, modales à contenu long...). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #00BFA6 transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #00BFA6;
+  border-radius: 999px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #00908A;
+}
+
+/* Défilement horizontal des carrousels (page d'accueil, galerie fiche annonce) — scrollbar
+   masquée sur les trois moteurs, le défilement lui-même reste géré par flèches/glisser. */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Contenu riche des pages légales (CGU / Confidentialité), produit par l'éditeur admin.
    white-space: pre-line au niveau du conteneur préserve les sauts de ligne des anciens
    textes en texte brut (avant l'éditeur riche) ; normal dans les blocs structurés pour
@@ -94,4 +141,23 @@ body {
 .animate-media-fade { animation: media-fade-in 0.9s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   .animate-media-fade { animation: none; }
+}
+
+/* Titre trop long d'une carte annonce (PropertyCard) — au lieu de couper avec "..." et une icône
+   (i) qu'il fallait survoler pour lire la suite, le titre défile de lui-même jusqu'à révéler sa
+   fin, marque une pause, puis revient au début. `--scroll-distance` (posée en JS, exactement le
+   nombre de pixels qui dépassent) est ce qui rend le défilement précis quel que soit le titre. */
+@keyframes marquee-title {
+  0%, 12%   { transform: translateX(0); }
+  45%, 55%  { transform: translateX(calc(-1 * var(--scroll-distance, 0px))); }
+  88%, 100% { transform: translateX(0); }
+}
+.animate-marquee-title {
+  animation: marquee-title 7s ease-in-out infinite;
+}
+.group:hover .animate-marquee-title {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-title { animation: none; }
 }

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
-import { Camera, Eye, Heart, MapPin, Building2, Info, Play, Images } from "lucide-react";
+import { Camera, Eye, Heart, MapPin, Building2, Play, Images, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROPERTY_TYPES } from "@/data/propertyTypes";
 import { getCategoryColor } from "@/data/categoryColors";
@@ -77,9 +77,54 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     )
 }
 
-export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; autoPlay?: boolean }) => {
+// Titre de carte trop long pour tenir sur une ligne : défile tout seul jusqu'au bout puis revient,
+// plutôt que de couper avec "..." derrière une icône (i) qu'il fallait survoler pour lire la
+// suite — surtout gênant au tactile, où le survol n'existe pas. Ne s'anime que si ça déborde
+// vraiment (mesuré à l'affichage), sinon le titre reste simplement affiché tel quel.
+function ScrollingTitle({ text, className, dir = "auto" }: { text: string; className?: string; dir?: "auto" | "ltr" | "rtl" }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [overflowPx, setOverflowPx] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      if (!containerRef.current || !textRef.current) return;
+      const diff = textRef.current.scrollWidth - containerRef.current.clientWidth;
+      setOverflowPx(diff > 2 ? diff : 0);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [text]);
+
+  return (
+    <div ref={containerRef} dir={dir} className={cn("min-w-0 overflow-hidden", className)}>
+      <span
+        ref={textRef}
+        className={cn("inline-block whitespace-nowrap", overflowPx > 0 && "animate-marquee-title")}
+        style={overflowPx > 0 ? ({ "--scroll-distance": `${overflowPx}px` } as React.CSSProperties) : undefined}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
+type PropertyCardProps = {
+  announce: any;
+  autoPlay?: boolean;
+  /** Réorganisation plus éditoriale réservée aux carrousels de la page d'accueil. */
+  variant?: "default" | "home";
+  /** État initial du cœur, fourni par les pages qui le connaissent déjà (ex. « Mes favoris »). */
+  initialFavorite?: boolean;
+  /** Appelé après un toggle réussi afin que la page parente puisse synchroniser sa liste. */
+  onFavoriteChange?: (isFavorite: boolean) => void;
+};
+
+export const PropertyCard = ({ announce, autoPlay = false, variant = "default", initialFavorite = false, onFavoriteChange }: PropertyCardProps) => {
   const t = useTranslations("PropertyCard");
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
+  const isHomeVariant = variant === "home";
 
   const commune = announce.property?.address?.town?.nameFr;
   const wilaya = announce.property?.address?.town?.city?.nameFr;
@@ -92,7 +137,7 @@ export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; au
   const isSale = announce.type === "SALE";
 
   const fullTitle = announce.title || t("titleFallback", { category: categoryName, location: locationLabel });
-  const shortTitle = fullTitle.length > 15 ? `${fullTitle.slice(0, 15).trimEnd()}…` : fullTitle;
+  const formattedPrice = new Intl.NumberFormat('fr-DZ').format(announce.price);
 
   const images = announce.property?.images || [];
 
@@ -117,7 +162,7 @@ export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; au
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images, videosList.join('|'), coverVideoIndex]);
 
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(initialFavorite);
   const [isHovering, setIsHovering] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
 
@@ -147,7 +192,9 @@ export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; au
         await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/favorites/${announce.id}`, {}, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        setIsFavorite(!isFavorite);
+        const next = !isFavorite;
+        setIsFavorite(next);
+        onFavoriteChange?.(next);
     } catch (error) {
         console.error("Error toggling favorite", error);
     }
@@ -155,7 +202,7 @@ export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; au
 
   return (
     <Link href={`/announces/${announce.id}`} className="block h-full w-full">
-      <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 group cursor-pointer border border-gray-100 h-full w-full flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-[#03303c] rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gray-100 dark:border-white/10 h-full w-full flex flex-col overflow-hidden">
 
         {/* Image */}
         <div
@@ -231,51 +278,77 @@ export const PropertyCard = ({ announce, autoPlay = false }: { announce: any; au
           <PhotoOverlaySpecs announce={announce} />
         </div>
 
-        {/* Contenu — ordre : sous-catégorie, prix (seul, aligné à droite), titre, localisation, agence */}
-        <div className="p-4 flex flex-col gap-1.5 flex-1">
-            <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide truncate">
-                {categoryName}
-            </span>
-
-            <div className="text-right">
-                <span className="text-base font-bold text-[#003B4A] leading-none whitespace-nowrap">
-                    {new Intl.NumberFormat('fr-DZ').format(announce.price)}
-                    <span className="text-[10px] text-gray-400 font-semibold ml-1">DA</span>
+        {/* Contenu — sur l'accueil, la catégorie reste entière puis titre et prix partagent la ligne suivante. */}
+        <div className={cn("p-4 flex flex-col flex-1", isHomeVariant ? "min-h-36" : "gap-1.5")}>
+            {isHomeVariant ? (
+                <span dir="auto" className="block w-full break-words text-left text-[#00BFA6] font-bold text-[11px] leading-4 uppercase tracking-wide">
+                    {categoryName}
                 </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 min-w-0">
-                <h3 className="text-gray-900 font-bold text-[15px] leading-snug truncate">
-                    {shortTitle}
-                </h3>
-                {fullTitle.length > 15 && (
-                    <span title={fullTitle} className="shrink-0 text-gray-300 hover:text-gray-500 cursor-help">
-                        <Info className="h-3.5 w-3.5" />
+            ) : (
+                <>
+                    <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide truncate">
+                        {categoryName}
                     </span>
-                )}
+                    <div className="text-right">
+                        <span className="text-base font-bold text-[#003B4A] dark:text-[#5EEAD4] leading-none whitespace-nowrap">
+                            {formattedPrice}
+                            <span className="text-[10px] text-gray-400 dark:text-white/40 font-semibold ml-1">DA</span>
+                        </span>
+                    </div>
+                </>
+            )}
+
+            {isHomeVariant ? (
+                <div dir="ltr" className="mt-2 flex min-w-0 items-center justify-between gap-3">
+                    <ScrollingTitle
+                        text={fullTitle}
+                        className="text-[15px] font-semibold leading-5 text-gray-900 dark:text-white"
+                    />
+                    <span dir="ltr" className="shrink-0 whitespace-nowrap text-right text-base font-extrabold tabular-nums text-[#003B4A] dark:text-[#5EEAD4] leading-none">
+                        {formattedPrice}
+                        <span className="ml-1 text-[10px] font-semibold text-gray-400 dark:text-white/40">DA</span>
+                    </span>
+                </div>
+            ) : (
+                <ScrollingTitle
+                    text={fullTitle}
+                    className="text-gray-900 dark:text-white font-semibold text-[15px] leading-snug"
+                />
+            )}
+
+            <div className={cn("flex min-w-0 items-center text-gray-400 dark:text-white/40 text-xs font-medium gap-1", isHomeVariant && "mt-1.5")}>
+                <MapPin className="h-3.5 w-3.5 text-gray-300 dark:text-white/30 shrink-0" />
+                <span dir="auto" className="truncate">{locationLabel}</span>
             </div>
 
-            <div className="flex items-center text-gray-400 text-xs font-medium gap-1 truncate">
-                <MapPin className="h-3.5 w-3.5 text-gray-300 shrink-0" />
-                {locationLabel}
-            </div>
-
-            {/* Agence : logo rond + nom si société, sinon ligne vide de même hauteur pour garder l'alignement des cartes */}
-            <div className="mt-auto pt-2 flex items-center gap-2 h-8">
+            {/* L'identité du vendeur forme un pied stable ; les particuliers sont nommés sur l'accueil. */}
+            <div className={cn(
+                "mt-auto flex items-center gap-2",
+                isHomeVariant ? "border-t border-gray-100 pt-2 dark:border-white/10" : "h-8 pt-2"
+            )}>
                 {isCompany ? (
                     <>
-                        <div className="h-7 w-7 rounded-full border border-gray-100 shrink-0 overflow-hidden flex items-center justify-center bg-gray-50">
+                        <div className="h-7 w-7 rounded-full border border-gray-100 dark:border-white/10 shrink-0 overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-white/5">
                             {announce.user?.imageUrl ? (
                                 <img
                                     src={getImageUrl(announce.user.imageUrl) || ''}
-                                    alt={announce.user.companyName}
+                                    alt={announce.user.companyName || t("professionalSeller")}
                                     className="h-full w-full object-contain"
                                 />
                             ) : (
-                                <Building2 className="h-3.5 w-3.5 text-gray-300" />
+                                <Building2 className="h-3.5 w-3.5 text-gray-300 dark:text-white/30" />
                             )}
                         </div>
-                        <span className="text-gray-500 text-xs font-semibold truncate">{announce.user?.companyName}</span>
+                        <span className="truncate text-xs font-semibold text-gray-500 dark:text-white/50">
+                            {announce.user?.companyName || (isHomeVariant ? t("professionalSeller") : "")}
+                        </span>
+                    </>
+                ) : isHomeVariant ? (
+                    <>
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-gray-50 dark:border-white/10 dark:bg-white/5">
+                            <UserRound className="h-3.5 w-3.5 text-gray-400 dark:text-white/40" />
+                        </div>
+                        <span className="truncate text-xs font-semibold text-gray-500 dark:text-white/50">{t("privateSeller")}</span>
                     </>
                 ) : null}
             </div>

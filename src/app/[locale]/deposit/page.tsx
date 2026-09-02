@@ -1600,6 +1600,25 @@ const InlineCalendar = ({ value, onChange }: { value?: Date, onChange: (date: Da
 
 function DepositPageComponent() {
   const t = useTranslations("Deposit")
+  // BASE_REAL_ESTATE_CATEGORIES porte des `label` en français en dur — Categories a déjà la
+  // traduction de chaque catégorie (mêmes ids), utilisée partout ailleurs sur le site.
+  const tc = useTranslations("Categories")
+  // DepositOptions couvre pour l'instant la branche Résidentiel (+ son pendant Bureaux et
+  // Commerces qui partage les mêmes écrans) — .has() retombe sur le libellé français en dur tant
+  // qu'un groupe d'options n'a pas encore été migré, même mécanisme que optLabel dans research/page.tsx.
+  const tOpt = useTranslations("DepositOptions")
+  const optLabel = (group: string, item: { id: string; label: string }) => {
+    const nestedKey = `${group}.${item.id}.label` // groupes label+description (USAGE_TYPES...)
+    if (tOpt.has(nestedKey)) return tOpt(nestedKey)
+    const flatKey = `${group}.${item.id}` // groupes à simple libellé
+    if (tOpt.has(flatKey)) return tOpt(flatKey)
+    return item.label
+  }
+  const optDesc = (group: string, item: { id: string; description?: string; desc?: string }) => {
+    const key = `${group}.${item.id}.description`
+    if (tOpt.has(key)) return tOpt(key)
+    return item.description ?? item.desc ?? ""
+  }
   const router = useRouter()
   const pathname = usePathname()
   const forcedUserType: "PARTICULIER" | "SOCIETE" | undefined =
@@ -3491,7 +3510,7 @@ function DepositPageComponent() {
                             style={{ backgroundColor: `${getCategoryColor(realEstateType).hex}14`, color: getCategoryColor(realEstateType).hex }}
                         >
                             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(realEstateType).hex }} />
-                            {BASE_REAL_ESTATE_CATEGORIES.find((c) => c.id === realEstateType)?.label}
+                            {tc(realEstateType)}
                         </span>
                         {transactionType && (
                             <>
@@ -3623,7 +3642,7 @@ function DepositPageComponent() {
                                                 className={cn("text-lg font-bold text-center max-w-[180px] transition-colors", !isSelected && "text-gray-500")}
                                                 style={isSelected ? { color: catColor.hex } : undefined}
                                             >
-                                                {cat.label}
+                                                {tc(cat.id)}
                                             </span>
                                         </div>
                                     )
@@ -5663,7 +5682,7 @@ function DepositPageComponent() {
                                         <label className="block text-sm font-bold text-gray-900 mb-2">État général</label>
                                         <select {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
                                             <option value="">Sélectionner</option>
-                                            {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                            {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                         </select>
                                     </div>
                                     <div>
@@ -6007,7 +6026,7 @@ function DepositPageComponent() {
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">Sélectionner</option>
-                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                         </select>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
@@ -6038,7 +6057,7 @@ function DepositPageComponent() {
                                                         <label key={m.id} className="cursor-pointer">
                                                             <input type="radio" value={m.id} {...register("buildingTypologyMode")} className="peer sr-only" />
                                                             <div className="w-full min-h-[64px] flex items-center justify-center px-4 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 text-center whitespace-normal leading-snug">
-                                                                {m.label}
+                                                                {optLabel('BUILDING_TYPOLOGY_MODES', m)}
                                                             </div>
                                                         </label>
                                                     ))}
@@ -6101,7 +6120,7 @@ function DepositPageComponent() {
                                                                     <label key={m.id} className="cursor-pointer">
                                                                         <input type="radio" value={m.id} {...register("buildingSurfaceMode")} className="peer sr-only" />
                                                                         <div className="w-full px-2 py-2 rounded-md text-[11px] font-bold text-gray-700 peer-checked:bg-[#00BFA6] peer-checked:text-white transition-colors text-center whitespace-nowrap">
-                                                                            {m.label}
+                                                                            {optLabel('BUILDING_SURFACE_MODES', m)}
                                                                         </div>
                                                                     </label>
                                                                 ))}
@@ -6163,7 +6182,7 @@ function DepositPageComponent() {
                                                                     <label key={s.id} className="cursor-pointer">
                                                                         <input type="checkbox" value={s.id} {...register("buildingApartmentStyle")} className="peer sr-only" />
                                                                         <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">
-                                                                            {s.label}
+                                                                            {optLabel('BUILDING_APARTMENT_STYLES', s)}
                                                                         </div>
                                                                     </label>
                                                                 ))}
@@ -6252,7 +6271,7 @@ function DepositPageComponent() {
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">Sélectionner</option>
-                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                         </select>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
@@ -6425,7 +6444,7 @@ function DepositPageComponent() {
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
                                                     <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                         <option value="">Sélectionner</option>
-                                                        {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                                        {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                     </select>
                                                     {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                 </div>
@@ -6492,7 +6511,7 @@ function DepositPageComponent() {
                                                 <label key={u.id} className="cursor-pointer">
                                                     <input type="checkbox" value={u.id} {...register("buildingUsageTypes")} className="peer sr-only" />
                                                     <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
-                                                        {u.label}
+                                                        {optLabel('APARTMENT_LIFESTYLE_TYPES', u)}
                                                     </div>
                                                 </label>
                                             ))}
@@ -6508,11 +6527,11 @@ function DepositPageComponent() {
                                                     <label key={u.id} className="cursor-pointer group relative">
                                                         <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
                                                         <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
-                                                            {u.label}
+                                                            {optLabel('USAGE_TYPES', u)}
                                                             <div className="relative group/info ml-1">
                                                                 <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
-                                                                    {u.description}
+                                                                    {optDesc('USAGE_TYPES', u)}
                                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
                                                                 </div>
                                                             </div>
@@ -6533,11 +6552,11 @@ function DepositPageComponent() {
                                                     <label key={u.id} className="cursor-pointer group relative">
                                                         <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
                                                         <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
-                                                            {u.label}
+                                                            {optLabel('ENTRY_ACCESS_TYPES', u)}
                                                             <div className="relative group/info ml-1">
                                                                 <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
-                                                                    {u.description}
+                                                                    {optDesc('ENTRY_ACCESS_TYPES', u)}
                                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
                                                                 </div>
                                                             </div>
@@ -6657,11 +6676,11 @@ function DepositPageComponent() {
                                             {KITCHEN_TYPES.map(k => (
                                                 <label key={k.id} className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center relative group min-w-[140px]">
                                                     <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-sm font-bold text-gray-900">{k.label}</span>
+                                                    <span className="text-sm font-bold text-gray-900">{optLabel('KITCHEN_TYPES', k)}</span>
                                                     <div className="relative group/info ml-1">
                                                         <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
                                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 font-normal text-left">
-                                                            {k.description}
+                                                            {optDesc('KITCHEN_TYPES', k)}
                                                             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                                                         </div>
                                                     </div>
@@ -6697,14 +6716,14 @@ function DepositPageComponent() {
                                                                         : upsertArrayValue((Array.isArray(current) ? current.filter((x) => x !== "no_appliances") : []), id, checked)
                                                                 setValue("kitchenEquipment", next as any, { shouldValidate: true })
                                                             }}
-                                                            className="peer sr-only" 
+                                                            className="peer sr-only"
                                                         />
                                                         <div className="p-2 border-2 border-gray-200 rounded-xl flex flex-col items-center gap-1 text-center peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-white h-20 justify-start">
                                                             <div className="h-7 flex items-center justify-center">
                                                                 <Icon className="h-5 w-5 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6] transition-colors" />
                                                             </div>
                                                             <div className="min-h-[36px] flex items-start justify-center px-1">
-                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('VILLA_EQUIPMENTS_KITCHEN', item)}</span>
                                                             </div>
                                                         </div>
                                                     </label>
@@ -6748,7 +6767,7 @@ function DepositPageComponent() {
                                                     <input type="checkbox" value={item.id} {...register("exteriorFeatures")} className="peer sr-only" />
                                                     <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
                                                         <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                        <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                        <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('VILLA_EQUIPMENTS_EXTERIOR', item)}</span>
                                                     </div>
                                                 </label>
                                             )
@@ -6770,7 +6789,7 @@ function DepositPageComponent() {
                                                             <input type="radio" value={h.id} {...register("heatingType")} className="peer sr-only" />
                                                             <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
                                                                 <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{h.label}</span>
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('HEATING_TYPES', h)}</span>
                                                             </div>
                                                         </label>
                                                     )
@@ -6790,7 +6809,7 @@ function DepositPageComponent() {
                                                             <input type="radio" value={a.id} {...register("acType")} className="peer sr-only" />
                                                             <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
                                                                 <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{a.label}</span>
+                                                                <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('AC_TYPES', a)}</span>
                                                             </div>
                                                         </label>
                                                     )
@@ -6815,7 +6834,7 @@ function DepositPageComponent() {
                                                                     <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
                                                                 </div>
                                                                 <div className="min-h-[32px] flex items-center justify-center">
-                                                                    <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{s.label}</span>
+                                                                    <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('VILLA_EQUIPMENTS_SECURITY', s)}</span>
                                                                 </div>
                                                             </div>
                                                         </label>
@@ -6838,7 +6857,7 @@ function DepositPageComponent() {
                                                                     <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
                                                                 </div>
                                                                 <div className="min-h-[32px] flex items-center justify-center">
-                                                                    <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{c.label}</span>
+                                                                    <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('VILLA_EQUIPMENTS_CONNECTIVITY', c)}</span>
                                                                 </div>
                                                             </div>
                                                         </label>

@@ -19,7 +19,7 @@ const DEFAULT_COLORS = ["#0EA5E9", "#059669", "#DB2777", "#7C3AED", "#EA580C"]
 // Habillage visuel (icône/couleur/bordure/mise en avant) des formules connues — le contenu
 // (titre/description/prix/points) vient de l'admin (Points & Achats).
 const BOUTIQUE_PACK_STYLE: Record<string, { icon: typeof Store; color: string; border: string; popular?: boolean }> = {
-  STANDARD: { icon: Store, color: "#6B7280", border: "border-gray-200" },
+  STANDARD: { icon: Store, color: "#6B7280", border: "border-gray-200 dark:border-white/10" },
   AVANCEE: { icon: Star, color: "#1E40AF", border: "border-blue-200", popular: true },
   ENTREPRISE: { icon: Crown, color: "#D97706", border: "border-amber-200" },
 }
@@ -49,7 +49,7 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
         price: p.price,
         points: p.points,
         features: FEATURES[p.key] || [],
-        ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
+        ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
       }))
     : FALLBACK
 
@@ -72,13 +72,13 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 my-4">
+      <div className="bg-white dark:bg-white/5 rounded-2xl shadow-xl w-full max-w-4xl p-6 my-4">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="font-black text-gray-900 text-xl flex items-center gap-2">
+            <h3 className="font-black text-gray-900 dark:text-white text-xl flex items-center gap-2">
               <Store className="h-6 w-6 text-[#00BFA6]" /> {t("activateBoutiqueTitle")}
             </h3>
-            <p className="text-sm text-gray-500 mt-1">{t("activateBoutiqueSubtitle")}</p>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{t("activateBoutiqueSubtitle")}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="h-5 w-5" /></button>
         </div>
@@ -91,7 +91,7 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
           {BOUTIQUE_PACKS.map(pack => {
             const Icon = pack.icon
             return (
-              <div key={pack.id} className={`relative bg-white rounded-2xl border-2 ${pack.border} overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6]' : ''}`}>
+              <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 ${pack.border} overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6]' : ''}`}>
                 {pack.popular && (
                   <div className="absolute top-0 inset-x-0 text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
                 )}
@@ -101,15 +101,15 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
                       <Icon className="h-5 w-5" style={{ color: pack.color }} />
                     </div>
                     <div>
-                      <div className="font-black text-gray-900 text-sm">{pack.label}</div>
+                      <div className="font-black text-gray-900 dark:text-white text-sm">{pack.label}</div>
                       <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
                     </div>
                   </div>
-                  <div className="text-xl font-black text-gray-900 mb-1">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500">{t("perMonth")}</span></div>
-                  {pack.description && <p className="text-[11px] text-gray-400 mb-3">{pack.description}</p>}
+                  <div className="text-xl font-black text-gray-900 dark:text-white mb-1">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500 dark:text-white/50">{t("perMonth")}</span></div>
+                  {pack.description && <p className="text-[11px] text-gray-400 dark:text-white/40 mb-3">{pack.description}</p>}
                   <ul className={`space-y-1.5 mb-4 ${pack.description ? '' : 'mt-2'}`}>
                     {pack.features.map(f => (
-                      <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                      <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-white/60">
                         <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
                       </li>
                     ))}
@@ -185,7 +185,7 @@ export default function VitrineTypePage() {
         points: p.points,
         features: FEATURES_INLINE[p.key] || [],
         tagline: TAGLINES[p.key] || p.description || "",
-        ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
+        ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
       }))
     : INLINE_FALLBACK
 
@@ -230,7 +230,7 @@ export default function VitrineTypePage() {
   if (loading || isPro === null) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-[#00BFA6]" /></div>
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
       {toast && (
         <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
       )}
@@ -239,12 +239,12 @@ export default function VitrineTypePage() {
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex items-center justify-between flex-wrap gap-4">
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6 flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <LayoutTemplate className="h-7 w-7 text-[#00BFA6]" /> {t("vitrineTitle")}
             </h1>
-            <p className="text-gray-500 mt-1 text-sm">{t("vitrineSubtitle")}</p>
+            <p className="text-gray-500 dark:text-white/50 mt-1 text-sm">{t("vitrineSubtitle")}</p>
           </div>
           {activeSub && (
             <Link href={`/boutique/${boutiqueSlug || userId}`} target="_blank" className="text-sm font-bold text-[#00BFA6] hover:underline flex items-center gap-1.5">
@@ -255,14 +255,14 @@ export default function VitrineTypePage() {
 
         {/* Formule active */}
         {activeSub && (
-          <div className="bg-white rounded-2xl border border-[#00BFA6]/30 shadow-sm p-5 flex items-center justify-between flex-wrap gap-3">
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-[#00BFA6]/30 shadow-sm p-5 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-[#00BFA6]/10 flex items-center justify-center">
                 <ShieldCheck className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <div>
-                <p className="font-black text-gray-900">{packLabel(activeSub.pack)}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-black text-gray-900 dark:text-white">{packLabel(activeSub.pack)}</p>
+                <p className="text-sm text-gray-500 dark:text-white/50">
                   {t("activeUntil", { date: new Date(activeSub.expiresAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR'), points: activeSub.pointsIncluded })}
                 </p>
               </div>
@@ -280,17 +280,17 @@ export default function VitrineTypePage() {
 
         {/* Grille des 3 offres — toujours visible, même avec un abonnement actif, pour pouvoir
             comparer et changer de formule à tout moment. */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
           <div className="mb-5">
-            <h2 className="font-black text-gray-900 text-lg flex items-center gap-2"><Store className="h-5 w-5 text-[#00BFA6]" /> {t("boutiqueOffersTitle")}</h2>
-            <p className="text-sm text-gray-500 mt-1">{activeSub ? t("boutiqueOffersActiveSubtitle") : t("boutiqueOffersSubtitle")}</p>
+            <h2 className="font-black text-gray-900 dark:text-white text-lg flex items-center gap-2"><Store className="h-5 w-5 text-[#00BFA6]" /> {t("boutiqueOffersTitle")}</h2>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{activeSub ? t("boutiqueOffersActiveSubtitle") : t("boutiqueOffersSubtitle")}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {inlineBoutiquePacks.map(pack => {
               const Icon = pack.icon
               const isCurrent = activeSub?.pack === pack.id
               return (
-                <div key={pack.id} className={`relative bg-white rounded-2xl border-2 overflow-hidden flex flex-col ${isCurrent ? 'border-[#00BFA6] ring-2 ring-[#00BFA6]' : pack.border} ${pack.popular && !isCurrent ? 'ring-2 ring-[#00BFA6]' : ''}`}>
+                <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 overflow-hidden flex flex-col ${isCurrent ? 'border-[#00BFA6] ring-2 ring-[#00BFA6]' : pack.border} ${pack.popular && !isCurrent ? 'ring-2 ring-[#00BFA6]' : ''}`}>
                   {isCurrent ? (
                     <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6] flex items-center justify-center gap-1.5">
                       <ShieldCheck className="h-3.5 w-3.5" /> {t("currentPlanBadge")}
@@ -303,14 +303,14 @@ export default function VitrineTypePage() {
                       <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: pack.color + '20' }}>
                         <Icon className="h-5 w-5" style={{ color: pack.color }} />
                       </div>
-                      <div className="font-black text-gray-900 text-sm">{pack.label}</div>
+                      <div className="font-black text-gray-900 dark:text-white text-sm">{pack.label}</div>
                     </div>
-                    <p className="text-xs text-gray-500 leading-snug mb-3">{pack.tagline}</p>
+                    <p className="text-xs text-gray-500 dark:text-white/50 leading-snug mb-3">{pack.tagline}</p>
                     <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
-                    <div className="text-xl font-black text-gray-900 mb-3">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500">{t("perMonth")}</span></div>
+                    <div className="text-xl font-black text-gray-900 dark:text-white mb-3">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500 dark:text-white/50">{t("perMonth")}</span></div>
                     <ul className="space-y-1.5 mb-4 flex-1">
                       {pack.features.slice(0, 3).map(f => (
-                        <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                        <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-white/60">
                           <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
                         </li>
                       ))}
@@ -332,17 +332,17 @@ export default function VitrineTypePage() {
 
         {/* Historique abonnements boutique */}
         {mySubs.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><Clock className="h-5 w-5 text-amber-500" /> {t("subsHistoryTitle")}</h2>
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
+            <h2 className="font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2 text-base"><Clock className="h-5 w-5 text-amber-500" /> {t("subsHistoryTitle")}</h2>
             <div className="space-y-3">
               {mySubs.map(s => (
-                <div key={s.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div key={s.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/10 last:border-0">
                   <div>
-                    <span className="font-bold text-gray-900">{packLabel(s.pack)}</span>
-                    <span className="text-gray-500 text-sm ml-2">— {s.price.toLocaleString()} {t("perMonthShort")}</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{packLabel(s.pack)}</span>
+                    <span className="text-gray-500 dark:text-white/50 text-sm ml-2">— {s.price.toLocaleString()} {t("perMonthShort")}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
+                    <span className="text-xs text-gray-400 dark:text-white/40">{new Date(s.createdAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                       s.status === 'VALIDATED' ? 'bg-green-100 text-green-700' :
                       s.status === 'REJECTED' ? 'bg-red-100 text-red-700' :

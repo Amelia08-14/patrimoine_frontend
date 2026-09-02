@@ -1,17 +1,30 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, CheckCircle, Heart, MapPin, Bath, Square, ChevronLeft, ChevronRight, Camera, Video, Search, ChevronDown, Eye, Building2, Check, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Plus, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, Smartphone, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid } from "lucide-react"
+import { ArrowRight, MapPin, ChevronLeft, ChevronRight, Search, Building2, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { Link, useRouter } from "@/i18n/navigation"
 import axios from "axios"
+import { motion, useReducedMotion, type Variants } from "framer-motion"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { getCategoryColor } from "@/data/categoryColors"
+
+// Entrée du hero — le seul moment chorégraphié de la page (le reste reste calme), chaque ligne
+// arrive légèrement après la précédente. `prefers-reduced-motion` désactive le mouvement en
+// gardant le contenu visible d'emblée (cf. usage de useReducedMotion plus bas).
+const heroStagger: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+}
+const heroItem: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+}
 
 // Helper for Icons
 const getIcon = (name: string) => {
@@ -25,9 +38,6 @@ const getIcon = (name: string) => {
 
 // Mapping des couleurs par ID de catégorie
 const getCategoryColorById = (categoryId: string) => getCategoryColor(categoryId).bg500;
-
-// Mapping des couleurs d'icônes
-const getIconColorById = (categoryId: string) => getCategoryColor(categoryId).text500;
 
 // Dégradé du hero par catégorie — couleur dynamique par id, donc appliqué via style inline
 // (Tailwind ne peut pas générer une classe arbitraire construite au runtime) : à consommer comme
@@ -52,6 +62,12 @@ const getCategoryHeroImageById = (categoryId: string) => {
 // Section Carousel avec flèches de navigation et auto-scroll
 const CarouselSection = ({ title, categoryId, items }: { title: string, categoryId: string, items: any[], maxItems?: number }) => {
   const t = useTranslations("HomePage")
+  // En arabe (RTL), la ligne de titre s'inverse visuellement (le flex mirror automatique du
+  // navigateur place le titre à droite, les boutons à gauche) — mais les chevrons eux-mêmes ne se
+  // retournent jamais tout seuls : on les échange ici pour que chacun pointe encore vers "avant"/
+  // "arrière" une fois la ligne inversée, au lieu de pointer dans le mauvais sens visuel.
+  const locale = useLocale()
+  const isRtl = locale === "ar"
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isHovered, setIsHovered] = useState(false)
 
@@ -99,31 +115,31 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">{title}</h2>
-            <div className="flex gap-2">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white capitalize sm:text-2xl">{title}</h2>
+            <div className="hidden gap-2 sm:flex">
               <button
                 onClick={() => scroll('left')}
                 className="p-2 rounded-full border border-gray-200 dark:border-white/15 text-gray-600 dark:text-white/60 hover:text-white transition-all shadow-sm"
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = catColor.hex; e.currentTarget.style.borderColor = catColor.hex }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '' }}
-                aria-label="Défiler à gauche"
+                aria-label={t("scrollLeft")}
               >
-                <ChevronLeft className="h-5 w-5" />
+                {isRtl ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
               </button>
               <button
                 onClick={() => scroll('right')}
                 className="p-2 rounded-full border border-gray-200 dark:border-white/15 text-gray-600 dark:text-white/60 hover:text-white transition-all shadow-sm"
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = catColor.hex; e.currentTarget.style.borderColor = catColor.hex }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '' }}
-                aria-label="Défiler à droite"
+                aria-label={t("scrollRight")}
               >
-                <ChevronRight className="h-5 w-5" />
+                {isRtl ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
               </button>
             </div>
           </div>
-          <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex items-center gap-1.5 text-sm font-bold hover:underline whitespace-nowrap" style={{ color: catColor.hex }}>
+          <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-bold hover:underline sm:text-sm" style={{ color: catColor.hex }}>
             {t("viewAllListings")} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -135,9 +151,9 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((item) => (
-            <div key={item.id} className="min-w-[280px] md:min-w-[300px] lg:w-[calc(23%-1.1rem)] lg:min-w-[calc(23%-1.1rem)] flex-shrink-0 snap-start flex">
-              <div className="w-full">
-                <PropertyCard announce={item} autoPlay />
+            <div key={item.id} className="flex w-[calc(100vw-2rem)] min-w-[280px] max-w-[300px] flex-shrink-0 snap-start md:w-[300px] md:min-w-[300px] lg:w-[calc(23%-1.1rem)] lg:min-w-[calc(23%-1.1rem)] lg:max-w-none">
+              <div className="min-w-0 w-full">
+                <PropertyCard announce={item} autoPlay variant="home" />
               </div>
             </div>
           ))}
@@ -175,161 +191,6 @@ const RotatingCategoryWord = ({ categories, tc }: { categories: { id: string, ic
         {tc(cat.id)}
       </span>
     </span>
-  )
-}
-
-// Carousel des Catégories avec effet loupe
-const CategoryCarousel = ({ categories, onCategoryClick }: { categories: any[], onCategoryClick: (id: string) => void }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scales, setScales] = useState<number[]>([]);
-
-  const handleScroll = () => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const containerCenter = container.scrollLeft + container.clientWidth / 2;
-    
-    const newScales = categories.map((_, index) => {
-        const item = container.children[index] as HTMLElement;
-        if (!item) return 0.9;
-        const itemCenter = item.offsetLeft + item.offsetWidth / 2;
-        const distance = Math.abs(containerCenter - itemCenter);
-        
-        // Logic de scaling
-        const range = 250; 
-        let scale = 1.4 - (distance / range) * 0.5; 
-        return Math.max(0.9, Math.min(1.4, scale));
-    });
-    setScales(newScales);
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    
-    // Trouver l'élément le plus proche du centre actuel
-    const containerCenter = container.scrollLeft + container.clientWidth / 2;
-    let closestIndex = 0;
-    let minDistance = Infinity;
-
-    Array.from(container.children).forEach((child, index) => {
-        const item = child as HTMLElement;
-        const itemCenter = item.offsetLeft + item.offsetWidth / 2;
-        const distance = Math.abs(containerCenter - itemCenter);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestIndex = index;
-        }
-    });
-
-    // Calculer l'index cible (un par un)
-    let targetIndex = direction === 'left' ? closestIndex - 1 : closestIndex + 1;
-    targetIndex = Math.max(0, Math.min(categories.length - 1, targetIndex));
-
-    const targetItem = container.children[targetIndex] as HTMLElement;
-    if (targetItem) {
-        targetItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-  };
-
-  useEffect(() => {
-    handleScroll();
-    const container = containerRef.current;
-    if (container) {
-        container.addEventListener('scroll', handleScroll);
-        window.addEventListener('resize', handleScroll);
-        
-        // Center initial view
-        setTimeout(() => {
-            if(container) {
-                const middleIndex = Math.floor(categories.length / 2);
-                const targetItem = container.children[middleIndex] as HTMLElement;
-                if(targetItem) {
-                    targetItem.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
-                    handleScroll();
-                }
-            }
-        }, 100);
-
-        return () => {
-            container.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('resize', handleScroll);
-        }
-    }
-  }, [categories]);
-
-  return (
-    <div className="relative w-full py-12 group px-4 md:px-12">
-        {/* Navigation Arrows */}
-        <button 
-            onClick={() => scroll('left')}
-            className="absolute left-0 md:left-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg text-gray-800 hover:text-[#00BFA6] hover:scale-110 border border-gray-100 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-        >
-            <ChevronLeft className="h-6 w-6" />
-        </button>
-        <button 
-            onClick={() => scroll('right')}
-            className="absolute right-0 md:right-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg text-gray-800 hover:text-[#00BFA6] hover:scale-110 border border-gray-100 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-        >
-            <ChevronRight className="h-6 w-6" />
-        </button>
-
-        <div 
-            ref={containerRef}
-            className="flex overflow-x-auto gap-8 px-[calc(50%-60px)] snap-x snap-mandatory hide-scrollbar pb-12 pt-8 items-center"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-            {categories.map((category, index) => {
-                const Icon = getIcon(category.iconName);
-                const scale = scales[index] || 0.9;
-                const isActive = scale > 1.2;
-
-                return (
-                    <button
-                        key={category.id}
-                        onClick={() => {
-                            onCategoryClick(category.id);
-                            if (containerRef.current) {
-                                const item = containerRef.current.children[index] as HTMLElement;
-                                if (item) {
-                                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                                }
-                            }
-                        }}
-                        className="snap-center flex flex-col items-center gap-6 transition-all duration-300 ease-out min-w-[120px] outline-none"
-                        style={{ 
-                            transform: `scale(${scale})`,
-                            zIndex: isActive ? 10 : 1,
-                            opacity: isActive ? 1 : 0.6
-                        }}
-                    >
-                        <div className={cn(
-                            "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300",
-                            isActive 
-                                ? cn("shadow-2xl shadow-gray-200 border-2 border-transparent ring-4 ring-gray-50", getCategoryColorById(category.id).replace('bg-', 'bg-').replace('500', '100').replace('400', '100'))
-                                : "bg-white shadow-md border border-gray-100"
-                        )}>
-                            <Icon className={cn(
-                                "h-10 w-10 transition-colors duration-300",
-                                isActive ? getIconColorById(category.id) : getIconColorById(category.id)
-                            )} />
-                        </div>
-                        <span className={cn(
-                            "text-[10px] md:text-xs uppercase font-bold text-center transition-colors duration-300 max-w-[140px] px-3 py-1.5 rounded-full tracking-widest leading-tight",
-                            isActive 
-                                ? cn("bg-gray-100", getIconColorById(category.id))
-                                : "text-gray-400"
-                        )}>
-                            {category.label}
-                        </span>
-                    </button>
-                )
-            })}
-        </div>
-        
-        {/* Gradients */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-gray-50 to-transparent pointer-events-none z-20" />
-        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none z-20" />
-    </div>
   )
 }
 
@@ -413,6 +274,8 @@ export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("HomePage");
   const tc = useTranslations("Categories");
+  const isRtl = useLocale() === "ar";
+  const heroReducedMotion = useReducedMotion();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [announces, setAnnounces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -530,33 +393,41 @@ export default function HomePage() {
 
       {/* HERO SECTION — plein écran, photo edge-to-edge avec fondu texte/image */}
       <div className="bg-white dark:bg-transparent">
-        <div className="relative h-[400px] sm:h-[440px] lg:h-[480px] overflow-hidden group">
-          {/* Photo plein cadre, rotation par catégorie */}
-          {activeSlides.map((slide, index) => (
-            <img
-              key={slide.id === -1 ? `fallback-${slide.categoryId}` : slide.id}
-              src={slide.id === -1 ? slide.imageUrl : `${apiUrl}${slide.imageUrl}`}
-              alt={slide.title || (slide.categoryId ? tc(slide.categoryId) : "")}
-              className={cn("absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out", index === currentSlide ? "opacity-100" : "opacity-0")}
-            />
-          ))}
+        <div className="relative min-h-[560px] sm:min-h-[440px] lg:min-h-[480px] flex items-center group">
+          {/* Calque photo — couvre toute la hauteur réelle de la section (variable sur mobile
+              selon la longueur du texte traduit), jamais la hauteur fixe d'avant qui rognait le
+              contenu en overflow-hidden dès que le texte dépassait 400px sur un petit écran. */}
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Photo plein cadre, rotation par catégorie */}
+            {activeSlides.map((slide, index) => (
+              <img
+                key={slide.id === -1 ? `fallback-${slide.categoryId}` : slide.id}
+                src={slide.id === -1 ? slide.imageUrl : `${apiUrl}${slide.imageUrl}`}
+                alt={slide.title || (slide.categoryId ? tc(slide.categoryId) : "")}
+                className={cn("absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out", index === currentSlide ? "opacity-100" : "opacity-0")}
+              />
+            ))}
 
-          {/* Fondu : vert/navy de la charte plein sur le texte, dégradé vers la photo à droite */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#003B4A] via-[#003B4A]/85 to-[#00BFA6]/10 sm:via-[#003B4A]/80 sm:to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#00BFA6]/40 via-transparent to-transparent" />
-          {/* Léger fondu bas pour la transition vers la barre de recherche */}
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#003B4A]/70 to-transparent" />
+            {/* Fondu : vert/navy de la charte plein sur le texte, dégradé vers la photo à droite */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#003B4A] via-[#003B4A]/85 to-[#00BFA6]/10 sm:via-[#003B4A]/80 sm:to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#00BFA6]/40 via-transparent to-transparent" />
+            {/* Léger fondu bas pour la transition vers la barre de recherche */}
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#003B4A]/70 to-transparent" />
+          </div>
 
-          <button onClick={prevSlide} aria-label="Catégorie précédente" className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full text-[#003B4A] transition-all opacity-0 group-hover:opacity-100 z-20">
-            <ChevronLeft className="h-5 w-5" />
+          {/* left-3/right-3 en dur ne s'inverse jamais tout seul en RTL (contrairement à un ordre
+              flex) — position ET chevron sont donc échangés ensemble ici pour l'arabe, "précédent"
+              restant du côté d'où vient la lecture. */}
+          <button onClick={prevSlide} aria-label="Catégorie précédente" className={cn("absolute top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full text-[#003B4A] transition-all opacity-0 group-hover:opacity-100 z-20 hidden sm:block", isRtl ? "right-3" : "left-3")}>
+            {isRtl ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </button>
-          <button onClick={nextSlide} aria-label="Catégorie suivante" className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full text-[#003B4A] transition-all opacity-0 group-hover:opacity-100 z-20">
-            <ChevronRight className="h-5 w-5" />
+          <button onClick={nextSlide} aria-label="Catégorie suivante" className={cn("absolute top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full text-[#003B4A] transition-all opacity-0 group-hover:opacity-100 z-20 hidden sm:block", isRtl ? "left-3" : "right-3")}>
+            {isRtl ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
           </button>
           {activeSlideCategory && (
             <button
               onClick={() => handleCategoryClick(activeSlideCategory.id)}
-              className="absolute top-6 right-6 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1.5 pr-3.5 py-1.5 text-xs font-bold text-[#003B4A] hover:bg-white transition-colors z-20"
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1.5 pr-3.5 py-1.5 text-xs font-bold text-[#003B4A] hover:bg-white transition-colors z-20"
             >
               {(() => {
                 const Icon = getIcon(activeSlideCategory.iconName)
@@ -565,50 +436,57 @@ export default function HomePage() {
             </button>
           )}
 
-          {/* Contenu texte — posé sur le fondu, aligné à gauche */}
-          <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 flex items-center">
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
+          {/* Contenu texte — posé sur le fondu, aligné à gauche ; ne fixe plus sa propre hauteur,
+              c'est lui qui détermine celle de la section (au moins min-h-*, plus si besoin). */}
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-0">
+            <motion.div
+              className="max-w-xl"
+              initial={heroReducedMotion ? "visible" : "hidden"}
+              animate="visible"
+              variants={heroStagger}
+            >
+              <motion.div variants={heroItem} className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
                 {t("heroEyebrow")}
-              </div>
+              </motion.div>
               {activeSlide?.title ? (
-                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.2rem] leading-[1.1] text-white">
+                <motion.h1 variants={heroItem} className="font-brand text-[1.9rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
                   {activeSlide.title}
-                </h1>
+                </motion.h1>
               ) : (
-                <h1 className="font-brand text-[2.3rem] sm:text-5xl lg:text-[3.2rem] leading-[1.1] text-white">
+                <motion.h1 variants={heroItem} className="font-brand text-[1.9rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
                   {t("heroTitle")}<br />
                   <span className="text-[#00BFA6]">{t("heroTitleAccent")}</span>
-                </h1>
+                </motion.h1>
               )}
-              <p className="mt-5 text-white/70 text-base sm:text-lg leading-relaxed max-w-lg">
+              <motion.p variants={heroItem} className="mt-4 sm:mt-5 text-white/70 text-sm sm:text-lg leading-relaxed max-w-lg">
                 {activeSlide?.subtitle || t("heroSubtitle")}
-              </p>
+              </motion.p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <motion.div variants={heroItem} className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
                 <Link href="/announces">
-                  <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold">
+                  <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
                     {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </Link>
                 <Link href="/faq">
-                  <Button variant="outline" className="rounded-full px-7 py-6 text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20">
+                  <Button variant="outline" className="rounded-full px-7 py-6 text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:-translate-y-0.5 transition-all">
                     {t("howItWorks")}
                   </Button>
                 </Link>
-              </div>
+              </motion.div>
 
-              {/* Signaux de confiance réels — pas d'avatars ni de compteurs fictifs */}
-              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+              {/* Signaux de confiance réels — pas d'avatars ni de compteurs fictifs ; masqués sur
+                  mobile pour laisser respirer la carte de recherche juste en dessous. */}
+              <motion.div variants={heroItem} className="mt-6 sm:mt-8 hidden sm:flex flex-wrap items-center gap-x-6 gap-y-2">
                 <span className="flex items-center gap-2 text-sm font-semibold text-white/80">
                   <ShieldCheck className="h-4 w-4 text-[#00BFA6]" /> {t("whyVerifiedTitle")}
                 </span>
                 <span className="flex items-center gap-2 text-sm font-semibold text-white/80">
                   <Globe2 className="h-4 w-4 text-[#00BFA6]" /> {t("statWilayas")}
                 </span>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
 
         </div>
@@ -633,11 +511,11 @@ export default function HomePage() {
                 <Link
                   key={catId}
                   href={`/announces?realEstateCategory=${catId}`}
-                  className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-sm transition-all group"
+                  className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = catColor.hex }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = '' }}
                 >
-                  <span className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${catColor.hex}1A` }}>
+                  <span className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: `${catColor.hex}1A` }}>
                     <Icon className="h-4.5 w-4.5" style={{ color: catColor.hex }} />
                   </span>
                   <span className="min-w-0">
@@ -703,12 +581,12 @@ export default function HomePage() {
                 <div
                   key={card.title}
                   className={cn(
-                    "px-6 py-8 text-center sm:text-left",
+                    "px-6 py-8 text-center sm:text-left group",
                     i > 0 && "sm:border-l sm:border-dashed sm:border-white/15",
                     i === 2 && "sm:border-l-0 lg:border-l"
                   )}
                 >
-                  <div className="mx-auto sm:mx-0 h-12 w-12 rounded-full border border-dashed border-[#00BFA6]/40 flex items-center justify-center mb-5">
+                  <div className="mx-auto sm:mx-0 h-12 w-12 rounded-full border border-dashed border-[#00BFA6]/40 flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:border-[#00BFA6]/70">
                     <div className="h-8 w-8 rounded-full bg-[#00BFA6]/15 flex items-center justify-center">
                       <card.icon className="h-4 w-4 text-[#5EEAD4]" />
                     </div>
@@ -735,7 +613,7 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative bg-white dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 overflow-hidden">
+            <div className="relative bg-white dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-[#00BFA6]/10 hover:-translate-y-1 transition-all duration-300">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#00BFA6]" />
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Building2 className="h-6 w-6 text-[#00BFA6]" />
@@ -748,7 +626,7 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
-            <div className="relative bg-[#003B4A] dark:border dark:border-white/10 rounded-3xl p-8 sm:p-10 overflow-hidden">
+            <div className="relative bg-[#003B4A] dark:border dark:border-white/10 rounded-3xl p-8 sm:p-10 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-[#003B4A]/30 hover:-translate-y-1 transition-all duration-300">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#5EEAD4]" />
               <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
                 <HandHeart className="h-6 w-6 text-[#5EEAD4]" />
@@ -774,7 +652,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Points — visualisation d'une annonce qui gagne en visibilité */}
-            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col">
+            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Coins className="h-6 w-6 text-[#00BFA6]" />
               </div>
@@ -802,7 +680,7 @@ export default function HomePage() {
             </div>
 
             {/* Boutique — aperçu schématique de la vraie vitrine personnalisable (logo, bannière, réseaux) */}
-            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col">
+            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Store className="h-6 w-6 text-[#00BFA6]" />
               </div>

@@ -1,58 +1,100 @@
 "use client"
 
-import { ArrowLeft, Bell, CheckCheck, MessageSquareText, Reply, Send, Smile, Star, Trash2, Zap } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
+import { useRouter } from "@/i18n/navigation"
+import axios from "axios"
+import { Search, Loader2, Handshake } from "lucide-react"
+import { EntrustedResearchCard } from "@/components/EntrustedResearchCard"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 export default function ResearchesPage() {
+  const t = useTranslations("ProfileResearches")
+  const router = useRouter()
+  const [researches, setResearches] = useState<any[] | null>(null)
+  const [transactionFilter, setTransactionFilter] = useState<"" | "SALE" | "RENTAL">("")
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) { router.push("/auth/login"); return }
+    axios.get(`${API_URL}/entrusted-research/mine`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => setResearches(res.data))
+      .catch((e) => {
+        if (e?.response?.status === 401) { localStorage.removeItem("token"); router.push("/auth/login"); return }
+        setResearches([])
+      })
+  }, [router])
+
+  const filtered = useMemo(() => {
+    if (!researches) return []
+    if (!transactionFilter) return researches
+    return researches.filter((r) => r.transaction === transactionFilter)
+  }, [researches, transactionFilter])
+
+  if (researches === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#0094BD]" />
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-[#f3f3f3] px-4 py-8 text-[#1f2937]">
-      <div className="mx-auto max-w-[1500px]">
-        <div className="rounded-[28px] border border-[#e7e7e7] bg-[#f9f9f9] p-4 shadow-[0_8px_30px_rgba(17,24,39,0.04)]">
-          <div className="mb-8 flex items-center justify-between gap-4 px-2">
-            <div className="flex items-center gap-3 text-[18px] font-medium text-[#1f2937]">
-              <span className="text-[38px] font-light leading-none">Mes Recherches Confiées</span>
-              <div className="flex items-center gap-2 rounded-lg bg-[#e5e7eb] px-3 py-1 text-[14px] text-[#374151]">
-                <span>Boîte de réception</span>
-                <span className="text-lg">×</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-[#4b5563]">
-              <ArrowLeft className="h-5 w-5" />
-              <Bell className="h-5 w-5" />
-              <MessageSquareText className="h-5 w-5" />
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Handshake className="h-6 w-6 text-[#0094BD]" /> {t("title")}
+            </h1>
+            <p className="text-gray-500 dark:text-white/60 text-sm mt-0.5">{t("subtitle")}</p>
           </div>
-
-          <div className="flex items-center gap-4 py-4">
-            <div className="flex h-[78px] w-[78px] items-center justify-center rounded-full bg-[#4b443f] text-[32px] font-bold text-white">
-              A
-            </div>
-            <div>
-              <h2 className="text-[28px] font-extrabold tracking-[-0.04em] text-[#1f2937]">AQUARIUS TECH WELCOME</h2>
-              <div className="mt-2 flex items-center gap-2 text-[18px] text-[#374151]">
-                <span>À moi</span>
-                <span className="text-sm">▼</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 rounded-[22px] border border-[#e5e7eb] bg-white p-8 shadow-sm">
-            <p className="text-[28px] font-medium leading-relaxed text-[#1f2937]">même chose mettre le filtre</p>
-
-            <div className="mt-10 flex items-center justify-center gap-5">
-              <button className="inline-flex items-center gap-3 rounded-full border border-[#374151] bg-white px-7 py-3 text-[18px] text-[#1f2937] shadow-sm transition hover:bg-slate-50">
-                <Reply className="h-5 w-5" />
-                Répondre
-              </button>
-              <button className="inline-flex items-center gap-3 rounded-full border border-[#374151] bg-white px-7 py-3 text-[18px] text-[#1f2937] shadow-sm transition hover:bg-slate-50">
-                <Send className="h-5 w-5" />
-                Transférer
-              </button>
-              <button className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#374151] bg-white text-[#1f2937] shadow-sm transition hover:bg-slate-50">
-                <Smile className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
+          {researches.length > 0 && (
+            <span className="text-sm font-bold text-gray-500 dark:text-white/50">{t("count", { count: researches.length })}</span>
+          )}
         </div>
+
+        {researches.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mt-6 mb-6">
+            {([
+              ["", t("filterAll")],
+              ["SALE", t("filterSale")],
+              ["RENTAL", t("filterRental")],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id || "all"}
+                onClick={() => setTransactionFilter(id)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                  transactionFilter === id
+                    ? "bg-[#0094BD] border-[#0094BD] text-white"
+                    : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:border-[#0094BD] hover:text-[#0094BD]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {researches.length === 0 ? (
+          <div className="text-center py-20 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10">
+            <Search className="h-10 w-10 mx-auto text-gray-200 dark:text-white/15 mb-4" />
+            <p className="text-gray-500 dark:text-white/60 mb-5">{t("noResearches")}</p>
+            <button
+              onClick={() => router.push("/research")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0094BD] hover:bg-[#003B4A] text-white rounded-xl font-bold text-sm transition-colors"
+            >
+              <Handshake className="h-4 w-4" /> {t("entrustNew")}
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filtered.map((r) => (
+              <EntrustedResearchCard key={r.id} research={r} variant="mine" />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

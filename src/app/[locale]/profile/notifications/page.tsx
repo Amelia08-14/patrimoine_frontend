@@ -1,130 +1,147 @@
 "use client"
 
-import { Bell, MessageSquareText, Inbox, Star, CheckCircle2, CircleEllipsis, SlidersHorizontal, Mail, Search, ArrowLeft, Send, PencilLine, Trash2, ChevronDown, Grid2x2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
+import { useRouter, Link } from "@/i18n/navigation"
+import axios from "axios"
+import { Bell, MessageSquare, Search, CheckCircle2, XCircle, Loader2, CheckCheck } from "lucide-react"
 
-const notifications = [
-  {
-    label: "notification confirmer votre recherche",
-    title: "Nouvelle recherche Un particulier a confié une recherche de bien qui correspond à votre profil.",
-    type: "confirmation",
-  },
-  {
-    label: "notification message annonce",
-    title: "Nouveau message Vous avez reçu un message relatif à votre annonce [Référence : [Numéro de référence]]. [ Bouton : Consulter ]",
-    type: "message",
-  },
-  {
-    label: "annonce et favoris",
-    title: "Structure des Filtres\n• Type de transaction : Vente, Location\n• Type de bien : Appartement, Villa, Terrain, Local...\n• Wilaya : Sélection de la wilaya\n• Commune : Filtre dynamique basé sur la wilaya",
-    type: "filter",
-  },
-  {
-    label: "nombre de point manque delai valable jusqua quand",
-    title: "Proposition d'affichage (Espace Publicitaire & Points)\nMon Espace Publicitaire\n• Solde actuel : 150 points\n• Validité : Valable jusqu'au 30/09/2026\n• [ Bouton : Recharger mes points ]",
-    type: "points",
-  },
-]
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+interface RawNotification {
+  id: number
+  type: "MESSAGE" | "RESEARCH_MATCH" | "ANNOUNCE_VALIDATED" | "ANNOUNCE_REJECTED" | "POINTS_EXPIRING"
+  title: string
+  body: string | null
+  link: string | null
+  isRead: boolean
+  createdAt: string
+}
+
+const TYPE_ICON: Record<string, any> = {
+  MESSAGE: MessageSquare,
+  RESEARCH_MATCH: Search,
+  ANNOUNCE_VALIDATED: CheckCircle2,
+  ANNOUNCE_REJECTED: XCircle,
+  POINTS_EXPIRING: Bell,
+}
+
+const TYPE_COLOR: Record<string, string> = {
+  MESSAGE: "#0094BD",
+  RESEARCH_MATCH: "#00BFA6",
+  ANNOUNCE_VALIDATED: "#22C55E",
+  ANNOUNCE_REJECTED: "#EF4444",
+  POINTS_EXPIRING: "#F59E0B",
+}
 
 export default function NotificationsPage() {
+  const t = useTranslations("ProfileNotifications")
+  const router = useRouter()
+  const [notifications, setNotifications] = useState<RawNotification[] | null>(null)
+
+  const load = () => {
+    const token = localStorage.getItem("token")
+    if (!token) { router.push("/auth/login"); return }
+    axios.get(`${API_URL}/notifications`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => setNotifications(res.data))
+      .catch((e) => {
+        if (e?.response?.status === 401) { localStorage.removeItem("token"); router.push("/auth/login"); return }
+        setNotifications([])
+      })
+  }
+
+  useEffect(load, [router])
+
+  const unreadCount = (notifications || []).filter((n) => !n.isRead).length
+
+  const handleOpen = async (n: RawNotification) => {
+    if (!n.isRead) {
+      setNotifications((prev) => (prev || []).map((x) => (x.id === n.id ? { ...x, isRead: true } : x)))
+      const token = localStorage.getItem("token")
+      axios.patch(`${API_URL}/notifications/${n.id}/read`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(() => {})
+    }
+    if (n.link) router.push(n.link)
+  }
+
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => (prev || []).map((x) => ({ ...x, isRead: true })))
+    const token = localStorage.getItem("token")
+    try {
+      await axios.post(`${API_URL}/notifications/read-all`, {}, { headers: { Authorization: `Bearer ${token}` } })
+    } catch {}
+  }
+
+  if (notifications === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#0094BD]" />
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-[#f3f3f3] px-4 py-6 text-[#111827]"> 
-      <div className="mx-auto max-w-[1500px]">
-        <div className="rounded-[28px] border border-[#e7e7e7] bg-[#f9f9f9] p-4 shadow-[0_8px_30px_rgba(17,24,39,0.04)]">
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-[18px] font-medium text-[#1f2937]">
-              <span className="text-[38px] font-light leading-none">notification</span>
-              <div className="flex items-center gap-2 rounded-lg bg-[#e5e7eb] px-3 py-1 text-[14px] text-[#374151]">
-                <span>Boîte de réception</span>
-                <span className="text-lg">×</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-[#4b5563]">
-              <Inbox className="h-5 w-5" />
-              <Mail className="h-5 w-5" />
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Bell className="h-6 w-6 text-[#00BFA6]" /> {t("title")}
+              {unreadCount > 0 && (
+                <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-[#00BFA6] text-white text-[11px] font-black flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </h1>
+            <p className="text-gray-500 dark:text-white/60 text-sm mt-0.5">{t("subtitle")}</p>
           </div>
-
-          <div className="flex flex-col lg:flex-row gap-6">
-            <aside className="w-full lg:w-[330px] shrink-0 rounded-[26px] border border-[#dfe6eb] bg-[#dfeaf3] p-5 text-[#1f2937]">
-              <button className="mb-5 flex w-full items-center gap-3 rounded-[18px] border border-[#cfe0ec] bg-[#cfe8f5] px-4 py-4 text-left text-[16px] font-medium shadow-sm">
-                <PencilLine className="h-5 w-5" />
-                Nouveau message
-              </button>
-
-              <nav className="space-y-2 text-[17px]">
-                <button className="flex w-full items-center gap-3 rounded-xl bg-[#cfe8f5] px-3 py-3 font-semibold text-[#1f2937]">
-                  <Inbox className="h-5 w-5" />
-                  Boîte de réception
-                </button>
-                <button className="flex w-full items-center gap-3 px-3 py-3 text-[#374151]">
-                  <Star className="h-5 w-5" />
-                  Messages suivis
-                </button>
-                <button className="flex w-full items-center gap-3 px-3 py-3 text-[#374151]">
-                  <ClockIcon />
-                  En attente
-                </button>
-                <button className="flex w-full items-center gap-3 px-3 py-3 text-[#374151]">
-                  <Send className="h-5 w-5 rotate-45" />
-                  Messages envoyés
-                </button>
-                <button className="flex w-full items-center gap-3 px-3 py-3 text-[#374151]">
-                  <Trash2 className="h-5 w-5" />
-                  Brouillons
-                </button>
-                <button className="flex w-full items-center gap-3 px-3 py-3 text-[#374151]">
-                  <Grid2x2 className="h-5 w-5" />
-                  Factures
-                </button>
-                <button className="flex w-full items-center gap-3 px-3 py-3 text-[#374151]">
-                  <Bell className="h-5 w-5" />
-                  Notifications
-                </button>
-              </nav>
-            </aside>
-
-            <main className="flex-1 rounded-[26px] border border-[#e5e7eb] bg-[#f9f9f9] p-8">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-[78px] w-[78px] items-center justify-center rounded-full bg-[#4b443f] text-[32px] font-bold text-white">
-                    A
-                  </div>
-                  <div>
-                    <h2 className="text-[28px] font-extrabold tracking-[-0.04em] text-[#1f2937]">AQUARIUS TECH WELCOME</h2>
-                    <div className="mt-2 flex items-center gap-2 text-[18px] text-[#374151]">
-                      <span>À moi</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-5 text-[#4b5563]">
-                  <span className="text-[18px]">01:00</span>
-                  <Star className="h-5 w-5" />
-                  <MessageSquareText className="h-5 w-5" />
-                  <ArrowLeft className="h-5 w-5" />
-                  <button className="text-lg">⋮</button>
-                </div>
-              </div>
-
-              <div className="mt-8 space-y-6">
-                {notifications.map((item, index) => (
-                  <div key={index} className="rounded-[20px] border border-[#e7e7e7] bg-white p-5 shadow-sm">
-                    <div className="mb-3 flex items-center justify-between gap-4">
-                      <p className="text-[26px] font-medium text-[#1f2937] capitalize">{item.label}</p>
-                      <div className="rounded-lg bg-[#e5e7eb] px-3 py-1 text-[13px] text-[#374151]">Boîte de réception ×</div>
-                    </div>
-                    <p className="whitespace-pre-line text-[20px] leading-relaxed text-[#1f2937]">{item.title}</p>
-                  </div>
-                ))}
-              </div>
-            </main>
-          </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-white/50 hover:text-[#00BFA6] transition-colors shrink-0"
+            >
+              <CheckCheck className="h-3.5 w-3.5" /> {t("markAllRead")}
+            </button>
+          )}
         </div>
+
+        {notifications.length === 0 ? (
+          <div className="text-center py-20 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 mt-6">
+            <Bell className="h-10 w-10 mx-auto text-gray-200 dark:text-white/15 mb-4" />
+            <p className="text-gray-500 dark:text-white/60">{t("noNotifications")}</p>
+          </div>
+        ) : (
+          <div className="mt-6 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
+            {notifications.map((n) => {
+              const Icon = TYPE_ICON[n.type] || Bell
+              const color = TYPE_COLOR[n.type] || "#0094BD"
+              const content = (
+                <div className={`flex items-start gap-3.5 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${!n.isRead ? "bg-[#00BFA6]/[0.04]" : ""}`}>
+                  <span className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center" style={{ backgroundColor: `${color}1A` }}>
+                    <Icon className="h-4.5 w-4.5" style={{ color }} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className={`text-sm ${!n.isRead ? "font-black text-gray-900 dark:text-white" : "font-semibold text-gray-700 dark:text-white/70"}`}>
+                        {n.title}
+                      </p>
+                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-[#00BFA6] shrink-0 mt-1.5" />}
+                    </div>
+                    {n.body && <p className="text-xs text-gray-500 dark:text-white/50 mt-1 line-clamp-2">{n.body}</p>}
+                    <span className="text-[11px] text-gray-400 dark:text-white/30 mt-1.5 block">
+                      {new Date(n.createdAt).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                </div>
+              )
+              return n.link ? (
+                <button key={n.id} onClick={() => handleOpen(n)} className="w-full">{content}</button>
+              ) : (
+                <div key={n.id}>{content}</div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
-}
-
-function ClockIcon() {
-  return <div className="h-5 w-5 rounded-full border-2 border-current p-[2px]" aria-label="En attente" />
 }

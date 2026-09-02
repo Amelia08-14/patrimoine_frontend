@@ -146,7 +146,7 @@ export default function CompleteProfilePage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen w-full flex bg-white">
+    <div className="min-h-screen w-full flex bg-white dark:bg-transparent">
 
       {/* Left Side - Visual (Full height, 45% width) */}
       <div className="hidden lg:flex w-[45%] relative overflow-hidden flex-col justify-between transition-all duration-700">
@@ -208,13 +208,13 @@ export default function CompleteProfilePage() {
       </div>
 
       {/* Right Side - Form (Full height, 55% width, Scrollable) */}
-      <div className="flex-1 flex flex-col items-center p-4 sm:p-8 lg:p-10 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-[#E6F8F6]/60">
-        <div className="w-full max-w-3xl my-auto rounded-[28px] border border-slate-200/80 bg-white shadow-[0_24px_70px_rgba(0,59,74,0.10)] p-5 sm:p-8 lg:p-10">
+      <div className="flex-1 flex flex-col items-center p-4 sm:p-8 lg:p-10 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-[#E6F8F6]/60 dark:bg-none dark:bg-transparent">
+        <div className="w-full max-w-3xl my-auto rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-[0_24px_70px_rgba(0,59,74,0.10)] p-5 sm:p-8 lg:p-10">
 
           <div className="text-center lg:text-left mb-8">
             <div className="inline-flex items-center rounded-full bg-[#E6F8F6] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#007F78] mb-3">Profil</div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#082A3A] tracking-tight mb-2">{t("formTitle")}</h2>
-            <p className="text-sm sm:text-base text-slate-500">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#082A3A] dark:text-white tracking-tight mb-2">{t("formTitle")}</h2>
+            <p className="text-sm sm:text-base text-slate-500 dark:text-white/50">
               {t("formSubtitle")}
             </p>
           </div>
@@ -222,57 +222,57 @@ export default function CompleteProfilePage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
              {/* --- SECTION 1: IDENTITÉ --- */}
-             <div className="space-y-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
-                <h3 className="text-base font-extrabold text-[#003B4A] flex items-center gap-3">
+             <div className="space-y-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 p-5 sm:p-6">
+                <h3 className="text-base font-extrabold text-[#003B4A] dark:text-white flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00BFA6]/10"><User className="text-[#00BFA6] h-5 w-5" /></span>
                     {user.userType === 'PARTICULIER' ? t("section1TitleParticulier") : t("section1TitleSociete")}
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("civilityLabel")}</label>
+                        <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("civilityLabel")}</label>
                         <div className="flex gap-4">
                             <label className={cn(
                                 "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
-                                watch("civility") === "M" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:border-gray-300 bg-gray-50"
+                                watch("civility") === "M" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 dark:border-white/10 hover:border-gray-300 bg-gray-50 dark:bg-transparent"
                             )}>
                                 <input type="radio" value="M" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold text-gray-700">{t("mr")}</span>
+                                <span className="text-sm font-bold text-gray-700 dark:text-white/70">{t("mr")}</span>
                             </label>
                             <label className={cn(
                                 "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
-                                watch("civility") === "MME" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 hover:border-gray-300 bg-gray-50"
+                                watch("civility") === "MME" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 dark:border-white/10 hover:border-gray-300 bg-gray-50 dark:bg-transparent"
                             )}>
                                 <input type="radio" value="MME" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold text-gray-700">{t("mrs")}</span>
+                                <span className="text-sm font-bold text-gray-700 dark:text-white/70">{t("mrs")}</span>
                             </label>
                         </div>
                         {errors.civility && <p className="text-red-500 text-xs pl-1 mt-1">{errors.civility.message}</p>}
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("lastNameLabel")}</label>
-                        <input {...register("lastName")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
+                        <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("lastNameLabel")}</label>
+                        <input {...register("lastName")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px]" />
                         {errors.lastName && <p className="text-red-500 text-xs pl-1">{errors.lastName.message}</p>}
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("firstNameLabel")}</label>
-                        <input {...register("firstName")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
+                        <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("firstNameLabel")}</label>
+                        <input {...register("firstName")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px]" />
                         {errors.firstName && <p className="text-red-500 text-xs pl-1">{errors.firstName.message}</p>}
                     </div>
 
                     {user.userType === 'SOCIETE' && (
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("positionLabel")}</label>
-                            <input {...register("position")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" placeholder={t("positionPlaceholder")} />
+                            <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("positionLabel")}</label>
+                            <input {...register("position")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px]" placeholder={t("positionPlaceholder")} />
                             {errors.position && <p className="text-red-500 text-xs pl-1">{errors.position.message}</p>}
                         </div>
                     )}
 
                     {user.userType === 'PARTICULIER' && (
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("dobLabel")}</label>
-                            <input type="date" {...register("dateOfBirth")} className="w-full px-4 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 bg-white h-12" />
+                            <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("dobLabel")}</label>
+                            <input type="date" {...register("dateOfBirth")} className="w-full px-4 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white bg-white dark:bg-white/5 h-12" />
                             {errors.dateOfBirth && <p className="text-red-500 text-xs pl-1">{errors.dateOfBirth.message}</p>}
                         </div>
                     )}
@@ -280,8 +280,8 @@ export default function CompleteProfilePage() {
              </div>
 
              {/* --- SECTION 2: ADRESSE & CONTACT --- */}
-             <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-                <h3 className="text-base font-extrabold text-[#003B4A] flex items-center gap-3">
+             <div className="space-y-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-6 shadow-sm">
+                <h3 className="text-base font-extrabold text-[#003B4A] dark:text-white flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00BFA6]/10"><MapPin className="text-[#00BFA6] h-5 w-5" /></span>
                     {t("section2Title")}
                 </h3>
@@ -289,14 +289,14 @@ export default function CompleteProfilePage() {
                 <div className="space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("wilayaLabel")}</label>
+                                 <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("wilayaLabel")}</label>
                                  <select
                                    {...wilayaRegister}
                                    onChange={(e) => {
                                      wilayaRegister.onChange(e)
                                      setValue("commune", "")
                                    }}
-                                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]"
+                                   className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px]"
                                  >
                                      <option value="">{t("selectOption")}</option>
                                      {cities.map((c) => (
@@ -306,8 +306,8 @@ export default function CompleteProfilePage() {
                                  {errors.wilaya && <p className="text-red-500 text-xs pl-1">{errors.wilaya.message}</p>}
                              </div>
                              <div className="space-y-1">
-                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("communeLabel")}</label>
-                                 <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px] disabled:opacity-60">
+                                 <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("communeLabel")}</label>
+                                 <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px] disabled:opacity-60">
                                      <option value="">{t("selectOption")}</option>
                                      {towns.map((town) => (
                                        <option key={town.id} value={town.id}>
@@ -318,21 +318,21 @@ export default function CompleteProfilePage() {
                                  {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
                              </div>
                              <div className="space-y-1 sm:col-span-2">
-                                 <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("addressLabel")}</label>
-                                 <input {...register("address")} placeholder={t("addressPlaceholder")} className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500 bg-gray-50 h-[42px]" />
+                                 <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("addressLabel")}</label>
+                                 <input {...register("address")} placeholder={t("addressPlaceholder")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px]" />
                                  {errors.address && <p className="text-red-500 text-xs pl-1">{errors.address.message}</p>}
                              </div>
                         </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">{t("mobilePhoneLabel")}</label>
-                            <input type="tel" {...register("phone")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                            <label className="text-xs font-bold text-gray-500 dark:text-white/50 uppercase ml-1">{t("mobilePhoneLabel")}</label>
+                            <input type="tel" {...register("phone")} className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500" />
                             {errors.phone && <p className="text-red-500 text-xs pl-1">{errors.phone.message}</p>}
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">{t("landlinePhoneLabel")}</label>
-                            <input type="tel" {...register("landline")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                            <label className="text-xs font-bold text-gray-500 dark:text-white/50 uppercase ml-1">{t("landlinePhoneLabel")}</label>
+                            <input type="tel" {...register("landline")} className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500" />
                         </div>
                     </div>
                 </div>
@@ -341,24 +341,24 @@ export default function CompleteProfilePage() {
              {/* --- SECTION 3: INFO SOCIETE (SI PRO) --- */}
              {user.userType === 'SOCIETE' && (
                  <>
-                 <div className="h-px bg-gray-100"></div>
+                 <div className="h-px bg-gray-100 dark:bg-white/10"></div>
                  <div className="space-y-6">
-                    <h3 className="text-lg font-bold text-[#003B4A] flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-[#003B4A] dark:text-white flex items-center gap-2">
                         <Building2 className="text-[#00BFA6] h-5 w-5" />
                         {t("section3Title")}
                     </h3>
 
                     <div className="space-y-6">
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase ml-1">{t("companyNameLabel")}</label>
-                            <input {...register("companyName")} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500" />
+                            <label className="text-xs font-bold text-gray-500 dark:text-white/50 uppercase ml-1">{t("companyNameLabel")}</label>
+                            <input {...register("companyName")} className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("rcLabel")}</label>
+                                <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("rcLabel")}</label>
                                 <label className={cn(
                                     "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
-                                    watch("rcDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
+                                    watch("rcDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"
                                 )}>
                                     <span className="flex items-center gap-2">
                                         {watch("rcDocument")?.[0] ? (
@@ -371,10 +371,10 @@ export default function CompleteProfilePage() {
                                 </label>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("agreementLabel")}</label>
+                                <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("agreementLabel")}</label>
                                 <label className={cn(
                                     "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
-                                    watch("agreementDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
+                                    watch("agreementDocument")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"
                                 )}>
                                     <span className="flex items-center gap-2">
                                         {watch("agreementDocument")?.[0] ? (
@@ -387,10 +387,10 @@ export default function CompleteProfilePage() {
                                 </label>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-700 uppercase ml-1">{t("logoLabel")}</label>
+                                <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("logoLabel")}</label>
                                 <label className={cn(
                                     "flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm",
-                                    watch("agencyLogo")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"
+                                    watch("agencyLogo")?.[0] ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"
                                 )}>
                                     <span className="flex items-center gap-2">
                                         {watch("agencyLogo")?.[0] ? (

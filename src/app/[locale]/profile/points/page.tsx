@@ -20,7 +20,7 @@ type OfferPack = { id: number; kind: 'POINTS' | 'BOUTIQUE'; key: string; title: 
 // connu reçoit une couleur par défaut (cycle ci-dessous) : la liste affichée n'est jamais figée
 // à 3 entrées.
 const POINT_PACK_STYLE: Record<string, { icon: typeof Coins; color: string; border: string; popular?: boolean }> = {
-  PACK_50: { icon: Coins, color: "#6B7280", border: "border-gray-200" },
+  PACK_50: { icon: Coins, color: "#6B7280", border: "border-gray-200 dark:border-white/10" },
   PACK_100: { icon: Star, color: "#1E40AF", border: "border-blue-200", popular: true },
   PACK_200: { icon: Crown, color: "#D97706", border: "border-amber-200" },
 }
@@ -47,7 +47,7 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
         description: p.description,
         points: p.points,
         price: p.price,
-        ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
+        ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
       }))
     : FALLBACK
 
@@ -67,13 +67,13 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
+      <div className="bg-white dark:bg-white/5 rounded-2xl shadow-xl w-full max-w-2xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="font-black text-gray-900 text-xl flex items-center gap-2">
+            <h3 className="font-black text-gray-900 dark:text-white text-xl flex items-center gap-2">
               <Coins className="h-6 w-6 text-[#00BFA6]" /> {t("buyPointsTitle")}
             </h3>
-            <p className="text-sm text-gray-500 mt-1">{t("buyPointsSubtitle")}</p>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{t("buyPointsSubtitle")}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="h-5 w-5" /></button>
         </div>
@@ -84,16 +84,16 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
         )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {POINT_PACKS.map(pack => (
-            <div key={pack.id} className={`relative bg-white rounded-2xl border-2 overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : 'border-gray-200'}`}>
+            <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : 'border-gray-200 dark:border-white/10'}`}>
               {pack.popular && (
                 <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
               )}
               <div className={`p-5 text-center ${pack.popular ? '' : ''}`}>
                 <div className="text-3xl font-black mb-1" style={{ color: pack.color }}>{pack.points}</div>
-                <div className="text-sm font-bold text-gray-500 mb-3">{t("pointsUnit")}</div>
-                <div className="text-xl font-black text-gray-900 mb-1">{pack.price.toLocaleString()}</div>
-                <div className="text-xs text-gray-400">{t("oneTimePayment")}</div>
-                <div className="text-[11px] text-gray-400 mb-4 min-h-[1em]">{pack.description || ''}</div>
+                <div className="text-sm font-bold text-gray-500 dark:text-white/50 mb-3">{t("pointsUnit")}</div>
+                <div className="text-xl font-black text-gray-900 dark:text-white mb-1">{pack.price.toLocaleString()}</div>
+                <div className="text-xs text-gray-400 dark:text-white/40">{t("oneTimePayment")}</div>
+                <div className="text-[11px] text-gray-400 dark:text-white/40 mb-4 min-h-[1em]">{pack.description || ''}</div>
                 <button
                   onClick={() => order(pack.id)}
                   disabled={ordering === pack.id}
@@ -107,7 +107,7 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-400 text-center mt-4">{t("pointsValidityNote")}</p>
+        <p className="text-xs text-gray-400 dark:text-white/40 text-center mt-4">{t("pointsValidityNote")}</p>
       </div>
     </div>
   )
@@ -137,9 +137,9 @@ function FeatureModal({ announce, onClose, onSuccess }: { announce: any; onClose
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-white/5 rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-black text-gray-900 flex items-center gap-2"><Star className="h-5 w-5 text-amber-500" /> {t("featureModalTitle")}</h3>
+          <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-2"><Star className="h-5 w-5 text-amber-500" /> {t("featureModalTitle")}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100"><X className="h-4 w-4" /></button>
         </div>
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 mb-5">
@@ -148,18 +148,18 @@ function FeatureModal({ announce, onClose, onSuccess }: { announce: any; onClose
         {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex gap-2"><AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />{error}</div>}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("startDate")}</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1.5">{t("startDate")}</label>
             <input type="date" value={startDate} min={new Date().toISOString().split('T')[0]} onChange={e => setStartDate(e.target.value)}
-              className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm" />
+              className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">{t("durationLabel")} <span className="text-[#00BFA6]">{t("daysCount", { days })}</span></label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-2">{t("durationLabel")} <span className="text-[#00BFA6]">{t("daysCount", { days })}</span></label>
             <input type="range" min={1} max={30} value={days} onChange={e => setDays(Number(e.target.value))} className="w-full accent-[#00BFA6]" />
-            <div className="flex justify-between text-xs text-gray-400 mt-1"><span>{t("oneDay")}</span><span>{t("thirtyDays")}</span></div>
+            <div className="flex justify-between text-xs text-gray-400 dark:text-white/40 mt-1"><span>{t("oneDay")}</span><span>{t("thirtyDays")}</span></div>
           </div>
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-center">
+          <div className="p-4 bg-gray-50 dark:bg-transparent rounded-xl border border-gray-200 dark:border-white/10 text-center">
             <div className="text-2xl font-black text-[#00BFA6]">{t("costPoints", { cost })}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{t("costBreakdown", { days })}</div>
+            <div className="text-xs text-gray-500 dark:text-white/50 mt-0.5">{t("costBreakdown", { days })}</div>
           </div>
           <button onClick={submit} disabled={loading}
             className="w-full py-3 bg-amber-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-amber-600 disabled:opacity-60 transition-colors">
@@ -303,7 +303,7 @@ export default function EspacePublicitairePage() {
         label: p.title,
         points: p.points,
         price: p.price,
-        ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200" }),
+        ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
       }))
     : INLINE_POINT_FALLBACK
 
@@ -327,7 +327,7 @@ export default function EspacePublicitairePage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-[#00BFA6]" /></div>
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
       {toast && (
         <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
       )}
@@ -337,19 +337,19 @@ export default function EspacePublicitairePage() {
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header solde */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex items-center justify-between">
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-[#00BFA6]" /> {t("pageTitle")}
             </h1>
-            <p className="text-gray-500 mt-1 text-sm">{t("pageSubtitle")}</p>
+            <p className="text-gray-500 dark:text-white/50 mt-1 text-sm">{t("pageSubtitle")}</p>
           </div>
           <div className="text-right flex flex-col items-end gap-2">
             <div>
               <div className={`text-4xl font-black ${expired ? 'text-red-400' : 'text-[#00BFA6]'}`}>{balance}</div>
-              <div className="text-sm text-gray-500 font-medium">{t("pointsAvailable")}</div>
+              <div className="text-sm text-gray-500 dark:text-white/50 font-medium">{t("pointsAvailable")}</div>
               {expirationDate && !expired && (
-                <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 justify-end">
+                <div className="text-xs text-gray-400 dark:text-white/40 mt-0.5 flex items-center gap-1 justify-end">
                   <CalendarDays className="h-3 w-3" /> {t("expiresOn", { date: new Date(expirationDate).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR') })}
                 </div>
               )}
@@ -362,16 +362,16 @@ export default function EspacePublicitairePage() {
         </div>
 
         {/* Résumé formule choisie / total / consommés / restants */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><Coins className="h-5 w-5 text-[#00BFA6]" /> {t("summaryTitle")}</h2>
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+          <h2 className="font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2 text-base"><Coins className="h-5 w-5 text-[#00BFA6]" /> {t("summaryTitle")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-              <p className="text-xs text-gray-500 font-medium mb-1">{t("chosenFormula")}</p>
-              <p className="font-black text-gray-900 text-sm truncate">{latestValidatedPurchase ? pointPackLabel(latestValidatedPurchase.pack) : t("noFormulaYet")}</p>
+            <div className="p-4 rounded-xl bg-gray-50 dark:bg-transparent border border-gray-100 dark:border-white/10">
+              <p className="text-xs text-gray-500 dark:text-white/50 font-medium mb-1">{t("chosenFormula")}</p>
+              <p className="font-black text-gray-900 dark:text-white text-sm truncate">{latestValidatedPurchase ? pointPackLabel(latestValidatedPurchase.pack) : t("noFormulaYet")}</p>
             </div>
-            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-              <p className="text-xs text-gray-500 font-medium mb-1">{t("totalPointsLabel")}</p>
-              <p className="font-black text-gray-900 text-xl">{totalPointsEarned}</p>
+            <div className="p-4 rounded-xl bg-gray-50 dark:bg-transparent border border-gray-100 dark:border-white/10">
+              <p className="text-xs text-gray-500 dark:text-white/50 font-medium mb-1">{t("totalPointsLabel")}</p>
+              <p className="font-black text-gray-900 dark:text-white text-xl">{totalPointsEarned}</p>
             </div>
             <div className="p-4 rounded-xl bg-red-50 border border-red-100">
               <p className="text-xs text-red-500 font-medium mb-1">{t("consumedPointsLabel")}</p>
@@ -387,17 +387,17 @@ export default function EspacePublicitairePage() {
         {/* Formules de points disponibles — toujours visible, comme la grille des formules
             boutique sur "Ma boutique" (les packs de points s'additionnent, ne se remplacent pas :
             pas de badge "formule actuelle" désactivant les autres). */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
           <div className="mb-5">
-            <h2 className="font-black text-gray-900 text-lg flex items-center gap-2"><Coins className="h-5 w-5 text-[#00BFA6]" /> {t("pointPacksAvailableTitle")}</h2>
-            <p className="text-sm text-gray-500 mt-1">{t("pointPacksAvailableSubtitle")}</p>
+            <h2 className="font-black text-gray-900 dark:text-white text-lg flex items-center gap-2"><Coins className="h-5 w-5 text-[#00BFA6]" /> {t("pointPacksAvailableTitle")}</h2>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{t("pointPacksAvailableSubtitle")}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {inlinePointPacks.map(pack => {
               const Icon = pack.icon
               const isLatest = latestValidatedPurchase?.pack === pack.id
               return (
-                <div key={pack.id} className={`relative bg-white rounded-2xl border-2 overflow-hidden flex flex-col ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : pack.border}`}>
+                <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 overflow-hidden flex flex-col ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : pack.border}`}>
                   {isLatest ? (
                     <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6] flex items-center justify-center gap-1.5">
                       <ShieldCheck className="h-3.5 w-3.5" /> {t("lastPurchasedBadge")}
@@ -410,13 +410,13 @@ export default function EspacePublicitairePage() {
                       <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: pack.color + '20' }}>
                         <Icon className="h-5 w-5" style={{ color: pack.color }} />
                       </div>
-                      <div className="font-black text-gray-900 text-sm">{pack.label}</div>
+                      <div className="font-black text-gray-900 dark:text-white text-sm">{pack.label}</div>
                     </div>
                     <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
-                    <div className="text-xl font-black text-gray-900 mb-3">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500">{t("oneTimePayment")}</span></div>
+                    <div className="text-xl font-black text-gray-900 dark:text-white mb-3">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500 dark:text-white/50">{t("oneTimePayment")}</span></div>
                     <ul className="space-y-1.5 mb-4 flex-1">
                       {pointPackFeatures(pack.points).map(f => (
-                        <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                        <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-white/60">
                           <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
                         </li>
                       ))}
@@ -436,21 +436,21 @@ export default function EspacePublicitairePage() {
         </div>
 
         {/* Comment utiliser */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base"><Sparkles className="h-5 w-5 text-[#00BFA6]" /> {t("howToUseTitle")}</h2>
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+          <h2 className="font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2 text-base"><Sparkles className="h-5 w-5 text-[#00BFA6]" /> {t("howToUseTitle")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex gap-3 p-4 bg-[#00BFA6]/5 rounded-xl border border-[#00BFA6]/20">
               <div className="h-9 w-9 rounded-full bg-[#00BFA6] text-white flex items-center justify-center font-black text-sm shrink-0">1</div>
               <div>
-                <p className="font-bold text-gray-900 text-sm">{t("step1Title")}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{t("step1Text")} <strong>{t("step1Points")}</strong></p>
+                <p className="font-bold text-gray-900 dark:text-white text-sm">{t("step1Title")}</p>
+                <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5">{t("step1Text")} <strong>{t("step1Points")}</strong></p>
               </div>
             </div>
             <div className="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
               <div className="h-9 w-9 rounded-full bg-amber-500 text-white flex items-center justify-center font-black text-sm shrink-0">2</div>
               <div>
-                <p className="font-bold text-gray-900 text-sm">{t("step2Title")}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{t("step2Text")} <strong>{t("step2Points")}</strong></p>
+                <p className="font-bold text-gray-900 dark:text-white text-sm">{t("step2Title")}</p>
+                <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5">{t("step2Text")} <strong>{t("step2Points")}</strong></p>
               </div>
             </div>
           </div>
@@ -458,9 +458,9 @@ export default function EspacePublicitairePage() {
 
         {/* Mes annonces — actions boost/publicité */}
         {announces.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-              <h2 className="font-black text-gray-900 text-base flex items-center gap-2"><Zap className="h-4 w-4 text-[#00BFA6]" /> {t("myAnnouncesTitle")}</h2>
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-transparent flex items-center justify-between">
+              <h2 className="font-black text-gray-900 dark:text-white text-base flex items-center gap-2"><Zap className="h-4 w-4 text-[#00BFA6]" /> {t("myAnnouncesTitle")}</h2>
               <Link href="/profile/announces" className="text-sm text-[#00BFA6] font-bold hover:underline">{t("viewAll")}</Link>
             </div>
             <div className="divide-y divide-gray-50">
@@ -469,10 +469,10 @@ export default function EspacePublicitairePage() {
                 const refreshed = a.refreshDate && (new Date().getTime() - new Date(a.refreshDate).getTime()) < 24 * 3600 * 1000
                 return (
                   <div key={a.id} className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50">
-                    <span className="text-xs text-gray-400 font-mono w-8 shrink-0">#{a.id}</span>
+                    <span className="text-xs text-gray-400 dark:text-white/40 font-mono w-8 shrink-0">#{a.id}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-sm truncate">{a.title || a.reference}</p>
-                      <p className="text-xs text-gray-400">{a.reference}</p>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{a.title || a.reference}</p>
+                      <p className="text-xs text-gray-400 dark:text-white/40">{a.reference}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {featured && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold flex items-center gap-1"><Star className="h-2.5 w-2.5" />{t("featuredBadge")}</span>}
@@ -499,18 +499,18 @@ export default function EspacePublicitairePage() {
 
         {/* Historique utilisation points, avec filtre période + type d'action + pagination */}
         {(history.length > 0 || dateFrom || dateTo) && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h2 className="font-black text-gray-900 flex items-center gap-2 text-base"><ArrowDownCircle className="h-5 w-5 text-gray-400" /> {t("pointsUsageTitle")}</h2>
+              <h2 className="font-black text-gray-900 dark:text-white flex items-center gap-2 text-base"><ArrowDownCircle className="h-5 w-5 text-gray-400 dark:text-white/40" /> {t("pointsUsageTitle")}</h2>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-white/50">
                   <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                  <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#00BFA6]" />
+                  <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#00BFA6]" />
                   <span>→</span>
-                  <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#00BFA6]" />
+                  <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#00BFA6]" />
                 </div>
                 {(dateFrom || dateTo) && (
-                  <button onClick={resetPeriod} className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition-colors">
+                  <button onClick={resetPeriod} className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 text-xs font-bold hover:bg-gray-50 transition-colors">
                     <X className="h-3 w-3" /> {t("resetFilterBtn")}
                   </button>
                 )}
@@ -527,7 +527,7 @@ export default function EspacePublicitairePage() {
                 <button
                   key={f.id}
                   onClick={() => setActionFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${actionFilter === f.id ? 'bg-[#00BFA6] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${actionFilter === f.id ? 'bg-[#00BFA6] text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/60 hover:bg-gray-200'}`}
                 >
                   {f.label}
                 </button>
@@ -537,20 +537,20 @@ export default function EspacePublicitairePage() {
             {historyLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-[#00BFA6]" /></div>
             ) : filteredHistory.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">{t("noHistoryForPeriod")}</p>
+              <p className="text-sm text-gray-400 dark:text-white/40 text-center py-6">{t("noHistoryForPeriod")}</p>
             ) : (
               <>
                 <div className="space-y-3">
                   {pagedHistory.map((h: any) => (
-                    <div key={h.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                    <div key={h.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/10 last:border-0">
                       <div>
-                        <span className="font-bold text-gray-900 text-sm">
+                        <span className="font-bold text-gray-900 dark:text-white text-sm">
                           {h.action === 'BOOST' ? t("actionBoost") : t("actionFeature")}
                         </span>
-                        <span className="text-gray-500 text-xs ml-2">— {t("refLabel", { ref: h.announce?.reference || `#${h.announceId}` })}</span>
+                        <span className="text-gray-500 dark:text-white/50 text-xs ml-2">— {t("refLabel", { ref: h.announce?.reference || `#${h.announceId}` })}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-400">{new Date(h.usageDate).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
+                        <span className="text-xs text-gray-400 dark:text-white/40">{new Date(h.usageDate).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
                         <span className="font-bold text-red-600 text-sm">{t("minusPoints", { points: h.pointsUsed })}</span>
                       </div>
                     </div>
@@ -558,20 +558,20 @@ export default function EspacePublicitairePage() {
                 </div>
 
                 {historyTotalPages > 1 && (
-                  <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
-                    <span className="text-xs text-gray-400">{t("historyPageIndicator", { page: historyPage, total: historyTotalPages })}</span>
+                  <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                    <span className="text-xs text-gray-400 dark:text-white/40">{t("historyPageIndicator", { page: historyPage, total: historyTotalPages })}</span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                         disabled={historyPage === 1}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                       >
                         {t("historyPrevBtn")}
                       </button>
                       <button
                         onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
                         disabled={historyPage === historyTotalPages}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                       >
                         {t("historyNextBtn")}
                       </button>

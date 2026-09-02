@@ -3,8 +3,8 @@ import { defineRouting } from 'next-intl/routing';
 export const routing = defineRouting({
   locales: ['fr', 'en', 'ar'],
   defaultLocale: 'fr',
-  // Le français (langue par défaut) reste sans préfixe (/announces),
-  // l'anglais et l'arabe sont préfixés (/en/announces, /ar/announces).
+  // Le français reste la langue par défaut du site public,
+  // tandis que l'anglais et l'arabe restent disponibles via leurs routes.
   localePrefix: 'as-needed',
 });
 

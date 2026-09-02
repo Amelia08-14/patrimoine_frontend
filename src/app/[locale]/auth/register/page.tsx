@@ -244,7 +244,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex bg-white">
+    <div className="min-h-screen w-full flex bg-white dark:bg-transparent">
       
       {/* Left Side - Visual (Full height, 45% width) */}
       <div className="hidden lg:flex w-[45%] relative overflow-hidden transition-all duration-700 ease-in-out">
@@ -323,12 +323,12 @@ export default function RegisterPage() {
       </div>
 
       {/* Right Side - Form (Full height, 55% width, Scrollable) */}
-      <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 overflow-y-auto bg-white">
+      <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 overflow-y-auto bg-white dark:bg-white/5">
         <div className="w-full max-w-2xl space-y-6 sm:space-y-8 pb-16 md:pb-0">
 
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t("title")}</h2>
-            <p className="mt-2 text-gray-500">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t("title")}</h2>
+            <p className="mt-2 text-gray-500 dark:text-white/50">
               {t("subtitle")}
             </p>
           </div>
@@ -343,14 +343,14 @@ export default function RegisterPage() {
               <div className={cn(
                 "w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
                 userType === "PARTICULIER"
-                  ? "bg-white border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
-                  : "bg-white border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-0.5"
+                  ? "bg-white dark:bg-white/5 border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
+                  : "bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-0.5"
               )}>
                 <div className={cn(
                   "w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-colors duration-300",
                   userType === "PARTICULIER"
                     ? "bg-[#00BFA6] text-white"
-                    : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                    : "bg-gray-50 dark:bg-transparent text-gray-400 dark:text-white/40 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                 )}>
                   <User className="h-6 w-6 sm:h-7 sm:w-7" />
                 </div>
@@ -358,11 +358,11 @@ export default function RegisterPage() {
               <div className="text-center">
                 <span className={cn(
                   "block text-sm font-extrabold transition-colors",
-                  userType === "PARTICULIER" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
+                  userType === "PARTICULIER" ? "text-[#00BFA6]" : "text-gray-500 dark:text-white/50 group-hover:text-[#00BFA6]"
                 )}>
                   {t("particulierLabel")}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium">{t("particulierHint")}</span>
+                <span className="text-[10px] text-gray-400 dark:text-white/40 font-medium">{t("particulierHint")}</span>
               </div>
             </button>
 
@@ -374,14 +374,14 @@ export default function RegisterPage() {
               <div className={cn(
                 "w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
                 userType === "SOCIETE"
-                  ? "bg-white border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
-                  : "bg-white border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-0.5"
+                  ? "bg-white dark:bg-white/5 border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
+                  : "bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-0.5"
               )}>
                 <div className={cn(
                   "w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-colors duration-300",
                   userType === "SOCIETE"
                     ? "bg-[#00BFA6] text-white"
-                    : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                    : "bg-gray-50 dark:bg-transparent text-gray-400 dark:text-white/40 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                 )}>
                   <Building2 className="h-6 w-6 sm:h-7 sm:w-7" />
                 </div>
@@ -389,16 +389,16 @@ export default function RegisterPage() {
               <div className="text-center">
                 <span className={cn(
                   "block text-sm font-extrabold transition-colors",
-                  userType === "SOCIETE" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
+                  userType === "SOCIETE" ? "text-[#00BFA6]" : "text-gray-500 dark:text-white/50 group-hover:text-[#00BFA6]"
                 )}>
                   {t("societeLabel")}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium">{t("societeHint")}</span>
+                <span className="text-[10px] text-gray-400 dark:text-white/40 font-medium">{t("societeHint")}</span>
               </div>
             </button>
           </div>
 
-          <div className="h-px bg-gray-100"></div>
+          <div className="h-px bg-gray-100 dark:bg-white/10"></div>
           
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             
@@ -408,7 +408,7 @@ export default function RegisterPage() {
                 <div className="space-y-1">
                   <input
                     {...register("firstName")}
-                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                     placeholder={t("firstNamePlaceholder")}
                   />
                   {errors.firstName && <p className="text-red-500 text-xs pl-1">{errors.firstName.message}</p>}
@@ -416,7 +416,7 @@ export default function RegisterPage() {
                 <div className="space-y-1">
                   <input
                     {...register("lastName")}
-                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                     placeholder={t("lastNamePlaceholder")}
                   />
                   {errors.lastName && <p className="text-red-500 text-xs pl-1">{errors.lastName.message}</p>}
@@ -446,8 +446,8 @@ export default function RegisterPage() {
                               className={cn(
                                 "w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-200 border-4 relative",
                                 isActive
-                                  ? "bg-white border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
-                                  : "bg-white border-[#00BFA6]/20 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/45 group-hover:-translate-y-0.5"
+                                  ? "bg-white dark:bg-white/5 border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
+                                  : "bg-white dark:bg-white/5 border-[#00BFA6]/20 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/45 group-hover:-translate-y-0.5"
                               )}
                             >
                               <div
@@ -455,7 +455,7 @@ export default function RegisterPage() {
                                   "w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors duration-200",
                                   isActive
                                     ? "bg-[#00BFA6] text-white"
-                                    : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                                    : "bg-gray-50 dark:bg-transparent text-gray-400 dark:text-white/40 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                                 )}
                               >
                                 <Icon size={18} strokeWidth={2.5} className="sm:hidden" />
@@ -465,7 +465,7 @@ export default function RegisterPage() {
                             <span
                               className={cn(
                                 "text-[10px] font-extrabold text-center max-w-[150px] leading-snug transition-colors whitespace-pre-line",
-                                isActive ? "text-[#00BFA6]" : "text-gray-600 group-hover:text-[#00BFA6]"
+                                isActive ? "text-[#00BFA6]" : "text-gray-600 dark:text-white/60 group-hover:text-[#00BFA6]"
                               )}
                             >
                               {tActivities(`families.${family.id}`)}
@@ -478,7 +478,7 @@ export default function RegisterPage() {
 
                   {selectedFamily && (
                     <div className="space-y-3">
-                      <div className="h-px bg-gray-100"></div>
+                      <div className="h-px bg-gray-100 dark:bg-white/10"></div>
                       <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                         {selectedFamily.items.map((item) => (
                           <button
@@ -489,7 +489,7 @@ export default function RegisterPage() {
                               "whitespace-nowrap border px-3 py-2 rounded-full text-xs font-bold text-center transition-all duration-200 flex items-center justify-center min-h-[40px]",
                               selectedActivity === item.id
                                 ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A] ring-1 ring-[#00BFA6]"
-                                : "border-[#00BFA6]/35 text-gray-700 bg-white hover:bg-gray-50 hover:border-[#00BFA6]"
+                                : "border-[#00BFA6]/35 text-gray-700 dark:text-white/70 bg-white dark:bg-white/5 hover:bg-gray-50 hover:border-[#00BFA6]"
                             )}
                           >
                             {tActivities(`items.${item.id}`)}
@@ -503,7 +503,7 @@ export default function RegisterPage() {
                  <div className="space-y-1">
                    <input
                       {...register("companyName")}
-                      className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                      className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                       placeholder={t("companyNamePlaceholder")}
                    />
                    {errors.companyName && <p className="text-red-500 text-xs pl-1">{errors.companyName.message}</p>}
@@ -517,7 +517,7 @@ export default function RegisterPage() {
                          "flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all",
                          watch("position") === role
                            ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]"
-                           : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00BFA6]/50"
+                           : "border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-transparent text-gray-700 dark:text-white/70 hover:border-[#00BFA6]/50"
                        )}>
                          <input type="radio" value={role} {...register("position")} className="h-4 w-4 accent-[#00BFA6]" />
                          <span className="text-sm font-bold">
@@ -534,7 +534,7 @@ export default function RegisterPage() {
                      <div className="relative">
                        <select
                          {...register("cityCode", { valueAsNumber: true })}
-                         className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900"
+                         className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white"
                          disabled={isLoadingCities}
                        >
                          <option value="">{t("wilayaPlaceholder")}</option>
@@ -546,7 +546,7 @@ export default function RegisterPage() {
                        </select>
                        {isLoadingCities && (
                          <div className="absolute inset-y-0 right-3 flex items-center">
-                           <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                           <Loader2 className="h-4 w-4 animate-spin text-gray-400 dark:text-white/40" />
                          </div>
                        )}
                      </div>
@@ -557,7 +557,7 @@ export default function RegisterPage() {
                      <div className="relative">
                        <select
                          {...register("townCode", { valueAsNumber: true })}
-                         className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900"
+                         className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white"
                          disabled={!selectedCityCode || isLoadingTowns}
                        >
                          <option value="">{t("communePlaceholder")}</option>
@@ -569,7 +569,7 @@ export default function RegisterPage() {
                        </select>
                        {isLoadingTowns && (
                          <div className="absolute inset-y-0 right-3 flex items-center">
-                           <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                           <Loader2 className="h-4 w-4 animate-spin text-gray-400 dark:text-white/40" />
                          </div>
                        )}
                      </div>
@@ -583,12 +583,12 @@ export default function RegisterPage() {
             <div className="space-y-4">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-[#00BFA6]">
-                  <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-[#00BFA6]" />
+                  <Mail className="h-5 w-5 text-gray-400 dark:text-white/40 group-focus-within:text-[#00BFA6]" />
                 </div>
                 <input
                   {...register("email")}
                   type="email"
-                  className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                  className="w-full pl-12 px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                   placeholder={t("emailPlaceholder")}
                 />
               </div>
@@ -596,12 +596,12 @@ export default function RegisterPage() {
 
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400 group-focus-within:text-[#00BFA6]" />
+                  <Phone className="h-5 w-5 text-gray-400 dark:text-white/40 group-focus-within:text-[#00BFA6]" />
                 </div>
                 <input
                   {...register("phone")}
                   type="tel"
-                  className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                  className="w-full pl-12 px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                   placeholder={t("phonePlaceholder")}
                 />
               </div>
@@ -610,23 +610,23 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-[#00BFA6]" />
+                      <Lock className="h-5 w-5 text-gray-400 dark:text-white/40 group-focus-within:text-[#00BFA6]" />
                     </div>
                     <input
                       {...register("password")}
                       type="password"
-                      className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                      className="w-full pl-12 px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                       placeholder={t("passwordPlaceholder")}
                     />
                   </div>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-[#00BFA6]" />
+                      <Lock className="h-5 w-5 text-gray-400 dark:text-white/40 group-focus-within:text-[#00BFA6]" />
                     </div>
                     <input
                       {...register("confirmPassword")}
                       type="password"
-                      className="w-full pl-12 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-500"
+                      className="w-full pl-12 px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500"
                       placeholder={t("confirmPasswordPlaceholder")}
                     />
                   </div>
@@ -646,7 +646,7 @@ export default function RegisterPage() {
           </form>
 
           <div className="text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-white/50">
               {t("alreadyAccount")}{' '}
               <Link href="/auth/login" className="font-bold text-[#003B4A] hover:text-[#00BFA6] transition-colors">
                 {t("login")}

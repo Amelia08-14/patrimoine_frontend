@@ -30,9 +30,9 @@ function getImageUrl(url: string) {
 
 function ColorPicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
+    <div className="flex items-center gap-3 py-3 border-b border-gray-100 dark:border-white/10 last:border-0">
       <div className="w-32 shrink-0">
-        <span className="text-sm font-bold text-gray-700">{label}</span>
+        <span className="text-sm font-bold text-gray-700 dark:text-white/70">{label}</span>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap flex-1">
         {PALETTE.map(p => (
@@ -40,8 +40,8 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
             {value === p && <Check className="h-3 w-3 text-white mx-auto" />}
           </button>
         ))}
-        <input type="color" value={value} onChange={e => onChange(e.target.value)} className="h-6 w-8 border border-gray-200 rounded cursor-pointer" />
-        <span className="text-xs font-mono text-gray-400">{value}</span>
+        <input type="color" value={value} onChange={e => onChange(e.target.value)} className="h-6 w-8 border border-gray-200 dark:border-white/10 rounded cursor-pointer" />
+        <span className="text-xs font-mono text-gray-400 dark:text-white/40">{value}</span>
       </div>
     </div>
   )
@@ -76,7 +76,7 @@ function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { co
         {config.slogan && <div className="text-xs mt-1" style={{ color: htc, opacity: 0.8 }}>{config.slogan}</div>}
         {config.description && <div className="text-[10px] mt-1 line-clamp-2" style={{ color: htc, opacity: 0.6 }}>{config.description}</div>}
         <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
-          {config.phone && <span className="text-[10px] bg-white text-gray-800 px-2 py-0.5 rounded-full font-bold">{config.phone}</span>}
+          {config.phone && <span className="text-[10px] bg-white dark:bg-white/5 text-gray-800 dark:text-white/90 px-2 py-0.5 rounded-full font-bold">{config.phone}</span>}
           {config.whatsapp && <span className="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-bold">WhatsApp</span>}
           {config.email && <span className="text-[10px] bg-white/20 border border-white/40 px-2 py-0.5 rounded-full font-bold" style={{ color: htc }}>{t("fieldEmail")}</span>}
           {config.facebook && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>f</span>}
@@ -336,7 +336,7 @@ export default function BoutiqueConfigPage() {
 
   const SaveBar = () => (
     <div className="flex gap-3">
-      <a href={`/boutique/${boutiqueSlug || user?.id}`} target="_blank" className="flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors">
+      <a href={`/boutique/${boutiqueSlug || user?.id}`} target="_blank" className="flex items-center gap-2 px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-700 dark:text-white/70 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors">
         <Eye className="h-4 w-4" /> {t("preview")}
       </a>
       <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2 bg-[#00BFA6] text-white rounded-xl font-bold text-sm hover:bg-[#009e88] transition-colors disabled:opacity-60">
@@ -350,13 +350,13 @@ export default function BoutiqueConfigPage() {
 
   // Garde : boutique inactive → page d'activation
   if (!activeSub) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 max-w-lg w-full p-8 text-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 max-w-lg w-full p-8 text-center">
         <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
           <Store className="h-8 w-8 text-amber-500" />
         </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-2">{t("notActivatedTitle")}</h2>
-        <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{t("notActivatedTitle")}</h2>
+        <p className="text-gray-500 dark:text-white/50 text-sm mb-6 leading-relaxed">
           {t("notActivatedText")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 text-left">
@@ -365,10 +365,10 @@ export default function BoutiqueConfigPage() {
             { pack: t("packAvancee"), price: '10 000 DA', pts: '100 pts', hot: true },
             { pack: t("packEntreprise"), price: '15 000 DA', pts: '200 pts' },
           ].map(p => (
-            <div key={p.pack} className={`p-3 rounded-xl border-2 text-center ${p.hot ? 'border-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200'}`}>
-              <div className="font-black text-gray-900 text-xs">{p.pack}</div>
+            <div key={p.pack} className={`p-3 rounded-xl border-2 text-center ${p.hot ? 'border-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 dark:border-white/10'}`}>
+              <div className="font-black text-gray-900 dark:text-white text-xs">{p.pack}</div>
               <div className="font-bold text-[#00BFA6] text-sm mt-0.5">{p.pts}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{p.price}{t("perMonth")}</div>
+              <div className="text-xs text-gray-500 dark:text-white/50 mt-0.5">{p.price}{t("perMonth")}</div>
             </div>
           ))}
         </div>
@@ -383,14 +383,14 @@ export default function BoutiqueConfigPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3"><Store className="h-7 w-7 text-[#00BFA6]" /> {t("pageTitle")}</h1>
-            <p className="text-gray-500 mt-1 text-sm">{t("pageSubtitle")}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3"><Store className="h-7 w-7 text-[#00BFA6]" /> {t("pageTitle")}</h1>
+            <p className="text-gray-500 dark:text-white/50 mt-1 text-sm">{t("pageSubtitle")}</p>
           </div>
           <SaveBar />
         </div>
@@ -411,43 +411,43 @@ export default function BoutiqueConfigPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Identité */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Building2 className="h-5 w-5 text-[#00BFA6]" /> {t("identityTitle")}</h2>
+              <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+                <h2 className="font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2 text-base"><Building2 className="h-5 w-5 text-[#00BFA6]" /> {t("identityTitle")}</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">{companyNameLabel}</label>
-                    <input value={config.companyName} onChange={e => handleChange('companyName', e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder={t("companyNamePlaceholder")} />
+                    <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1">{companyNameLabel}</label>
+                    <input value={config.companyName} onChange={e => handleChange('companyName', e.target.value)} className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder={t("companyNamePlaceholder")} />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">{t("sloganLabel")}</label>
-                    <input value={config.slogan} onChange={e => handleChange('slogan', e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder={t("sloganPlaceholder")} />
+                    <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1">{t("sloganLabel")}</label>
+                    <input value={config.slogan} onChange={e => handleChange('slogan', e.target.value)} className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none font-medium text-sm" placeholder={t("sloganPlaceholder")} />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">{t("descriptionLabel")}</label>
-                    <textarea value={config.description} onChange={e => handleChange('description', e.target.value)} rows={3} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none font-medium resize-none text-sm" placeholder={t("descriptionPlaceholder")} />
+                    <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1">{t("descriptionLabel")}</label>
+                    <textarea value={config.description} onChange={e => handleChange('description', e.target.value)} rows={3} className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none font-medium resize-none text-sm" placeholder={t("descriptionPlaceholder")} />
                   </div>
                 </div>
               </div>
 
               {/* Visuels */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><ImageIcon className="h-5 w-5 text-[#00BFA6]" /> {t("visualsTitle")}</h2>
+              <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+                <h2 className="font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2 text-base"><ImageIcon className="h-5 w-5 text-[#00BFA6]" /> {t("visualsTitle")}</h2>
 
                 {/* Logo */}
                 <div className="mb-5">
-                  <label className="block text-sm font-bold text-gray-700 mb-3">{t("logoLabel")}</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-3">{t("logoLabel")}</label>
 
                   {/* Source: compte ou custom */}
                   <div className="flex gap-2 mb-3">
                     <button
                       onClick={() => { setLogoSource('account'); handleChange('logoUrl', accountLogo) }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${logoSource === 'account' ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-600'}`}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${logoSource === 'account' ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60'}`}
                     >
                       <User className="h-3.5 w-3.5" /> {t("accountPhoto")}
                     </button>
                     <button
                       onClick={() => { setLogoSource('custom'); logoInputRef.current?.click() }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${logoSource === 'custom' ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-600'}`}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${logoSource === 'custom' ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60'}`}
                     >
                       <Upload className="h-3.5 w-3.5" /> {t("customLogo")}
                     </button>
@@ -462,30 +462,30 @@ export default function BoutiqueConfigPage() {
                         <img
                           src={getImageUrl(config.logoUrl)}
                           alt="Logo"
-                          className={`h-16 w-16 object-contain border-4 border-gray-100 ${logoShape === 'round' ? 'rounded-full' : logoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'}`}
+                          className={`h-16 w-16 object-contain border-4 border-gray-100 dark:border-white/10 ${logoShape === 'round' ? 'rounded-full' : logoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'}`}
                         />
                         {logoSource === 'custom' && (
-                          <button onClick={() => { handleChange('logoUrl', accountLogo); setLogoSource('account') }} className="absolute -top-1 -right-1 p-1 bg-white border border-gray-200 rounded-full shadow">
-                            <X className="h-3 w-3 text-gray-600" />
+                          <button onClick={() => { handleChange('logoUrl', accountLogo); setLogoSource('account') }} className="absolute -top-1 -right-1 p-1 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full shadow">
+                            <X className="h-3 w-3 text-gray-600 dark:text-white/60" />
                           </button>
                         )}
                       </div>
                     ) : (
-                      <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <User className="h-6 w-6 text-gray-400" />
+                      <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-white/15">
+                        <User className="h-6 w-6 text-gray-400 dark:text-white/40" />
                       </div>
                     )}
 
                     {/* Forme du logo */}
                     <div>
-                      <p className="text-xs font-bold text-gray-500 mb-2">{t("shapeLabel")}</p>
+                      <p className="text-xs font-bold text-gray-500 dark:text-white/50 mb-2">{t("shapeLabel")}</p>
                       <div className="flex gap-2">
                         {([
                           { v: 'round', icon: Circle, label: t("shapeRound") },
                           { v: 'rectangle', icon: Square, label: t("shapeRectangle") },
                           { v: 'none', icon: Minus, label: t("shapeNone") },
                         ] as { v: 'round' | 'rectangle' | 'none'; icon: any; label: string }[]).map(({ v, icon: Icon, label }) => (
-                          <button key={v} onClick={() => setLogoShape(v)} className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-all text-xs ${logoShape === v ? 'border-[#00BFA6] bg-[#00BFA6]/5 text-[#00BFA6]' : 'border-gray-200 text-gray-500'}`}>
+                          <button key={v} onClick={() => setLogoShape(v)} className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-all text-xs ${logoShape === v ? 'border-[#00BFA6] bg-[#00BFA6]/5 text-[#00BFA6]' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50'}`}>
                             <Icon className="h-4 w-4" />
                             <span>{label}</span>
                           </button>
@@ -496,35 +496,35 @@ export default function BoutiqueConfigPage() {
                 </div>
 
                 {/* Second logo / Commercial */}
-                <div className="mb-5 pb-5 border-b border-gray-100">
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    {t("secondLogoLabel")} <span className="text-gray-400 font-normal text-xs">{t("secondLogoHint")}</span>
+                <div className="mb-5 pb-5 border-b border-gray-100 dark:border-white/10">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-2">
+                    {t("secondLogoLabel")} <span className="text-gray-400 dark:text-white/40 font-normal text-xs">{t("secondLogoHint")}</span>
                   </label>
                   <input ref={secondLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'secondLogoUrl') }} />
                   <div className="flex items-center gap-4">
                     {config.secondLogoUrl ? (
                       <div className="relative">
-                        <img src={getImageUrl(config.secondLogoUrl)} alt="Logo 2" className={`h-14 w-14 object-contain border-4 border-gray-100 ${secondLogoShape === 'round' ? 'rounded-full' : secondLogoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'}`} />
-                        <button onClick={() => handleChange('secondLogoUrl', '')} className="absolute -top-1 -right-1 p-1 bg-white border border-gray-200 rounded-full shadow"><X className="h-3 w-3 text-gray-600" /></button>
+                        <img src={getImageUrl(config.secondLogoUrl)} alt="Logo 2" className={`h-14 w-14 object-contain border-4 border-gray-100 dark:border-white/10 ${secondLogoShape === 'round' ? 'rounded-full' : secondLogoShape === 'rectangle' ? 'rounded-xl' : 'rounded-none'}`} />
+                        <button onClick={() => handleChange('secondLogoUrl', '')} className="absolute -top-1 -right-1 p-1 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full shadow"><X className="h-3 w-3 text-gray-600 dark:text-white/60" /></button>
                       </div>
                     ) : (
-                      <button onClick={() => secondLogoInputRef.current?.click()} className="h-14 w-14 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-[#00BFA6] transition-colors">
-                        <Upload className="h-5 w-5 text-gray-400" />
+                      <button onClick={() => secondLogoInputRef.current?.click()} className="h-14 w-14 rounded-xl bg-gray-100 dark:bg-white/10 border-2 border-dashed border-gray-300 dark:border-white/15 flex items-center justify-center hover:border-[#00BFA6] transition-colors">
+                        <Upload className="h-5 w-5 text-gray-400 dark:text-white/40" />
                       </button>
                     )}
                     <div>
-                      <p className="text-xs font-bold text-gray-500 mb-1.5">{t("shapeLabel")}</p>
+                      <p className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5">{t("shapeLabel")}</p>
                       <div className="flex gap-1.5">
                         {([{ v: 'round', label: t("shapeRound") }, { v: 'rectangle', label: t("shapeRect") }, { v: 'none', label: t("shapeNone") }] as { v: 'round'|'rectangle'|'none'; label: string }[]).map(({ v, label }) => (
-                          <button key={v} onClick={() => setSecondLogoShape(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${secondLogoShape === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-500'}`}>{label}</button>
+                          <button key={v} onClick={() => setSecondLogoShape(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${secondLogoShape === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50'}`}>{label}</button>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-gray-500 mb-1.5">{t("alignmentLabel")}</p>
+                      <p className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5">{t("alignmentLabel")}</p>
                       <div className="flex gap-1.5">
                         {([{ v: 'center', label: t("alignCenter") }, { v: 'sides', label: t("alignSides") }] as { v: 'center'|'sides'; label: string }[]).map(({ v, label }) => (
-                          <button key={v} onClick={() => setLogoAlignment(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${logoAlignment === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 text-gray-500'}`}>{label}</button>
+                          <button key={v} onClick={() => setLogoAlignment(v)} className={`px-2 py-1 rounded-lg border text-xs font-bold ${logoAlignment === v ? 'border-[#00BFA6] text-[#00BFA6] bg-[#00BFA6]/5' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50'}`}>{label}</button>
                         ))}
                       </div>
                     </div>
@@ -533,25 +533,25 @@ export default function BoutiqueConfigPage() {
 
                 {/* Bannière slider */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    {t("bannerLabel")} <span className="text-gray-400 font-normal text-xs">{t("bannerHint")}</span>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-2">
+                    {t("bannerLabel")} <span className="text-gray-400 dark:text-white/40 font-normal text-xs">{t("bannerHint")}</span>
                   </label>
                   <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && addBannerSlide(e.target.files[0])} />
                   {config.bannerUrls.length > 0 ? (
                     <div className="space-y-2">
                       {config.bannerUrls.map((url, idx) => (
-                        <div key={idx} className="relative rounded-xl overflow-hidden h-16 bg-gray-100">
+                        <div key={idx} className="relative rounded-xl overflow-hidden h-16 bg-gray-100 dark:bg-white/10">
                           <img src={getImageUrl(url)} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
                           <div className="absolute top-1.5 left-2 bg-black/50 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{idx + 1}</div>
-                          <button onClick={() => removeBannerSlide(idx)} className="absolute top-1.5 right-1.5 p-1 bg-white/80 rounded-full hover:bg-white"><X className="h-3 w-3 text-gray-700" /></button>
+                          <button onClick={() => removeBannerSlide(idx)} className="absolute top-1.5 right-1.5 p-1 bg-white/80 rounded-full hover:bg-white"><X className="h-3 w-3 text-gray-700 dark:text-white/70" /></button>
                         </div>
                       ))}
-                      <button onClick={() => bannerInputRef.current?.click()} className="w-full py-2 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 text-sm transition-colors">
+                      <button onClick={() => bannerInputRef.current?.click()} className="w-full py-2 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex items-center justify-center gap-2 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 dark:text-white/40 text-sm transition-colors">
                         <Plus className="h-4 w-4" /> {t("addSlide")}
                       </button>
                     </div>
                   ) : (
-                    <button onClick={() => bannerInputRef.current?.click()} className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 transition-colors">
+                    <button onClick={() => bannerInputRef.current?.click()} className="w-full h-20 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 dark:text-white/40 transition-colors">
                       <Upload className="h-5 w-5" />
                       <span className="text-sm font-medium">{t("uploadBanner")}</span>
                     </button>
@@ -561,12 +561,12 @@ export default function BoutiqueConfigPage() {
             </div>
 
             {/* Couleurs */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Palette className="h-5 w-5 text-[#00BFA6]" /> {t("colorsTitle")}</h2>
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+              <h2 className="font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2 text-base"><Palette className="h-5 w-5 text-[#00BFA6]" /> {t("colorsTitle")}</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Couleurs de fond */}
                 <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">{t("backgroundsLabel")}</p>
+                  <p className="text-xs font-black text-gray-400 dark:text-white/40 uppercase tracking-wider mb-3">{t("backgroundsLabel")}</p>
                   <ColorPicker label={t("colorHeader")} value={config.headerColor} onChange={v => handleChange('headerColor', v)} />
                   <ColorPicker label={t("colorFooter")} value={config.footerColor} onChange={v => handleChange('footerColor', v)} />
                   <ColorPicker label={t("colorBody")} value={config.bodyColor} onChange={v => handleChange('bodyColor', v)} />
@@ -575,25 +575,25 @@ export default function BoutiqueConfigPage() {
                 </div>
                 {/* Couleurs de texte */}
                 <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">{t("textsLabel")}</p>
+                  <p className="text-xs font-black text-gray-400 dark:text-white/40 uppercase tracking-wider mb-3">{t("textsLabel")}</p>
                   <ColorPicker label={t("colorHeaderText")} value={config.headerTextColor} onChange={v => handleChange('headerTextColor', v)} />
                   <ColorPicker label={t("colorFooterText")} value={config.footerTextColor} onChange={v => handleChange('footerTextColor', v)} />
                 </div>
               </div>
               {/* Preview bande couleurs */}
-              <div className="mt-5 rounded-xl overflow-hidden border border-gray-200 text-xs">
+              <div className="mt-5 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 text-xs">
                 <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.headerColor, color: config.headerTextColor }}>{t("previewHeaderSample")}</div>
-                <div className="h-8 flex items-center px-4 text-gray-500 font-medium" style={{ backgroundColor: config.bodyColor }}>{t("previewBodySample")}</div>
+                <div className="h-8 flex items-center px-4 text-gray-500 dark:text-white/50 font-medium" style={{ backgroundColor: config.bodyColor }}>{t("previewBodySample")}</div>
                 <div className="h-8 flex items-center px-4 font-bold" style={{ backgroundColor: config.footerColor, color: config.footerTextColor }}>{t("previewFooterSample")}</div>
               </div>
             </div>
 
             {/* Typographie */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2 text-base">
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+              <h2 className="font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2 text-base">
                 <span className="text-[#00BFA6] font-black text-lg">Aa</span> {t("typographyTitle")}
               </h2>
-              <p className="text-xs text-gray-500 mb-4">{t("typographySubtitle")}</p>
+              <p className="text-xs text-gray-500 dark:text-white/50 mb-4">{t("typographySubtitle")}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { name: "", label: t("fontDefault") },
@@ -612,7 +612,7 @@ export default function BoutiqueConfigPage() {
                   <button
                     key={f.name}
                     onClick={() => handleChange('fontFamily', f.name)}
-                    className={`px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all text-left ${config.fontFamily === f.name ? 'border-[#00BFA6] bg-[#00BFA6]/5 text-[#00BFA6]' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
+                    className={`px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all text-left ${config.fontFamily === f.name ? 'border-[#00BFA6] bg-[#00BFA6]/5 text-[#00BFA6]' : 'border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/70 hover:border-gray-300'}`}
                     style={{ fontFamily: f.name || undefined }}
                   >
                     {f.label}
@@ -620,16 +620,16 @@ export default function BoutiqueConfigPage() {
                 ))}
               </div>
               {config.fontFamily && (
-                <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-200">
-                  <p className="text-lg font-bold text-gray-900" style={{ fontFamily: config.fontFamily }}>{t("fontPreviewTitle")}</p>
-                  <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: config.fontFamily }}>{t("fontPreviewSubtitle")}</p>
+                <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white" style={{ fontFamily: config.fontFamily }}>{t("fontPreviewTitle")}</p>
+                  <p className="text-sm text-gray-500 dark:text-white/50 mt-1" style={{ fontFamily: config.fontFamily }}>{t("fontPreviewSubtitle")}</p>
                 </div>
               )}
             </div>
 
             {/* Coordonnées & Réseaux */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-base"><Phone className="h-5 w-5 text-[#00BFA6]" /> {t("contactSocialTitle")}</h2>
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+              <h2 className="font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2 text-base"><Phone className="h-5 w-5 text-[#00BFA6]" /> {t("contactSocialTitle")}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { key: 'phone', label: t("fieldPhone"), icon: Phone, placeholder: '+213 555 123 456', type: 'tel' },
@@ -640,18 +640,18 @@ export default function BoutiqueConfigPage() {
                   { key: 'instagram', label: t("fieldInstagram"), icon: Instagram, placeholder: '@monagence', type: 'text' },
                   { key: 'linkedin', label: t("fieldLinkedin"), icon: Linkedin, placeholder: 'https://linkedin.com/...', type: 'url' },
                 ].map(({ key, label, icon: Icon, placeholder, type }) => (
-                  <div key={key} className="flex items-center gap-3 p-3 border-2 border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
-                    <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-gray-400" /></div>
-                    <input type={type} value={(config as any)[key]} onChange={e => handleChange(key, e.target.value)} className="flex-1 outline-none text-sm font-medium text-gray-900 bg-transparent placeholder-gray-400" placeholder={`${label} — ${placeholder}`} />
+                  <div key={key} className="flex items-center gap-3 p-3 border-2 border-gray-100 dark:border-white/10 rounded-xl hover:border-gray-200 transition-colors">
+                    <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-transparent flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-gray-400 dark:text-white/40" /></div>
+                    <input type={type} value={(config as any)[key]} onChange={e => handleChange(key, e.target.value)} className="flex-1 outline-none text-sm font-medium text-gray-900 dark:text-white bg-transparent placeholder-gray-400" placeholder={`${label} — ${placeholder}`} />
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Stories */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base"><Play className="h-5 w-5 text-[#00BFA6]" /> {t("storiesTitle")}</h2>
-              <p className="text-xs text-gray-500 mb-5">{t("storiesHint")}</p>
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+              <h2 className="font-black text-gray-900 dark:text-white mb-2 flex items-center gap-2 text-base"><Play className="h-5 w-5 text-[#00BFA6]" /> {t("storiesTitle")}</h2>
+              <p className="text-xs text-gray-500 dark:text-white/50 mb-5">{t("storiesHint")}</p>
 
               <input ref={storyInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={e => { if (e.target.files?.[0]) { addStory(e.target.files[0]); e.target.value = '' } }} />
 
@@ -659,7 +659,7 @@ export default function BoutiqueConfigPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
                   {config.stories.map((s, idx) => (
                     <div key={idx} className="space-y-1.5">
-                      <div className="relative rounded-xl overflow-hidden bg-gray-100" style={{ aspectRatio: '9/16' }}>
+                      <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-white/10" style={{ aspectRatio: '9/16' }}>
                         {s.type === 'video' ? (
                           <video src={getImageUrl(s.url)} className="w-full h-full object-cover" muted />
                         ) : (
@@ -679,8 +679,8 @@ export default function BoutiqueConfigPage() {
                         {s.type === 'video' && <div className="absolute top-1.5 left-1.5 bg-black/50 rounded-full p-1"><Play className="h-3 w-3 text-white" /></div>}
                       </div>
                       {/* Lien externe optionnel — affiché à droite de la story avec son icône */}
-                      <div className="flex items-center gap-1 border-2 border-gray-200 rounded-lg px-2 py-1.5 focus-within:border-[#00BFA6]">
-                        <Link2 className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <div className="flex items-center gap-1 border-2 border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 focus-within:border-[#00BFA6]">
+                        <Link2 className="h-3.5 w-3.5 text-gray-400 dark:text-white/40 shrink-0" />
                         <input
                           value={s.link || ''}
                           onChange={e => updateStoryLink(idx, e.target.value)}
@@ -692,7 +692,7 @@ export default function BoutiqueConfigPage() {
                         <input
                           value={s.linkLabel || ''}
                           onChange={e => updateStoryLinkLabel(idx, e.target.value)}
-                          className="w-full text-xs border-2 border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:border-[#00BFA6] placeholder-gray-400"
+                          className="w-full text-xs border-2 border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 outline-none focus:border-[#00BFA6] placeholder-gray-400"
                           placeholder={t("storyLinkLabelPlaceholder")}
                         />
                       )}
@@ -701,17 +701,17 @@ export default function BoutiqueConfigPage() {
                 </div>
               ) : null}
 
-              <button onClick={() => storyInputRef.current?.click()} className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 transition-colors text-sm font-medium">
+              <button onClick={() => storyInputRef.current?.click()} className="w-full py-3 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl flex items-center justify-center gap-2 hover:border-[#00BFA6] hover:text-[#00BFA6] text-gray-400 dark:text-white/40 transition-colors text-sm font-medium">
                 <Plus className="h-4 w-4" /> {t("addStory")}
               </button>
             </div>
 
             {/* Menu de navigation */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base">
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+              <h2 className="font-black text-gray-900 dark:text-white mb-2 flex items-center gap-2 text-base">
                 <span className="text-[#00BFA6] font-black">≡</span> {t("menuTitle")}
               </h2>
-              <p className="text-xs text-gray-500 mb-4">{t("menuHint")}</p>
+              <p className="text-xs text-gray-500 dark:text-white/50 mb-4">{t("menuHint")}</p>
               <div className="space-y-2 mb-3">
                 {config.menuItems.map((item, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
@@ -722,7 +722,7 @@ export default function BoutiqueConfigPage() {
                         next[idx] = { ...next[idx], label: e.target.value }
                         handleChange('menuItems', next)
                       }}
-                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
+                      className="flex-1 px-3 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
                       placeholder={t("menuLabelPlaceholder")}
                     />
                     <input
@@ -732,10 +732,10 @@ export default function BoutiqueConfigPage() {
                         next[idx] = { ...next[idx], href: e.target.value }
                         handleChange('menuItems', next)
                       }}
-                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
+                      className="flex-1 px-3 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none"
                       placeholder={t("menuLinkPlaceholder")}
                     />
-                    <button onClick={() => handleChange('menuItems', config.menuItems.filter((_, i) => i !== idx))} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                    <button onClick={() => handleChange('menuItems', config.menuItems.filter((_, i) => i !== idx))} className="p-2 text-gray-400 dark:text-white/40 hover:text-red-500 transition-colors">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
@@ -750,31 +750,31 @@ export default function BoutiqueConfigPage() {
             </div>
 
             {/* Page À propos */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-base">
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
+              <h2 className="font-black text-gray-900 dark:text-white mb-2 flex items-center gap-2 text-base">
                 <Building2 className="h-5 w-5 text-[#00BFA6]" /> {t("aboutPageTitle")}
               </h2>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-gray-500 dark:text-white/50 mb-4">
                 {t("aboutPageHint")} <span className="font-mono">/boutique/{boutiqueSlug || user.id}/about</span> {t("aboutPageHintSuffix")}
               </p>
               <input ref={aboutImageInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadAboutImage(e.target.files[0]) }} />
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("presentationImage")}</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1.5">{t("presentationImage")}</label>
                   {config.aboutImage ? (
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-50">
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-transparent">
                       <img src={getImageUrl(config.aboutImage)} alt={t("aboutPageTitle")} className="w-full h-full object-cover" />
-                      <button onClick={() => handleChange('aboutImage', '')} className="absolute top-2 right-2 p-1.5 bg-white border border-gray-200 rounded-full shadow hover:bg-red-50">
-                        <X className="h-3.5 w-3.5 text-gray-600" />
+                      <button onClick={() => handleChange('aboutImage', '')} className="absolute top-2 right-2 p-1.5 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full shadow hover:bg-red-50">
+                        <X className="h-3.5 w-3.5 text-gray-600 dark:text-white/60" />
                       </button>
-                      <button onClick={() => aboutImageInputRef.current?.click()} className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 shadow hover:bg-white">
+                      <button onClick={() => aboutImageInputRef.current?.click()} className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 border border-gray-200 dark:border-white/10 rounded-lg text-xs font-bold text-gray-700 dark:text-white/70 shadow hover:bg-white">
                         <Upload className="h-3 w-3 inline mr-1" />{t("changeImage")}
                       </button>
                     </div>
                   ) : (
                     <button
                       onClick={() => aboutImageInputRef.current?.click()}
-                      className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors"
+                      className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-white/15 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-white/40 hover:border-[#00BFA6] hover:text-[#00BFA6] transition-colors"
                     >
                       <Upload className="h-7 w-7" />
                       <span className="text-sm font-medium">{t("clickToUpload")}</span>
@@ -783,31 +783,31 @@ export default function BoutiqueConfigPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("companyDescriptionLabel")}</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1.5">{t("companyDescriptionLabel")}</label>
                   <textarea
                     value={config.aboutDescription || ''}
                     onChange={e => handleChange('aboutDescription', e.target.value)}
                     rows={5}
-                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm resize-none"
+                    className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none text-sm resize-none"
                     placeholder={t("companyDescriptionPlaceholder")}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("buttonLabelField")}</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1.5">{t("buttonLabelField")}</label>
                     <input
                       value={config.aboutButtonLabel || ''}
                       onChange={e => handleChange('aboutButtonLabel', e.target.value)}
-                      className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
+                      className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
                       placeholder={t("buttonLabelPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{t("buttonUrlField")}</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1.5">{t("buttonUrlField")}</label>
                     <input
                       value={config.aboutButtonUrl || ''}
                       onChange={e => handleChange('aboutButtonUrl', e.target.value)}
-                      className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
+                      className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none text-sm"
                       placeholder={t("buttonUrlPlaceholder")}
                     />
                   </div>
@@ -818,9 +818,9 @@ export default function BoutiqueConfigPage() {
             {/* Link to boutique */}
             <div className="p-5 bg-[#00BFA6]/5 border border-[#00BFA6]/20 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="font-bold text-gray-900">{t("boutiqueLinkTitle")}</p>
+                <p className="font-bold text-gray-900 dark:text-white">{t("boutiqueLinkTitle")}</p>
                 <p className="text-sm text-[#00BFA6] mt-0.5 font-mono font-bold">/boutique/{boutiqueSlug || user.id}</p>
-                {!boutiqueSlug && <p className="text-xs text-gray-400 mt-0.5">{t("boutiqueLinkHint")}</p>}
+                {!boutiqueSlug && <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">{t("boutiqueLinkHint")}</p>}
               </div>
               <a href={`/boutique/${boutiqueSlug || user.id}`} target="_blank" className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white" style={{ backgroundColor: config.headerColor }}>
                 <ExternalLink className="h-4 w-4" /> {t("viewMyShop")}
@@ -835,9 +835,9 @@ export default function BoutiqueConfigPage() {
 
           {/* ── APERÇU LIVE ── */}
           <div className="xl:sticky xl:top-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <span className="text-sm font-black text-gray-700">{t("livePreview")}</span>
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
+                <span className="text-sm font-black text-gray-700 dark:text-white/70">{t("livePreview")}</span>
                 <a href={`/boutique/${boutiqueSlug || user.id}`} target="_blank" className="text-xs text-[#00BFA6] font-bold flex items-center gap-1 hover:underline">
                   <ExternalLink className="h-3 w-3" /> {t("open")}
                 </a>
@@ -850,7 +850,7 @@ export default function BoutiqueConfigPage() {
                 <HeroPreview config={config} logoShape={logoShape} secondLogoShape={secondLogoShape} logoAlignment={logoAlignment} />
 
                 {/* Mini filter bar */}
-                <div className="bg-white shadow-sm border-b border-gray-200 px-3 py-2.5 flex gap-2">
+                <div className="bg-white dark:bg-white/5 shadow-sm border-b border-gray-200 dark:border-white/10 px-3 py-2.5 flex gap-2">
                   {[t("filterAll"), t("filterSale"), t("filterRental")].map((label, i) => (
                     <span
                       key={label}
@@ -865,7 +865,7 @@ export default function BoutiqueConfigPage() {
 
                 {/* Stories */}
                 {config.stories.length > 0 && (
-                  <div className="bg-white px-4 py-3 flex gap-3 overflow-x-auto border-b border-gray-100">
+                  <div className="bg-white dark:bg-white/5 px-4 py-3 flex gap-3 overflow-x-auto border-b border-gray-100 dark:border-white/10">
                     {config.stories.slice(0, 5).map((s, idx) => (
                       <div key={idx} className="flex flex-col items-center gap-1 shrink-0">
                         <div className="h-11 w-11 rounded-full overflow-hidden border-2" style={{ borderColor: config.storyColor }}>
@@ -873,7 +873,7 @@ export default function BoutiqueConfigPage() {
                             ? <video src={getImageUrl(s.url)} className="h-full w-full object-cover" muted />
                             : <img src={getImageUrl(s.url)} alt="" className="h-full w-full object-cover" />}
                         </div>
-                        <span className="block text-[9px] text-gray-500 truncate max-w-[44px] font-medium" title={s.label || undefined}>{s.label || t("defaultStoryLabel")}</span>
+                        <span className="block text-[9px] text-gray-500 dark:text-white/50 truncate max-w-[44px] font-medium" title={s.label || undefined}>{s.label || t("defaultStoryLabel")}</span>
                       </div>
                     ))}
                   </div>
@@ -882,11 +882,11 @@ export default function BoutiqueConfigPage() {
                 {/* Annonces placeholder grid */}
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="rounded-xl overflow-hidden bg-white border border-gray-200 shadow-sm">
-                      <div className="h-20 bg-gray-100" />
+                    <div key={i} className="rounded-xl overflow-hidden bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow-sm">
+                      <div className="h-20 bg-gray-100 dark:bg-white/10" />
                       <div className="p-2.5">
-                        <div className="h-2.5 bg-gray-200 rounded w-3/4 mb-1.5" />
-                        <div className="h-2 bg-gray-100 rounded w-1/2 mb-1.5" />
+                        <div className="h-2.5 bg-gray-200 dark:bg-white/10 rounded w-3/4 mb-1.5" />
+                        <div className="h-2 bg-gray-100 dark:bg-white/10 rounded w-1/2 mb-1.5" />
                         <div className="h-2.5 rounded w-2/3 font-bold" style={{ backgroundColor: config.headerColor + '40' }} />
                       </div>
                     </div>

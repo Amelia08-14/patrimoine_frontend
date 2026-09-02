@@ -178,41 +178,41 @@ export default function ProfileInfoPage() {
             <User className="text-[#00BFA6] fill-current" /> {t("title")}
         </h1>
         
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-white/5 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
             <form onSubmit={handleSubmit} className="space-y-8">
 
                 {/* Société Section (en premier) */}
                 {user.userType === 'SOCIETE' && (
                     <div>
-                        <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
-                            <Building2 className="w-5 h-5 text-gray-400" /> {t("companyInfoTitle")}
+                        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white/90 border-b pb-2 flex items-center gap-2">
+                            <Building2 className="w-5 h-5 text-gray-400 dark:text-white/40" /> {t("companyInfoTitle")}
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("companyName")}</label>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("companyName")}</label>
                                 <Input
                                     name="companyName"
                                     value={formData.companyName}
                                     onChange={handleChange}
-                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("position")}</label>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("position")}</label>
                                 <Input
                                     name="position"
                                     value={formData.position}
                                     onChange={handleChange}
-                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
                                 />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("rcLabel")}</label>
-                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.rcDocument || user.rcDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("rcLabel")}</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.rcDocument || user.rcDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.rcDocument || user.rcDocumentUrl ? (
                                             <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.rcDocument ? files.rcDocument.name : t("existingDocument")}</>
@@ -225,8 +225,8 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("agreementLabel")}</label>
-                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agreementDocument || user.agreementDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("agreementLabel")}</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agreementDocument || user.agreementDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.agreementDocument || user.agreementDocumentUrl ? (
                                             <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agreementDocument ? files.agreementDocument.name : t("existingDocument")}</>
@@ -239,8 +239,8 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("logoLabel")}</label>
-                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agencyLogo || user.agencyLogoUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("logoLabel")}</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.agencyLogo || user.agencyLogoUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.agencyLogo || user.agencyLogoUrl ? (
                                             <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.agencyLogo ? files.agencyLogo.name : t("existingLogo")}</>
@@ -255,8 +255,8 @@ export default function ProfileInfoPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("nifDocLabel")}</label>
-                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.nifDocument || user.nifDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("nifDocLabel")}</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.nifDocument || user.nifDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.nifDocument || user.nifDocumentUrl ? (
                                             <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.nifDocument ? files.nifDocument.name : t("existingDocument")}</>
@@ -269,8 +269,8 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("nisDocLabel")}</label>
-                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.nisDocument || user.nisDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("nisDocLabel")}</label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.nisDocument || user.nisDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.nisDocument || user.nisDocumentUrl ? (
                                             <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.nisDocument ? files.nisDocument.name : t("existingDocument")}</>
@@ -283,8 +283,8 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("inapiDocLabel")} <span className="text-gray-400 font-normal">{t("inapiDocHint")}</span></label>
-                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.inapiDocument || user.inapiDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 border-gray-200 hover:border-[#00BFA6] text-gray-600"}`}>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("inapiDocLabel")} <span className="text-gray-400 dark:text-white/40 font-normal">{t("inapiDocHint")}</span></label>
+                                <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.inapiDocument || user.inapiDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.inapiDocument || user.inapiDocumentUrl ? (
                                             <><Check className="w-4 h-4 text-[#00BFA6]" /> {files.inapiDocument ? files.inapiDocument.name : t("existingDocument")}</>
@@ -301,44 +301,44 @@ export default function ProfileInfoPage() {
 
                 {/* Responsable légal pour une société, Informations personnelles pour un particulier (en deuxième) */}
                 <div>
-                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
-                        <User className="w-5 h-5 text-gray-400" /> {user.userType === 'SOCIETE' ? t("legalRepresentativeTitle") : t("personalInfoTitle")}
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white/90 border-b pb-2 flex items-center gap-2">
+                        <User className="w-5 h-5 text-gray-400 dark:text-white/40" /> {user.userType === 'SOCIETE' ? t("legalRepresentativeTitle") : t("personalInfoTitle")}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("firstName")}</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("firstName")}</label>
                             <Input
                                 name="firstName"
                                 value={formData.firstName}
                                 onChange={handleChange}
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                                className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("lastName")}</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("lastName")}</label>
                             <Input
                                 name="lastName"
                                 value={formData.lastName}
                                 onChange={handleChange}
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                                className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("email")}</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("email")}</label>
                             <Input
                                 name="email"
                                 value={formData.email}
                                 disabled
-                                className="bg-gray-100 border-2 border-gray-200 text-gray-500 cursor-not-allowed font-medium h-[42px]"
+                                className="bg-gray-100 dark:bg-white/10 border-2 border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 cursor-not-allowed font-medium h-[42px]"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("phone")}</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("phone")}</label>
                             <Input
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                                className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
                             />
                         </div>
                     </div>
@@ -346,28 +346,28 @@ export default function ProfileInfoPage() {
 
                 {/* Wilaya / Commune (en troisième) — remplace l'ancien champ Adresse en texte libre, sert de base aux filtres */}
                 <div>
-                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-gray-400" /> {t("addressSectionTitle")}
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white/90 border-b pb-2 flex items-center gap-2">
+                        <MapPin className="w-5 h-5 text-gray-400 dark:text-white/40" /> {t("addressSectionTitle")}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("wilaya")}</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("wilaya")}</label>
                             <select
                                 value={selectedWilaya}
                                 onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); }}
-                                className="w-full bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px] rounded-md px-3"
+                                className="w-full bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px] rounded-md px-3"
                             >
                                 <option value="">{t("wilayaPlaceholder")}</option>
                                 {cities.map((c) => <option key={c.id} value={c.id}>{c.nameFr}</option>)}
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("commune")}</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("commune")}</label>
                             <select
                                 value={selectedCommune}
                                 onChange={(e) => setSelectedCommune(e.target.value)}
                                 disabled={!selectedWilaya}
-                                className="w-full bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px] rounded-md px-3 disabled:opacity-60"
+                                className="w-full bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px] rounded-md px-3 disabled:opacity-60"
                             >
                                 <option value="">{t("communePlaceholder")}</option>
                                 {towns.map((tw) => <option key={tw.id} value={tw.id}>{tw.nameFr}</option>)}
@@ -378,30 +378,30 @@ export default function ProfileInfoPage() {
 
                 {/* Password Change */}
                 <div>
-                    <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
-                        <Lock className="w-5 h-5 text-gray-400" /> {t("securityTitle")}
+                    <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white/90 border-b pb-2 flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-gray-400 dark:text-white/40" /> {t("securityTitle")}
                     </h2>
                     <div className="grid grid-cols-1 gap-6 max-w-md">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t("newPassword")}</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("newPassword")}</label>
                             <Input
                                 type="password"
                                 name="newPassword"
                                 value={formData.newPassword}
                                 onChange={handleChange}
                                 placeholder={t("newPasswordPlaceholder")}
-                                className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]"
+                                className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
                             />
                         </div>
                         {formData.newPassword && (
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t("confirmPassword")}</label>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("confirmPassword")}</label>
                                 <Input 
                                     type="password"
                                     name="confirmPassword" 
                                     value={formData.confirmPassword} 
                                     onChange={handleChange} 
-                                    className="bg-gray-50 border-2 border-gray-200 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 h-[42px]" 
+                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]" 
                                 />
                             </div>
                         )}

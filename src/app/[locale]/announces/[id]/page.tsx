@@ -283,6 +283,22 @@ export default function AnnounceDetailsPage() {
   const [reportError, setReportError] = useState("")
   const [boutiqueAnnounces, setBoutiqueAnnounces] = useState<any[]>([])
 
+  // Messagerie interne — le bouton "Envoyer un message" poste un vrai Message (nécessite d'être
+  // connecté, contrairement au signalement qui tolère l'anonyme) ; l'annonceur le retrouve dans
+  // /profile/messages.
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+  const [messageContent, setMessageContent] = useState("")
+  const [messageSending, setMessageSending] = useState(false)
+  const [messageSent, setMessageSent] = useState(false)
+  const [messageError, setMessageError] = useState("")
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) setCurrentUserId(JSON.parse(userStr)?.id ?? null)
+    } catch {}
+  }, [])
+
   const allImages = announce?.property?.images || [];
   
   // Find the main image
@@ -416,6 +432,27 @@ export default function AnnounceDetailsPage() {
     }).catch(() => {})
   }
 
+  const sendMessage = async () => {
+    if (!messageContent.trim() || !announce?.user?.id) return
+    setMessageSending(true)
+    setMessageError("")
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) throw new Error('NO_TOKEN')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ receiverId: announce.user.id, announceId: announce.id, content: messageContent.trim() }),
+      })
+      if (!res.ok) throw new Error()
+      setMessageSent(true)
+    } catch {
+      setMessageError(t("messageErrorGeneric"))
+    } finally {
+      setMessageSending(false)
+    }
+  }
+
   const sendReport = async () => {
     if (!reportReason || !params.id) return
     setReportSending(true)
@@ -439,8 +476,8 @@ export default function AnnounceDetailsPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">{t("loading")}</div>
-  if (!announce) return <div className="min-h-screen flex items-center justify-center">{t("notFound")}</div>
+  if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-transparent text-gray-500 dark:text-white/60 flex items-center justify-center">{t("loading")}</div>
+  if (!announce) return <div className="min-h-screen bg-gray-50 dark:bg-transparent text-gray-500 dark:text-white/60 flex items-center justify-center">{t("notFound")}</div>
 
   const property = announce.property
   const images = property.images || []
@@ -669,7 +706,7 @@ export default function AnnounceDetailsPage() {
   }
   
   const tagBaseClass = "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold leading-none";
-  const tagNeutralClass = `${tagBaseClass} bg-white text-gray-700 border-gray-200`;
+  const tagNeutralClass = `${tagBaseClass} bg-white dark:bg-white/5 text-gray-700 dark:text-white/70 border-gray-200 dark:border-white/10`;
   const tagPrimaryClass = `${tagBaseClass} bg-[#00BFA6]/10 text-[#007B73] border-[#00BFA6]/25`;
 
   const legalDocuments = (() => {
@@ -720,31 +757,31 @@ export default function AnnounceDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent pb-12">
       {/* Header / Nav Removed */}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Images Grid - Compact, à la Airbnb : titre/prix restent au-dessus du pli, le filtre par
             pièce ne prend de la place que dans la modale plein écran (voir plus bas). */}
-        <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 mb-8">
+        <div className="bg-white dark:bg-white/5 p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
             <div className="flex justify-between items-center mb-3 px-1">
                 <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <ArrowLeft className="h-5 w-5 text-gray-700" />
+                    <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-white/70" />
                 </button>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
+                    <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
                         <Heart className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" className="text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
+                    <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
                         <Share2 className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
 
-            <div className="h-[280px] sm:h-[320px] lg:h-[360px] rounded-2xl overflow-hidden relative bg-gray-50">
+            <div className="h-[280px] sm:h-[320px] lg:h-[360px] rounded-2xl overflow-hidden relative bg-gray-50 dark:bg-transparent">
                 {mediaList.length === 0 && displayImages.length === 0 ? (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">{t("noImageAvailable")}</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-white/40 font-medium">{t("noImageAvailable")}</div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-2 h-full">
                         {/* Média principal (Gauche) — défile automatiquement entre photos et vidéos */}
@@ -777,7 +814,7 @@ export default function AnnounceDetailsPage() {
                             {mediaList.length > 1 && (
                                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
                                     {mediaList.map((_, i) => (
-                                        <span key={i} className={`h-1.5 rounded-full transition-all ${i === heroIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`} />
+                                        <span key={i} className={`h-1.5 rounded-full transition-all ${i === heroIndex ? 'w-5 bg-white dark:bg-white/5' : 'w-1.5 bg-white/50'}`} />
                                     ))}
                                 </div>
                             )}
@@ -798,7 +835,7 @@ export default function AnnounceDetailsPage() {
                                         />
                                     </>
                                 ) : (
-                                    <div className="w-full h-full bg-gray-50 flex items-center justify-center border border-gray-100/50 rounded-lg">
+                                    <div className="w-full h-full bg-gray-50 dark:bg-transparent flex items-center justify-center border border-gray-100/50 rounded-lg">
                                     </div>
                                 )}
                             </div>
@@ -815,7 +852,7 @@ export default function AnnounceDetailsPage() {
                                         />
                                     </>
                                 ) : (
-                                    <div className="w-full h-full bg-gray-50 flex items-center justify-center border border-gray-100/50 rounded-lg">
+                                    <div className="w-full h-full bg-gray-50 dark:bg-transparent flex items-center justify-center border border-gray-100/50 rounded-lg">
                                     </div>
                                 )}
                             </div>
@@ -836,7 +873,7 @@ export default function AnnounceDetailsPage() {
                                         />
                                     </>
                                 ) : (
-                                    <div className="w-full h-full bg-gray-50 flex items-center justify-center border border-gray-100/50 rounded-lg">
+                                    <div className="w-full h-full bg-gray-50 dark:bg-transparent flex items-center justify-center border border-gray-100/50 rounded-lg">
                                     </div>
                                 )}
                             </div>
@@ -853,7 +890,7 @@ export default function AnnounceDetailsPage() {
                                         />
                                     </>
                                 ) : (
-                                    <div className="w-full h-full bg-gray-50 flex items-center justify-center border border-gray-100/50 rounded-lg">
+                                    <div className="w-full h-full bg-gray-50 dark:bg-transparent flex items-center justify-center border border-gray-100/50 rounded-lg">
                                     </div>
                                 )}
                                 
@@ -869,7 +906,7 @@ export default function AnnounceDetailsPage() {
                                     <Button 
                                         variant="secondary" 
                                         size="sm" 
-                                        className="bg-white/90 text-gray-900 font-bold hover:bg-white gap-2 shadow-lg pointer-events-none"
+                                        className="bg-white/90 text-gray-900 dark:text-white font-bold hover:bg-white gap-2 shadow-lg pointer-events-none"
                                     >
                                         <Square className="h-4 w-4" />
                                         {t("seeGallery")}
@@ -974,11 +1011,11 @@ export default function AnnounceDetailsPage() {
           <div className="lg:col-span-2 space-y-8">
             
             {/* Header Information */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-white/5 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-3">
-                      <h1 className="text-3xl font-bold text-gray-900">{propertyTypeLabel}</h1>
+                      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{propertyTypeLabel}</h1>
                       {isHangarRental && hangar?.globalState && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
                               {LABELS[hangar.globalState] || hangar.globalState}
@@ -1000,7 +1037,7 @@ export default function AnnounceDetailsPage() {
                           </span>
                       )}
                   </div>
-                  <div className="flex items-center text-gray-500 text-lg">
+                  <div className="flex items-center text-gray-500 dark:text-white/50 text-lg">
                     <MapPin className="h-5 w-5 mr-2 text-[#00BFA6]" />
                     {property.address?.town?.nameFr || property.address?.street}, {property.address?.town?.city?.nameFr}
                     {property.mapsLink && (
@@ -1036,65 +1073,65 @@ export default function AnnounceDetailsPage() {
                               ? `${announce.price.toLocaleString()} DZD`
                               : t("priceNotSpecified"))}
                   </div>
-                  <div className="text-sm text-gray-500 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
+                  <div className="text-sm text-gray-500 dark:text-white/50 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
                       <span className="uppercase">{isRental ? t("rentalLabel") : isSale ? t("saleLabel") : announce.type}</span>
                       {(!isSpecialRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
                           <>
-                              <span className="text-gray-300">|</span>
-                              <span className="text-gray-600">{announce.priceType === 'FIXED' ? t("priceFixed") : announce.priceType === 'NEGOTIABLE' ? t("priceNegotiable") : t("priceOffered")}</span>
+                              <span className="text-gray-300 dark:text-white/30">|</span>
+                              <span className="text-gray-600 dark:text-white/60">{announce.priceType === 'FIXED' ? t("priceFixed") : announce.priceType === 'NEGOTIABLE' ? t("priceNegotiable") : t("priceOffered")}</span>
                           </>
                       )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-between items-center gap-6 py-5 border-t border-b border-gray-100 mt-5">
+              <div className="flex flex-wrap justify-between items-center gap-6 py-5 border-t border-b border-gray-100 dark:border-white/10 mt-5">
                 {isFactoryRental ? (
                   <div className="w-full flex items-center justify-between gap-3">
                     {/* Secteur d'activité */}
                     {industrialFactory?.sector?.[0] && (
-                      <div className="flex items-center gap-2 text-gray-700 min-w-0">
-                        <Factory className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 min-w-0">
+                        <Factory className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div className="min-w-0">
                           <div className="font-bold text-base truncate">
                             {industrialFactory.sector[0] === "AUTRE_ACTIVITE"
                               ? (industrialFactory.sectorOther || "Autre activité")
                               : (LABELS[industrialFactory.sector[0]] || industrialFactory.sector[0])}
                           </div>
-                          <div className="text-xs text-gray-500">Activité compatible</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Activité compatible</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {/* Surface Terrain */}
                     {industrialFactory?.surfaces?.landArea != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{industrialFactory.surfaces.landArea} m²</div>
-                          <div className="text-xs text-gray-500">Surf. Terrain</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Terrain</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {/* Surface Bâtie */}
                     {industrialFactory?.surfaces?.builtArea != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Warehouse className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Warehouse className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{industrialFactory.surfaces.builtArea} m²</div>
-                          <div className="text-xs text-gray-500">Surf. Bâtie</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Bâtie</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {/* Surface Libre */}
                     {industrialFactory?.surfaces?.freeArea != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{industrialFactory.surfaces.freeArea} m²</div>
-                          <div className="text-xs text-gray-500">Surf. Libre</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Libre</div>
                         </div>
                       </div>
                     )}
@@ -1102,41 +1139,41 @@ export default function AnnounceDetailsPage() {
                 ) : isColdRoomRental ? (
                   <div className="w-full flex items-center justify-between gap-3">
                     {coldRoom?.structureType && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{LABELS[coldRoom.structureType] || coldRoom.structureType}</div>
-                          <div className="text-xs text-gray-500">Structure</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Structure</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {coldRoom?.dimensions?.length != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{coldRoom.dimensions.length} ml</div>
-                          <div className="text-xs text-gray-500">Longueur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Longueur</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {coldRoom?.dimensions?.width != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{coldRoom.dimensions.width} ml</div>
-                          <div className="text-xs text-gray-500">Largeur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Largeur</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {coldRoom?.dimensions?.height != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{coldRoom.dimensions.height} ml</div>
-                          <div className="text-xs text-gray-500">Hauteur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Hauteur</div>
                         </div>
                       </div>
                     )}
@@ -1144,51 +1181,51 @@ export default function AnnounceDetailsPage() {
                 ) : isHangarRental ? (
                   <div className="w-full flex items-center justify-between gap-3">
                     {hangar?.surfaces?.terrain != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.surfaces.terrain} m²</div>
-                          <div className="text-xs text-gray-500">Surf. Terrain</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Terrain</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.surfaces?.covered != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.surfaces.covered} m²</div>
-                          <div className="text-xs text-gray-500">Surf. Couverte</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Couverte</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.dimensions?.length != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.dimensions.length} ml</div>
-                          <div className="text-xs text-gray-500">Longueur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Longueur</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.dimensions?.width != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.dimensions.width} ml</div>
-                          <div className="text-xs text-gray-500">Largeur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Largeur</div>
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.dimensions?.height != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.dimensions.height} ml</div>
-                          <div className="text-xs text-gray-500">Ht. sous crochet</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Ht. sous crochet</div>
                         </div>
                       </div>
                     )}
@@ -1197,23 +1234,23 @@ export default function AnnounceDetailsPage() {
                   <div className="w-full flex items-center justify-between gap-3 flex-wrap">
                     {/* Surface terrain */}
                     {property.landArea != null && (
-                      <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                        <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                        <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{property.landArea} m²</div>
-                          <div className="text-xs text-gray-500">Surf. Terrain</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Terrain</div>
                         </div>
                       </div>
                     )}
                     {/* Longueur */}
                     {terrain?.facadeLength != null && (
                       <>
-                        <div className="h-8 w-px bg-gray-200 shrink-0" />
-                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                          <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                          <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
                             <div className="font-bold text-base">{terrain.facadeLength} ml</div>
-                            <div className="text-xs text-gray-500">Longueur</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">Longueur</div>
                           </div>
                         </div>
                       </>
@@ -1221,12 +1258,12 @@ export default function AnnounceDetailsPage() {
                     {/* Largeur */}
                     {terrain?.depth != null && (
                       <>
-                        <div className="h-8 w-px bg-gray-200 shrink-0" />
-                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                          <Ruler className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                          <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
                             <div className="font-bold text-base">{terrain.depth} m</div>
-                            <div className="text-xs text-gray-500">Largeur</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">Largeur</div>
                           </div>
                         </div>
                       </>
@@ -1234,12 +1271,12 @@ export default function AnnounceDetailsPage() {
                     {/* Topographie */}
                     {terrain?.topographie && (
                       <>
-                        <div className="h-8 w-px bg-gray-200 shrink-0" />
-                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                          <Layers className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                          <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
                             <div className="font-bold text-base">{LABELS[terrain.topographie] || terrain.topographie}</div>
-                            <div className="text-xs text-gray-500">Topographie</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">Topographie</div>
                           </div>
                         </div>
                       </>
@@ -1247,109 +1284,109 @@ export default function AnnounceDetailsPage() {
                     {/* Façades */}
                     {property.facadesCount != null && (
                       <>
-                        <div className="h-8 w-px bg-gray-200 shrink-0" />
-                        <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                          <Square className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                          <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
                             <div className="font-bold text-base">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</div>
-                            <div className="text-xs text-gray-500">Façades</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">Façades</div>
                           </div>
                         </div>
                       </>
                     )}
                     {/* Viabilisé */}
-                    <div className="h-8 w-px bg-gray-200 shrink-0" />
-                    <div className="flex items-center gap-2 text-gray-700 shrink-0">
-                      <Key className="h-6 w-6 text-gray-400 stroke-1 shrink-0" />
+                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                      <Key className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                       <div>
                         <div className="font-bold text-base">{terrain?.viabilise ? "Viabilisé" : "Non viabilisé"}</div>
-                        <div className="text-xs text-gray-500">Viabilisation</div>
+                        <div className="text-xs text-gray-500 dark:text-white/50">Viabilisation</div>
                       </div>
                     </div>
                   </div>
                 ) : isSaleBuildingDemolition ? (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             {property.landArea !== undefined && property.landArea !== null && Number(property.landArea) > 0 ? (
                                 <div className="font-bold text-xl">{property.landArea} m²</div>
                             ) : (
-                                <div className="font-bold text-xl text-gray-400">Non spécifié</div>
+                                <div className="font-bold text-xl text-gray-400 dark:text-white/40">Non spécifié</div>
                             )}
-                            <div className="text-sm text-gray-500">Surf. terrain</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">Surf. terrain</div>
                         </div>
                     </div>
                 ) : (
                 <>
                 {normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && property.typology && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.typology}</div>
-                            <div className="text-sm text-gray-500">Typologie</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">Typologie</div>
                         </div>
                     </div>
                 )}
 
                 {normalizedPropertyType === "VILLA" && property.landArea !== undefined && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.landArea} m²</div>
-                            <div className="text-sm text-gray-500">Surf. terrain</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">Surf. terrain</div>
                         </div>
                     </div>
                 )}
 
                 {normalizedPropertyType === "VILLA" && property.builtArea !== undefined && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.builtArea} m²</div>
-                            <div className="text-sm text-gray-500">Surf. bâtie</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">Surf. bâtie</div>
                         </div>
                     </div>
                 )}
 
                 {/* Surface — shown before étage for appartement types */}
                 {normalizedPropertyType !== "VILLA" && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && displayArea !== undefined && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{displayArea} m²</div>
-                            <div className="text-sm text-gray-500">Surface</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">Surface</div>
                         </div>
                     </div>
                 )}
 
                 {property.nbFloors !== undefined && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">
                                 {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
                             </div>
-                            <div className="text-sm text-gray-500">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
                         </div>
                     </div>
                 )}
 
                 {normalizedPropertyType === "VILLA" && property.facadesCount !== undefined && property.facadesCount !== null && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.facadesCount}</div>
-                            <div className="text-sm text-gray-500">Façades</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">Façades</div>
                         </div>
                     </div>
                 )}
 
                 {normalizedPropertyType !== "VILLA" && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && hasElevator && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">Oui</div>
-                            <div className="text-sm text-gray-500">Ascenseur</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">Ascenseur</div>
                         </div>
                     </div>
                 )}
@@ -1357,57 +1394,57 @@ export default function AnnounceDetailsPage() {
                 {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && (
                     <>
                         {buildingTypology?.mode && (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">
                                         {buildingTypology.mode === "SIMILAIRES" ? "Similaires" : buildingTypology.mode === "DIFFERENTES" ? "Différentes" : buildingTypology.mode}
                                     </div>
-                                    <div className="text-sm text-gray-500">Typologie</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">Typologie</div>
                                 </div>
                             </div>
                         )}
                         {buildingTypology?.totalApartments !== undefined && (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Building2 className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">{buildingTypology.totalApartments}</div>
-                                    <div className="text-sm text-gray-500">Appartements</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">Appartements</div>
                                 </div>
                             </div>
                         )}
                         {property.nbFloors !== undefined && (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">{property.nbFloors}</div>
-                                    <div className="text-sm text-gray-500">{formatFloorsLabel(property.nbFloors)}</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{formatFloorsLabel(property.nbFloors)}</div>
                                 </div>
                             </div>
                         )}
                         {hasElevator && (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Layers className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">Oui</div>
-                                    <div className="text-sm text-gray-500">Ascenseur</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">Ascenseur</div>
                                 </div>
                             </div>
                         )}
                         {buildingTypology?.mode === "SIMILAIRES" && property.area !== undefined && property.area !== null && Number(property.area) > 0 ? (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">{property.area} m²</div>
-                                    <div className="text-sm text-gray-500">Surface unique</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">Surface unique</div>
                                 </div>
                             </div>
                         ) : buildingTypology?.mode === "DIFFERENTES" ? (
-                            <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Square className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                                <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">Variable</div>
-                                    <div className="text-sm text-gray-500">Surfaces</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">Surfaces</div>
                                 </div>
                             </div>
                         ) : null}
@@ -1415,18 +1452,18 @@ export default function AnnounceDetailsPage() {
                 )}
 
                 {(property.parkingCount > 0 || property.outdoorParking > 0) && (
-                    <div className="flex items-center gap-4 text-gray-700 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Car className="h-8 w-8 text-gray-400 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
+                        <Car className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div className="flex flex-col gap-1.5">
-                            <div className="font-bold text-gray-900 leading-none">Parking</div>
+                            <div className="font-bold text-gray-900 dark:text-white leading-none">Parking</div>
                             <div className="flex flex-col gap-1">
                                 {property.parkingCount > 0 && (
-                                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded uppercase w-fit">
+                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-[10px] font-bold rounded uppercase w-fit">
                                         INTÉRIEUR: {property.parkingCount}
                                     </span>
                                 )}
                                 {property.outdoorParking > 0 && (
-                                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded uppercase w-fit">
+                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-[10px] font-bold rounded uppercase w-fit">
                                         EXTÉRIEUR: {property.outdoorParking}
                                     </span>
                                 )}
@@ -1439,7 +1476,7 @@ export default function AnnounceDetailsPage() {
               </div>
 
               {/* Contacts Row */}
-              <div className="mt-5 flex flex-wrap gap-4 text-gray-600">
+              <div className="mt-5 flex flex-wrap gap-4 text-gray-600 dark:text-white/60">
                   {(() => {
                       let contactsList = [];
                       try {
@@ -1503,7 +1540,7 @@ export default function AnnounceDetailsPage() {
                               <a
                                   href={`tel:+${toIntlDigits(contact.phone)}`}
                                   onClick={() => trackContact('CALL')}
-                                  className="flex items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900"
+                                  className="flex items-center gap-2 px-5 py-3 bg-gray-50 dark:bg-transparent hover:bg-gray-100 border border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900 dark:text-white"
                               >
                                   <Phone className="h-4 w-4 text-[#00BFA6]" />
                                   {formatDisplayPhone(contact.phone)}
@@ -1511,8 +1548,8 @@ export default function AnnounceDetailsPage() {
 
                               {/* Hover Icons Dropdown */}
                               {(contact.hasWhatsapp || contact.hasViber || contact.hasTelegram) && (
-                                  <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-xl border border-gray-100 flex gap-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 w-max">
-                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('CALL')} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors" title={t("callTitle")}>
+                                  <div className="absolute top-full left-0 mt-2 p-2 bg-white dark:bg-white/5 rounded-xl shadow-xl border border-gray-100 dark:border-white/10 flex gap-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 w-max">
+                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('CALL')} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 dark:text-white/60 transition-colors" title={t("callTitle")}>
                                           <Phone className="h-5 w-5" />
                                       </a>
                                       {contact.email && (
@@ -1547,12 +1584,12 @@ export default function AnnounceDetailsPage() {
 
           {/* Sidebar — carte unifiée annonceur + contact */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden sticky top-[100px] z-10">
+            <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden sticky top-[100px] z-10">
 
               {/* En-tête annonceur */}
               {announce.user?.userType === 'SOCIETE' ? (
                 <div className="bg-gradient-to-r from-[#00BFA6] to-[#0077b6] p-5 flex items-center gap-3">
-                  <div className="h-16 w-16 rounded-full overflow-hidden border-3 border-white shadow shrink-0 bg-white" style={{ borderWidth: 3 }}>
+                  <div className="h-16 w-16 rounded-full overflow-hidden border-3 border-white shadow shrink-0 bg-white dark:bg-white/5" style={{ borderWidth: 3 }}>
                     {announce.user?.agencyLogoUrl ? (
                       <img src={getImageUrl(announce.user.agencyLogoUrl) || ''} alt="Logo" className="w-full h-full object-contain p-1.5" />
                     ) : (
@@ -1569,33 +1606,35 @@ export default function AnnounceDetailsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="p-5 flex items-center gap-4 border-b border-gray-100">
-                  <div className="h-14 w-14 bg-gray-100 rounded-full overflow-hidden shrink-0">
+                <div className="p-5 flex items-center gap-4 border-b border-gray-100 dark:border-white/10">
+                  <div className="h-14 w-14 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden shrink-0">
                     {announce.user?.imageUrl ? (
                       <img src={getImageUrl(announce.user.imageUrl) || ''} alt="Annonceur" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400"><User className="h-7 w-7" /></div>
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-white/40"><User className="h-7 w-7" /></div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">{t("individualAdvertiser")}</h3>
-                    <p className="text-sm text-gray-500">{t("individualLabel")}</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">{t("individualAdvertiser")}</h3>
+                    <p className="text-sm text-gray-500 dark:text-white/50">{t("individualLabel")}</p>
                   </div>
                 </div>
               )}
 
-              {/* Boutons contact */}
+              {/* Boutons contact — masqué si on regarde sa propre annonce */}
               <div className="p-5 space-y-3">
-                <Button
-                  onClick={() => setIsContactModalOpen(true)}
-                  className="w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold"
-                >
-                  <Mail className="h-4 w-4" /> {t("sendMessage")}
-                </Button>
+                {currentUserId !== announce.user?.id && (
+                  <Button
+                    onClick={() => setIsContactModalOpen(true)}
+                    className="w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold"
+                  >
+                    <Mail className="h-4 w-4" /> {t("sendMessage")}
+                  </Button>
+                )}
                 {announce.user?.email && (
                   <a
                     href={`mailto:${announce.user.email}`}
-                    className="flex items-center justify-center gap-2 w-full py-3.5 text-sm bg-white hover:bg-gray-50 text-gray-900 rounded-xl border-2 border-gray-200 font-bold transition-colors"
+                    className="flex items-center justify-center gap-2 w-full py-3.5 text-sm bg-white dark:bg-white/5 hover:bg-gray-50 text-gray-900 dark:text-white rounded-xl border-2 border-gray-200 dark:border-white/10 font-bold transition-colors"
                   >
                     <Mail className="h-4 w-4 text-red-500" /> {t("sendEmail")}
                   </a>
@@ -1605,7 +1644,7 @@ export default function AnnounceDetailsPage() {
 
               {/* Voir la boutique */}
               {announce.user?.userType === 'SOCIETE' && (
-                <div className="border-t border-gray-100 p-3">
+                <div className="border-t border-gray-100 dark:border-white/10 p-3">
                   <a
                     href={`/boutique/${announce.user?.id}`}
                     className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#00BFA6]/8 hover:bg-[#00BFA6]/15 text-[#00BFA6] rounded-xl text-sm font-bold transition-colors"
@@ -1617,10 +1656,10 @@ export default function AnnounceDetailsPage() {
               )}
 
               {/* Signaler */}
-              <div className="border-t border-gray-50 px-5 py-3">
+              <div className="border-t border-gray-50 dark:border-white/5 px-5 py-3">
                 <button
                   onClick={() => setIsReportModalOpen(true)}
-                  className="w-full text-xs text-gray-400 hover:text-red-500 flex items-center justify-center gap-1.5 transition-colors py-1"
+                  className="w-full text-xs text-gray-400 dark:text-white/40 hover:text-red-500 flex items-center justify-center gap-1.5 transition-colors py-1"
                 >
                   <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                   {t("reportProblem")}
@@ -1638,33 +1677,33 @@ export default function AnnounceDetailsPage() {
             <>
               {/* 4 colonnes Informations Générales */}
               {industrialFactory && (
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     {/* Colonne 1: État & Type de location */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Key className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">État &amp; Types d&apos;offre</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">État &amp; Types d&apos;offre</h3>
                       </div>
                       <div className="space-y-3">
                         {industrialFactory.rentalType && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Type de location</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.rentalType] || industrialFactory.rentalType}</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Type de location</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[industrialFactory.rentalType] || industrialFactory.rentalType}</span>
                           </div>
                         )}
                         {industrialFactory.globalState && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">État global</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[industrialFactory.globalState] || industrialFactory.globalState}</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">État global</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[industrialFactory.globalState] || industrialFactory.globalState}</span>
                           </div>
                         )}
                         {industrialFactory.configuration && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Configuration</span>
-                            <span className="font-bold text-gray-900 text-sm">
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Configuration</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">
                               {LABELS[industrialFactory.configuration] || industrialFactory.configuration}
                               {industrialFactory.configuration === "ETAGES" && industrialFactory.floorsCount ? ` — ${industrialFactory.floorsCount} étage(s)` : ""}
                             </span>
@@ -1672,29 +1711,29 @@ export default function AnnounceDetailsPage() {
                         )}
                         {industrialFactory.rentalType === "EQUIPEE" && industrialFactory.serviceYear && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 text-xs">Mise en service</span>
-                            <span className="font-bold text-gray-900 text-sm">{industrialFactory.serviceYear}</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Mise en service</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{industrialFactory.serviceYear}</span>
                           </div>
                         )}
                         {industrialFactory.productDetail && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 text-xs">Produit fabriqué</span>
-                            <span className="font-bold text-gray-900 text-sm">{industrialFactory.productDetail}</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Produit fabriqué</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{industrialFactory.productDetail}</span>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Colonne 2: Emplacement & Logistique */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Emplacement</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Emplacement</h3>
                       </div>
                       <div className="space-y-3">
                         {industrialFactory.logistics?.situation?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Situation</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Situation</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.logistics.situation.map((s: string) => (
                                 <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
@@ -1703,65 +1742,65 @@ export default function AnnounceDetailsPage() {
                           </div>
                         )}
                         {industrialFactory.logistics?.accessTransport?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Accès transport</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Accès transport</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.logistics.accessTransport.map((a: string) => (
-                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.logistics?.highwayDistanceKm != null && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 text-xs">Distance autoroute</span>
-                            <span className="font-bold text-gray-900 text-sm">{industrialFactory.logistics.highwayDistanceKm} km</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Distance autoroute</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{industrialFactory.logistics.highwayDistanceKm} km</span>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Colonne 3: Annexes & Commodités */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Layers className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Annexes</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Annexes</h3>
                       </div>
                       <div className="space-y-3">
                         {industrialFactory.annexes?.offices != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Bureaux</span>
-                            <span className="font-bold text-gray-900 text-sm">
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Bureaux</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">
                               {industrialFactory.annexes.offices ? `Oui${industrialFactory.annexes.officesArea ? ` — ${industrialFactory.annexes.officesArea} m²` : ""}` : "Non"}
                             </span>
                           </div>
                         )}
                         {industrialFactory.annexes?.socialLocales?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Locaux sociaux</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Locaux sociaux</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.annexes.socialLocales.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.annexes?.hebergement?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Hébergement</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Hébergement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.annexes.hebergement.map((h: string) => (
-                                <span key={h} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.annexes?.security?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Sécurité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.annexes.security.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
@@ -1770,58 +1809,58 @@ export default function AnnounceDetailsPage() {
                     </div>
 
                     {/* Colonne 4: Énergie & Fluides + Sécurité incendie */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Énergie &amp; Fluides</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Énergie &amp; Fluides</h3>
                       </div>
                       <div className="space-y-3">
                         {(industrialFactory.energy?.transformerKva != null || industrialFactory.energy?.forceMotrice380) && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Électricité</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Électricité</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.energy.transformerKva != null && (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Transfo {industrialFactory.energy.transformerKva} KVA</span>
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Transfo {industrialFactory.energy.transformerKva} KVA</span>
                               )}
                               {industrialFactory.energy.forceMotrice380 && (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Force motrice 380V</span>
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Force motrice 380V</span>
                               )}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(industrialFactory.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").length > 0 && (
-                            <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                              <span className="text-gray-500 text-xs">Gaz</span>
+                            <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                              <span className="text-gray-500 dark:text-white/50 text-xs">Gaz</span>
                               <div className="flex flex-wrap gap-1.5">
                                 {splitEnumValues(industrialFactory.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").map((g: string) => (
-                                  <span key={g} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
+                                  <span key={g} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
                                 ))}
                               </div>
                             </div>
                         )}
                         {industrialFactory.energy?.waterSources?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Eau</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Eau</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.energy.waterSources.map((w: string) => (
-                                <span key={w} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
+                                <span key={w} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(industrialFactory.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).length > 0 && (
-                            <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                              <span className="text-gray-500 text-xs">Assainissement</span>
+                            <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                              <span className="text-gray-500 dark:text-white/50 text-xs">Assainissement</span>
                               <div className="flex flex-wrap gap-1.5">
                                 {splitEnumValues(industrialFactory.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).map((s: string) => (
-                                  <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                  <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                                 ))}
                               </div>
                             </div>
                         )}
                         {industrialFactory.fireSafety?.network?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.fireSafety.network.map((n: string) => (
                                 <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[n] || n}</span>
@@ -1831,7 +1870,7 @@ export default function AnnounceDetailsPage() {
                         )}
                         {industrialFactory.fireSafety?.equipment?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Équipements complémentaires</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Équipements complémentaires</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.fireSafety.equipment.map((e: string) => (
                                 <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
@@ -1853,12 +1892,12 @@ export default function AnnounceDetailsPage() {
 
               {/* Description */}
               {announce.shortDescription && (
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />
                     Description
                   </h2>
-                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
                 </div>
               )}
             </>
@@ -1869,48 +1908,48 @@ export default function AnnounceDetailsPage() {
           {isColdRoomRental && (
             <>
               {coldRoom && (
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     {/* Col 1 — Configuration & Structure */}
                     {/* Col 1 — Configuration */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <Layers className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Configuration</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Configuration</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.structureType && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Structure</span>
-                            <span className="font-bold text-gray-900 text-sm">{(LABELS[coldRoom.structureType] || coldRoom.structureType).replace(/\s*\([^)]*\)/g, '').trim()}</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Structure</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{(LABELS[coldRoom.structureType] || coldRoom.structureType).replace(/\s*\([^)]*\)/g, '').trim()}</span>
                           </div>
                         )}
                         {coldRoom.configuration && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Configuration</span>
-                            <span className="font-bold text-gray-900 text-sm">
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Configuration</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">
                               {LABELS[coldRoom.configuration] || coldRoom.configuration}
                               {coldRoom.configuration === "ETAGES" && coldRoom.floorsCount ? ` — ${coldRoom.floorsCount} étage(s)` : ""}
                             </span>
                           </div>
                         )}
                         {coldRoom.logistiqueVerticale && coldRoom.logistiqueVerticale !== "AUCUN" && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Logistique verticale</span>
-                            <span className="font-bold text-gray-900 text-sm">
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Logistique verticale</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">
                               {LABELS[coldRoom.logistiqueVerticale] || coldRoom.logistiqueVerticale}
                               {coldRoom.logistiqueVerticale === "MONTE_CHARGE" && coldRoom.monteChargeCapacity ? ` — ${coldRoom.monteChargeCapacity} Tonnes` : ""}
                             </span>
                           </div>
                         )}
                         {coldRoom.zoneDechargement?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Zone de déchargement</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Zone de déchargement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.zoneDechargement.map((z: string) => (
-                                <span key={z} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[z] || z}</span>
+                                <span key={z} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[z] || z}</span>
                               ))}
                             </div>
                           </div>
@@ -1919,15 +1958,15 @@ export default function AnnounceDetailsPage() {
                     </div>
 
                     {/* Col 2 — Équipements */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Équipements</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Équipements</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.typeFroid?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Type de froid</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Type de froid</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.typeFroid.map((t: string) => (
                                 <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
@@ -1936,18 +1975,18 @@ export default function AnnounceDetailsPage() {
                           </div>
                         )}
                         {coldRoom.modeDiffusion?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Mode de diffusion</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Mode de diffusion</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.modeDiffusion.map((m: string) => (
-                                <span key={m} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[m] || m}</span>
+                                <span key={m} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[m] || m}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.techniqueFroid?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Technique froid</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Technique froid</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.techniqueFroid.map((t: string) => (
                                 <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
@@ -1956,42 +1995,42 @@ export default function AnnounceDetailsPage() {
                           </div>
                         )}
                         {coldRoom.tracabilite?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Traçabilité</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Traçabilité</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.tracabilite.map((t: string) => (
-                                <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
+                                <span key={t} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.generateur && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Générateur de secours</span>
-                            <span className="font-bold text-gray-900 text-sm">
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Générateur de secours</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">
                               Oui{coldRoom.generateurKva ? ` — ${coldRoom.generateurKva} KVA` : ""}
                             </span>
                           </div>
                         )}
                         {coldRoom.securiteHumaine && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 text-xs">Sécurité humaine</span>
-                            <span className="font-bold text-gray-900 text-sm">Dispositif anti-enfermement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité humaine</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">Dispositif anti-enfermement</span>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Col 3 — Localisation et modalités */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <MapPin className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Localisation et modalités</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Localisation et modalités</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.localisation?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Situation</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Situation</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.localisation.map((l: string) => (
                                 <span key={l} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[l] || l}</span>
@@ -2000,25 +2039,25 @@ export default function AnnounceDetailsPage() {
                           </div>
                         )}
                         {coldRoom.accessibilite?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Accès camions</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Accès camions</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.accessibilite.map((a: string) => (
-                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
                               ))}
                             </div>
                           </div>
                         )}
-                        <div className="border-b border-gray-100" />
+                        <div className="border-b border-gray-100 dark:border-white/10" />
                         {coldRoom.modeGestion && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Mode de gestion</span>
-                            <span className="font-bold text-gray-900 text-sm">{LABELS[coldRoom.modeGestion] || coldRoom.modeGestion}</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Mode de gestion</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[coldRoom.modeGestion] || coldRoom.modeGestion}</span>
                           </div>
                         )}
                         {coldRoom.flexibilite?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Flexibilité d&apos;espace</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Flexibilité d&apos;espace</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.flexibilite.map((f: string) => (
                                 <span key={f} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[f] || f}</span>
@@ -2028,10 +2067,10 @@ export default function AnnounceDetailsPage() {
                         )}
                         {coldRoom.dureeEngagement?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Durée d&apos;engagement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Durée d&apos;engagement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.dureeEngagement.map((d: string) => (
-                                <span key={d} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
+                                <span key={d} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
                               ))}
                             </div>
                           </div>
@@ -2040,44 +2079,44 @@ export default function AnnounceDetailsPage() {
                     </div>
 
                     {/* Col 4 — Annexes */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <LayoutGrid className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Annexes</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Annexes</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.annexes?.offices != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Bureaux</span>
-                            <span className="font-bold text-gray-900 text-sm">{coldRoom.annexes.offices ? "Oui" : "Non"}</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Bureaux</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{coldRoom.annexes.offices ? "Oui" : "Non"}</span>
                           </div>
                         )}
                         {coldRoom.annexes?.socialLocales?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Locaux sociaux</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Locaux sociaux</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.annexes.socialLocales.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.annexes?.hebergement?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Hébergement</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Hébergement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.annexes.hebergement.map((h: string) => (
-                                <span key={h} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.annexes?.security?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Sécurité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.annexes.security.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
@@ -2091,12 +2130,12 @@ export default function AnnounceDetailsPage() {
 
               {/* Description */}
               {announce.shortDescription && (
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />
                     Description
                   </h2>
-                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
                 </div>
               )}
             </>
@@ -2106,60 +2145,60 @@ export default function AnnounceDetailsPage() {
           {/* ===== SECTION TERRAIN ===== */}
           {(isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty) && (
             <>
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+              <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                   {/* Col 1 — Caractéristiques physiques */}
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                     <div className="flex items-start gap-2 min-h-[40px] mb-3">
                       <Ruler className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                      <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Caractéristiques</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Caractéristiques</h3>
                     </div>
                     <div className="space-y-3">
                       {property.landArea != null && (
-                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                          <span className="text-gray-500 text-xs">Surface terrain</span>
-                          <span className="font-bold text-gray-900 text-sm">{property.landArea} m²</span>
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Surface terrain</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">{property.landArea} m²</span>
                         </div>
                       )}
                       {property.facadesCount != null && (
-                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                          <span className="text-gray-500 text-xs">Nombre de façades</span>
-                          <span className="font-bold text-gray-900 text-sm">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</span>
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Nombre de façades</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</span>
                         </div>
                       )}
                       {terrain?.facadeLength != null && (
-                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                          <span className="text-gray-500 text-xs">Longueur</span>
-                          <span className="font-bold text-gray-900 text-sm">{terrain.facadeLength} ml</span>
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Longueur</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">{terrain.facadeLength} ml</span>
                         </div>
                       )}
                       {terrain?.depth != null && (
-                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                          <span className="text-gray-500 text-xs">Largeur</span>
-                          <span className="font-bold text-gray-900 text-sm">{terrain.depth} m</span>
+                        <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Largeur</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">{terrain.depth} m</span>
                         </div>
                       )}
                       {terrain?.topographie && (
                         <div className="flex flex-col gap-1 py-1.5">
-                          <span className="text-gray-500 text-xs">Topographie (Relief)</span>
-                          <span className="font-bold text-gray-900 text-sm">{LABELS[terrain.topographie] || terrain.topographie}</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Topographie (Relief)</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[terrain.topographie] || terrain.topographie}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Col 2 — Statut & Documents */}
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                     <div className="flex items-start gap-2 min-h-[40px] mb-3">
                       <FileText className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                      <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Statut & Documents</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Statut & Documents</h3>
                     </div>
                     <div className="space-y-3">
                       {terrain?.statutZone?.length > 0 && (
-                        <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                          <span className="text-gray-500 text-xs">Statut de la zone</span>
+                        <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Statut de la zone</span>
                           <div className="flex flex-wrap gap-1.5">
                             {terrain.statutZone.map((s: string) => (
                               <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
@@ -2169,10 +2208,10 @@ export default function AnnounceDetailsPage() {
                       )}
                       {terrain?.documents?.length > 0 && (
                         <div className="flex flex-col gap-2 py-1.5">
-                          <span className="text-gray-500 text-xs">Documents disponibles</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Documents disponibles</span>
                           <div className="flex flex-wrap gap-1.5">
                             {terrain.documents.map((d: string) => (
-                              <span key={d} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
+                              <span key={d} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
                             ))}
                           </div>
                         </div>
@@ -2182,24 +2221,24 @@ export default function AnnounceDetailsPage() {
 
                   {/* Col 3 — Viabilisation (non affiché pour agricole et touristique) */}
                   {!isTerrainAgricoleProperty && !isTerrainTouristiqueProperty && (
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                     <div className="flex items-start gap-2 min-h-[40px] mb-3">
                       <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                      <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Viabilisation</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Viabilisation</h3>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                        <span className="text-gray-500 text-xs">État de viabilisation</span>
+                      <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                        <span className="text-gray-500 dark:text-white/50 text-xs">État de viabilisation</span>
                         <span className={`font-bold text-sm ${terrain?.viabilise ? "text-[#00BFA6]" : "text-orange-600"}`}>
                           {terrain?.viabilise ? "Terrain viabilisé" : "Non viabilisé"}
                         </span>
                       </div>
                       {!terrain?.viabilise && terrain?.raccordements?.length > 0 && (
                         <div className="flex flex-col gap-2 py-1.5">
-                          <span className="text-gray-500 text-xs">Raccordements à proximité</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">Raccordements à proximité</span>
                           <div className="flex flex-wrap gap-1.5">
                             {terrain.raccordements.map((r: string) => (
-                              <span key={r} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[r] || r}</span>
+                              <span key={r} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[r] || r}</span>
                             ))}
                           </div>
                         </div>
@@ -2213,12 +2252,12 @@ export default function AnnounceDetailsPage() {
 
               {/* Description */}
               {announce.shortDescription && (
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />
                     Description
                   </h2>
-                  <p className="text-gray-600 leading-relaxed">{announce.shortDescription}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
                 </div>
               )}
             </>
@@ -2230,15 +2269,15 @@ export default function AnnounceDetailsPage() {
             <>
               {/* Description et type d'utilisation — même emplacement/mise en page que pour les autres types de biens */}
               {hangar && (announce.shortDescription || hangar.usage?.length > 0) && (
-                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                  <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           {announce.shortDescription && (
                               <div>
-                                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                       <Layers className="h-5 w-5 text-[#00BFA6]" />
                                       Description
                                   </h2>
-                                  <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                                  <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
                                       {announce.shortDescription}
                                   </p>
                               </div>
@@ -2246,7 +2285,7 @@ export default function AnnounceDetailsPage() {
 
                           {hangar.usage?.length > 0 && (
                               <div>
-                                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                       <Ruler className="h-5 w-5 text-[#00BFA6]" />
                                       Type d&apos;utilisation
                                   </h2>
@@ -2262,16 +2301,16 @@ export default function AnnounceDetailsPage() {
               )}
 
               {hangar && (
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     {/* Col 1 — Infrastructure */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Infrastructure</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Infrastructure</h3>
                       </div>
 
                       <div className="space-y-3">
@@ -2279,8 +2318,8 @@ export default function AnnounceDetailsPage() {
                         {(hangar.usage?.length > 0 || hangar.toiture?.toleTH40 || hangar.toiture?.panneauxSandwich || hangar.toiture?.autre || hangar.sol?.beton || hangar.sol?.resineEpoxy || hangar.sol?.autre) && (
                           <div className="space-y-3">
                             {hangar.usage?.length > 0 && (
-                              <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                                <span className="text-gray-500 text-xs">Type d&apos;utilisation</span>
+                              <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                                <span className="text-gray-500 dark:text-white/50 text-xs">Type d&apos;utilisation</span>
                                 <div className="flex flex-wrap gap-1.5">
                                   {hangar.usage.map((u: string) => (
                                     <span key={u} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[u] || u}</span>
@@ -2289,22 +2328,22 @@ export default function AnnounceDetailsPage() {
                               </div>
                             )}
                             {(hangar.toiture?.toleTH40 || hangar.toiture?.panneauxSandwich || hangar.toiture?.autre) && (
-                              <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                                <span className="text-gray-500 text-xs">Toiture</span>
+                              <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                                <span className="text-gray-500 dark:text-white/50 text-xs">Toiture</span>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Tôle TN40</span>}
-                                  {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Panneaux Sandwich</span>}
-                                  {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
+                                  {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Tôle TN40</span>}
+                                  {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Panneaux Sandwich</span>}
+                                  {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Autre</span>}
                                 </div>
                               </div>
                             )}
                             {(hangar.sol?.beton || hangar.sol?.resineEpoxy || hangar.sol?.autre) && (
                               <div className="flex flex-col gap-2 py-1.5">
-                                <span className="text-gray-500 text-xs">Sol</span>
+                                <span className="text-gray-500 dark:text-white/50 text-xs">Sol</span>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {hangar.sol.beton && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Béton</span>}
-                                  {hangar.sol.resineEpoxy && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Résine Époxy</span>}
-                                  {hangar.sol.autre && <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Autre</span>}
+                                  {hangar.sol.beton && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Béton</span>}
+                                  {hangar.sol.resineEpoxy && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Résine Époxy</span>}
+                                  {hangar.sol.autre && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Autre</span>}
                                 </div>
                               </div>
                             )}
@@ -2314,15 +2353,15 @@ export default function AnnounceDetailsPage() {
                     </div>
 
                     {/* Col 2 — Emplacement */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Emplacement</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Emplacement</h3>
                       </div>
                       <div className="space-y-3">
                         {hangar.logistics?.situation?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Situation</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Situation</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.logistics.situation.map((s: string) => (
                                 <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
@@ -2332,11 +2371,11 @@ export default function AnnounceDetailsPage() {
                         )}
                         {hangar.logistics?.accessTransport?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="font-bold text-gray-900 text-sm mb-1">Logistique</span>
-                            <span className="text-gray-500 text-xs">Accès transport</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm mb-1">Logistique</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Accès transport</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.logistics.accessTransport.map((a: string) => (
-                                <span key={a} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
                               ))}
                             </div>
                           </div>
@@ -2345,46 +2384,46 @@ export default function AnnounceDetailsPage() {
                     </div>
 
                     {/* Col 3 — Annexes & Commodités */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Layers className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Annexes</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Annexes</h3>
                       </div>
                       <div className="space-y-3">
                         {hangar.annexes?.offices != null && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Bureaux</span>
-                            <span className="font-bold text-gray-900 text-sm">
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Bureaux</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">
                               {hangar.annexes.offices ? `Oui${hangar.annexes.officesArea ? ` — ${hangar.annexes.officesArea} m²` : ""}` : "Non"}
                             </span>
                           </div>
                         )}
                         {hangar.annexes?.socialLocales?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Locaux sociaux</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Locaux sociaux</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.annexes.socialLocales.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.annexes?.hebergement?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Hébergement</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Hébergement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.annexes.hebergement.map((h: string) => (
-                                <span key={h} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.annexes?.security?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Sécurité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.annexes.security.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
@@ -2393,58 +2432,58 @@ export default function AnnounceDetailsPage() {
                     </div>
 
                     {/* Col 4 — Énergie & Fluides + Sécurité incendie */}
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col gap-4">
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900">Énergie &amp; Fluides</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Énergie &amp; Fluides</h3>
                       </div>
                       <div className="space-y-3">
                         {(hangar.energy?.transformerKva != null || hangar.energy?.forceMotrice380) && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Électricité</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Électricité</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.energy.transformerKva != null && (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Transfo {hangar.energy.transformerKva} KVA</span>
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Transfo {hangar.energy.transformerKva} KVA</span>
                               )}
                               {hangar.energy.forceMotrice380 && (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">Force motrice 380V</span>
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Force motrice 380V</span>
                               )}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(hangar.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").length > 0 && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Gaz</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Gaz</span>
                             <div className="flex flex-wrap gap-1.5">
                               {splitEnumValues(hangar.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").map((g: string) => (
-                                <span key={g} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
+                                <span key={g} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.energy?.waterSources?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Eau</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Eau</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.energy.waterSources.map((w: string) => (
-                                <span key={w} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
+                                <span key={w} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(hangar.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).length > 0 && (
-                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs">Assainissement</span>
+                          <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Assainissement</span>
                             <div className="flex flex-wrap gap-1.5">
                               {splitEnumValues(hangar.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.fireSafety?.network?.length > 0 && (
-                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100">
-                            <span className="text-gray-500 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
+                          <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
+                            <span className="text-gray-500 dark:text-white/50 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.fireSafety.network.map((n: string) => (
                                 <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[n] || n}</span>
@@ -2454,7 +2493,7 @@ export default function AnnounceDetailsPage() {
                         )}
                         {hangar.fireSafety?.equipment?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 text-xs">Équipements incendie</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">Équipements incendie</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.fireSafety.equipment.map((e: string) => (
                                 <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
@@ -2479,38 +2518,38 @@ export default function AnnounceDetailsPage() {
 
           {/* ===== SECTION SHOWROOM ===== */}
           {isShowroomProperty && showroom && (
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Fiche Showroom</h2>
+            <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Fiche Showroom</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Superficies & Dimensions */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
                   <div className="space-y-2">
-                    {showroom.surfaces?.terrain != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Surface terrain</span><span className="font-bold">{showroom.surfaces.terrain} m²</span></div>}
-                    {showroom.surfaces?.batie != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Surface bâtie / expo</span><span className="font-bold">{showroom.surfaces.batie} m²</span></div>}
-                    {showroom.dimensions?.niveaux != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Niveaux</span><span className="font-bold">{showroom.dimensions.niveaux}</span></div>}
-                    {showroom.dimensions?.hauteurPlafond != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Hauteur plafond</span><span className="font-bold">{showroom.dimensions.hauteurPlafond} m</span></div>}
-                    {showroom.dimensions?.facadeWidth != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Longueur façade</span><span className="font-bold">{showroom.dimensions.facadeWidth} m</span></div>}
-                    {showroom.dimensions?.facadeDepth != null && <div className="flex justify-between text-sm"><span className="text-gray-500">Profondeur</span><span className="font-bold">{showroom.dimensions.facadeDepth} m</span></div>}
+                    {showroom.surfaces?.terrain != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Surface terrain</span><span className="font-bold">{showroom.surfaces.terrain} m²</span></div>}
+                    {showroom.surfaces?.batie != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Surface bâtie / expo</span><span className="font-bold">{showroom.surfaces.batie} m²</span></div>}
+                    {showroom.dimensions?.niveaux != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Niveaux</span><span className="font-bold">{showroom.dimensions.niveaux}</span></div>}
+                    {showroom.dimensions?.hauteurPlafond != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Hauteur plafond</span><span className="font-bold">{showroom.dimensions.hauteurPlafond} m</span></div>}
+                    {showroom.dimensions?.facadeWidth != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Longueur façade</span><span className="font-bold">{showroom.dimensions.facadeWidth} m</span></div>}
+                    {showroom.dimensions?.facadeDepth != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Profondeur</span><span className="font-bold">{showroom.dimensions.facadeDepth} m</span></div>}
                   </div>
                 </div>
                 {/* Style & Visibilité */}
                 <div className="space-y-6">
                   {(showroom.style || showroom.structure) && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Style Architectural</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Style Architectural</h3>
                       <div className="space-y-2">
-                        {showroom.style && <div className="flex justify-between text-sm"><span className="text-gray-500">Style</span><span className="font-bold">{LABELS[showroom.style] || showroom.style}</span></div>}
-                        {showroom.structure && <div className="flex justify-between text-sm"><span className="text-gray-500">Structure</span><span className="font-bold">{LABELS[showroom.structure] || showroom.structure}</span></div>}
+                        {showroom.style && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Style</span><span className="font-bold">{LABELS[showroom.style] || showroom.style}</span></div>}
+                        {showroom.structure && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Structure</span><span className="font-bold">{LABELS[showroom.structure] || showroom.structure}</span></div>}
                       </div>
                     </div>
                   )}
                   {showroom.visibilite && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Visibilité</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Visibilité</h3>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm"><span className="text-gray-500">Visible depuis autoroute</span><span className="font-bold">{showroom.visibilite.autoroute ? "Oui" : "Non"}</span></div>
-                        {showroom.visibilite.axeRoutier && <div className="flex justify-between text-sm"><span className="text-gray-500">Axe routier</span><span className="font-bold">{showroom.visibilite.axeRoutier}</span></div>}
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Visible depuis autoroute</span><span className="font-bold">{showroom.visibilite.autoroute ? "Oui" : "Non"}</span></div>
+                        {showroom.visibilite.axeRoutier && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Axe routier</span><span className="font-bold">{showroom.visibilite.axeRoutier}</span></div>}
                       </div>
                     </div>
                   )}
@@ -2522,53 +2561,53 @@ export default function AnnounceDetailsPage() {
 
           {/* ===== SECTION LOCAL COMMERCIAL ===== */}
           {isLocalCommercialProperty && local && (
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Fiche Local Commercial</h2>
+            <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Fiche Local Commercial</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Environnement & Usage */}
                 <div className="space-y-6">
                   {local.environnement && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Environnement</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Environnement</h3>
                       <div className="space-y-1 text-sm">
-                        <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="font-bold">{LABELS[local.environnement] || local.environnement}</span></div>
-                        {local.environnementAutre && <div className="flex justify-between"><span className="text-gray-500">Précision</span><span className="font-bold">{local.environnementAutre}</span></div>}
+                        <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Type</span><span className="font-bold">{LABELS[local.environnement] || local.environnement}</span></div>
+                        {local.environnementAutre && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Précision</span><span className="font-bold">{local.environnementAutre}</span></div>}
                       </div>
                     </div>
                   )}
                   {local.emplacement && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-[#00BFA6]" />Emplacement &amp; Flux</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-[#00BFA6]" />Emplacement &amp; Flux</h3>
                       <div className="space-y-1 text-sm">
-                        {local.emplacement.zoneType && <div className="flex justify-between"><span className="text-gray-500">Zone</span><span className="font-bold">{LABELS[local.emplacement.zoneType] || local.emplacement.zoneType}</span></div>}
-                        {local.emplacement.fluxPieton && <div className="flex justify-between"><span className="text-gray-500">Flux piéton</span><span className="font-bold">{LABELS[local.emplacement.fluxPieton] || local.emplacement.fluxPieton}</span></div>}
-                        {local.emplacement.fluxVehicules && <div className="flex justify-between"><span className="text-gray-500">Flux véhicules</span><span className="font-bold">{LABELS[local.emplacement.fluxVehicules] || local.emplacement.fluxVehicules}</span></div>}
+                        {local.emplacement.zoneType && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Zone</span><span className="font-bold">{LABELS[local.emplacement.zoneType] || local.emplacement.zoneType}</span></div>}
+                        {local.emplacement.fluxPieton && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Flux piéton</span><span className="font-bold">{LABELS[local.emplacement.fluxPieton] || local.emplacement.fluxPieton}</span></div>}
+                        {local.emplacement.fluxVehicules && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Flux véhicules</span><span className="font-bold">{LABELS[local.emplacement.fluxVehicules] || local.emplacement.fluxVehicules}</span></div>}
                       </div>
                     </div>
                   )}
                   {local.usage && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2"><Key className="h-5 w-5 text-[#00BFA6]" />Usage</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Key className="h-5 w-5 text-[#00BFA6]" />Usage</h3>
                       <span className="inline-block bg-[#00BFA6]/10 text-[#00BFA6] px-3 py-1 rounded-full text-sm font-bold">{LABELS[local.usage] || local.usage}</span>
                     </div>
                   )}
                 </div>
                 {/* Dimensions */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
                   <div className="space-y-2 text-sm">
-                    {local.surfaces?.total != null && <div className="flex justify-between"><span className="text-gray-500">Surface totale</span><span className="font-bold">{local.surfaces.total} m²</span></div>}
-                    {local.surfaces?.vitrineLongueur != null && <div className="flex justify-between"><span className="text-gray-500">Longueur vitrine</span><span className="font-bold">{local.surfaces.vitrineLongueur} ml</span></div>}
-                    {local.surfaces?.largeur != null && <div className="flex justify-between"><span className="text-gray-500">Largeur</span><span className="font-bold">{local.surfaces.largeur} m</span></div>}
-                    {local.surfaces?.profondeur != null && <div className="flex justify-between"><span className="text-gray-500">Profondeur</span><span className="font-bold">{local.surfaces.profondeur} m</span></div>}
-                    {local.surfaces?.hauteurPlafond != null && <div className="flex justify-between"><span className="text-gray-500">Hauteur plafond</span><span className="font-bold">{local.surfaces.hauteurPlafond} m</span></div>}
+                    {local.surfaces?.total != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface totale</span><span className="font-bold">{local.surfaces.total} m²</span></div>}
+                    {local.surfaces?.vitrineLongueur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Longueur vitrine</span><span className="font-bold">{local.surfaces.vitrineLongueur} ml</span></div>}
+                    {local.surfaces?.largeur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Largeur</span><span className="font-bold">{local.surfaces.largeur} m</span></div>}
+                    {local.surfaces?.profondeur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Profondeur</span><span className="font-bold">{local.surfaces.profondeur} m</span></div>}
+                    {local.surfaces?.hauteurPlafond != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Hauteur plafond</span><span className="font-bold">{local.surfaces.hauteurPlafond} m</span></div>}
                     {local.mezzanine?.present === true && (
-                      <div className="mt-2 pt-2 border-t border-gray-100">
-                        <div className="flex justify-between"><span className="text-gray-500">Mezzanine</span><span className="font-bold text-[#00BFA6]">Oui</span></div>
-                        {local.mezzanine.surface != null && <div className="flex justify-between"><span className="text-gray-500">Surface mezzanine</span><span className="font-bold">{local.mezzanine.surface} m²</span></div>}
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/10">
+                        <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Mezzanine</span><span className="font-bold text-[#00BFA6]">Oui</span></div>
+                        {local.mezzanine.surface != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface mezzanine</span><span className="font-bold">{local.mezzanine.surface} m²</span></div>}
                       </div>
                     )}
-                    {local.style && <div className="flex justify-between mt-2"><span className="text-gray-500">Style</span><span className="font-bold">{LABELS[local.style] || local.style}</span></div>}
+                    {local.style && <div className="flex justify-between mt-2"><span className="text-gray-500 dark:text-white/50">Style</span><span className="font-bold">{LABELS[local.style] || local.style}</span></div>}
                   </div>
                 </div>
               </div>
@@ -2578,47 +2617,47 @@ export default function AnnounceDetailsPage() {
 
           {/* ===== SECTION BLOC ADMINISTRATIF ===== */}
           {isBlocAdministratifProperty && bloc && (
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Fiche Bloc Administratif</h2>
+            <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Fiche Bloc Administratif</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Structure */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Structure</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Structure</h3>
                   <div className="space-y-2 text-sm">
-                    {bloc.surfaces?.terrain != null && <div className="flex justify-between"><span className="text-gray-500">Surface terrain</span><span className="font-bold">{bloc.surfaces.terrain} m²</span></div>}
-                    {bloc.surfaces?.batie != null && <div className="flex justify-between"><span className="text-gray-500">Surface bâtie</span><span className="font-bold">{bloc.surfaces.batie} m²</span></div>}
-                    {bloc.structure?.etages != null && <div className="flex justify-between"><span className="text-gray-500">Étages (R+)</span><span className="font-bold">{bloc.structure.etages}</span></div>}
-                    {bloc.structure?.facades != null && <div className="flex justify-between"><span className="text-gray-500">Façades</span><span className="font-bold">{bloc.structure.facades}</span></div>}
-                    <div className="flex justify-between"><span className="text-gray-500">Sous-sol</span><span className="font-bold">{bloc.structure?.sousSol ? "Oui" : "Non"}</span></div>
+                    {bloc.surfaces?.terrain != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface terrain</span><span className="font-bold">{bloc.surfaces.terrain} m²</span></div>}
+                    {bloc.surfaces?.batie != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface bâtie</span><span className="font-bold">{bloc.surfaces.batie} m²</span></div>}
+                    {bloc.structure?.etages != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Étages (R+)</span><span className="font-bold">{bloc.structure.etages}</span></div>}
+                    {bloc.structure?.facades != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Façades</span><span className="font-bold">{bloc.structure.facades}</span></div>}
+                    <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Sous-sol</span><span className="font-bold">{bloc.structure?.sousSol ? "Oui" : "Non"}</span></div>
                   </div>
                 </div>
                 {/* Espace */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-[#00BFA6]" />Type d&apos;Espace</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-[#00BFA6]" />Type d&apos;Espace</h3>
                   <div className="space-y-2 text-sm">
-                    {bloc.espace?.typeEspace && <div className="flex justify-between"><span className="text-gray-500">Espace</span><span className="font-bold">{LABELS[bloc.espace.typeEspace] || bloc.espace.typeEspace}</span></div>}
+                    {bloc.espace?.typeEspace && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Espace</span><span className="font-bold">{LABELS[bloc.espace.typeEspace] || bloc.espace.typeEspace}</span></div>}
                     {bloc.espace?.typeCloisonnement?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 block mb-1">Cloisonnement</span>
-                        <div className="flex flex-wrap gap-1">{bloc.espace.typeCloisonnement.map((c: string) => <span key={c} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
+                        <span className="text-gray-500 dark:text-white/50 block mb-1">Cloisonnement</span>
+                        <div className="flex flex-wrap gap-1">{bloc.espace.typeCloisonnement.map((c: string) => <span key={c} className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
                       </div>
                     )}
                   </div>
                 </div>
                 {/* Connectivité */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Zap className="h-5 w-5 text-[#00BFA6]" />Connectivité</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Zap className="h-5 w-5 text-[#00BFA6]" />Connectivité</h3>
                   <div className="space-y-2 text-sm">
-                    {bloc.connectivite?.type && <div className="flex justify-between"><span className="text-gray-500">Connexion</span><span className="font-bold">{LABELS[bloc.connectivite.type] || bloc.connectivite.type}</span></div>}
+                    {bloc.connectivite?.type && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Connexion</span><span className="font-bold">{LABELS[bloc.connectivite.type] || bloc.connectivite.type}</span></div>}
                     {bloc.connectivite?.typeConnexion?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 block mb-1">Mode</span>
-                        <div className="flex flex-wrap gap-1">{bloc.connectivite.typeConnexion.map((c: string) => <span key={c} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
+                        <span className="text-gray-500 dark:text-white/50 block mb-1">Mode</span>
+                        <div className="flex flex-wrap gap-1">{bloc.connectivite.typeConnexion.map((c: string) => <span key={c} className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
                       </div>
                     )}
                     {bloc.connectivite?.equipementServeur?.length > 0 && (
                       <div className="mt-2">
-                        <span className="text-gray-500 block mb-1">Équipements serveur</span>
+                        <span className="text-gray-500 dark:text-white/50 block mb-1">Équipements serveur</span>
                         <div className="flex flex-wrap gap-1">{bloc.connectivite.equipementServeur.map((e: string) => <span key={e} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{LABELS[e] || e}</span>)}</div>
                       </div>
                     )}
@@ -2631,35 +2670,35 @@ export default function AnnounceDetailsPage() {
 
           {/* ===== SECTION TERRAIN AGRICOLE ===== */}
           {isTerrainAgricoleProperty && terrain?.agricole && (
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Caractéristiques Agricoles</h2>
+            <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Caractéristiques Agricoles</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   {(terrain.agricole.unite) && (
-                    <div className="flex justify-between text-sm"><span className="text-gray-500">Unité de mesure</span><span className="font-bold">{LABELS[terrain.agricole.unite] || terrain.agricole.unite}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Unité de mesure</span><span className="font-bold">{LABELS[terrain.agricole.unite] || terrain.agricole.unite}</span></div>
                   )}
                   {terrain.agricole.vocation?.length > 0 && (
                     <div>
-                      <span className="text-sm text-gray-500 block mb-2">Vocation / Culture</span>
+                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">Vocation / Culture</span>
                       <div className="flex flex-wrap gap-2">{terrain.agricole.vocation.map((v: string) => <span key={v} className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[v] || v}</span>)}</div>
-                      {terrain.agricole.vocationAutre && <p className="text-sm text-gray-600 mt-2">{terrain.agricole.vocationAutre}</p>}
+                      {terrain.agricole.vocationAutre && <p className="text-sm text-gray-600 dark:text-white/60 mt-2">{terrain.agricole.vocationAutre}</p>}
                     </div>
                   )}
                   {terrain.agricole.ensoleillement && (
-                    <div className="flex justify-between text-sm"><span className="text-gray-500">Ensoleillement</span><span className="font-bold">{LABELS[terrain.agricole.ensoleillement] || terrain.agricole.ensoleillement}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Ensoleillement</span><span className="font-bold">{LABELS[terrain.agricole.ensoleillement] || terrain.agricole.ensoleillement}</span></div>
                   )}
                 </div>
                 <div className="space-y-4">
                   {terrain.agricole.ressourcesEau?.length > 0 && (
                     <div>
-                      <span className="text-sm text-gray-500 block mb-2">Ressources en eau</span>
+                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">Ressources en eau</span>
                       <div className="flex flex-wrap gap-2">{terrain.agricole.ressourcesEau.map((r: string) => <span key={r} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[r] || r}</span>)}</div>
-                      {terrain.agricole.debitForage && <p className="text-sm text-gray-600 mt-1">Débit forage : {terrain.agricole.debitForage} m³/h</p>}
+                      {terrain.agricole.debitForage && <p className="text-sm text-gray-600 dark:text-white/60 mt-1">Débit forage : {terrain.agricole.debitForage} m³/h</p>}
                     </div>
                   )}
                   {terrain.agricole.exposition?.length > 0 && (
                     <div>
-                      <span className="text-sm text-gray-500 block mb-2">Exposition</span>
+                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">Exposition</span>
                       <div className="flex flex-wrap gap-2">{terrain.agricole.exposition.map((e: string) => <span key={e} className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[e] || e}</span>)}</div>
                     </div>
                   )}
@@ -2671,16 +2710,16 @@ export default function AnnounceDetailsPage() {
 
           {/* Nouvelle section : Description et informations spécifiques */}
           {!isSpecialRental && !isSaleDemolition && (announce.shortDescription || property.usageType || buildingUsageTypes.length > 0) && (
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
+              <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
                       {announce.shortDescription && (
                           <div>
-                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Layers className="h-5 w-5 text-[#00BFA6]" />
                                   Description
                               </h2>
-                              <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                              <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
                                   {announce.shortDescription}
                               </p>
                           </div>
@@ -2689,7 +2728,7 @@ export default function AnnounceDetailsPage() {
                       {/* Cadre et mode de vie — environnement (choix multiple) */}
                       {buildingUsageTypes.length > 0 && (
                           <div>
-                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
                                   Cadre et mode de vie
                               </h2>
@@ -2706,46 +2745,46 @@ export default function AnnounceDetailsPage() {
                       {/* Usage / Type d'accès — choix unique (villa / niveau de villa) */}
                       {property.usageType && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
                           <div>
-                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
                                   {normalizedPropertyType === "NIVEAU_VILLA" ? "Type d'accès" : "Usage"}
                               </h2>
                               <div className="flex gap-4">
                                   {property.usageType === 'UNIQUE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Usage unique (Communicante)</span>
-                                          <span className="text-gray-500 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage unique (Communicante)</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
                                       </div>
                                   ) : property.usageType === 'SEPARE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
-                                          <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage séparé (appartement)</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(chaque étage est indépendant)</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Entrée indépendante</span>
-                                          <span className="text-gray-500 text-sm">(accès indépendant au niveau de villa)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée indépendante</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès indépendant au niveau de villa)</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_COMMUNE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Entrée commune</span>
-                                          <span className="text-gray-500 text-sm">(accès partagé / entrée commune)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée commune</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès partagé / entrée commune)</span>
                                       </div>
                                   ) : property.usageType === 'QUARTIER_OUVERT' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Quartier classique</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Quartier classique</span>
                                       </div>
                                   ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Résidence clôturée</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Résidence clôturée</span>
                                       </div>
                                   ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Promotion immobilière</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Promotion immobilière</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">{LABELS[property.usageType] || property.usageType}</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{LABELS[property.usageType] || property.usageType}</span>
                                       </div>
                                   )}
                               </div>
@@ -2757,42 +2796,42 @@ export default function AnnounceDetailsPage() {
           )}
 
           {/* Informations Générales (Detailed) - Résidentiel uniquement */}
-          {!isSpecialRental && <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-100">Informations Générales</h2>
+          {!isSpecialRental && <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
 
               <div className={isSaleDemolition ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"}>
                   {/* Colonne 01: Espace de Vie */}
                   {!isSaleDemolition && (
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <BedDouble className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">
+                          <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">
                               {normalizedPropertyType === "APPARTEMENT_COMMERCIAL" ? "Espace exploité" : "Espace de Vie"}
                           </h3>
                       </div>
                       <div className="space-y-4 flex-1">
-                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Chambres</span>
-                              <span className="font-bold text-gray-900">{property.nbPieces || 0}</span>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                              <span className="text-gray-500 dark:text-white/50 text-sm">Chambres</span>
+                              <span className="font-bold text-gray-900 dark:text-white">{property.nbPieces || 0}</span>
                           </div>
-                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Suites parentales</span>
-                              <span className="font-bold text-gray-900">{property.nbSuites || 0}</span>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                              <span className="text-gray-500 dark:text-white/50 text-sm">Suites parentales</span>
+                              <span className="font-bold text-gray-900 dark:text-white">{property.nbSuites || 0}</span>
                           </div>
-                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Salons</span>
-                              <span className="font-bold text-gray-900">{property.nbLivingRooms || 0}</span>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                              <span className="text-gray-500 dark:text-white/50 text-sm">Salons</span>
+                              <span className="font-bold text-gray-900 dark:text-white">{property.nbLivingRooms || 0}</span>
                           </div>
-                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">WC / Toilettes</span>
-                              <span className="font-bold text-gray-900">{property.nbToilets || 0}</span>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                              <span className="text-gray-500 dark:text-white/50 text-sm">WC / Toilettes</span>
+                              <span className="font-bold text-gray-900 dark:text-white">{property.nbToilets || 0}</span>
                           </div>
-                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                              <span className="text-gray-500 text-sm">Salles de bain</span>
-                              <span className="font-bold text-gray-900">{property.nbBathrooms || 0}</span>
+                          <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                              <span className="text-gray-500 dark:text-white/50 text-sm">Salles de bain</span>
+                              <span className="font-bold text-gray-900 dark:text-white">{property.nbBathrooms || 0}</span>
                           </div>
                           <div className="flex flex-col gap-2 pt-1">
-                              <span className="text-gray-500 text-sm">Type de salle de bain</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">Type de salle de bain</span>
                               <div className="flex flex-wrap gap-2">
                                   {bathroomTypes.length > 0 ? (
                                       bathroomTypes.map((t, i) => (
@@ -2820,17 +2859,17 @@ export default function AnnounceDetailsPage() {
 
                   {/* Colonne 02: Cuisine et équipements */}
                   {!isSaleDemolition && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <Wind className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">
+                          <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">
                               <span className="xl:hidden">Cuisine</span>
                               <span className="hidden xl:inline">Cuisine &amp; équipements</span>
                           </h3>
                       </div>
                       <div className="space-y-4 flex-1">
-                          <div className="flex flex-col gap-2 border-b border-gray-50 pb-4">
-                              <span className="text-gray-500 text-sm">Type de cuisine</span>
+                          <div className="flex flex-col gap-2 border-b border-gray-50 dark:border-white/5 pb-4">
+                              <span className="text-gray-500 dark:text-white/50 text-sm">Type de cuisine</span>
                               {property.kitchenType && (
                                   <span className={tagPrimaryClass}>
                                       {LABELS[property.kitchenType] || property.kitchenType}
@@ -2838,7 +2877,7 @@ export default function AnnounceDetailsPage() {
                               )}
                           </div>
                           <div className="flex flex-col gap-3">
-                              <span className="text-gray-500 text-sm">Équipements</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">Équipements</span>
                               <div className="flex flex-wrap gap-2">
                                   {kitchenEquipments.length > 0 ? (
                                       kitchenEquipments.map((k, i) => (
@@ -2853,7 +2892,7 @@ export default function AnnounceDetailsPage() {
                                           </span>
                                       ))
                                   ) : (
-                                      <span className="text-gray-400 text-xs italic">Non équipé</span>
+                                      <span className="text-gray-400 dark:text-white/40 text-xs italic">Non équipé</span>
                                   )}
                               </div>
                           </div>
@@ -2863,27 +2902,27 @@ export default function AnnounceDetailsPage() {
 
                   {/* Colonne 02 (Immeuble): Composition de l'immeuble */}
                   {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && !isSaleBuildingDemolition && buildingTypology && (
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Building2 className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Composition</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Composition</h3>
                           </div>
                           <div className="space-y-3 flex-1">
                               {buildingTypology.apartmentTypology && (
-                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                                      <span className="text-gray-500 text-sm">Typologie des appartements</span>
-                                      <span className="font-bold text-gray-900">{buildingTypology.apartmentTypology}</span>
+                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">Typologie des appartements</span>
+                                      <span className="font-bold text-gray-900 dark:text-white">{buildingTypology.apartmentTypology}</span>
                                   </div>
                               )}
                               {buildingTypology.totalApartments !== undefined && (
-                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                                      <span className="text-gray-500 text-sm">Nombre d'appartements</span>
-                                      <span className="font-bold text-gray-900">{buildingTypology.totalApartments}</span>
+                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">Nombre d'appartements</span>
+                                      <span className="font-bold text-gray-900 dark:text-white">{buildingTypology.totalApartments}</span>
                                   </div>
                               )}
                               {(buildingTypology.apartmentTypologies?.length || buildingTypology.apartmentTypologiesOther?.length) && (
-                                  <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50">
-                                      <span className="text-gray-500 text-sm">Typologies</span>
+                                  <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50 dark:border-white/5">
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">Typologies</span>
                                       <div className="flex flex-wrap gap-2">
                                           {[...(Array.isArray(buildingTypology.apartmentTypologies) ? buildingTypology.apartmentTypologies : []), ...(Array.isArray(buildingTypology.apartmentTypologiesOther) ? buildingTypology.apartmentTypologiesOther : [])].map((t: string, i: number) => (
                                               <span key={i} className={tagNeutralClass}>
@@ -2894,11 +2933,11 @@ export default function AnnounceDetailsPage() {
                                   </div>
                               )}
                               {(Array.isArray(buildingTypology.apartmentStyle) ? buildingTypology.apartmentStyle.length > 0 : !!buildingTypology.apartmentStyle) && (
-                                  <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50">
-                                      <span className="text-gray-500 text-sm">Style d&apos;appartement</span>
+                                  <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50 dark:border-white/5">
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">Style d&apos;appartement</span>
                                       <div className="flex flex-wrap gap-1.5">
                                           {(Array.isArray(buildingTypology.apartmentStyle) ? buildingTypology.apartmentStyle : [buildingTypology.apartmentStyle]).map((s: string, i: number) => (
-                                              <span key={i} className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">
+                                              <span key={i} className="px-2.5 py-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">
                                                   {s === "SIMPLEX" ? "Simplex" : s === "DUPLEX" ? "Duplex" : s === "TRIPLEX" ? "Triplex" : s}
                                               </span>
                                           ))}
@@ -2908,20 +2947,20 @@ export default function AnnounceDetailsPage() {
                               {buildingTypology.mode === "SIMILAIRES" ? (
                                   (property.area !== undefined && property.area !== null && Number(property.area) > 0) ? (
                                       <div className="flex justify-between items-center py-1.5">
-                                          <span className="text-gray-500 text-sm">Surface</span>
-                                          <span className="font-bold text-gray-900">{property.area} m²</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">Surface</span>
+                                          <span className="font-bold text-gray-900 dark:text-white">{property.area} m²</span>
                                       </div>
                                   ) : (
                                       <div className="flex justify-between items-center py-1.5">
-                                          <span className="text-gray-500 text-sm">Surface</span>
-                                          <span className="text-gray-400 text-xs italic">Non spécifié</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">Surface</span>
+                                          <span className="text-gray-400 dark:text-white/40 text-xs italic">Non spécifié</span>
                                       </div>
                                   )
                               ) : (
                                   buildingTypology.surfaceMode && (
                                       <div className="flex justify-between items-center py-1.5">
-                                          <span className="text-gray-500 text-sm">Surface</span>
-                                          <span className="font-bold text-gray-900">{buildingTypology.surfaceMode === "UNIQUE" ? "Unique" : buildingTypology.surfaceMode === "MULTI" ? "Multi-surfaces" : buildingTypology.surfaceMode}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">Surface</span>
+                                          <span className="font-bold text-gray-900 dark:text-white">{buildingTypology.surfaceMode === "UNIQUE" ? "Unique" : buildingTypology.surfaceMode === "MULTI" ? "Multi-surfaces" : buildingTypology.surfaceMode}</span>
                                       </div>
                                   )
                               )}
@@ -2930,17 +2969,17 @@ export default function AnnounceDetailsPage() {
                   )}
 
                   {/* Colonne 03: Commodités et compteurs */}
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <Check className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Commodités</h3>
+                          <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Commodités</h3>
                       </div>
                       <div className="space-y-6 flex-1">
                           
                           {/* Espaces Extérieurs */}
                           {(exteriorFeatures.length > 0) && (
                               <div className="space-y-2">
-                                  <h4 className="text-sm font-bold text-gray-900 mb-2">Espaces Extérieurs</h4>
+                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Espaces Extérieurs</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {exteriorFeatures.map((item, idx) => (
                                           <span key={`ext-${idx}`} className={tagNeutralClass}>
@@ -2956,7 +2995,7 @@ export default function AnnounceDetailsPage() {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {property.heatingType && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Chauffage</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Chauffage</h4>
                                           <span className={tagNeutralClass}>
                                               {LABELS[property.heatingType] || property.heatingType}
                                           </span>
@@ -2964,7 +3003,7 @@ export default function AnnounceDetailsPage() {
                                   )}
                                   {property.acType && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Climatisation</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Climatisation</h4>
                                           <span className={tagNeutralClass}>
                                               {LABELS[property.acType] || property.acType}
                                           </span>
@@ -2978,7 +3017,7 @@ export default function AnnounceDetailsPage() {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {securityFeatures.length > 0 && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Sécurité</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Sécurité</h4>
                                           <div className="flex flex-wrap gap-2">
                                               {securityFeatures.map((item, idx) => (
                                                   <span key={`sec-${idx}`} className={tagNeutralClass}>
@@ -2990,7 +3029,7 @@ export default function AnnounceDetailsPage() {
                                   )}
                                   {connectivityFeatures.length > 0 && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 mb-2">Connectivité</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Connectivité</h4>
                                           <div className="flex flex-wrap gap-2">
                                               {connectivityFeatures.map((item, idx) => (
                                                   <span key={`con-${idx}`} className={tagNeutralClass}>
@@ -3006,7 +3045,7 @@ export default function AnnounceDetailsPage() {
                           {/* Other active amenities fallback */}
                           {[...conveniences, ...heaters, ...otherPieces, ...advantages].length > 0 && (
                               <div className="space-y-2">
-                                  <h4 className="text-sm font-bold text-gray-900 mb-2">Autres Commodités</h4>
+                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Autres Commodités</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {[...conveniences, ...heaters, ...otherPieces, ...advantages].slice(0, 10).map((item, idx) => (
                                           <span key={idx} className={tagNeutralClass}>
@@ -3018,8 +3057,8 @@ export default function AnnounceDetailsPage() {
                           )}
 
                           {/* Counters Section */}
-                          <div className="space-y-3 pt-4 border-t border-gray-100">
-                              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Compteurs</h4>
+                          <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-white/10">
+                              <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">Compteurs</h4>
                               <div className="flex flex-col gap-2">
                                   {property.waterCounter && (
                                       <div className="flex justify-between items-center px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100">
@@ -3045,10 +3084,10 @@ export default function AnnounceDetailsPage() {
                   </div>
 
                   {isSaleDemolition && (
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <FileText className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Documents</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Documents</h3>
                           </div>
                           <div className="space-y-4 flex-1">
                               <div className="flex flex-wrap gap-2">
@@ -3059,7 +3098,7 @@ export default function AnnounceDetailsPage() {
                                           </span>
                                       ))
                                   ) : (
-                                      <span className="text-gray-400 text-xs italic">Non spécifié</span>
+                                      <span className="text-gray-400 dark:text-white/40 text-xs italic">Non spécifié</span>
                                   )}
                               </div>
                           </div>
@@ -3067,36 +3106,36 @@ export default function AnnounceDetailsPage() {
                   )}
 
                   {isSaleDemolition && (
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Conditions de vente</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Conditions de vente</h3>
                           </div>
                           <div className="space-y-4 flex-1">
-                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
-                                  <span className="text-gray-500 text-sm">Accepte crédit bancaire</span>
-                                  <span className="font-bold text-gray-900 text-sm">{acceptsBankCreditLabel}</span>
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">Accepte crédit bancaire</span>
+                                  <span className="font-bold text-gray-900 dark:text-white text-sm">{acceptsBankCreditLabel}</span>
                               </div>
                           </div>
                       </div>
                   )}
 
                   {isSale && !isSaleDemolition && (
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Vente</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Vente</h3>
                           </div>
                           <div className="space-y-5 flex-1">
                               <div className="space-y-2">
-                                  <div className="text-gray-500 text-sm">Conditions de vente</div>
-                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                                      <span className="text-gray-500 text-sm">Accepte crédit bancaire</span>
-                                      <span className="font-bold text-gray-900 text-sm">{acceptsBankCreditLabel}</span>
+                                  <div className="text-gray-500 dark:text-white/50 text-sm">Conditions de vente</div>
+                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">Accepte crédit bancaire</span>
+                                      <span className="font-bold text-gray-900 dark:text-white text-sm">{acceptsBankCreditLabel}</span>
                                   </div>
                               </div>
-                              <div className="space-y-2 pt-3 border-t border-gray-100">
-                                  <div className="text-gray-500 text-sm">Documents</div>
+                              <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-white/10">
+                                  <div className="text-gray-500 dark:text-white/50 text-sm">Documents</div>
                                   <div className="flex flex-wrap gap-2">
                                       {legalDocuments.length > 0 ? (
                                           legalDocuments.map((d: string, i: number) => (
@@ -3105,7 +3144,7 @@ export default function AnnounceDetailsPage() {
                                               </span>
                                           ))
                                       ) : (
-                                          <span className="text-gray-400 text-xs italic">Non spécifié</span>
+                                          <span className="text-gray-400 dark:text-white/40 text-xs italic">Non spécifié</span>
                                       )}
                                   </div>
                               </div>
@@ -3114,14 +3153,14 @@ export default function AnnounceDetailsPage() {
                   )}
 
                   {isRental && (
-                      <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 flex flex-col">
+                      <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Search className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 leading-tight">Conditions</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Conditions</h3>
                           </div>
                           <div className="space-y-4 flex-1">
-                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
-                                  <span className="text-gray-500 text-sm">Usage Autorisé</span>
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">Usage Autorisé</span>
                                   {(() => {
                                       const rentalUsageList: string[] = property.rentalUsage
                                           ? (typeof property.rentalUsage === 'string' && property.rentalUsage.startsWith('['))
@@ -3135,28 +3174,28 @@ export default function AnnounceDetailsPage() {
                                               ))}
                                           </div>
                                       ) : (
-                                          <span className="font-bold text-gray-900 text-sm">Non spécifié</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-sm">Non spécifié</span>
                                       );
                                   })()}
                               </div>
-                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
-                                  <span className="text-gray-500 text-sm">Cautionnement</span>
-                                  <span className="font-bold text-gray-900 text-sm">
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">Cautionnement</span>
+                                  <span className="font-bold text-gray-900 dark:text-white text-sm">
                                       {property.depositMonths > 0 
                                           ? `${property.depositMonths} Mois` 
                                           : 'Aucune Caution'}
                                   </span>
                               </div>
-                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
-                                  <span className="text-gray-500 text-sm">Charges</span>
-                                  <span className="font-bold text-gray-900 text-sm">
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">Charges</span>
+                                  <span className="font-bold text-gray-900 dark:text-white text-sm">
                                       {property.chargesIncluded === 1 || property.chargesIncluded === true || String(property.chargesIncluded).trim() === '1' || String(property.chargesIncluded).trim() === '01' || String(property.chargesIncluded).toLowerCase() === 'true'
                                           ? 'Charges incluses' 
                                           : 'Sans charges'}
                                   </span>
                               </div>
-                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50">
-                                  <span className="text-gray-500 text-sm">Disponibilité</span>
+                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">Disponibilité</span>
                                   <span className="font-bold text-[#00BFA6] text-sm">
                                       {property.availableDate
                                           ? (() => {
@@ -3180,15 +3219,15 @@ export default function AnnounceDetailsPage() {
           </div>}
 
           {isSaleDemolition && (announce.shortDescription || property.usageType || buildingUsageTypes.length > 0) && (
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mt-8">
+              <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mt-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {announce.shortDescription && (
                           <div>
-                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Layers className="h-5 w-5 text-[#00BFA6]" />
                                   Description
                               </h2>
-                              <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                              <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
                                   {announce.shortDescription}
                               </p>
                           </div>
@@ -3196,7 +3235,7 @@ export default function AnnounceDetailsPage() {
 
                       {buildingUsageTypes.length > 0 && (
                           <div>
-                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
                                   Cadre et mode de vie
                               </h2>
@@ -3212,46 +3251,46 @@ export default function AnnounceDetailsPage() {
 
                       {property.usageType && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
                           <div>
-                              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
                                   {normalizedPropertyType === "NIVEAU_VILLA" ? "Type d'accès" : "Usage"}
                               </h2>
                               <div className="flex gap-4">
                                   {property.usageType === 'UNIQUE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Usage unique (Communicante)</span>
-                                          <span className="text-gray-500 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage unique (Communicante)</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
                                       </div>
                                   ) : property.usageType === 'SEPARE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Usage séparé (appartement)</span>
-                                          <span className="text-gray-500 text-sm">(chaque étage est indépendant)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage séparé (appartement)</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(chaque étage est indépendant)</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Entrée indépendante</span>
-                                          <span className="text-gray-500 text-sm">(accès indépendant au niveau de villa)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée indépendante</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès indépendant au niveau de villa)</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_COMMUNE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Entrée commune</span>
-                                          <span className="text-gray-500 text-sm">(accès partagé / entrée commune)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée commune</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès partagé / entrée commune)</span>
                                       </div>
                                   ) : property.usageType === 'QUARTIER_OUVERT' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Quartier classique</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Quartier classique</span>
                                       </div>
                                   ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Résidence clôturée</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Résidence clôturée</span>
                                       </div>
                                   ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">Promotion immobilière</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Promotion immobilière</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 text-lg">{LABELS[property.usageType] || property.usageType}</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{LABELS[property.usageType] || property.usageType}</span>
                                       </div>
                                   )}
                               </div>
@@ -3263,39 +3302,62 @@ export default function AnnounceDetailsPage() {
       </div>
       </div>
       
-      {/* Contact Modal */}
+      {/* Contact Modal — vrai envoi vers /messages (nécessite d'être connecté) */}
       {isContactModalOpen && (
         <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
-                    <h3 className="font-bold text-gray-900 text-xl flex items-center gap-2">
+            <div className="bg-white dark:bg-white/5 rounded-3xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/10 bg-gray-50/50 dark:bg-transparent">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-xl flex items-center gap-2">
                         <Mail className="h-5 w-5 text-[#00BFA6]" />
                         {t("contactAdvertiser")}
                     </h3>
-                    <button 
-                        onClick={() => setIsContactModalOpen(false)}
-                        className="p-2 hover:bg-white rounded-full transition-colors text-gray-400 hover:text-gray-600 shadow-sm"
+                    <button
+                        onClick={() => { setIsContactModalOpen(false); setMessageSent(false); setMessageError(""); }}
+                        className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-full transition-colors text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 shadow-sm"
                     >
                         <X className="h-5 w-5" />
                     </button>
                 </div>
                 <div className="p-6">
-                    <form className="space-y-4">
-                        <input type="text" placeholder={t("namePlaceholder")} className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors" />
-                        <input type="tel" placeholder={t("phonePlaceholder")} className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors" />
-                        <textarea rows={4} placeholder={t("messagePlaceholder")} className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white placeholder-gray-400 font-medium text-gray-900 transition-colors resize-none"></textarea>
-
-                        <Button
-                            className="w-full py-6 text-lg bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 mt-4 font-bold"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                // TODO: Handle message submission
-                                setIsContactModalOpen(false);
-                            }}
-                        >
-                            {t("send")}
-                        </Button>
-                    </form>
+                    {!currentUserId ? (
+                        <div className="text-center py-4">
+                            <p className="text-gray-600 dark:text-white/60 mb-5">{t("messageLoginPrompt")}</p>
+                            <Link href="/auth/login" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl font-bold">
+                                {t("messageLoginCta")}
+                            </Link>
+                        </div>
+                    ) : messageSent ? (
+                        <div className="text-center py-6">
+                            <div className="h-14 w-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Check className="h-7 w-7 text-green-600" />
+                            </div>
+                            <h4 className="font-bold text-gray-900 dark:text-white text-lg">{t("messageSentTitle")}</h4>
+                            <p className="text-gray-500 dark:text-white/50 text-sm mt-2">{t("messageSentText")}</p>
+                            <div className="flex items-center justify-center gap-3 mt-5">
+                                <button onClick={() => { setIsContactModalOpen(false); setMessageSent(false); setMessageContent(""); }} className="px-5 py-2.5 border-2 border-gray-200 dark:border-white/10 rounded-xl font-bold text-sm text-gray-700 dark:text-white/70">{t("close")}</button>
+                                <Link href="/profile/messages" className="px-5 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">{t("viewMyMessages")}</Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                            <textarea
+                                rows={4}
+                                placeholder={t("messagePlaceholder")}
+                                value={messageContent}
+                                onChange={(e) => setMessageContent(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 dark:border-white/10 focus:border-[#00BFA6] focus:ring-0 outline-none bg-white dark:bg-white/5 placeholder-gray-400 font-medium text-gray-900 dark:text-white transition-colors resize-none"
+                            />
+                            {messageError && <p className="text-red-500 text-xs">{messageError}</p>}
+                            <Button
+                                type="button"
+                                disabled={!messageContent.trim() || messageSending}
+                                className="w-full py-6 text-lg bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 mt-4 font-bold disabled:opacity-50"
+                                onClick={sendMessage}
+                            >
+                                {messageSending ? t("sending") : t("send")}
+                            </Button>
+                        </form>
+                    )}
                 </div>
             </div>
         </div>
@@ -3304,13 +3366,13 @@ export default function AnnounceDetailsPage() {
     {/* ── MODAL SIGNALEMENT ── */}
       {isReportModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason(""); setReportError("") }}>
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
-              <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+          <div className="bg-white dark:bg-white/5 rounded-3xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/10">
+              <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-red-500 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                 {t("reportProblem")}
               </h3>
-              <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason(""); setReportError("") }} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+              <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason(""); setReportError("") }} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 dark:text-white/40">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -3320,21 +3382,21 @@ export default function AnnounceDetailsPage() {
                   <div className="h-14 w-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check className="h-7 w-7 text-green-600" />
                   </div>
-                  <h4 className="font-bold text-gray-900 text-lg">{t("reportSentTitle")}</h4>
-                  <p className="text-gray-500 text-sm mt-2">{t("reportSentText")}</p>
+                  <h4 className="font-bold text-gray-900 dark:text-white text-lg">{t("reportSentTitle")}</h4>
+                  <p className="text-gray-500 dark:text-white/50 text-sm mt-2">{t("reportSentText")}</p>
                   <button onClick={() => { setIsReportModalOpen(false); setReportSent(false); setReportReason(""); setReportError("") }} className="mt-5 px-6 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">{t("close")}</button>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600">{t("reportWhy")}</p>
+                  <p className="text-sm text-gray-600 dark:text-white/60">{t("reportWhy")}</p>
                   <div className="space-y-2">
                     {[t("reportReasonFraud"), t("reportReasonPrice"), t("reportReasonPhotos"), t("reportReasonSold"), t("reportReasonWrongInfo"), t("reportReasonOther")].map(r => (
                       <label key={r} className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors hover:border-gray-300" style={reportReason === r ? { borderColor: '#ef4444', backgroundColor: '#fef2f2' } : { borderColor: '#f3f4f6' }}>
                         <input type="radio" name="reportReason" value={r} checked={reportReason === r} onChange={() => setReportReason(r)} className="sr-only" />
-                        <div className={`h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center ${reportReason === r ? 'border-red-500 bg-red-500' : 'border-gray-300'}`}>
-                          {reportReason === r && <div className="h-1.5 w-1.5 bg-white rounded-full" />}
+                        <div className={`h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center ${reportReason === r ? 'border-red-500 bg-red-500' : 'border-gray-300 dark:border-white/15'}`}>
+                          {reportReason === r && <div className="h-1.5 w-1.5 bg-white dark:bg-white/5 rounded-full" />}
                         </div>
-                        <span className={`text-sm font-medium ${reportReason === r ? 'text-red-600' : 'text-gray-700'}`}>{r}</span>
+                        <span className={`text-sm font-medium ${reportReason === r ? 'text-red-600' : 'text-gray-700 dark:text-white/70'}`}>{r}</span>
                       </label>
                     ))}
                   </div>

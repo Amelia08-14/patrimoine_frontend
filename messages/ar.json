@@ -2,8 +2,8 @@
   "Categories": {
     "RESIDENTIEL": "سكني",
     "INDUSTRIEL": "صناعي",
-    "HOTELIER": "الضيافة والإقامة",
-    "HEBERGEMENT": "الإقامة لدى السكان",
+    "HOTELIER": "سياحة وإقامة",
+    "HEBERGEMENT": "إقامة",
     "BUREAUX_COMMERCES": "مكاتب ومحلات تجارية",
     "TERRAIN_FONCIER": "أراضٍ وعقارات"
   },
@@ -42,7 +42,37 @@
     "particulierAccount": "حساب فردي",
     "societeAccount": "حساب شركة",
     "administrator": "المسؤول",
-    "clientSpace": "فضاء العميل"
+    "clientSpace": "فضاء العميل",
+    "navHome": "الرئيسية",
+    "navSearch": "بحث",
+    "navMessages": "الرسائل",
+    "navProfile": "الملف الشخصي",
+    "navAddSheetTitle": "ماذا تريد أن تفعل؟",
+    "markAllRead": "تحديد الكل كمقروء",
+    "viewAllNotifications": "عرض كل الإشعارات",
+    "noNotifications": "لا توجد إشعارات"
+  },
+  "QuickSearchBar": {
+    "rental": "إيجار",
+    "sale": "شراء",
+    "booking": "إقامة",
+    "immobilier": "العقارات",
+    "hospitality": "الفندقة",
+    "event": "المناسبات",
+    "storage": "التخزين",
+    "comingSoon": "قريبًا",
+    "search": "بحث"
+  },
+  "SearchForm": {
+    "rent": "إيجار",
+    "buy": "شراء",
+    "wilaya": "الولاية",
+    "allWilayas": "كل الولايات",
+    "commune": "البلدية",
+    "allCommunes": "كل البلديات",
+    "budgetMax": "الميزانية القصوى",
+    "max": "الحد الأقصى",
+    "search": "بحث"
   },
   "Footer": {
     "ctaTitle": "لديك عقار للكراء أو البيع؟",
@@ -227,7 +257,9 @@
     "titleFallback": "{category} في {location}",
     "rooms": "{count} غرف",
     "bedrooms": "{count} غرف نوم",
-    "seeGallery": "عرض المعرض"
+    "seeGallery": "عرض المعرض",
+    "privateSeller": "مالك خاص",
+    "professionalSeller": "محترف"
   },
   "Contact": {
     "title": "اتصل بنا",
@@ -306,7 +338,25 @@
     "formSubmitting": "جارٍ الإرسال...",
     "formSuccessTitle": "تم إرسال الطلب!",
     "formSuccessText": "شكرًا، يدرس فريقنا طلبك وسيتواصل معك قريبًا.",
-    "formErrorText": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+    "formErrorText": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "loadingPartners": "جارٍ تحميل الشركاء...",
+    "noPartners": "لا توجد شركاء للعرض في الوقت الحالي.",
+    "allPartners": "جميع الشركاء",
+    "visitWebsite": "زيارة الموقع",
+    "previous": "السابق",
+    "next": "التالي",
+    "activityImmobilier": "نشاط عقاري",
+    "activityHotellerie": "نشاط الضيافة والإقامة",
+    "activityEvenementiel": "نشاط المناسبات",
+    "activityEntreposage": "نشاط التخزين والمستودعات"
+  },
+  "Boutique": {
+    "loadingStore": "جارٍ تحميل المتجر...",
+    "storeUnavailable": "المتجر غير متاح",
+    "storeUnavailableDesc": "هذه الصفحة غير مفعّلة بعد أو انتهت صلاحية اشتراكها.",
+    "backHome": "العودة إلى الصفحة الرئيسية",
+    "storeNotFound": "المتجر غير موجود",
+    "storeNotFoundDesc": "هذا المتجر غير موجود أو لم يعد متاحًا."
   },
   "Cgu": {
     "title": "شروط الاستخدام العامة",
@@ -333,7 +383,8 @@
     "upTo": "حتى",
     "from": "ابتداءً من",
     "floor": "الطابق",
-    "contactToRespond": "تواصل معنا للرد على هذا الطلب"
+    "contactToRespond": "تواصل معنا للرد على هذا الطلب",
+    "submittedOn": "أوكلت في {date}"
   },
   "Research": {
     "zodBranchRequired": "اختر فئة",
@@ -626,11 +677,20 @@
   "ProfileFavorites": {
     "title": "مفضلتي",
     "noFavorites": "ليس لديك أي عناصر مفضلة بعد.",
-    "loading": "جارٍ التحميل..."
+    "loading": "جارٍ التحميل...",
+    "subtitle": "كل العقارات التي أضفتها إلى المفضلة.",
+    "count": "{count} عقار مفضل",
+    "filterAll": "الكل",
+    "filterSale": "بيع",
+    "filterRental": "إيجار",
+    "browseListings": "تصفح الإعلانات"
   },
   "ProfileNotifications": {
     "title": "الإشعارات",
-    "noNotifications": "ليس لديك أي إشعارات جديدة."
+    "noNotifications": "ليس لديك أي إشعارات جديدة.",
+    "subtitle": "كل النشاط المرتبط بحسابك: رسائل، طلبات بحث مطابقة لإعلاناتك، تفعيلات...",
+    "markAllRead": "وضع علامة مقروء على الكل",
+    "unreadCount": "{count} غير مقروءة"
   },
   "ProfileAdvertising": {
     "title": "الفضاء الإعلاني",
@@ -682,13 +742,27 @@
   "ProfileResearches": {
     "title": "طلبات البحث المفوَّضة",
     "noResearches": "لم تقم بتفويض أي بحث بعد.",
-    "list": "قائمة الطلبات..."
+    "list": "قائمة الطلبات...",
+    "subtitle": "كل طلبات البحث التي أوكلتها وحالتها.",
+    "count": "{count} طلب بحث",
+    "entrustNew": "إسناد بحث جديد",
+    "filterAll": "الكل",
+    "filterSale": "شراء",
+    "filterRental": "إيجار"
   },
   "ProfileMessages": {
     "title": "رسائلي",
     "noMessages": "ليس لديك أي رسائل بعد.",
     "loading": "جارٍ التحميل...",
-    "reference": "المرجع: {reference}"
+    "reference": "المرجع: {reference}",
+    "subtitle": "محادثاتك مع المعلنين والمهتمين بعقاراتك.",
+    "unknownUser": "مستخدم",
+    "selectConversation": "اختر محادثة لعرضها هنا.",
+    "replyPlaceholder": "اكتب رسالة...",
+    "send": "إرسال",
+    "browseListings": "تصفح الإعلانات",
+    "noConversationsHint": "تواصل مع معلن من صفحة إعلان لبدء محادثة.",
+    "youPrefix": "أنت: "
   },
   "ProfilePacks": {
     "title": "باقات النقاط لدينا",
@@ -1124,7 +1198,13 @@
     "sending": "جارٍ الإرسال...",
     "reportError": "حدث خطأ أثناء إرسال البلاغ. يرجى المحاولة مرة أخرى.",
     "callTitle": "اتصال",
-    "emailTitle": "بريد إلكتروني"
+    "emailTitle": "بريد إلكتروني",
+    "messageLoginPrompt": "سجّل الدخول لإرسال رسالة إلى المعلن.",
+    "messageLoginCta": "تسجيل الدخول",
+    "messageSentTitle": "تم إرسال الرسالة!",
+    "messageSentText": "يمكن للمعلن الرد عليك مباشرة في رسائلك.",
+    "messageErrorGeneric": "تعذر إرسال الرسالة. حاول مرة أخرى.",
+    "viewMyMessages": "عرض رسائلي"
   },
   "Deposit": {
     "draftFoundTitle": "توجد مسودة بانتظارك",
@@ -1218,6 +1298,8 @@
     "partnersSectionTitle": "يثقون بنا",
     "partnersSectionSubtitle": "وكالات ومروّجون ومحترفون شركاء Patrimoine Immobilier.",
     "partnersSeeAll": "عرض كل الشركاء",
+    "scrollLeft": "التمرير إلى اليسار",
+    "scrollRight": "التمرير إلى اليمين",
     "mobileAppTitle": "التطبيق الجوال قريبًا",
     "mobileAppDesc": "تصفح الإعلانات، استلم التنبيهات وسيّر نقاطك مباشرة من هاتفك.",
     "mobileAppHeadline": "مستقبلك العقاري،",
@@ -1228,5 +1310,174 @@
     "mobileAppStatListings": "إعلان منشور",
     "mobileAppStatWilayas": "ولاية مغطاة",
     "mobileAppStatCategories": "فئات عقارية"
+  },
+  "ResearchOptions": {
+    "RESEARCH_PROPERTY_TYPES": {
+      "RESIDENTIEL": {
+        "STUDIO": "استوديو",
+        "APPARTEMENT": "شقة",
+        "DUPLEX": "دوبلكس",
+        "TRIPLEX": "تريبلكس",
+        "VILLA": "فيلا",
+        "NIVEAU_VILLA": "طابق فيلا",
+        "IMMEUBLE_COMPLET": "عمارة كاملة"
+      }
+    },
+    "RESEARCH_INTERLOCUTORS": {
+      "RESIDENTIEL": {
+        "PROMOTEUR_IMMOBILIER": "مروّج عقاري",
+        "AGENCE_IMMOBILIERE": "وكالة عقارية",
+        "PARTICULIER": "مالك خاص"
+      }
+    },
+    "SITUATION_OPTIONS": {
+      "RESIDENT_NATIONAL": "مقيم في الوطن",
+      "DIASPORA": "من الجالية (مقيم بالخارج)"
+    },
+    "ACHAT_INTERLOCUTOR_OPTIONS": {
+      "PROMOTEUR_IMMOBILIER": "مروّج عقاري",
+      "AGENCE_IMMOBILIERE": "وكالة عقارية",
+      "PARTICULIER": "خاص",
+      "PEU_IMPORTE": "غير مهم"
+    },
+    "REALISATION_STAGE_OPTIONS": {
+      "FINI": "جاهز (مفتاح باليد)",
+      "EN_FINALISATION": "قيد الإنجاز النهائي",
+      "SUR_PLAN": "مشروع على التصميم (بيع على التصميم)"
+    },
+    "REALISATION_STAGE_OPTIONS_DESC": {
+      "FINI": "جاهز للسكن أو الإيجار فورًا.",
+      "EN_FINALISATION": "أشغال متقدمة (تشطيبات، تجهيزات)، إمكانية السكن على المدى القريب.",
+      "SUR_PLAN": "أسعار تفضيلية قبل الانطلاق واختيار الطابق/الإطلالة."
+    },
+    "AIRPORT_PROXIMITY_OPTIONS": {
+      "MOINS_15": "أقل من 15 دقيقة",
+      "MOINS_30": "أقل من 30 دقيقة",
+      "MOINS_45": "أقل من 45 دقيقة",
+      "PEU_IMPORTE": "غير مهم"
+    },
+    "CURRENCY_OPTIONS": {
+      "DA": "دج",
+      "EUR": "€",
+      "USD": "$"
+    },
+    "FINANCING_OPTIONS": {
+      "CASH": "تمويل ذاتي (نقدًا)",
+      "CREDIT": "قرض عقاري",
+      "MIXTE": "مختلط"
+    },
+    "ENVIRONMENT_OPTIONS": {
+      "PROMOTION_IMMOBILIERE": "برنامج ترقية عقارية",
+      "RESIDENCE_CLOTUREE": "إقامة مسيّجة",
+      "QUARTIER_CLASSIQUE": "حي عادي"
+    },
+    "VILLA_LEVEL_ENTRANCE_OPTIONS": {
+      "SEPAREE": "مدخل منفصل",
+      "COMMUNE": "مدخل مشترك"
+    }
+  },
+  "DepositOptions": {
+    "PROPERTY_STATES": {
+      "NEUF": "جديد (لم يُسكن من قبل)",
+      "RENOVE": "مُجدّد",
+      "BON_ETAT": "بحالة جيدة",
+      "A_DEMOLIR": "قابل للهدم"
+    },
+    "BUILDING_TYPOLOGY_MODES": {
+      "SIMILAIRES": "عمارة بشقق ذات مخططات متشابهة",
+      "DIFFERENTES": "عمارة بشقق ذات مخططات مختلفة"
+    },
+    "BUILDING_SURFACE_MODES": {
+      "UNIQUE": "مساحة واحدة",
+      "MULTI": "مساحات متعددة"
+    },
+    "BUILDING_APARTMENT_STYLES": {
+      "SIMPLEX": "سيمبلكس (طابق واحد)",
+      "DUPLEX": "دوبلكس",
+      "TRIPLEX": "تريبلكس"
+    },
+    "APARTMENT_LIFESTYLE_TYPES": {
+      "QUARTIER_OUVERT": "حي عادي",
+      "RESIDENCE_CLOTUREE": "إقامة مسيّجة",
+      "PROMOTION_IMMOBILIERE": "برنامج عقاري"
+    },
+    "USAGE_TYPES": {
+      "UNIQUE": {
+        "label": "استعمال واحد (متصل)",
+        "description": "طوابق الفيلا متصلة من الداخل"
+      },
+      "SEPARE": {
+        "label": "استعمال منفصل (شقة)",
+        "description": "كل طابق مستقل"
+      }
+    },
+    "ENTRY_ACCESS_TYPES": {
+      "ENTREE_INDEPENDANTE": {
+        "label": "مدخل مستقل",
+        "description": "دخول مستقل إلى طابق الفيلا"
+      },
+      "ENTREE_COMMUNE": {
+        "label": "مدخل مشترك",
+        "description": "دخول مشترك (مدخل عام)"
+      }
+    },
+    "KITCHEN_TYPES": {
+      "AMERICAINE": {
+        "label": "مفتوحة",
+        "description": "مطبخ مفتوح على الصالون (على الطراز الأمريكي)"
+      },
+      "FERMEE": {
+        "label": "مغلقة",
+        "description": "مطبخ منفصل بجدران وباب"
+      },
+      "SEMI_OUVERTE": {
+        "label": "شبه مفتوحة",
+        "description": "مفتوحة جزئياً (واجهة زجاجية، بار، نافذة تمرير)"
+      }
+    },
+    "HEATING_TYPES": {
+      "CENTRAL": "مركزي",
+      "SOL": "أرضي (تحت البلاط)",
+      "GAZ": "بالغاز"
+    },
+    "AC_TYPES": {
+      "CENTRAL": "مركزي",
+      "SPLIT": "سبليت",
+      "SANS": "بدون"
+    },
+    "VILLA_EQUIPMENTS_KITCHEN": {
+      "plates": "موقد",
+      "oven": "فرن",
+      "hood": "شفاط",
+      "dishwasher": "غسالة أطباق",
+      "microwave": "ميكروويف",
+      "fridge": "ثلاجة",
+      "washing_machine": "غسالة ملابس",
+      "no_appliances": "بدون تجهيزات"
+    },
+    "VILLA_EQUIPMENTS_EXTERIOR": {
+      "garden": "حديقة",
+      "terrace": "شرفة (تراس)",
+      "balcony": "بلكون",
+      "pool": "مسبح",
+      "playground": "فضاء خارجي",
+      "barbecue": "شواء",
+      "elevator": "مصعد"
+    },
+    "VILLA_EQUIPMENTS_UTILITIES": {
+      "water_tank": "خزان مياه",
+      "generator": "مولد كهربائي",
+      "central_heating": "تدفئة مركزية"
+    },
+    "VILLA_EQUIPMENTS_SECURITY": {
+      "cameras": "كاميرات مراقبة",
+      "alarm": "جهاز إنذار",
+      "guardian": "حراسة على مدار الساعة"
+    },
+    "VILLA_EQUIPMENTS_CONNECTIVITY": {
+      "fiber": "ألياف بصرية",
+      "adsl": "ADSL",
+      "phone_line": "خط هاتف ثابت"
+    }
   }
 }
