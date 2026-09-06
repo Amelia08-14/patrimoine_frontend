@@ -6,16 +6,18 @@ import { MapPin, Calendar, Wallet, Ruler, ArrowRight, Home, User, Store } from "
 import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
 import { RESEARCH_PROPERTY_TYPES, ENVIRONMENT_OPTIONS, VILLA_LEVEL_ENTRANCE_OPTIONS } from "@/data/researchConfig"
 
-// Table de correspondance id -> libellé, construite à partir de toutes les branches (recherche + dépôt)
-const PROPERTY_TYPE_LABELS: Record<string, string> = {}
-Object.values(RESEARCH_PROPERTY_TYPES).forEach((list) => list.forEach((t) => { PROPERTY_TYPE_LABELS[t.id] ||= t.label }))
-PROPERTY_TYPES.forEach((t) => { PROPERTY_TYPE_LABELS[t.id] ||= t.label })
+// Tables de correspondance id -> libellé FRANÇAIS (repli), construites à partir de toutes les branches
+// (recherche + dépôt). La traduction se fait au rendu via les namespaces i18n (voir le composant).
+const PROPERTY_TYPE_LABELS_FR: Record<string, string> = {}
+Object.values(RESEARCH_PROPERTY_TYPES).forEach((list) => list.forEach((t) => { PROPERTY_TYPE_LABELS_FR[t.id] ||= t.label }))
+PROPERTY_TYPES.forEach((t) => { PROPERTY_TYPE_LABELS_FR[t.id] ||= t.label })
+const RESEARCH_BRANCH_IDS = Object.keys(RESEARCH_PROPERTY_TYPES)
 
-const ENVIRONMENT_LABELS: Record<string, string> = {}
-ENVIRONMENT_OPTIONS.forEach((o) => { ENVIRONMENT_LABELS[o.id] = o.label })
+const ENVIRONMENT_LABELS_FR: Record<string, string> = {}
+ENVIRONMENT_OPTIONS.forEach((o) => { ENVIRONMENT_LABELS_FR[o.id] = o.label })
 
-const VILLA_ENTRANCE_LABELS: Record<string, string> = {}
-VILLA_LEVEL_ENTRANCE_OPTIONS.forEach((o) => { VILLA_ENTRANCE_LABELS[o.id] = o.label })
+const VILLA_ENTRANCE_LABELS_FR: Record<string, string> = {}
+VILLA_LEVEL_ENTRANCE_OPTIONS.forEach((o) => { VILLA_ENTRANCE_LABELS_FR[o.id] = o.label })
 
 /**
  * Carte d'une recherche confiée — extraite pour être partagée entre la liste publique (/demandes,
@@ -24,8 +26,24 @@ VILLA_LEVEL_ENTRANCE_OPTIONS.forEach((o) => { VILLA_ENTRANCE_LABELS[o.id] = o.la
  */
 export function EntrustedResearchCard({ research: r, variant = "public" }: { research: any; variant?: "public" | "mine" }) {
   const t = useTranslations("Demandes")
+  const tOpt = useTranslations("ResearchOptions")
+  const tCat = useTranslations("Categories")
+  const tPt = useTranslations("PropertyTypes")
 
-  const getCategoryLabel = (id?: string) => REAL_ESTATE_CATEGORIES.find((c) => c.id === id)?.label
+  const getCategoryLabel = (id?: string) =>
+    id ? (tCat.has(id) ? tCat(id) : REAL_ESTATE_CATEGORIES.find((c) => c.id === id)?.label) : undefined
+  const resolvePropertyType = (id: string) => {
+    if (tPt.has(id)) return tPt(id)
+    for (const br of RESEARCH_BRANCH_IDS) {
+      const k = `RESEARCH_PROPERTY_TYPES.${br}.${id}`
+      if (tOpt.has(k)) return tOpt(k)
+    }
+    return PROPERTY_TYPE_LABELS_FR[id] || id
+  }
+  const resolveEnvironment = (id: string) =>
+    tOpt.has(`ENVIRONMENT_OPTIONS.${id}`) ? tOpt(`ENVIRONMENT_OPTIONS.${id}`) : (ENVIRONMENT_LABELS_FR[id] || id)
+  const resolveVillaEntrance = (id: string) =>
+    tOpt.has(`VILLA_LEVEL_ENTRANCE_OPTIONS.${id}`) ? tOpt(`VILLA_LEVEL_ENTRANCE_OPTIONS.${id}`) : VILLA_ENTRANCE_LABELS_FR[id]
 
   const getLocationLabel = () => {
     const parts = [r.cityName, ...(r.townNames || [])].filter(Boolean)
@@ -40,7 +58,7 @@ export function EntrustedResearchCard({ research: r, variant = "public" }: { res
   const propertyTypeIds: string[] = locationCriteria?.propertyTypes?.length
     ? locationCriteria.propertyTypes
     : (r.propertyType ? r.propertyType.split(",") : [])
-  const propertyTypeLabels: string[] = propertyTypeIds.map((id: string) => PROPERTY_TYPE_LABELS[id] || id)
+  const propertyTypeLabels: string[] = propertyTypeIds.map((id: string) => resolvePropertyType(id))
 
   const requesterName = r.user?.companyName || r.user?.firstName || null
 
@@ -78,8 +96,8 @@ export function EntrustedResearchCard({ research: r, variant = "public" }: { res
     : floorMin
     ? `${t("from")} ${t("floor")} ${floorMin}`
     : null
-  const villaEntranceLabel = locationCriteria?.villaLevelEntrance ? VILLA_ENTRANCE_LABELS[locationCriteria.villaLevelEntrance] : null
-  const environmentLabels: string[] = (locationCriteria?.environment || []).map((id: string) => ENVIRONMENT_LABELS[id] || id).filter(Boolean)
+  const villaEntranceLabel = locationCriteria?.villaLevelEntrance ? resolveVillaEntrance(locationCriteria.villaLevelEntrance) : null
+  const environmentLabels: string[] = (locationCriteria?.environment || []).map((id: string) => resolveEnvironment(id)).filter(Boolean)
 
   return (
     <div className="bg-white dark:bg-white/5 rounded-3xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 dark:border-white/10 p-6 flex flex-col gap-4">

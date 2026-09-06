@@ -11,6 +11,7 @@ import {
   Star, Crown, MapPin, Bell, Send, Heart, Share2, Eye, Link2
 } from "lucide-react"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
+import { usePropertyTypeLabel } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
@@ -480,6 +481,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   }, [announces, txType, categoryFilter, wilayas, commune])
 
   const t = useTranslations('Boutique')
+  const ptLabel = usePropertyTypeLabel()
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -952,7 +954,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
                   </div>
                   <div className="p-5">
                     <h3 className="font-bold text-gray-900 text-base group-hover:text-[#00BFA6] transition-colors line-clamp-2">
-                      {a.title || PROPERTY_TYPES?.find((t: any) => t.id === a.property?.propertyType?.toUpperCase())?.label || a.property?.propertyType}
+                      {a.title || ptLabel(a.property?.propertyType, a.property?.propertyType)}
                     </h3>
                     {city && <p className="flex items-center gap-1 text-gray-500 text-sm mt-2"><MapPin className="h-3.5 w-3.5 shrink-0" />{city}</p>}
                     <div className="mt-4 flex items-center justify-between">
@@ -971,7 +973,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
               const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
               const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
               const tx = a.type || a.transactionType || a.transaction
-              const pType = PROPERTY_TYPES?.find((t: any) => t.id === a.property?.propertyType?.toUpperCase())?.label || a.property?.propertyType
+              const pType = ptLabel(a.property?.propertyType, a.property?.propertyType)
               return (
                 <a key={a.id} href={`/announces/${a.id}`} className="group flex bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
                   <div className="w-44 h-36 shrink-0 overflow-hidden bg-gray-100">

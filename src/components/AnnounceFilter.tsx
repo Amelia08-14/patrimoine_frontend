@@ -12,6 +12,7 @@ import {
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
+import { usePropertyTypeLabel, useCategoryLabel, useLocalizedGeoName } from "@/lib/typeLabels"
 
 // Icon mapping helper
 const getIcon = (name: string) => {
@@ -48,6 +49,9 @@ interface AnnounceFilterProps {
 
 export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor }: AnnounceFilterProps) {
   const t = useTranslations("AnnounceFilter")
+  const ptLabel = usePropertyTypeLabel()
+  const catLabel = useCategoryLabel()
+  const geoName = useLocalizedGeoName()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -95,10 +99,10 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
     ? filteredCommunes.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
     : filteredCommunes
 
-  const selectedWilayaName = filters.wilaya ? WILAYAS.find(w => w.code === filters.wilaya)?.name : ""
-  const selectedCommuneName = filters.commune ? filteredCommunes.find(c => c.id === filters.commune)?.name : ""
-  const selectedCategoryLabel = filters.realEstateCategory ? REAL_ESTATE_CATEGORIES.find(c => c.id === filters.realEstateCategory)?.label : t("all")
-  const selectedPropertyTypeLabel = filters.propertyType ? PROPERTY_TYPES.find(pt => pt.id === filters.propertyType)?.label : t("all")
+  const selectedWilayaName = filters.wilaya ? geoName(WILAYAS.find(w => w.code === filters.wilaya)) : ""
+  const selectedCommuneName = filters.commune ? geoName(filteredCommunes.find(c => c.id === filters.commune)) : ""
+  const selectedCategoryLabel = filters.realEstateCategory ? catLabel(filters.realEstateCategory, REAL_ESTATE_CATEGORIES.find(c => c.id === filters.realEstateCategory)?.label) : t("all")
+  const selectedPropertyTypeLabel = filters.propertyType ? ptLabel(filters.propertyType, PROPERTY_TYPES.find(pt => pt.id === filters.propertyType)?.label) : t("all")
 
   const TRANSACTION_OPTIONS = [
     { id: "", label: t("all") },
@@ -202,7 +206,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                       style={active ? { borderColor: accent, backgroundColor: `${accent}14`, color: accent } : undefined}
                     >
                       <Icon className="h-5 w-5" />
-                      <span className="font-medium text-center text-xs leading-tight">{cat.label}</span>
+                      <span className="font-medium text-center text-xs leading-tight">{catLabel(cat.id, cat.label)}</span>
                     </div>
                   )
                 })}
@@ -261,7 +265,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                           style={active ? { borderColor: accent, backgroundColor: `${accent}14`, color: accent } : undefined}
                         >
                           <Icon className="h-5 w-5" />
-                          <span className="font-medium text-center text-xs leading-tight">{type.label}</span>
+                          <span className="font-medium text-center text-xs leading-tight">{ptLabel(type.id, type.label)}</span>
                         </div>
                       )
                     })}
@@ -328,7 +332,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                         className="px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer flex justify-between items-center text-gray-700 dark:text-white/70"
                         style={active ? { color: accent, fontWeight: 700, backgroundColor: `${accent}14` } : undefined}
                       >
-                        <span>{w.code} - {w.name}</span>
+                        <span>{w.code} - {geoName(w)}</span>
                         {active && <Check className="h-4 w-4" />}
                       </div>
                     )
@@ -396,7 +400,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                             className="px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer flex justify-between items-center text-gray-700 dark:text-white/70"
                             style={active ? { color: accent, fontWeight: 700, backgroundColor: `${accent}14` } : undefined}
                           >
-                            <span>{c.name}</span>
+                            <span>{geoName(c)}</span>
                             {active && <Check className="h-4 w-4" />}
                           </div>
                         )

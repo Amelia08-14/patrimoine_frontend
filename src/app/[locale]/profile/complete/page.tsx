@@ -212,7 +212,7 @@ export default function CompleteProfilePage() {
         <div className="w-full max-w-3xl my-auto rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-[0_24px_70px_rgba(0,59,74,0.10)] p-5 sm:p-8 lg:p-10">
 
           <div className="text-center lg:text-left mb-8">
-            <div className="inline-flex items-center rounded-full bg-[#E6F8F6] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#007F78] mb-3">Profil</div>
+            <div className="inline-flex items-center rounded-full bg-[#E6F8F6] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#007F78] mb-3">{t("eyebrow")}</div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#082A3A] dark:text-white tracking-tight mb-2">{t("formTitle")}</h2>
             <p className="text-sm sm:text-base text-slate-500 dark:text-white/50">
               {t("formSubtitle")}

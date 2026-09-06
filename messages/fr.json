@@ -259,7 +259,13 @@
     "bedrooms": "{count} chambres",
     "seeGallery": "Voir la galerie",
     "privateSeller": "Particulier",
-    "professionalSeller": "Professionnel"
+    "professionalSeller": "Professionnel",
+    "overlayFloor": "Étage {n}",
+    "overlayLand": "Terrain {v} m²",
+    "overlayCovered": "Couverte {v} m²",
+    "overlayTopoPLAT": "Plat",
+    "overlayTopoEN_PENTE": "En pente",
+    "overlayTopoACCIDENTE": "Accidenté"
   },
   "Contact": {
     "title": "Nous Contacter",
@@ -348,7 +354,10 @@
     "activityImmobilier": "Activité immobilière",
     "activityHotellerie": "Activité hôtelière et hébergement",
     "activityEvenementiel": "Activité évènementiel",
-    "activityEntreposage": "Activité d'entreposage et stockage"
+    "activityEntreposage": "Activité d'entreposage et stockage",
+    "otherGroup": "Autres",
+    "otherPartnersTitle": "Autres partenaires",
+    "partnersCount": "{count, plural, one {# partenaire} other {# partenaires}}"
   },
   "Boutique": {
     "loadingStore": "Chargement de la boutique...",
@@ -655,7 +664,16 @@
     "alertGenericError": "Une erreur est survenue.",
     "alertChooseBranch": "Merci de choisir une branche immobilière.",
     "alertCommentRequired": "Merci de renseigner un commentaire d'au moins 10 caractères (étape Budget & Localisation) avant de confier votre recherche.",
-    "alertCheckInfo": "Merci de vérifier les informations saisies avant de confier votre recherche."
+    "alertCheckInfo": "Merci de vérifier les informations saisies avant de confier votre recherche.",
+    "exVal": "Ex : {v}",
+    "curDA": "DA",
+    "curDAM2": "DA / m²",
+    "curMillions": "Millions",
+    "curMillionsM2": "Millions / m²",
+    "curMilliards": "Milliards",
+    "curMDA": "M DA",
+    "curMDAM2": "M/m²",
+    "curMdDA": "Md DA"
   },
   "ProfileHome": {
     "pendingBanner": "Compte en attente de validation.",
@@ -929,7 +947,8 @@
     "submit": "Enregistrer et Continuer",
     "updateSuccess": "Profil mis à jour avec succès !",
     "updateError": "Erreur lors de la mise à jour",
-    "technicalError": "Erreur technique"
+    "technicalError": "Erreur technique",
+    "eyebrow": "Profil"
   },
   "ProfilePoints": {
     "boutiqueOffersTitle": "Choisissez votre vitrine",
@@ -1204,7 +1223,195 @@
     "messageSentTitle": "Message envoyé !",
     "messageSentText": "L'annonceur pourra vous répondre directement dans votre messagerie.",
     "messageErrorGeneric": "Impossible d'envoyer le message. Réessayez.",
-    "viewMyMessages": "Voir ma messagerie"
+    "viewMyMessages": "Voir ma messagerie",
+    "f001": "Activité compatible",
+    "f002": "Surf. Terrain",
+    "f003": "Surf. Bâtie",
+    "f004": "Surf. Libre",
+    "f005": "Structure",
+    "f006": "Longueur",
+    "f007": "Largeur",
+    "f008": "Hauteur",
+    "f009": "Surf. Couverte",
+    "f010": "Ht. sous crochet",
+    "f011": "Topographie",
+    "f012": "Façades",
+    "f013": "Viabilisation",
+    "f014": "Non spécifié",
+    "f015": "Surf. terrain",
+    "f016": "Typologie",
+    "f017": "Surf. bâtie",
+    "f018": "Surface",
+    "f019": "Oui",
+    "f020": "Ascenseur",
+    "f021": "Appartements",
+    "f022": "Surface unique",
+    "f023": "Variable",
+    "f024": "Surfaces",
+    "f025": "Parking",
+    "f026": "Informations Générales",
+    "f027": "État & Types d'offre",
+    "f028": "Type de location",
+    "f029": "État global",
+    "f030": "Configuration",
+    "f031": "Mise en service",
+    "f032": "Produit fabriqué",
+    "f033": "Emplacement",
+    "f034": "Situation",
+    "f035": "Accès transport",
+    "f036": "Distance autoroute",
+    "f037": "Annexes",
+    "f038": "Bureaux",
+    "f039": "Locaux sociaux",
+    "f040": "Hébergement",
+    "f041": "Sécurité",
+    "f042": "Énergie & Fluides",
+    "f043": "Électricité",
+    "f044": "Force motrice 380V",
+    "f045": "Gaz",
+    "f046": "Eau",
+    "f047": "Assainissement",
+    "f048": "Réseau anti-incendie",
+    "f049": "Équipements complémentaires",
+    "f050": "Description",
+    "f051": "Logistique verticale",
+    "f052": "Zone de déchargement",
+    "f053": "Équipements",
+    "f054": "Type de froid",
+    "f055": "Mode de diffusion",
+    "f056": "Technique froid",
+    "f057": "Traçabilité",
+    "f058": "Générateur de secours",
+    "f059": "Sécurité humaine",
+    "f060": "Dispositif anti-enfermement",
+    "f061": "Localisation et modalités",
+    "f062": "Accès camions",
+    "f063": "Mode de gestion",
+    "f064": "Flexibilité d'espace",
+    "f065": "Durée d'engagement",
+    "f066": "Caractéristiques",
+    "f067": "Surface terrain",
+    "f068": "Nombre de façades",
+    "f069": "Topographie (Relief)",
+    "f070": "Statut & Documents",
+    "f071": "Statut de la zone",
+    "f072": "Documents disponibles",
+    "f073": "État de viabilisation",
+    "f074": "Raccordements à proximité",
+    "f075": "Type d'utilisation",
+    "f076": "Infrastructure",
+    "f077": "Toiture",
+    "f078": "Tôle TN40",
+    "f079": "Panneaux Sandwich",
+    "f080": "Autre",
+    "f081": "Sol",
+    "f082": "Béton",
+    "f083": "Résine Époxy",
+    "f084": "Logistique",
+    "f085": "Équipements incendie",
+    "f086": "Fiche Showroom",
+    "f087": "Superficies & Dimensions",
+    "f088": "Surface bâtie / expo",
+    "f089": "Niveaux",
+    "f090": "Hauteur plafond",
+    "f091": "Longueur façade",
+    "f092": "Profondeur",
+    "f093": "Style Architectural",
+    "f094": "Style",
+    "f095": "Visibilité",
+    "f096": "Visible depuis autoroute",
+    "f097": "Axe routier",
+    "f098": "Fiche Local Commercial",
+    "f099": "Environnement",
+    "f100": "Type",
+    "f101": "Précision",
+    "f102": "Emplacement & Flux",
+    "f103": "Zone",
+    "f104": "Flux piéton",
+    "f105": "Flux véhicules",
+    "f106": "Usage",
+    "f107": "Surface totale",
+    "f108": "Longueur vitrine",
+    "f109": "Mezzanine",
+    "f110": "Surface mezzanine",
+    "f111": "Fiche Bloc Administratif",
+    "f112": "Surface bâtie",
+    "f113": "Étages (R+)",
+    "f114": "Sous-sol",
+    "f115": "Type d'Espace",
+    "f116": "Espace",
+    "f117": "Cloisonnement",
+    "f118": "Connectivité",
+    "f119": "Connexion",
+    "f120": "Mode",
+    "f121": "Équipements serveur",
+    "f122": "Caractéristiques Agricoles",
+    "f123": "Unité de mesure",
+    "f124": "Vocation / Culture",
+    "f125": "Ensoleillement",
+    "f126": "Ressources en eau",
+    "f127": "Exposition",
+    "f128": "Cadre et mode de vie",
+    "f129": "Usage unique (Communicante)",
+    "f130": "(les étages de la villa communiquent de l'intérieur)",
+    "f131": "Usage séparé (appartement)",
+    "f132": "(chaque étage est indépendant)",
+    "f133": "Entrée indépendante",
+    "f134": "(accès indépendant au niveau de villa)",
+    "f135": "Entrée commune",
+    "f136": "(accès partagé / entrée commune)",
+    "f137": "Quartier classique",
+    "f138": "Résidence clôturée",
+    "f139": "Promotion immobilière",
+    "f140": "Chambres",
+    "f141": "Suites parentales",
+    "f142": "Salons",
+    "f143": "WC / Toilettes",
+    "f144": "Salles de bain",
+    "f145": "Type de salle de bain",
+    "f146": "Baignoire",
+    "f147": "Douche italienne",
+    "f148": "Cuisine",
+    "f149": "Cuisine & équipements",
+    "f150": "Type de cuisine",
+    "f151": "Non équipé",
+    "f152": "Composition",
+    "f153": "Typologie des appartements",
+    "f154": "Nombre d'appartements",
+    "f155": "Typologies",
+    "f156": "Style d'appartement",
+    "f157": "Commodités",
+    "f158": "Espaces Extérieurs",
+    "f159": "Chauffage",
+    "f160": "Climatisation",
+    "f161": "Autres Commodités",
+    "f162": "Compteurs",
+    "f163": "Documents",
+    "f164": "Conditions de vente",
+    "f165": "Accepte crédit bancaire",
+    "f166": "Vente",
+    "f167": "Conditions",
+    "f168": "Usage Autorisé",
+    "f169": "Cautionnement",
+    "f170": "Charges",
+    "f171": "Disponibilité",
+    "f172": "WhatsApp",
+    "f173": "Viber",
+    "f174": "Telegram",
+    "adGf": "RDC",
+    "adFloorOne": "Étage",
+    "adFloorsMany": "Étages",
+    "adDocActe": "Acte de propriété",
+    "adDocLivret": "Livret foncier",
+    "adDocConform": "Certificat de conformité",
+    "adNo": "Non",
+    "adNoPref": "Pas de préférence",
+    "adTypoSimilar": "Similaires",
+    "adTypoDifferent": "Différentes",
+    "adLandServiced": "Terrain viabilisé",
+    "adLandNotServiced": "Non viabilisé",
+    "adSpaceExploited": "Espace exploité",
+    "adLivingSpace": "Espace de Vie"
   },
   "Deposit": {
     "draftFoundTitle": "Un brouillon vous attend",
@@ -1237,7 +1444,466 @@
     "continueBtn": "Continuer",
     "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
     "networkError": "Erreur réseau lors de la soumission du formulaire",
-    "fixErrorsPrefix": "Veuillez corriger les erreurs suivantes:"
+    "fixErrorsPrefix": "Veuillez corriger les erreurs suivantes:",
+    "f001": "Nature de l'activité & Spécialisation",
+    "f002": "Secteur d'activité",
+    "f003": "Autre activité",
+    "f004": "Précision du produit fabriqué",
+    "f005": "État & Type de location",
+    "f006": "Type de location",
+    "f007": "État global",
+    "f008": "Infrastructure & Surfaces",
+    "f009": "Répartition des surfaces",
+    "f010": "Surface totale terrain",
+    "f011": "Surface bâtie (Production)",
+    "f012": "Surface libre (Cour/Parking)",
+    "f013": "Emplacement & Logistique",
+    "f014": "Situation",
+    "f015": "Accès transport",
+    "f016": "Annexes & Commodités",
+    "f017": "Bureaux",
+    "f018": "Oui",
+    "f019": "Non",
+    "f020": "Surface (m²)",
+    "f021": "Locaux sociaux",
+    "f022": "Hébergement",
+    "f023": "Sécurité",
+    "f024": "Énergie & Fluides",
+    "f025": "Électricité",
+    "f026": "Poste transfo (KVA)",
+    "f027": "Force motrice (380V)",
+    "f028": "Gaz",
+    "f029": "Industriel",
+    "f030": "De ville",
+    "f031": "Aucun",
+    "f032": "Eau",
+    "f033": "Assainissement",
+    "f034": "Réseau public",
+    "f035": "Fosse septique",
+    "f036": "Sécurité incendie & Protection",
+    "f037": "Réseau anti-incendie",
+    "f038": "Équipements complémentaires",
+    "f039": "Dimensions & Surface",
+    "f040": "Surface terrain (m²)",
+    "f041": "Surface couverte (m²)",
+    "f042": "Sélectionner",
+    "f043": "Longueur (ml)",
+    "f044": "Largeur (ml)",
+    "f045": "Hauteur sous crochet (ml)",
+    "f046": "Infrastructure",
+    "f047": "Type d'utilisation",
+    "f048": "Stockage",
+    "f049": "Production",
+    "f050": "Toiture",
+    "f051": "Tôle TN40",
+    "f052": "Panneaux Sandwich",
+    "f053": "Autre",
+    "f054": "Sol",
+    "f055": "Béton",
+    "f056": "Résine Époxy",
+    "f057": "Emplacement",
+    "f058": "Logistique",
+    "f059": "Activités & Usages autorisés",
+    "f060": "Secteur compatible",
+    "f061": "Préciser l'activité",
+    "f062": "Hauteur (ml)",
+    "f063": "Capacité (m³)",
+    "f064": "Configuration & Emplacement du site",
+    "f065": "Localisation",
+    "f066": "Type de structure",
+    "f067": "Configuration",
+    "f068": "Plain-pied (RDC)",
+    "f069": "À étages",
+    "f070": "Logistique verticale",
+    "f071": "Monte-charge",
+    "f072": "Accessibilité camions",
+    "f073": "Zone de déchargement",
+    "f074": "Équipements de sécurité & Performance",
+    "f075": "Énergie de secours",
+    "f076": "Groupe Électrogène Auto",
+    "f077": "Technique froid",
+    "f078": "Type de froid",
+    "f079": "Mode de diffusion",
+    "f080": "Modalités de location & Flexibilité",
+    "f081": "Mode de gestion",
+    "f082": "Flexibilité d'espace",
+    "f083": "Durée d'engagement",
+    "f084": "Caractéristiques Physiques",
+    "f085": "Unité",
+    "f086": "Altitude (mètres)",
+    "f087": "Nombre de façades",
+    "f088": "Longueur",
+    "f089": "Largeur",
+    "f090": "Topographie (Relief)",
+    "f091": "Viabilisation",
+    "f092": "Terrain viabilisé",
+    "f093": "Non viabilisé",
+    "f094": "Statut de la zone",
+    "f095": "État Juridique & Urbanisme",
+    "f096": "Documents disponibles",
+    "f097": "Raccordements à proximité",
+    "f098": "Caractéristiques Agricoles",
+    "f099": "Vocation / Type de culture",
+    "f100": "Ressources en eau",
+    "f101": "Forage",
+    "f102": "Débit forage (m³/h)",
+    "f103": "Exposition",
+    "f104": "Ensoleillement",
+    "f105": "Nature du sol",
+    "f106": "Zone d'implantation",
+    "f107": "Qualité de l'eau",
+    "f108": "Équipements hydrauliques",
+    "f109": "État actuel du terrain",
+    "f110": "Terrain vide / Nu",
+    "f111": "Terrain exploité / Planté",
+    "f112": "Accessibilité & Logistique",
+    "f113": "Type d'accès principal",
+    "f114": "Accessibilité véhicules lourds",
+    "f115": "Bâtiments, Constructions & Clôture",
+    "f116": "Constructions présentes",
+    "f117": "Clôture du terrain",
+    "f118": "Statut & Vocation Touristique",
+    "f119": "Zone d'Expansion Touristique (Z.E.T)",
+    "f120": "Le terrain est-il situé à l'intérieur d'une Z.E.T décrétée ?",
+    "f121": "Plan d'Aménagement Touristique (P.A.T)",
+    "f122": "Existe-t-il un P.A.T approuvé par le Ministère du Tourisme ?",
+    "f123": "Classification de la zone",
+    "f124": "Cocher la vocation principale",
+    "f125": "Informations Générales & Superficies",
+    "f126": "Longueur (m)",
+    "f127": "Largeur (m)",
+    "f128": "Nombre d'étages (RDC inclus)",
+    "f129": "Hauteur sous plafond (m)",
+    "f130": "Nombre de rideaux",
+    "f131": "Surface linéaire façade (ml)",
+    "f132": "État général du bâtiment",
+    "f133": "Emplacement, Visibilité & Accès",
+    "f134": "Type de zone",
+    "f135": "Visibilité & Flux",
+    "f136": "Type d'accès & Flux de circulation",
+    "f137": "Superficies & Dimensions",
+    "f138": "Surface bâtie (m²)",
+    "f139": "Nombre d'étages",
+    "f140": "État & Style Architectural",
+    "f141": "Style architectural",
+    "f142": "Structure",
+    "f143": "Visibilité & Accessibilité",
+    "f144": "Visibilité depuis autoroute / voie rapide",
+    "f145": "Axe routier / adresse commerciale",
+    "f146": "État & Style",
+    "f147": "Style du local",
+    "f148": "Emplacement & Flux",
+    "f149": "Flux piéton",
+    "f150": "Flux véhicules",
+    "f151": "Environnement & Usage",
+    "f152": "Environnement du local",
+    "f153": "Usage du local",
+    "f154": "Caractéristiques Extérieures",
+    "f155": "Nombre d'étages (R+)",
+    "f156": "État général",
+    "f157": "Garage (places)",
+    "f158": "Stationnement extérieur (places)",
+    "f159": "Sous-sol",
+    "f160": "Type d'Espace",
+    "f161": "Type d'espace bureautique",
+    "f162": "Type de cloisonnement",
+    "f163": "Extérieurs & Commodités",
+    "f164": "Espaces Extérieurs",
+    "f165": "Connectivité",
+    "f166": "Cuisine",
+    "f167": "Logement de fonction",
+    "f168": "Logement de fonction dans l'immeuble",
+    "f169": "Connectivité & Réseau",
+    "f170": "Mode de connexion",
+    "f171": "Équipements serveur",
+    "f172": "Volume (litres)",
+    "f173": "Caractéristiques Générales & Structure",
+    "f174": "R +",
+    "f175": "Rez-de-chaussée",
+    "f176": "Étage supérieur",
+    "f177": "État Général",
+    "f178": "Cadre et mode de vie",
+    "f179": "Environnement / type d'habitat du bien",
+    "f180": "Usage",
+    "f181": "Type d'accès",
+    "f182": "Type de salle de bain",
+    "f183": "Douche italienne",
+    "f184": "Baignoire",
+    "f185": "Les deux",
+    "f186": "Cuisine et équipements",
+    "f187": "Type de Cuisine",
+    "f188": "Équipements de la cuisine",
+    "f189": "Chauffage",
+    "f190": "Climatisation",
+    "f191": "Énergie, Eau & Technique",
+    "f192": "Compteur Individuel",
+    "f193": "Compteur Commun",
+    "f194": "Nombre d'étages R+",
+    "f195": "Niveaux supplémentaires",
+    "f196": "Typologie",
+    "f197": "Nombre de salles de bain",
+    "f198": "Nombre de WC",
+    "f199": "Type de salle de bain principale",
+    "f200": "Non spécifié",
+    "f201": "Mesures & Capacité",
+    "f202": "Surface Terrain (m²)",
+    "f203": "Surface Bâtie (m²)",
+    "f204": "Équipements & Commodités",
+    "f205": "Extérieur",
+    "f206": "Eau/Énergie",
+    "f207": "Garage",
+    "f208": "Présence d'un garage",
+    "f209": "Capacité (Volume)",
+    "f210": "Cible et profil de clientèle",
+    "f211": "Formule de location",
+    "f212": "Détails du logement entier",
+    "f213": "Nb. chambres",
+    "f214": "Nb. salons",
+    "f215": "Nb. WC / Salles de bain",
+    "f216": "Suite parentale",
+    "f217": "Type de chambre proposée",
+    "f218": "Type de propriété / Unité",
+    "f219": "Précisez le type d'hébergement insolite",
+    "f220": "Caractéristiques physiques",
+    "f221": "Surface habitable (m²)",
+    "f222": "Nombre de niveaux",
+    "f223": "Configuration des lits",
+    "f224": "Cadre & Environnement",
+    "f225": "Ambiance / Vocation du lieu (plusieurs choix possibles)",
+    "f226": "Accès à la plage",
+    "f227": "Commodités immédiates à proximité",
+    "f228": "Sorties et activités proposées",
+    "f229": "Spécificités thermales",
+    "f230": "Localisation du Hammam / Bain thermal",
+    "f231": "Intégré à l'établissement",
+    "f232": "À proximité (déplacement requis)",
+    "f233": "Distance (si à proximité)",
+    "f234": "Conditions d'accès pour les clients",
+    "f235": "Accès gratuit / Inclus",
+    "f236": "Accès payant (tarif préférentiel)",
+    "f237": "Infrastructures nature & montagne",
+    "f238": "Accès à l'espace nature / forêt",
+    "f239": "Temps de trajet estimé (min)",
+    "f240": "Service de visites guidées / Excursions organisées (randonnées, trekking)",
+    "f241": "Station / Piste de ski à proximité immédiate",
+    "f242": "Vue depuis le logement (plusieurs choix possibles)",
+    "f243": "Transports & Attractions de Proximité",
+    "f244": "Aéroport le plus proche",
+    "f245": "Distance de l'aéroport (km)",
+    "f246": "Transports en commun proches (Bus, Tram, Métro)",
+    "f247": "À moins de 20 minutes du logement",
+    "f248": "Équipements & Services",
+    "f249": "Restauration incluse",
+    "f250": "Linge de maison",
+    "f251": "Produits & Services",
+    "f252": "Produits d'hygiène fournis (Shampoing, Savon, Papier toilette)",
+    "f253": "Service de livraison de courses disponible",
+    "f254": "Équipements Cuisine",
+    "f255": "Confort & Multimédia",
+    "f256": "Infrastructures Loisirs & Bien-être",
+    "f257": "Équipements de Secours (Essentiels en Algérie)",
+    "f258": "Stationnement & Accessibilité",
+    "f259": "Parking (plusieurs choix possibles)",
+    "f260": "Accessibilité",
+    "f261": "Règlement Intérieur & Logistique",
+    "f262": "Critère d'âge minimal pour réserver (Responsable de groupe)",
+    "f263": "Autorisations générales",
+    "f264": "Fumeurs acceptés",
+    "f265": "Animaux acceptés",
+    "f266": "Fêtes / Soirées autorisées",
+    "f267": "Réception, Arrivée et Départ",
+    "f268": "Check-in à partir de",
+    "f269": "Check-out avant",
+    "f270": "Service de Réception",
+    "f271": "Ouverte de",
+    "f272": "Jusqu'à",
+    "f273": "Remise des clés",
+    "f274": "Contrôle d'identité",
+    "f275": "Prix & Tarification",
+    "f276": "Prix par nuitée",
+    "f277": "DA / nuit",
+    "f278": "Type de prix",
+    "f279": "Condition de Paiement",
+    "f280": "Pourcentage de l'acompte",
+    "f281": "Politique d'Annulation",
+    "f282": "Non remboursable",
+    "f283": "Annulation Flexible",
+    "f284": "Délai requis avant l'arrivée",
+    "f285": "Si le délai n'est pas respecté",
+    "f286": "Caution (Dépôt de garantie)",
+    "f287": "Montant (DZD)",
+    "f288": "Frais de ménage",
+    "f289": "Inclus",
+    "f290": "En supplément",
+    "f291": "Solutions de paiement acceptées",
+    "f292": "Paiements locaux (Algérie)",
+    "f293": "Paiements internationaux",
+    "f294": "Disponibilités",
+    "f295": "Durée minimale de séjour (nuits)",
+    "f296": "Délai de préparation entre réservations",
+    "f297": "Période d'ouverture",
+    "f298": "Début de saison",
+    "f299": "Fin de saison",
+    "f300": "Documents obligatoires à l'arrivée (Conformes à la loi algérienne)",
+    "f301": "Citoyens locaux / Résidents : CNI ou Permis de conduire original",
+    "f302": "Voyageurs internationaux : Passeport original avec visa valide",
+    "f303": "Couples et familles : Livret de famille original",
+    "f304": "Aucune remise de clé ne sera effectuée sans présentation de ces documents.",
+    "f305": "Disponibilité",
+    "f306": "Immédiate",
+    "f307": "Voulez-vous afficher le prix de location ?",
+    "f308": "Prix de location",
+    "f309": "DA / m²",
+    "f310": "Millions",
+    "f311": "Millions / m²",
+    "f312": "Milliards",
+    "f313": "Fixe",
+    "f314": "Négociable",
+    "f315": "Prix",
+    "f316": "Conditions de Location",
+    "f317": "Acceptez-vous également un usage commercial ou bureau ?",
+    "f318": "La même annonce sera aussi visible dans Bureaux et Commerces, sans créer ni gérer de doublon.",
+    "f319": "Acceptez-vous également un usage habitation ?",
+    "f320": "La même annonce sera aussi visible dans le Résidentiel, sans créer ni gérer de doublon.",
+    "f321": "Caution (Mois)",
+    "f322": "Charges Comprises",
+    "f323": "Conditions de Vente",
+    "f324": "Accepte crédit Bancaire",
+    "f325": "Pas de préférence",
+    "f326": "Documents Juridiques",
+    "f327": "Informations de l'annonce",
+    "f328": "(Optionnel)",
+    "f329": "Contacts",
+    "f330": "Ajoutez les numéros de téléphone sur lesquels les clients peuvent vous contacter.",
+    "f331": "Voulez-vous utiliser ce numéro pour cette annonce ?",
+    "f332": "Numéro de profil utilisé",
+    "f333": "WhatsApp",
+    "f334": "Viber",
+    "f335": "Telegram",
+    "f336": "Wilaya",
+    "f337": "Sélectionner...",
+    "f338": "Commune",
+    "f339": "Quartier (Adresse)",
+    "f340": "Lien Google Maps (Optionnel)",
+    "f341": "Photos",
+    "f342": "JPG, PNG (max 10MB)",
+    "f343": "Vidéos (Optionnel)",
+    "f344": "MP4, MOV (max 50MB) - Max 2 vidéos",
+    "f345": "Sélectionnez une ou plusieurs photos en cliquant dessus, puis utilisez les boutons pour les déplacer, ou glissez-déposez les directement.",
+    "f346": "Déplacer la sélection vers :",
+    "f347": "Détail",
+    "f348": "Année de mise en service (Ex: 2018)",
+    "f349": "Ex: 1200 m²",
+    "f350": "Ex: 400 m²",
+    "f351": "Ex: 200 m²",
+    "f352": "Ex: 80",
+    "f353": "Ex: 250",
+    "f354": "Ex: 10 000",
+    "f355": "Ex: 800 m²",
+    "f356": "Ex: 50 ml",
+    "f357": "Ex: 20 ml",
+    "f358": "Ex: 8 ml",
+    "f359": "ex: 20",
+    "f360": "ex: 10",
+    "f361": "ex: 4.5",
+    "f362": "ex: 80",
+    "f363": "Capacité (kg)",
+    "f364": "Puissance (KVA)",
+    "f365": "ex: 5",
+    "f366": "ex: 300 m²",
+    "f367": "ex: 800",
+    "f368": "ex: 12 ml",
+    "f369": "ex: 25 m",
+    "f370": "Préciser les cultures…",
+    "f371": "ex: 12",
+    "f372": "Nom de la Z.E.T…",
+    "f373": "ex: 500",
+    "f374": "ex: 30",
+    "f375": "ex: 4",
+    "f376": "ex: 3.5",
+    "f377": "ex: 3",
+    "f378": "ex: 15",
+    "f379": "ex: 350",
+    "f380": "ex: 2",
+    "f381": "Préciser…",
+    "f382": "ex: RN5, Boulevard Didouche Mourad…",
+    "f383": "ex: 120",
+    "f384": "ex: 8",
+    "f385": "ex: 1",
+    "f386": "Préciser l'environnement…",
+    "f387": "ex: 1200",
+    "f388": "Ex: 400",
+    "f389": "Ex: 8",
+    "f390": "Ex: 4",
+    "f391": "Ex: 24",
+    "f392": "Ex: 120",
+    "f393": "Ex: 1",
+    "f394": "Ex: 2",
+    "f395": "Ex: 3",
+    "f396": "Ex: 500",
+    "f397": "Nombre de véhicules",
+    "f398": "ex: Roulotte, Yourte, Cabane dans les arbres...",
+    "f399": "ex: 500 mètres / 2 km",
+    "f400": "ex: Aéroport d'Oran Es Sénia",
+    "f401": "ex: Bus ligne 12, Tramway arrêt Centre-ville...",
+    "f402": "Autre %",
+    "f403": "ex: 10 000",
+    "f404": "ex: 2 000",
+    "f405": "ex: Juin",
+    "f406": "ex: Septembre",
+    "f407": "Ex: Magnifique villa avec piscine vue sur mer...",
+    "f408": "Décrivez brièvement les points forts de votre bien...",
+    "f409": "Nom du quartier, rue...",
+    "f410": "https://maps.google.com/...",
+    "f411": "Pivoter",
+    "f412": "Supprimer",
+    "adImmFloorsCount": "Nombre d'étages dans l'immeuble",
+    "adAptTypology": "Typologie des appartements",
+    "adAptCount": "Nombre d'appartements",
+    "adSurface": "Surface",
+    "adAptStyle": "Style d'appartement",
+    "adTypologies": "Typologies",
+    "adTypologiesBeyondF10": "Typologies au-delà de F10",
+    "adBathrooms": "Salles de bain",
+    "adWC": "WC",
+    "adSuperficie": "Superficie",
+    "adLandArea": "Surface terrain",
+    "adFloor": "Étage",
+    "adSpaceExploited": "Espace exploité",
+    "adLivingSpaces": "Espaces de Vie",
+    "adOfficesRooms": "Bureaux (chambres)",
+    "adBedrooms": "Chambres",
+    "adOfficeSuites": "Bureaux suites (avec sanitaires)",
+    "adMasterSuites": "Suites parentales",
+    "adBigRoomSalons": "Grande salle (Salons)",
+    "adSalons": "Salons",
+    "adOfficeCount": "Nombre de bureaux",
+    "adBedroomCount": "Nombre de chambres",
+    "adMeetingRoomCount": "Nombre de salles de réunion",
+    "adSalonCount": "Nombre de salons",
+    "adBuildingRent": "Location de l'immeuble",
+    "adMonthlyRent": "Loyer mensuel",
+    "adSalePrice": "Prix de vente",
+    "adPrimaryNumber": "Numéro principal",
+    "adOtherNumber": "Autre numéro",
+    "adCover": "Couverture",
+    "adSetCover": "Définir couverture",
+    "photoCatOther": "Autres photos",
+    "photoCatBathrooms": "Salles de bain & WC",
+    "photoCatExterior": "Extérieur (jardin, piscine)",
+    "photoCatCommon": "Espaces communs",
+    "depGasCity": "De ville",
+    "depPriceFixed": "Fixe",
+    "depPriceNegotiable": "Négociable",
+    "depBuffer1Night": "1 nuit de battement",
+    "depAllYear": "Toute l'année",
+    "depSeasonal": "Saisonnier",
+    "depCatchTitle": "Titre accrocheur",
+    "depShortDesc": "Description courte",
+    "depCentimesMillions": "{v} Millions de centimes",
+    "depCentimesMilliards": "{v} Milliards de centimes",
+    "depCentimes": "{v} Centimes",
+    "curDA": "DA"
   },
   "HomePage": {
     "categoryLabel": "Catégorie",
@@ -1321,6 +1987,37 @@
         "VILLA": "Villa",
         "NIVEAU_VILLA": "Niveau de Villa",
         "IMMEUBLE_COMPLET": "Immeuble complet"
+      },
+      "INDUSTRIEL": {
+        "ENTREPOT": "Entrepôt",
+        "USINE": "Usine",
+        "LOCAL_ACTIVITE": "Local d'activité",
+        "CENTRE_LOGISTIQUE": "Centre logistique",
+        "CHAMBRE_FROIDE": "Chambre froide",
+        "AUTRE": "Autre"
+      },
+      "BUREAUX_COMMERCES": {
+        "BUREAU_FERME": "Bureau fermé",
+        "OPEN_SPACE": "Open space",
+        "LOCAL_COMMERCIAL": "Local commercial",
+        "BOUTIQUE": "Boutique",
+        "RESTAURANT_CAFE": "Restaurant / Café",
+        "SHOWROOM": "Showroom",
+        "AUTRE": "Autre"
+      },
+      "TERRAIN_FONCIER": {
+        "TERRAIN_CONSTRUCTIBLE": "Terrain constructible",
+        "TERRAIN_AGRICOLE": "Terrain agricole",
+        "FONCIER_INDUSTRIEL": "Foncier industriel",
+        "TERRAIN_VIABILISE": "Terrain viabilisé",
+        "TERRAIN_NON_VIABILISE": "Terrain non viabilisé"
+      },
+      "HOTELIER": {
+        "HOTEL": "Hôtel",
+        "COMPLEXE_TOURISTIQUE": "Complexe touristique",
+        "BUNGALOW": "Bungalow",
+        "RESIDENCE_HOTELIERE": "Résidence hôtelière",
+        "AUTRE": "Autre"
       }
     },
     "RESEARCH_INTERLOCUTORS": {
@@ -1328,6 +2025,26 @@
         "PROMOTEUR_IMMOBILIER": "Promoteur immobilier",
         "AGENCE_IMMOBILIERE": "Agence immobilière",
         "PARTICULIER": "Propriétaire particulier"
+      },
+      "INDUSTRIEL": {
+        "PARTICULIER": "Particulier",
+        "AGENCE_IMMOBILIERE": "Agence immobilière",
+        "PROFESSIONNEL_INDUSTRIE_LOGISTIQUE": "Professionnel de l'industrie / Logistique"
+      },
+      "BUREAUX_COMMERCES": {
+        "PARTICULIER": "Particulier",
+        "AGENCE_IMMOBILIERE": "Agence immobilière",
+        "PROFESSIONNEL_IMMOBILIER_ENTREPRISE": "Professionnel de l'immobilier d'entreprise"
+      },
+      "TERRAIN_FONCIER": {
+        "PARTICULIER": "Particulier",
+        "AGENCE_IMMOBILIERE": "Agence immobilière",
+        "PROMOTEUR_AMENAGEUR_FONCIER": "Promoteur / Aménageur foncier"
+      },
+      "HOTELIER": {
+        "PARTICULIER": "Particulier",
+        "AGENCE_IMMOBILIERE": "Agence immobilière",
+        "PROFESSIONNEL_HOTELLERIE_TOURISME": "Professionnel de l'hôtellerie / tourisme"
       }
     },
     "SITUATION_OPTIONS": {
@@ -1374,6 +2091,251 @@
     "VILLA_LEVEL_ENTRANCE_OPTIONS": {
       "SEPAREE": "Entrée séparée",
       "COMMUNE": "Entrée commune"
+    },
+    "OFFICE_SPACE_TYPE_OPTIONS": {
+      "OPEN_SPACE": "Open space",
+      "SEPARE_BUREAUX": "Séparé en bureaux"
+    },
+    "OFFICE_ENERGY_OPTIONS": {
+      "ELECTRICITE": "Électricité",
+      "GAZ": "Gaz",
+      "EAU": "Eau",
+      "ASSAINISSEMENT": "Assainissement"
+    },
+    "GENERAL_STATE_OPTIONS": {
+      "NEUF": "Neuf",
+      "BON_ETAT": "Bon état",
+      "A_RENOVER": "À rénover"
+    },
+    "ZONE_TYPE_OPTIONS": {
+      "COMMERCIAL": "Commercial",
+      "RESIDENTIEL": "Résidentiel",
+      "INDUSTRIEL": "Industriel"
+    },
+    "VISIBILITY_OPTIONS": {
+      "AUTOROUTE": "Visible autoroute",
+      "FACADE_COMMERCIALE": "Façade commerciale",
+      "PIETONNE": "Forte visibilité piétonne",
+      "ROUTIERE": "Bonne visibilité routière"
+    },
+    "LOCAL_STYLE_ETAT_OPTIONS": {
+      "MODERNE": "Moderne",
+      "CLASSIQUE": "Classique",
+      "A_RENOVER": "À rénover"
+    },
+    "LOCAL_ENVIRONMENT_OPTIONS": {
+      "GALERIE_MARCHANDE": "Galerie marchande",
+      "CENTRE_COMMERCIAL": "Centre commercial",
+      "RUE_COMMERCIALE": "Rue commerciale",
+      "ZONE_ACTIVITE_COMMERCIALE": "Zone d'activité commerciale",
+      "ZONE_INDUSTRIELLE": "Zone industrielle",
+      "AUTRE": "Autre"
+    },
+    "LOCAL_USAGE_OPTIONS": {
+      "MAGASIN": "Magasin",
+      "DEPOT": "Dépôt",
+      "BUREAU": "Bureau",
+      "SHOWROOM": "Showroom",
+      "AUTRE": "Autre"
+    },
+    "HANGAR_USAGE_OPTIONS": {
+      "STOCKAGE": "Stockage",
+      "PRODUCTION": "Production"
+    },
+    "INDUSTRIAL_ZONE_OPTIONS": {
+      "ZONE_INDUSTRIELLE": "Zone industrielle",
+      "ZONE_URBAINE": "Zone urbaine"
+    },
+    "USINE_EQUIPMENT_OPTIONS": {
+      "MURS_NUS": "Murs nus (Vide)",
+      "EQUIPEE": "Équipée (Clé en main avec lignes)"
+    },
+    "USINE_ACTIVITY_OPTIONS": {
+      "AGROALIMENTAIRE": "Agroalimentaire",
+      "PHARMACEUTIQUE_COSMETIQUE": "Pharmaceutique / Cosmétique",
+      "CHIMIQUE": "Chimique",
+      "MATERIAUX_CONSTRUCTION": "Matériaux de construction",
+      "PLASTURGIE_EMBALLAGE": "Plasturgie & Emballage",
+      "SIDERURGIE_METALLURGIE": "Sidérurgie & Métallurgie",
+      "TEXTILE_CUIR": "Textile & Cuir",
+      "ELECTROMENAGER_ELECTRONIQUE": "Électroménager & Électronique",
+      "MECANIQUE_AUTOMOBILE": "Mécanique & Automobile",
+      "RECYCLAGE_ENVIRONNEMENT": "Recyclage & Environnement",
+      "PAPIER_EDITION": "Papier & Édition",
+      "AUTRE_ACTIVITE": "Autre activité"
+    },
+    "CF_ACTIVITY_OPTIONS": {
+      "AGROALIMENTAIRE_CF": "Agroalimentaire",
+      "GLACES_SURGELES": "Glaces & Surgelés",
+      "PHARMACEUTIQUE_CF": "Pharmaceutique",
+      "CHIMIQUE_CF": "Chimique",
+      "HORTICOLE_AGRICOLE": "Horticole & Agricole",
+      "AUTRE_CF": "Autre activité"
+    },
+    "CF_TYPE_FROID_OPTIONS": {
+      "POSITIF": "Positif",
+      "NEGATIF": "Négatif",
+      "ULTRA_FROID": "Ultra Froid (Tunnel de congélation)"
+    },
+    "CF_MODE_GESTION_OPTIONS": {
+      "SANS_GESTION": "Sans gestion (Murs seuls)",
+      "AVEC_GESTION": "Avec gestion (Service complet)"
+    },
+    "INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS": {
+      "AGENCE_IMMOBILIERE": "Agence immobilière",
+      "PARTICULIER": "Particulier"
+    },
+    "HTL_PROFIL_GROUPE_OPTIONS": {
+      "FAMILIAL": "Exclusivement Familial",
+      "PROFESSIONNEL": "Professionnel / Affaires",
+      "GROUPE_AMIS": "Groupe d'amis"
+    },
+    "HTL_CLASSEMENT_OPTIONS": {
+      "1": "1★",
+      "2": "2★",
+      "3": "3★",
+      "4": "4★",
+      "5": "5★"
+    },
+    "HTL_TYPE_ETABLISSEMENT_OPTIONS": {
+      "HOTEL": "Hôtel",
+      "COMPLEXE_TOURISTIQUE": "Complexe touristique",
+      "APPART_HOTEL": "Appart-hôtel",
+      "MOTEL_RELAIS": "Motel / Relais",
+      "CAMPING_CLASSE": "Camping classé"
+    },
+    "HTL_FORMULE_OPTIONS": {
+      "LOGEMENT_ENTIER": "Logement complet / Entier",
+      "CHAMBRE_PRIVEE": "Chambre privée",
+      "A_LA_PLACE": "À la place / Au lit"
+    },
+    "HTL_GAMME_CHAMBRE_OPTIONS": {
+      "STANDARD": "Standard",
+      "SUITE": "Suite",
+      "PREMIUM": "Premium / Présidentielle"
+    },
+    "HTL_TYPE_COUCHAGE_OPTIONS": {
+      "LIT_SIMPLE": "Lit simple individuel",
+      "LIT_SUPERPOSE": "Lit superposé",
+      "MATELAS_SOL": "Matelas au sol (Style traditionnel saharien)"
+    },
+    "HTL_NATURE_BIEN_OPTIONS": {
+      "VILLA_NIVEAU": "Villa / Niveau de Villa",
+      "APPARTEMENT": "Appartement",
+      "STUDIO": "Studio",
+      "DUPLEX_TRIPLEX": "Duplex / Triplex",
+      "BUNGALOW_CHALET": "Bungalow / Chalet",
+      "INSOLITE": "Hébergement insolite"
+    },
+    "HTL_ACCESSIBILITE_OPTIONS": {
+      "INDIFFERENT": "Indifférent",
+      "PLAIN_PIED": "Plain-pied (RDC)",
+      "ETAGE_ASCENSEUR": "Étage AVEC ascenseur obligatoire"
+    },
+    "HTL_AMBIANCE_OPTIONS": {
+      "BALNEAIRE": "Balnéaire",
+      "URBAIN": "Urbain",
+      "SAHARIEN": "Saharien",
+      "THERMAL": "Thermal",
+      "CLIMATIQUE": "Climatique"
+    },
+    "HTL_BALNEAIRE_OPTIONS": {
+      "PLAGE_PRIVEE": "Proximité plage privée obligatoirement",
+      "PLAGE_PUBLIQUE": "Plage publique acceptée"
+    },
+    "HTL_URBAIN_OPTIONS": {
+      "COMMERCES": "Commerces",
+      "RESTAURANTS": "Restaurants",
+      "CENTRES_COMMERCIAUX": "Centres commerciaux / Souks"
+    },
+    "HTL_SAHARIEN_OPTIONS": {
+      "CIRCUITS_4X4": "Circuits 4x4 / Quad",
+      "MEHAREE": "Méharée",
+      "BIVOUAC": "Bivouac sous les étoiles"
+    },
+    "HTL_THERMAL_OPTIONS": {
+      "SOURCE_PROXIMITE": "Source thermale à proximité",
+      "HAMMAM_INTEGRE": "Hammam intégré à l'établissement obligatoire"
+    },
+    "HTL_CLIMATIQUE_OPTIONS": {
+      "FORET_MONTAGNE_PIED": "Forêt / Montagne accessible à pied",
+      "PISTE_SKI_MATERIEL": "Piste de ski + location de matériel"
+    },
+    "HTL_VUE_OPTIONS": {
+      "MER": "Vue sur mer",
+      "DUNES_OASIS": "Vue sur les Dunes / Oasis",
+      "MONTAGNE": "Vue sur montagne",
+      "JARDIN_PISCINE": "Vue sur jardin / Piscine",
+      "SANS_IMPORTANCE": "Sans importance"
+    },
+    "HTL_SERVICES_REPAS_OPTIONS": {
+      "PETIT_DEJEUNER": "Petit-déjeuner inclus",
+      "DEMI_PENSION": "Demi-pension / Pension complète",
+      "LINGE_FOURNI": "Linge de maison fourni"
+    },
+    "HTL_CUISINE_OPTIONS": {
+      "CUISINE_EQUIPEE": "Cuisine équipée autonome",
+      "REFRIGERATEUR": "Réfrigérateur",
+      "MICRO_ONDES": "Micro-ondes",
+      "MACHINE_CAFE": "Machine à café"
+    },
+    "HTL_CONFORT_OPTIONS": {
+      "CLIMATISATION": "Climatisation",
+      "CHAUFFAGE": "Chauffage",
+      "WIFI": "Connexion Wi-Fi Internet",
+      "MACHINE_LAVER": "Machine à laver"
+    },
+    "HTL_FLUIDES_OPTIONS": {
+      "CITERNE": "Citerne / Réservoir avec pompe (Eau H24)",
+      "GROUPE_ELECTROGENE": "Groupe électrogène (Secours électricité)",
+      "CHAUFFE_EAU": "Chauffe-eau opérationnel (Eau chaude en permanence)"
+    },
+    "HTL_LOISIRS_OPTIONS": {
+      "PISCINE": "Piscine privée / résidents",
+      "SPA_SAUNA": "Espace Spa / Sauna",
+      "AIRE_JEUX": "Aire de jeux enfants",
+      "BARBECUE": "Zone Barbecue"
+    },
+    "HTL_PAIEMENTS_LOCAUX_OPTIONS": {
+      "ESPECES": "Espèces",
+      "BARIDIMOB": "BaridiMob",
+      "CCP": "CCP",
+      "EDAHABIA": "Carte Edahabia"
+    },
+    "HTL_PAIEMENTS_INTL_OPTIONS": {
+      "VISA": "Carte VISA",
+      "MASTERCARD": "MasterCard"
+    },
+    "TER_AGRI_CULTURE_OPTIONS": {
+      "MARAICHAGE": "Maraîchage",
+      "ARBORICULTURE": "Arboriculture",
+      "VITICULTURE": "Viticulture",
+      "CEREALICULTURE": "Céréaliculture",
+      "ELEVAGE": "Élevage",
+      "AUTRE": "Autre"
+    },
+    "TER_AGRI_ETAT_OPTIONS": {
+      "VIDE": "Terrain vide",
+      "PLANTE": "Terrain planté",
+      "EXPLOITE": "Exploité"
+    },
+    "TER_IND_ZONE_OPTIONS": {
+      "INDUSTRIELLE": "Industrielle",
+      "URBAINE": "Urbaine",
+      "ACTIVITE": "Activité"
+    },
+    "TER_RES_ZONE_OPTIONS": {
+      "LOTISSEMENT_CLASSIQUE": "Lotissement classique",
+      "COOPERATIVE_IMMOBILIERE": "Coopérative immobilière",
+      "RESIDENCE_FERMEE": "Résidence fermée"
+    },
+    "TER_TOU_VOCATION_OPTIONS": {
+      "BALNEAIRE": "Balnéaire",
+      "URBAINE": "Urbaine",
+      "CLIMATIQUE": "Climatique",
+      "SAHARIENNE": "Saharienne",
+      "THERMALE": "Thermale",
+      "AUTRE": "Autre situation"
     }
   },
   "DepositOptions": {
@@ -1478,6 +2440,1332 @@
       "fiber": "Fibre",
       "adsl": "ADSL",
       "phone_line": "Ligne fixe"
+    },
+    "INDUSTRIAL_SECTORS": {
+      "AGROALIMENTAIRE": {
+        "label": "Agroalimentaire",
+        "info": "Transformation, boissons, froid"
+      },
+      "PHARMACEUTIQUE_COSMETIQUE": {
+        "label": "Pharmaceutique / Cosmétique",
+        "info": "Médicaments, soins"
+      },
+      "CHIMIQUE": {
+        "label": "Chimique",
+        "info": "Détergents, peintures, engrais"
+      },
+      "MATERIAUX_CONSTRUCTION": {
+        "label": "Matériaux de construction",
+        "info": "Briqueterie, menuiserie, PVC"
+      },
+      "PLASTURGIE_EMBALLAGE": {
+        "label": "Plasturgie & Emballage",
+        "info": "Injection, soufflage, carton"
+      },
+      "SIDERURGIE_METALLURGIE": {
+        "label": "Sidérurgie & Métallurgie",
+        "info": "Fer, acier, fonderie"
+      },
+      "TEXTILE_CUIR": {
+        "label": "Textile & Cuir",
+        "info": "Confection, chaussures"
+      },
+      "ELECTROMENAGER_ELECTRONIQUE": {
+        "label": "Électroménager & Électronique",
+        "info": "Assemblage, composants"
+      },
+      "MECANIQUE_AUTOMOBILE": {
+        "label": "Mécanique & Automobile",
+        "info": "Pièces de rechange, maintenance"
+      },
+      "RECYCLAGE_ENVIRONNEMENT": {
+        "label": "Recyclage & Environnement",
+        "info": "Plastique, papier, métaux"
+      },
+      "PAPIER_EDITION": {
+        "label": "Papier & Édition",
+        "info": "Imprimerie, papeterie"
+      },
+      "AUTRE_ACTIVITE": {
+        "label": "Autre activité"
+      }
+    },
+    "INDUSTRIAL_RENTAL_TYPES": {
+      "MURS_NUS": {
+        "label": "Murs nus (Vide)"
+      },
+      "EQUIPEE": {
+        "label": "Équipée (Clé en main avec lignes)"
+      }
+    },
+    "INDUSTRIAL_GLOBAL_STATES": {
+      "NEUF": {
+        "label": "Neuf (Jamais servi)"
+      },
+      "BON_ETAT_MARCHE": {
+        "label": "Bon état"
+      },
+      "ANCIEN": {
+        "label": "Ancien (À réviser)"
+      }
+    },
+    "INDUSTRIAL_SITUATIONS": {
+      "ZONE_INDUSTRIELLE": {
+        "label": "Zone industrielle (ZI/ZAC)"
+      },
+      "ZONE_URBAINE": {
+        "label": "Zone urbaine (Ville)"
+      }
+    },
+    "INDUSTRIAL_ACCESS_TRANSPORT": {
+      "SEMI_REMORQUE": {
+        "label": "Semi-remorque (40 T)"
+      },
+      "CAMIONNETTE": {
+        "label": "Camionnette (3.5 T)"
+      },
+      "PETIT_PORTEUR": {
+        "label": "Petit porteur (10T)"
+      }
+    },
+    "INDUSTRIAL_SOCIAL_LOCALES": {
+      "VESTIAIRES": {
+        "label": "Vestiaires"
+      },
+      "REFECTOIRE": {
+        "label": "Réfectoire"
+      },
+      "SANITAIRES_HF": {
+        "label": "Sanitaires H/F"
+      }
+    },
+    "INDUSTRIAL_HEBERGEMENT": {
+      "LOGEMENT_FONCTION": {
+        "label": "Logement"
+      },
+      "DORTOIRS": {
+        "label": "Dortoirs"
+      }
+    },
+    "INDUSTRIAL_SECURITY": {
+      "POSTE_GARDE": {
+        "label": "Poste de garde"
+      },
+      "CLOTURE_MACONNEE": {
+        "label": "Clôture maçonnée"
+      },
+      "CAMERAS": {
+        "label": "Caméras"
+      }
+    },
+    "INDUSTRIAL_WATER_SOURCES": {
+      "RESEAU_ADE": {
+        "label": "Réseau ADE"
+      },
+      "FORAGE": {
+        "label": "Forage"
+      },
+      "BACHE_EAU": {
+        "label": "Bâche à eau"
+      }
+    },
+    "INDUSTRIAL_FIRE_NETWORK": {
+      "RIA": {
+        "label": "R.I.A (Robinets d'Incendie Armés)"
+      },
+      "SPRINKLERS": {
+        "label": "Système Sprinklers"
+      },
+      "COLONNES_SECHES": {
+        "label": "Colonnes sèches"
+      }
+    },
+    "INDUSTRIAL_FIRE_EQUIPMENT": {
+      "BACHE_EAU": {
+        "label": "Bâche à eau anti-incendie (réserve dédiée)"
+      },
+      "MOTOPOMPE": {
+        "label": "Motopompe / Groupe de surpression"
+      }
+    },
+    "CF_SECTORS": {
+      "AGROALIMENTAIRE_CF": {
+        "label": "Agroalimentaire",
+        "info": "Viandes, fruits, légumes, laitages"
+      },
+      "GLACES_SURGELES": {
+        "label": "Glaces & Surgelés",
+        "info": "Spécial \"Ice Cream\""
+      },
+      "PHARMACEUTIQUE_CF": {
+        "label": "Pharmaceutique",
+        "info": "Normes de traçabilité et hygiène"
+      },
+      "CHIMIQUE_CF": {
+        "label": "Chimique"
+      },
+      "HORTICOLE_AGRICOLE": {
+        "label": "Horticole & Agricole"
+      },
+      "AUTRE_CF": {
+        "label": "Autre activité"
+      }
+    },
+    "CF_STRUCTURE_TYPES": {
+      "CELLULE_UNIQUE": {
+        "label": "Cellule unique (Une seule chambre)"
+      },
+      "COMPLEXE_FRIGORIFIQUE": {
+        "label": "Plusieurs cellules (Complexe frigorifique)"
+      }
+    },
+    "CF_ZONE_DECHARGEMENT": {
+      "QUAI_NIVELEUR_SAS": {
+        "label": "Quai niveleur SAS étanche"
+      },
+      "QUAI_SIMPLE": {
+        "label": "Quai simple"
+      },
+      "PLAIN_PIED_DECHARGT": {
+        "label": "Plain-pied"
+      }
+    },
+    "CF_TECHNIQUE_FROID": {
+      "SOL_CHAUFFANT": {
+        "label": "Sol chauffant (Anti-gel dalle)"
+      },
+      "DEGIVRAGE_AUTO": {
+        "label": "Dégivrage Auto"
+      }
+    },
+    "CF_MODE_GESTION": {
+      "SANS_GESTION": {
+        "label": "SANS GESTION (Murs seuls)",
+        "description": "Le locataire gère son personnel et ses flux."
+      },
+      "AVEC_GESTION": {
+        "label": "AVEC GESTION (Service complet)",
+        "description": "Vous assurez la manutention et le stockage."
+      }
+    },
+    "CF_FLEXIBILITE": {
+      "SURFACE_DEDIEE": {
+        "label": "Surface dédiée",
+        "description": "Location de la pièce entière ou du complexe total."
+      },
+      "CO_STOCKAGE": {
+        "label": "Co-stockage",
+        "description": "Location flexible à la palette (espace partagé)."
+      }
+    },
+    "CF_DUREE_ENGAGEMENT": {
+      "ANNUELLE": {
+        "label": "Annuelle (Bail long terme)"
+      },
+      "MENSUELLE_HEBDO": {
+        "label": "Mensuelle / Hebdomadaire"
+      },
+      "JOURNEE_SPOT": {
+        "label": "À la journée (Stockage \"Spot\")"
+      }
+    },
+    "TERRAIN_TOPOGRAPHIE": {
+      "PLAT": {
+        "label": "Plat"
+      },
+      "EN_PENTE": {
+        "label": "En pente"
+      },
+      "ACCIDENTE": {
+        "label": "Accidenté (escarpé)"
+      }
+    },
+    "TERRAIN_STATUT_ZONE": {
+      "LOTISSEMENT_CLASSIQUE": {
+        "label": "Lotissement classique"
+      },
+      "COOPERATIVE_IMMOBILIERE": {
+        "label": "Coopérative immobilière"
+      },
+      "RESIDENCE_FERMEE": {
+        "label": "Résidence fermée"
+      }
+    },
+    "TERRAIN_INDUSTRIEL_ZONE": {
+      "ZONE_INDUSTRIELLE": {
+        "label": "Zone Industrielle"
+      },
+      "ZONE_URBAINE_IND": {
+        "label": "Zone Urbaine"
+      },
+      "ZONE_ACTIVITE": {
+        "label": "Zone d'Activité"
+      }
+    },
+    "TERRAIN_DOCUMENTS": {
+      "ACTE_PROPRIETE": {
+        "label": "Acte de propriété (Notarié)"
+      },
+      "LIVRET_FONCIER": {
+        "label": "Livret foncier"
+      },
+      "CERTIFICAT_URBANISME": {
+        "label": "Certificat d'urbanisme"
+      },
+      "PERMIS_CONSTRUIRE": {
+        "label": "Permis de construire (Existant)"
+      },
+      "PLAN_MASSE": {
+        "label": "Plan de masse"
+      }
+    },
+    "TERRAIN_RACCORDEMENTS": {
+      "EAU": {
+        "label": "Eau (ADE)"
+      },
+      "ELECTRICITE": {
+        "label": "Électricité (Sonelgaz)"
+      },
+      "GAZ": {
+        "label": "Gaz"
+      },
+      "ASSAINISSEMENT": {
+        "label": "Assainissement"
+      },
+      "INTERNET": {
+        "label": "Internet / Fibre"
+      }
+    },
+    "TERRAIN_AGRICOLE_UNITE": {
+      "M2": {
+        "label": "m²"
+      },
+      "HA": {
+        "label": "Hectare"
+      },
+      "DOUNEM": {
+        "label": "Are"
+      }
+    },
+    "TERRAIN_AGRICOLE_VOCATION": {
+      "MARAICHAGE": {
+        "label": "Maraîchage"
+      },
+      "ARBORICULTURE": {
+        "label": "Arboriculture fruitière"
+      },
+      "VITICULTURE": {
+        "label": "Viticulture"
+      },
+      "CEREALES": {
+        "label": "Céréales (blé, orge…)"
+      },
+      "ELEVAGE": {
+        "label": "Élevage"
+      },
+      "MIXTE": {
+        "label": "Autre"
+      }
+    },
+    "TERRAIN_AGRICOLE_RESSOURCES_EAU": {
+      "PUITS": {
+        "label": "Puits"
+      },
+      "CANAL_IRRIGATION": {
+        "label": "Canal d'irrigation"
+      },
+      "BARRAGE_RETENUE": {
+        "label": "Barrage / retenue d'eau"
+      },
+      "BASSIN_COLLECTE": {
+        "label": "Bassin de collecte"
+      },
+      "RESEAU_ADE": {
+        "label": "Réseau ADE"
+      },
+      "FORAGE": {
+        "label": "Forage"
+      }
+    },
+    "TERRAIN_AGRICOLE_EXPOSITION": {
+      "NORD": {
+        "label": "Nord"
+      },
+      "SUD": {
+        "label": "Sud"
+      },
+      "EST": {
+        "label": "Est"
+      },
+      "OUEST": {
+        "label": "Ouest"
+      },
+      "NORD_EST": {
+        "label": "Nord-Est"
+      },
+      "NORD_OUEST": {
+        "label": "Nord-Ouest"
+      },
+      "SUD_EST": {
+        "label": "Sud-Est"
+      },
+      "SUD_OUEST": {
+        "label": "Sud-Ouest"
+      }
+    },
+    "TERRAIN_AGRICOLE_ENSOLEILLEMENT": {
+      "ELEVE": {
+        "label": "Élevé (> 8h/jour)"
+      },
+      "MOYEN": {
+        "label": "Moyen (5 à 8h/jour)"
+      },
+      "FAIBLE": {
+        "label": "Faible (< 5h/jour)"
+      }
+    },
+    "TERRAIN_AGRICOLE_NATURE_SOL": {
+      "ARGILEUX": {
+        "label": "Argileux"
+      },
+      "SABLONNEUX": {
+        "label": "Sablonneux"
+      },
+      "LIMONEUX": {
+        "label": "Limoneux"
+      },
+      "AUTRE_MIXTE": {
+        "label": "Autre"
+      }
+    },
+    "TERRAIN_AGRICOLE_QUALITE_EAU": {
+      "DOUCE": {
+        "label": "Douce"
+      },
+      "SAUMATRE": {
+        "label": "Saumâtre"
+      },
+      "AUTRE_EAU": {
+        "label": "Autre"
+      }
+    },
+    "TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE": {
+      "BASSIN_RETENTION": {
+        "label": "Bassin de rétention / Réservoir"
+      },
+      "IRRIGATION_GOUTTE": {
+        "label": "Système d'irrigation goutte-à-goutte"
+      },
+      "AUTRE_SYSTEME": {
+        "label": "Autre système"
+      }
+    },
+    "TERRAIN_AGRICOLE_ACCES": {
+      "ROUTE_GOUDRON": {
+        "label": "Route goudronnée"
+      },
+      "PISTE_CARROSSABLE": {
+        "label": "Piste carrossable (accessible en voiture)"
+      },
+      "ACCES_DIFFICILE": {
+        "label": "Accès difficile (nécessite 4x4)"
+      }
+    },
+    "TERRAIN_AGRICOLE_ACCES_LOURDS": {
+      "CAMION_PORTEUR": {
+        "label": "Accessible en Camion porteur"
+      },
+      "SEMI_REMORQUE": {
+        "label": "Accessible en Semi-remorque"
+      }
+    },
+    "TERRAIN_AGRICOLE_CONSTRUCTIONS": {
+      "HANGAR_STOCKAGE": {
+        "label": "Hangar de stockage"
+      },
+      "ECURIES_ELEVAGE": {
+        "label": "Bâtiment d'élevage"
+      },
+      "MAISON_GARDIENNAGE": {
+        "label": "Logement de fonction"
+      },
+      "AUCUNE": {
+        "label": "Aucune construction"
+      }
+    },
+    "TERRAIN_AGRICOLE_CLOTURE": {
+      "OUVERT": {
+        "label": "Terrain non clôturé"
+      },
+      "GRILLAGE": {
+        "label": "Clôture en grillage"
+      },
+      "MURS_ENCEINTE": {
+        "label": "Murs d'enceinte"
+      },
+      "HAIES": {
+        "label": "Haies naturelles"
+      }
+    },
+    "TERRAIN_AGRICOLE_ZONE": {
+      "URBAINE": {
+        "label": "Zone urbaine"
+      },
+      "ISOLEE": {
+        "label": "Zone isolée"
+      },
+      "SAHARIENNE": {
+        "label": "Zone saharienne"
+      }
+    },
+    "TERRAIN_TOURISTIQUE_ZONE": {
+      "BALNEAIRE": {
+        "label": "Zone balnéaire (Littoral, bord de mer)"
+      },
+      "SAHARIEN": {
+        "label": "Zone saharienne (Sud, oasis, tourisme saharien)"
+      },
+      "CLIMATIQUE": {
+        "label": "Zone climatique (Montagne, forêt, tourisme vert)"
+      },
+      "THERMAL": {
+        "label": "Zone thermale (Sources thermales, hammams)"
+      },
+      "URBAINE": {
+        "label": "Zone urbaine (Centre-ville, tourisme d'affaires)"
+      },
+      "AUTRE_ZONE": {
+        "label": "Autre situation"
+      }
+    },
+    "TERRAIN_TOURISTIQUE_ZET": {
+      "OUI": {
+        "label": "Oui — Situé dans une Z.E.T décrétée"
+      },
+      "NON": {
+        "label": "Non"
+      }
+    },
+    "TERRAIN_TOURISTIQUE_PAT": {
+      "OUI_APPROUVE": {
+        "label": "Oui (Approuvé et publié)"
+      },
+      "EN_COURS": {
+        "label": "En cours d'étude / En cours d'approbation"
+      },
+      "NON": {
+        "label": "Non / Aucun plan d'aménagement disponible"
+      }
+    },
+    "IMMEUBLE_TYPE_ZONE": {
+      "ZONE_COMMERCIALE": {
+        "label": "Zone Commerciale"
+      },
+      "ZONE_RESIDENTIELLE": {
+        "label": "Zone Résidentielle"
+      },
+      "ZONE_INDUSTRIELLE": {
+        "label": "Zone Industrielle"
+      }
+    },
+    "IMMEUBLE_VISIBILITE": {
+      "VIS_AUTOROUTE": {
+        "label": "Visible depuis l'autoroute"
+      },
+      "ANGLE_RUE": {
+        "label": "Façade commerciale"
+      },
+      "FORTE_VISIBILITE": {
+        "label": "Forte visibilité piétonne et routière"
+      }
+    },
+    "IMMEUBLE_TYPE_ACCES": {
+      "ROUTE_MIXTE": {
+        "label": "Route mixte (Piétonne et Voiture)",
+        "description": "Accessible aux véhicules avec trottoirs aménagés (idéal tous commerces)"
+      },
+      "PIETONNE": {
+        "label": "Route uniquement piétonne",
+        "description": "Zone 100% piétonne / Centre-ville historique (fort flux, restrictions livraisons)"
+      },
+      "VOITURE": {
+        "label": "Route uniquement voiture",
+        "description": "Axe routier rapide / Voie express (fort flux véhicules, aucun passage piéton)"
+      }
+    },
+    "IMMEUBLE_ETAT_GLOBAL": {
+      "NEUF": {
+        "label": "Neuf / Première occupation",
+        "description": "Prêt à l'emploi, normes récentes"
+      },
+      "BON_ETAT": {
+        "label": "Ancien / Bon état",
+        "description": "Structure saine, rafraîchissement mineur possible"
+      },
+      "A_RENOVER": {
+        "label": "À rénover / À aménager",
+        "description": "Travaux lourds ou aménagement intérieur complet à prévoir"
+      }
+    },
+    "SHOWROOM_STYLE": {
+      "MODERNE": {
+        "label": "Moderne"
+      },
+      "CLASSIQUE": {
+        "label": "Classique"
+      },
+      "INDUSTRIEL": {
+        "label": "Industriel"
+      }
+    },
+    "SHOWROOM_STRUCTURE": {
+      "BETON_ARME": {
+        "label": "Béton armé"
+      },
+      "STRUCTURE_METALLIQUE": {
+        "label": "Structure métallique"
+      },
+      "AUTRE": {
+        "label": "Autre"
+      }
+    },
+    "LOCAL_ENVIRONNEMENT": {
+      "GALERIE_MARCHANDE": {
+        "label": "Galerie marchande"
+      },
+      "CENTRE_COMMERCIAL": {
+        "label": "Centre commercial"
+      },
+      "RUE_COMMERCANTE": {
+        "label": "Rue commerçante"
+      },
+      "ZONE_ACTIVITE": {
+        "label": "Zone d'activité commerciale"
+      },
+      "ZONE_INDUSTRIELLE": {
+        "label": "Zone industrielle"
+      },
+      "AUTRE": {
+        "label": "Autre"
+      }
+    },
+    "LOCAL_STYLE": {
+      "MODERNE": {
+        "label": "Moderne"
+      },
+      "CLASSIQUE": {
+        "label": "Classique"
+      },
+      "BRUT": {
+        "label": "À rénover"
+      }
+    },
+    "LOCAL_ZONE_TYPE": {
+      "COMMERCIALE": {
+        "label": "Zone commerciale"
+      },
+      "RESIDENTIELLE": {
+        "label": "Zone résidentielle"
+      },
+      "INDUSTRIELLE": {
+        "label": "Zone industrielle"
+      }
+    },
+    "LOCAL_FLUX": {
+      "ELEVE": {
+        "label": "Élevé"
+      },
+      "MOYEN": {
+        "label": "Moyen"
+      },
+      "FAIBLE": {
+        "label": "Faible"
+      }
+    },
+    "LOCAL_USAGE": {
+      "MAGASIN": {
+        "label": "Magasin"
+      },
+      "DEPOT": {
+        "label": "Dépôt"
+      },
+      "BUREAU": {
+        "label": "Bureau"
+      },
+      "SHOWROOM": {
+        "label": "Showroom"
+      },
+      "AUTRE": {
+        "label": "Autre"
+      }
+    },
+    "BLOC_TYPE_ESPACE": {
+      "OPEN_SPACE": {
+        "label": "Open space"
+      },
+      "CLOISONNE": {
+        "label": "Bureaux cloisonnés"
+      },
+      "AUTRE": {
+        "label": "Autre"
+      }
+    },
+    "BLOC_CLOISONNEMENT": {
+      "AMOVIBLE": {
+        "label": "Amovible (modulable)"
+      },
+      "FIXE": {
+        "label": "Fixe (maçonnerie)"
+      },
+      "VITRE": {
+        "label": "Vitré"
+      }
+    },
+    "BLOC_CUISINE": {
+      "CANTINE": {
+        "label": "Cantine"
+      },
+      "KITCHENETTE": {
+        "label": "Kitchenette à chaque étage"
+      },
+      "SANS_CUISINE": {
+        "label": "Sans cuisine"
+      }
+    },
+    "BLOC_CONNEXION": {
+      "CABLEE": {
+        "label": "Câblée (RJ45)"
+      },
+      "WIFI": {
+        "label": "Wi-Fi"
+      },
+      "MIXTE": {
+        "label": "Mixte (câblée + Wi-Fi)"
+      }
+    },
+    "BLOC_EQUIPEMENT_SERVEUR": {
+      "ARMOIRE_SERVEUR": {
+        "label": "Armoire serveur"
+      },
+      "DATA_ROOM": {
+        "label": "Data room / Salle serveurs"
+      },
+      "GROUPE_ELECTROGENE": {
+        "label": "Groupe électrogène"
+      },
+      "ONDULEUR_UPS": {
+        "label": "Onduleur (UPS)"
+      }
+    },
+    "HAB_CLIENT_PROFILES": {
+      "FAMILIAL": {
+        "label": "Exclusivement Familial",
+        "description": "Idéal pour le repos des familles, non adapté aux célibataires ou affaires"
+      },
+      "PROFESSIONNEL": {
+        "label": "Professionnel / Affaires",
+        "description": "Adapté aux séjours professionnels, séminaires, cadres et travailleurs"
+      },
+      "GROUPES": {
+        "label": "Groupes d'amis / Groupements",
+        "description": "Adapté aux groupes voyageant ensemble, randonneurs, etc."
+      },
+      "TOUS": {
+        "label": "Tout type de clientèle légalement admissible",
+        "description": "Ouvert à tous les profils respectant la réglementation en vigueur"
+      }
+    },
+    "HAB_FORMULES": {
+      "LOGEMENT_ENTIER": {
+        "label": "Logement entier",
+        "description": "Accès exclusif à la totalité du logement / de l'unité"
+      },
+      "CHAMBRE_PRIVEE": {
+        "label": "Chambre privée",
+        "description": "Chambre seule, espaces communs partagés"
+      },
+      "LIT_SEUL": {
+        "label": "Lit / Place seule",
+        "description": "Dortoir, espace partagé, type auberge/traditionnel saharien"
+      }
+    },
+    "HAB_UNIT_TYPES": {
+      "APPARTEMENT": {
+        "label": "Appartement"
+      },
+      "STUDIO": {
+        "label": "Studio"
+      },
+      "VILLA": {
+        "label": "Villa / Niveau de Villa"
+      },
+      "DUPLEX": {
+        "label": "Duplex / Triplex"
+      },
+      "BUNGALOW": {
+        "label": "Bungalow / Chalet / Structure légère"
+      },
+      "CAMPING": {
+        "label": "Emplacement de camping vide"
+      },
+      "INSOLITE": {
+        "label": "Hébergement insolite"
+      }
+    },
+    "HAB_AMBIANCES": {
+      "BALNEAIRE": {
+        "label": "Balnéaire (Mer et plage)"
+      },
+      "URBAIN": {
+        "label": "Urbain (Centre-ville et commodités)"
+      },
+      "SAHARIEN": {
+        "label": "Saharien (Désert, Oasis, Grand Sud)"
+      },
+      "THERMAL": {
+        "label": "Thermal (Proche d'un Hammam / station thermale)"
+      },
+      "CLIMATIQUE": {
+        "label": "Climatique (Montagne, Ski, Nature, Forêt)"
+      }
+    },
+    "HAB_PLAGE_ACCES": {
+      "PRIVEE": {
+        "label": "Plage privée (Réservée exclusivement aux clients)"
+      },
+      "PUBLIQUE": {
+        "label": "Plage publique (Accès libre à tout le monde)"
+      },
+      "LES_DEUX": {
+        "label": "Les deux (Plage privée + Plage publique à côté)"
+      }
+    },
+    "HAB_URBAIN_COMMODITES": {
+      "COMMERCES": {
+        "label": "Commerces de proximité (Supérette, épicerie, boulangerie)"
+      },
+      "RESTAURANTS": {
+        "label": "Restaurants et Cafés (Fast-food, salons de thé)"
+      },
+      "SHOPPING": {
+        "label": "Shopping et Boutiques (Centres commerciaux, souks)"
+      }
+    },
+    "HAB_SAHARIEN_ACTIVITES": {
+      "VISITES_GUIDEES": {
+        "label": "Visites guidées / Excursions culturelles (Ksour, musées, gravures)"
+      },
+      "QUAD_4X4": {
+        "label": "Randonnées et circuits en Quad / 4x4 (dunes de sable)"
+      },
+      "CHAMEAU": {
+        "label": "Balades à dos de chameau (Méharée)"
+      },
+      "OASIS": {
+        "label": "Découverte et visite d'Oasis (Palmerais, Foggara)"
+      },
+      "SANDBOARD": {
+        "label": "Ski sur sable / Sandboarding (glisse sur les dunes)"
+      },
+      "BIVOUAC": {
+        "label": "Bivouac / Nuit étoilée dans le désert"
+      }
+    },
+    "HAB_VUES": {
+      "MER": {
+        "label": "Vue sur mer / Front de mer"
+      },
+      "DUNES": {
+        "label": "Vue sur les Dunes / Désert / Oasis"
+      },
+      "MONTAGNE": {
+        "label": "Vue sur montagne"
+      },
+      "VILLE": {
+        "label": "Vue sur la ville / Panoramique"
+      },
+      "NATURE": {
+        "label": "Vue sur la nature / Forêt / Campagne"
+      },
+      "JARDIN": {
+        "label": "Vue sur jardin / Cour intérieure / Piscine"
+      },
+      "SANS_VUE": {
+        "label": "Sans vue spécifique / Vis-à-vis"
+      }
+    },
+    "HAB_ATTRACTIONS": {
+      "PLAGE": {
+        "label": "Plage / Mer"
+      },
+      "SITES_HISTORIQUES": {
+        "label": "Sites historiques / Musées"
+      },
+      "FORET": {
+        "label": "Forêt / Sentier de randonnée"
+      },
+      "RESTAURANTS": {
+        "label": "Restaurants / Cafés / Salons de thé"
+      },
+      "HAMMAM": {
+        "label": "Station thermale (Hammam)"
+      },
+      "CENTRE_COMMERCIAL": {
+        "label": "Centre commercial / Souk"
+      },
+      "COMMODITES": {
+        "label": "Commodités (Supérette, Pharmacie, DAB)"
+      }
+    },
+    "HAB_REPAS": {
+      "AUCUN": {
+        "label": "Aucun repas"
+      },
+      "PETIT_DEJ": {
+        "label": "Petit-déjeuner inclus"
+      },
+      "DEJEUNER": {
+        "label": "Déjeuner"
+      },
+      "DINER": {
+        "label": "Dîner"
+      }
+    },
+    "HAB_LINGE": {
+      "DRAPS": {
+        "label": "Draps fournis"
+      },
+      "SERVIETTES": {
+        "label": "Serviettes fournies"
+      },
+      "AUCUN": {
+        "label": "Aucun linge fourni"
+      }
+    },
+    "HAB_EQUIPEMENTS_CUISINE": {
+      "USTENSILES": {
+        "label": "Ustensiles de base (Casseroles, couverts)"
+      },
+      "RECHAUD": {
+        "label": "Réchaud / Cuisinière"
+      },
+      "FRIGO": {
+        "label": "Réfrigérateur"
+      },
+      "MICROONDES": {
+        "label": "Micro-ondes"
+      },
+      "CAFETIERE": {
+        "label": "Machine à café"
+      }
+    },
+    "HAB_CONFORT": {
+      "CLIM": {
+        "label": "Climatisation"
+      },
+      "CHAUFFAGE": {
+        "label": "Chauffage"
+      },
+      "TV": {
+        "label": "Télévision (TV)"
+      },
+      "WIFI": {
+        "label": "Connexion Wi-Fi / Internet"
+      },
+      "BUREAU": {
+        "label": "Espace de travail dédié (Bureau)"
+      },
+      "SECHE_CHEVEUX": {
+        "label": "Sèche-cheveux"
+      },
+      "MACHINE_LAVER": {
+        "label": "Machine à laver"
+      },
+      "FER_REPASSER": {
+        "label": "Fer à repasser"
+      }
+    },
+    "HAB_LOISIRS": {
+      "PISCINE": {
+        "label": "Piscine privée / Réservée aux résidents"
+      },
+      "AQUAPARK": {
+        "label": "Parc aquatique / Toboggans (Aqua-park)"
+      },
+      "SALLE_SPORT": {
+        "label": "Salle de sport / Fitness"
+      },
+      "SPA": {
+        "label": "Spa / Centre de bien-être (Sauna, Hammam, Massages)"
+      },
+      "TENNIS": {
+        "label": "Terrain de Tennis"
+      },
+      "PADEL": {
+        "label": "Terrain de Padel"
+      },
+      "MULTISPORTS": {
+        "label": "Terrain Basket-ball / Multisports"
+      },
+      "JEUX_ENFANTS": {
+        "label": "Aire de jeux extérieure pour enfants"
+      },
+      "JEUX_INTERIEUR": {
+        "label": "Espace de jeux intérieur / Salle de jeux"
+      },
+      "ESPACE_FAMILLE": {
+        "label": "Espace loisirs famille (pique-nique, barbecue, jardin)"
+      }
+    },
+    "HAB_SECOURS": {
+      "CITERNE": {
+        "label": "Citerne d'eau / Réservoir avec pompe (Eau H24)"
+      },
+      "CHAUFFE_EAU": {
+        "label": "Chauffe-eau fonctionnel (Eau chaude en permanence)"
+      },
+      "GROUPE_ELECTROGENE": {
+        "label": "Groupe électrogène (Électricité de secours)"
+      }
+    },
+    "HAB_PARKING": {
+      "PRIVE_GRATUIT": {
+        "label": "Parking privé et sécurisé gratuit (Garage, cour fermée)"
+      },
+      "PRIVE_PAYANT": {
+        "label": "Parking privé payant"
+      },
+      "RUE_GRATUIT": {
+        "label": "Stationnement gratuit dans la rue"
+      },
+      "GARDIEN_NUIT": {
+        "label": "Gardien de nuit présent dans la rue"
+      }
+    },
+    "HAB_ACCESSIBILITE": {
+      "PLAIN_PIED": {
+        "label": "Plain-pied (Rez-de-chaussée, sans marches)"
+      },
+      "ETAGE_ASCENSEUR": {
+        "label": "À l'étage AVEC ascenseur"
+      },
+      "ETAGE_SANS_ASCENSEUR": {
+        "label": "À l'étage SANS ascenseur"
+      }
+    },
+    "HAB_CONDITION_PAIEMENT": {
+      "100_AVANCE": {
+        "label": "Paiement total à l'avance (100%) pour bloquer la réservation"
+      },
+      "ACOMPTE": {
+        "label": "Paiement d'un acompte, le reste à l'arrivée"
+      },
+      "SUR_PLACE": {
+        "label": "Paiement total sur place le jour de l'arrivée"
+      }
+    },
+    "HAB_ACOMPTE_OPTIONS": {
+      "30": {
+        "label": "30%"
+      },
+      "50": {
+        "label": "50%"
+      }
+    },
+    "HAB_DELAI_ANNULATION": {
+      "24H": {
+        "label": "24h à l'avance"
+      },
+      "48H": {
+        "label": "48h à l'avance"
+      },
+      "7J": {
+        "label": "7 jours"
+      },
+      "14J": {
+        "label": "14 jours"
+      }
+    },
+    "HAB_NON_RESPECT": {
+      "AVANCE_CONSERVEE": {
+        "label": "L'avance est conservée"
+      },
+      "TOTALITE_DUE": {
+        "label": "La totalité du séjour est due"
+      }
+    },
+    "HAB_PAIEMENTS_LOCAUX": {
+      "ESPECES": {
+        "label": "Espèces (Paiement sur place)"
+      },
+      "VIREMENT_BANCAIRE": {
+        "label": "Virement bancaire (Compte bancaire national)"
+      },
+      "CCP": {
+        "label": "Virement CCP (Compte Courant Postal)"
+      },
+      "EDAHABIA": {
+        "label": "Carte Edahabia (paiement en ligne ou TPE)"
+      },
+      "BARIDIMOB": {
+        "label": "BaridiMob (Transfert d'argent instantané)"
+      }
+    },
+    "HAB_PAIEMENTS_INTL": {
+      "VISA": {
+        "label": "Carte VISA"
+      },
+      "MASTERCARD": {
+        "label": "MasterCard"
+      }
     }
+  },
+  "PropertyTypes": {
+    "APPARTEMENT": "Appartement",
+    "VILLA": "Villa",
+    "NIVEAU_VILLA": "Niveau de villa",
+    "IMMEUBLE_RESIDENTIEL": "Immeuble Résidentiel",
+    "DUPLEX": "Duplex",
+    "TRIPLEX": "Triplex",
+    "STUDIO": "Studio",
+    "LOFT": "Loft",
+    "TERRAIN_RESIDENTIEL": "Terrain Résidentiel",
+    "TERRAIN_INDUSTRIEL": "Terrain Industriel",
+    "TERRAIN_AGRICOLE": "Terrain Agricole",
+    "TERRAIN_TOURISTIQUE": "Terrain Touristique",
+    "APPARTEMENT_COMMERCIAL": "Appartement Commercial",
+    "VILLA_COMMERCIALE": "Villa Commerciale",
+    "NIVEAU_VILLA_COMMERCIAL": "Niveau de Villa Commercial",
+    "IMMEUBLE_BUREAU": "Immeuble Bureau",
+    "LOCAL_COMMERCIAL": "Local Commercial",
+    "SHOWROOM": "Showroom",
+    "CENTRE_AFFAIRES": "Centre d'affaires",
+    "COWORKING": "Espace Co-Travail",
+    "BUREAU_FLEXIBLE": "Bureau flexible",
+    "BLOC_ADMINISTRATIF": "Bloc Administratif",
+    "HOTEL": "Hôtel",
+    "COMPLEXE_TOURISTIQUE": "Complexe Touristique",
+    "BUNGALOW": "Bungalow",
+    "TERRAIN_HOTELIER": "Terrain Hôtelier",
+    "AUTRE_HOTEL": "Autre structure hôtelière",
+    "HANGAR": "Hangar",
+    "USINE": "Usine",
+    "CHAMBRE_FROIDE": "Chambre Froide",
+    "CO_STOCKAGE": "Co-Stockage",
+    "DEPOT": "Dépôt",
+    "HEBERGEMENT_HOTELIER": "Hébergement Hôtelier",
+    "MAISON_HOTES": "Maison d'hôtes",
+    "COMPLEXE_TOURISTIQUE_HEBERGEMENT": "Complexe Touristique",
+    "AUTRE_HEBERGEMENT": "Autre hébergement",
+    "SALLE_FETES": "Salle des fêtes",
+    "SALLE_CONFERENCE": "Salle de conférence",
+    "SALLE_FORMATION": "Salle de formation",
+    "SALLE_DINER": "Salle de dîner",
+    "IMMEUBLE_COMMERCIAL": "Bloc commercial"
+  },
+  "AnnounceDetailLabels": {
+    "NEW": "Neuf / Première main",
+    "GOOD": "Bon état",
+    "RENOVATED": "Rénové",
+    "TO_RENOVATE": "A rénover",
+    "UNDER_CONSTRUCTION": "En construction",
+    "HABITATION": "Habitation",
+    "PROFESSIONAL": "Professionnel / Bureau",
+    "COMMERCIAL": "Commercial",
+    "QUARTIER_OUVERT": "Quartier classique",
+    "RESIDENCE_CLOTUREE": "Résidence clôturée",
+    "PROMOTION_IMMOBILIERE": "Promotion immobilière",
+    "italian_shower": "Douche Italienne",
+    "bathtub": "Baignoire",
+    "both": "Les deux",
+    "none": "Non spécifié",
+    "OPEN": "Ouverte",
+    "CLOSED": "Fermée",
+    "SEMI_OPEN": "Semi-ouverte",
+    "KITCHEN_EQUIPPED": "Cuisine Équipée",
+    "KITCHEN_SEMI_EQUIPPED": "Semi-équipée",
+    "KITCHEN_EMPTY": "Vide",
+    "KITCHEN_OPEN": "Ouverte (Américaine)",
+    "KITCHEN_CLOSED": "Fermée",
+    "KITCHEN_ISLAND": "Avec Ilot",
+    "HEATING_CENTRAL": "Chauffage Central",
+    "HEATING_GAS": "Chauffage à Gaz",
+    "HEATING_ELEC": "Chauffage Électrique",
+    "HEATING_FLOOR": "Chauffage au Sol",
+    "AC_CENTRAL": "Climatisation Centrale",
+    "AC_SPLIT": "Split System",
+    "INDIVIDUAL": "Individuel",
+    "COLLECTIVE": "Collectif",
+    "bedrooms": "Chambres",
+    "bathrooms": "Salles de bain & WC",
+    "kitchen": "Cuisine",
+    "exterior": "Extérieur",
+    "common": "Espaces communs",
+    "other": "Autres",
+    "general": "Général",
+    "equipements": "Équipements",
+    "bureaux": "Bureaux et Annexes",
+    "hebergement": "Hébergement",
+    "espaces_communs": "Espaces Communs",
+    "autres": "Autres",
+    "non_classees": "Autres",
+    "MURS_NUS": "Murs nus (Vide)",
+    "EQUIPEE": "Équipée (Clé en main)",
+    "NEUF": "Neuf (Jamais servi)",
+    "BON_ETAT_MARCHE": "Bon état",
+    "ANCIEN": "Ancien (À réviser)",
+    "PLAIN_PIED": "Plain-pied (RDC)",
+    "ETAGES": "À étages",
+    "ZONE_INDUSTRIELLE": "Zone industrielle (ZI/ZAC)",
+    "ZONE_URBAINE": "Zone urbaine (Ville)",
+    "SEMI_REMORQUE": "Semi-remorque (40 T)",
+    "CAMIONNETTE": "Camionnette (3.5 T)",
+    "PETIT_PORTEUR": "Petit porteur (10T)",
+    "QUAI_DECHARGEMENT": "Quai de déchargement",
+    "ENTREE_PLAIN_PIED": "Entrée de plain-pied",
+    "VESTIAIRES": "Vestiaires",
+    "REFECTOIRE": "Réfectoire",
+    "SANITAIRES_HF": "Sanitaires H/F",
+    "LOGEMENT_FONCTION": "Logement",
+    "DORTOIRS": "Dortoirs",
+    "POSTE_GARDE": "Poste de garde",
+    "CLOTURE_MACONNEE": "Clôture maçonnée",
+    "CAMERAS": "Caméras",
+    "INDUSTRIEL": "Industriel",
+    "VILLE": "De ville",
+    "AUCUN": "Aucun",
+    "RESEAU_ADE": "Réseau ADE",
+    "FORAGE": "Forage",
+    "BACHE_EAU": "Bâche à eau",
+    "RESEAU_PUBLIC": "Réseau public",
+    "FOSSE_INDUSTRIELLE": "Fosse septique",
+    "RIA": "R.I.A",
+    "SPRINKLERS": "Sprinklers",
+    "COLONNES_SECHES": "Colonnes sèches",
+    "MOTOPOMPE": "Motopompe",
+    "AGROALIMENTAIRE": "Agroalimentaire",
+    "PHARMACEUTIQUE_COSMETIQUE": "Pharmaceutique / Cosmétique",
+    "CHIMIQUE": "Chimique",
+    "MATERIAUX_CONSTRUCTION": "Matériaux de construction",
+    "PLASTURGIE_EMBALLAGE": "Plasturgie & Emballage",
+    "SIDERURGIE_METALLURGIE": "Sidérurgie & Métallurgie",
+    "TEXTILE_CUIR": "Textile & Cuir",
+    "ELECTROMENAGER_ELECTRONIQUE": "Électroménager & Électronique",
+    "MECANIQUE_AUTOMOBILE": "Mécanique & Automobile",
+    "RECYCLAGE_ENVIRONNEMENT": "Recyclage & Environnement",
+    "PAPIER_EDITION": "Papier & Édition",
+    "AUTRE_ACTIVITE": "Autre activité",
+    "AGROALIMENTAIRE_CF": "Agroalimentaire",
+    "GLACES_SURGELES": "Glaces & Surgelés",
+    "PHARMACEUTIQUE_CF": "Pharmaceutique",
+    "CHIMIQUE_CF": "Chimique",
+    "HORTICOLE_AGRICOLE": "Horticole & Agricole",
+    "AUTRE_CF": "Autre activité",
+    "CELLULE_UNIQUE": "Cellule unique (Une seule chambre)",
+    "COMPLEXE_FRIGORIFIQUE": "Plusieurs cellules (Complexe frigorifique)",
+    "QUAI_NIVELEUR_SAS": "Quai niveleur SAS étanche",
+    "QUAI_SIMPLE": "Quai simple",
+    "PLAIN_PIED_DECHARGT": "Plain-pied",
+    "ENREGISTREUR_T24": "Enregistreur T° H24",
+    "SYSTEME_ALERTE_SMS": "Système d'alerte SMS",
+    "SOL_CHAUFFANT": "Sol chauffant (Anti-gel dalle)",
+    "DEGIVRAGE_AUTO": "Dégivrage automatique",
+    "SANS_GESTION": "Sans gestion (Murs seuls)",
+    "AVEC_GESTION": "Avec gestion (Service complet)",
+    "SURFACE_DEDIEE": "Surface dédiée",
+    "CO_STOCKAGE": "Co-stockage",
+    "POSITIF": "Positif",
+    "NEGATIF": "Négatif",
+    "ULTRA_FROID": "Ultra Froid",
+    "FROID_VENTILE": "Froid Ventilé",
+    "FROID_STATIQUE": "Froid Statique",
+    "ANNUELLE": "Annuelle (Bail long terme)",
+    "MENSUELLE_HEBDO": "Mensuelle / Hebdomadaire",
+    "JOURNEE_SPOT": "À la journée (Stockage Spot)",
+    "RAMPE": "Rampe d'accès",
+    "MONTE_CHARGE": "Monte-charge",
+    "PLAT": "Plat",
+    "EN_PENTE": "En pente",
+    "ACCIDENTE": "Accidenté (escarpé)",
+    "LOTISSEMENT_CLASSIQUE": "Lotissement classique",
+    "COOPERATIVE_IMMOBILIERE": "Coopérative immobilière",
+    "RESIDENCE_FERMEE": "Résidence fermée",
+    "ACTE_PROPRIETE": "Acte de propriété (Notarié)",
+    "LIVRET_FONCIER": "Livret foncier",
+    "CERTIFICAT_URBANISME": "Certificat d'urbanisme",
+    "PERMIS_CONSTRUIRE": "Permis de construire",
+    "PLAN_MASSE": "Plan de masse",
+    "EAU": "Eau (ADE)",
+    "ELECTRICITE": "Électricité (Sonelgaz)",
+    "ASSAINISSEMENT": "Assainissement",
+    "INTERNET": "Internet / Fibre",
+    "vue_generale": "Vue générale",
+    "environnement": "Environnement",
+    "STOCKAGE_LOGISTIQUE": "Stockage",
+    "PRODUCTION_INDUSTRIEL": "Production",
+    "M2": "m²",
+    "HA": "Hectare (ha)",
+    "DOUNEM": "Dounem",
+    "MARAICHAGE": "Maraîchage",
+    "ARBORICULTURE": "Arboriculture fruitière",
+    "VITICULTURE": "Viticulture",
+    "CEREALES": "Céréales",
+    "ELEVAGE": "Élevage",
+    "APICULTURE": "Apiculture",
+    "SERRES": "Serres / hors-sol",
+    "PUITS": "Puits",
+    "CANAL_IRRIGATION": "Canal d'irrigation",
+    "BARRAGE_RETENUE": "Barrage / retenue d'eau",
+    "BASSIN_COLLECTE": "Bassin de collecte",
+    "NORD": "Nord",
+    "SUD": "Sud",
+    "EST": "Est",
+    "OUEST": "Ouest",
+    "NORD_EST": "Nord-Est",
+    "NORD_OUEST": "Nord-Ouest",
+    "SUD_EST": "Sud-Est",
+    "SUD_OUEST": "Sud-Ouest",
+    "ELEVE": "Élevé",
+    "MOYEN": "Moyen",
+    "FAIBLE": "Faible",
+    "MODERNE": "Moderne / Contemporain",
+    "CLASSIQUE": "Classique / Traditionnel",
+    "INDUSTRIEL_STYLE": "Industriel (Loft)",
+    "HAUSSMANNIEN": "Haussmannien / Prestige",
+    "BETON_ARME": "Béton armé",
+    "STRUCTURE_METALLIQUE": "Structure métallique",
+    "GALERIE_MARCHANDE": "Galerie marchande / Centre commercial",
+    "RUE_COMMERCANTE": "Rue commerçante",
+    "ZONE_ACTIVITE": "Zone d'activité commerciale",
+    "MARCHE": "Marché / souk",
+    "COMMERCIALE": "Zone commerciale",
+    "RESIDENTIELLE": "Zone résidentielle",
+    "MAGASIN_VENTE": "Magasin de vente / Boutique",
+    "SHOWROOM_USAGE": "Showroom / Exposition",
+    "DEPOT_VENTE": "Dépôt-vente / Stockage",
+    "PHARMACIE": "Pharmacie",
+    "ALIMENTATION": "Alimentation générale",
+    "CAFE_RESTAURANT": "Café / Restaurant",
+    "BUREAU": "Bureau / Cabinet",
+    "OPEN_SPACE": "Open-space (bureaux paysagers)",
+    "CLOISONNE": "Bureaux cloisonnés",
+    "AMOVIBLE": "Amovible (modulable)",
+    "FIXE": "Fixe",
+    "VITRE": "Vitré",
+    "FIBRE_OPTIQUE": "Fibre optique",
+    "ADSL_VDSL": "ADSL / VDSL",
+    "PAS_RESEAU": "Pas de réseau",
+    "CABLEE": "Câblée (RJ45)",
+    "WIFI": "Wi-Fi",
+    "ARMOIRE_SERVEUR": "Armoire serveur",
+    "DATA_ROOM": "Data room / Salle serveurs",
+    "GROUPE_ELECTROGENE": "Groupe électrogène",
+    "ONDULEUR_UPS": "Onduleur (UPS)",
+    "CENTRAL": "Central",
+    "SOL": "Au Sol",
+    "GAZ": "À Gaz",
+    "SPLIT": "Split",
+    "NONE": "Sans",
+    "SANS": "Sans"
   }
 }

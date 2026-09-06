@@ -38,6 +38,7 @@ import {
   TER_RES_ZONE_OPTIONS, TER_TOU_VOCATION_OPTIONS,
 } from '@/data/researchConfig';
 import { getCategoryColor } from '@/data/categoryColors';
+import { useLocalizedPlaceName } from '@/lib/typeLabels';
 
 const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
 
@@ -233,6 +234,7 @@ export default function ResearchPage() {
   // en premier) ; `.has()` retombe sur le label français tant qu'une branche n'est pas encore migrée,
   // pour ne jamais casser l'affichage d'une branche pas encore traitée.
   const tOpt = useTranslations('ResearchOptions');
+  const place = useLocalizedPlaceName();
   const optLabel = (ns: string, item: { id: string; label: string }) => {
     const key = `${ns}.${item.id}`;
     return tOpt.has(key) ? tOpt(key) : item.label;
@@ -1087,7 +1089,7 @@ export default function ResearchPage() {
       </span>
     ) : null;
     return (
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap" dir="ltr">
         <span className="text-sm font-bold text-gray-700 shrink-0">{fromLabel}</span>
         <div className="flex items-center rounded-xl border-2 border-gray-300 bg-gray-50 overflow-hidden shrink-0">
           {unitPosition === 'prefix' && chip}
@@ -1160,11 +1162,11 @@ export default function ResearchPage() {
         {...register('budgetUnit')}
         className="h-11 px-3 rounded-xl border-2 border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#0094BD] cursor-pointer"
       >
-        <option value="DA">DA</option>
-        <option value="DA_M2">DA / m²</option>
-        <option value="MILLION">Millions</option>
-        <option value="MILLION_M2">Millions / m²</option>
-        <option value="MILLIARD">Milliards</option>
+        <option value="DA">{t('curDA')}</option>
+        <option value="DA_M2">{t('curDAM2')}</option>
+        <option value="MILLION">{t('curMillions')}</option>
+        <option value="MILLION_M2">{t('curMillionsM2')}</option>
+        <option value="MILLIARD">{t('curMilliards')}</option>
       </select>
     </div>
   );
@@ -1179,7 +1181,7 @@ export default function ResearchPage() {
           <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {interlocutorOptions.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+              <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={optLabel('RESEARCH_INTERLOCUTORS.RESIDENTIEL', opt)} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
             ))}
           </div>
         </div>
@@ -1195,7 +1197,7 @@ export default function ResearchPage() {
         <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
           {INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={optLabel('INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS', opt)} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
           ))}
         </div>
       </div>
@@ -1221,7 +1223,7 @@ export default function ResearchPage() {
   ) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5" dir="ltr">
         {opts?.unit && opts.unitPosition !== 'suffix' && <span className="font-bold text-gray-700 text-base shrink-0">{opts.unit}</span>}
         <input
           type="number" inputMode="numeric" {...register(minField)}
@@ -1248,7 +1250,7 @@ export default function ResearchPage() {
   ) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5" dir="ltr">
         {opts?.unit && opts.unitPosition !== 'suffix' && <span className="font-bold text-gray-700 text-base shrink-0">{opts.unit}</span>}
         <input
           type="number" inputMode="numeric" {...register(field)}
@@ -1266,7 +1268,7 @@ export default function ResearchPage() {
   const renderBoxedBudgetField = (label: string, field: 'minBudget' | 'maxBudget', opts?: { withUnit?: boolean }) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
-      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all">
+      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all" dir="ltr">
         <input
           type="text" inputMode="numeric"
           value={formatThousands(watch(field) as any)}
@@ -1279,13 +1281,13 @@ export default function ResearchPage() {
         {opts?.withUnit && (
           <select
             {...register('budgetUnit')}
-            className="h-full shrink-0 pl-1.5 pr-1 border-l-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-700 outline-none cursor-pointer"
+            className="h-full shrink-0 ps-1.5 pe-1 border-s-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-700 outline-none cursor-pointer"
           >
-            <option value="DA">DA</option>
-            <option value="DA_M2">DA/m²</option>
-            <option value="MILLION">M DA</option>
-            <option value="MILLION_M2">M/m²</option>
-            <option value="MILLIARD">Md DA</option>
+            <option value="DA">{t('curDA')}</option>
+            <option value="DA_M2">{t('curMDAM2')}</option>
+            <option value="MILLION">{t('curMDA')}</option>
+            <option value="MILLION_M2">{t('curMDAM2')}</option>
+            <option value="MILLIARD">{t('curMdDA')}</option>
           </select>
         )}
       </div>
@@ -1300,9 +1302,9 @@ export default function ResearchPage() {
     <Section title={t('resLocTypologyTitle')} icon={Ruler}>
       <div className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {renderBoxedRange(t('resLocTypologyRange'), 'typologyMin', 'typologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: 'Ex: 3', placeholderMax: 'Ex: 5' })}
-          {renderBoxedRange(t('resLocSurfaceMax'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
-          {renderBoxedRange(t('resLocFloorMax'), 'floorMin', 'floorMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+          {renderBoxedRange(t('resLocTypologyRange'), 'typologyMin', 'typologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: t('exVal', { v: '3' }), placeholderMax: t('exVal', { v: '5' }) })}
+          {renderBoxedRange(t('resLocSurfaceMax'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '80' }), placeholderMax: t('exVal', { v: '120' }) })}
+          {renderBoxedRange(t('resLocFloorMax'), 'floorMin', 'floorMax', { placeholderMin: t('exVal', { v: '0' }), placeholderMax: t('exVal', { v: '4' }) })}
         </div>
         {/* Date d'installation envisagée — sur la même ligne que le budget, après Budget Min/Max
             (elle vivait avant dans la section Localisation, sous le nom "Date souhaitée"). */}
@@ -1330,7 +1332,7 @@ export default function ResearchPage() {
       <div className={cn('grid grid-cols-1 gap-6', opts?.hideDate ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
         <Field label={t('budgetCity')}>
           <MultiSelectDropdown
-            options={cities.map((c) => ({ id: c.id, label: c.nameFr || c.name }))}
+            options={cities.map((c) => ({ id: c.id, label: place.city(c) }))}
             selected={watch('cityIds') || []}
             onToggle={(id) => toggleArrayValue('cityIds', id)}
             placeholder={t('optSelect')}
@@ -1339,7 +1341,7 @@ export default function ResearchPage() {
         </Field>
         <Field label={t('budgetTowns')}>
           <MultiSelectDropdown
-            options={towns.map((tw) => ({ id: tw.id, label: tw.nameFr || tw.name }))}
+            options={towns.map((tw) => ({ id: tw.id, label: place.town(tw) }))}
             selected={watch('towns') || []}
             onToggle={(id) => toggleArrayValue('towns', id)}
             placeholder={t('optSelect')}
@@ -1387,7 +1389,7 @@ export default function ResearchPage() {
   // d'immeuble sont cochés à la fois.
   const renderImmeubleSharedRow = (includeFloor: boolean) => (
     <div className={cn('grid grid-cols-1 sm:grid-cols-2 gap-5', includeFloor ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
-      {includeFloor && renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+      {includeFloor && renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: t('exVal', { v: '0' }), placeholderMax: t('exVal', { v: '4' }) })}
       {renderBoxedBudgetField(t('budgetMin'), 'minBudget')}
       {renderBoxedBudgetField(t('budgetMax'), 'maxBudget', { withUnit: true })}
       <div className="min-w-0">
@@ -1425,16 +1427,16 @@ export default function ResearchPage() {
                   <div>
                     <h3 className="text-sm font-black text-gray-700 mb-3">{t('immeubleCaracSimilairesTitle')}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl">
-                      {renderBoxedSingle(t('resLocTypologyRange'), 'buildingTypologySimilaire', { unit: 'F', unitPosition: 'prefix', placeholder: 'Ex: 3' })}
-                      {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceSimilaireMin', 'buildingSurfaceSimilaireMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
+                      {renderBoxedSingle(t('resLocTypologyRange'), 'buildingTypologySimilaire', { unit: 'F', unitPosition: 'prefix', placeholder: t('exVal', { v: '3' }) })}
+                      {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceSimilaireMin', 'buildingSurfaceSimilaireMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '80' }), placeholderMax: t('exVal', { v: '120' }) })}
                     </div>
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-gray-700 mb-3">{t('immeubleCaracDifferentesTitle')}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                      {renderBoxedRange(t('resLocTypologyRange'), 'buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: 'Ex: 3', placeholderMax: 'Ex: 5' })}
-                      {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
-                      {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+                      {renderBoxedRange(t('resLocTypologyRange'), 'buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: t('exVal', { v: '3' }), placeholderMax: t('exVal', { v: '5' }) })}
+                      {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '80' }), placeholderMax: t('exVal', { v: '120' }) })}
+                      {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: t('exVal', { v: '0' }), placeholderMax: t('exVal', { v: '4' }) })}
                     </div>
                   </div>
                   {renderImmeubleSharedRow(false)}
@@ -1442,18 +1444,18 @@ export default function ResearchPage() {
               ) : hasSimilaires ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {renderBoxedSingle(t('resLocTypologyRange'), 'buildingTypologySimilaire', { unit: 'F', unitPosition: 'prefix', placeholder: 'Ex: 3' })}
-                    {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceSimilaireMin', 'buildingSurfaceSimilaireMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
-                    {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+                    {renderBoxedSingle(t('resLocTypologyRange'), 'buildingTypologySimilaire', { unit: 'F', unitPosition: 'prefix', placeholder: t('exVal', { v: '3' }) })}
+                    {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceSimilaireMin', 'buildingSurfaceSimilaireMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '80' }), placeholderMax: t('exVal', { v: '120' }) })}
+                    {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: t('exVal', { v: '0' }), placeholderMax: t('exVal', { v: '4' }) })}
                   </div>
                   {renderImmeubleSharedRow(false)}
                 </>
               ) : (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {renderBoxedRange(t('resLocTypologyRange'), 'buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: 'Ex: 3', placeholderMax: 'Ex: 5' })}
-                    {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 80', placeholderMax: 'Ex: 120' })}
-                    {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: 'Ex: 0', placeholderMax: 'Ex: 4' })}
+                    {renderBoxedRange(t('resLocTypologyRange'), 'buildingTypologyMin', 'buildingTypologyMax', { unit: 'F', unitPosition: 'prefix', placeholderMin: t('exVal', { v: '3' }), placeholderMax: t('exVal', { v: '5' }) })}
+                    {renderBoxedRange(t('resLocSurfaceMax'), 'buildingSurfaceMin', 'buildingSurfaceMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '80' }), placeholderMax: t('exVal', { v: '120' }) })}
+                    {renderBoxedRange(t('resLocFloorMax'), 'buildingFloorsMin', 'buildingFloorsMax', { placeholderMin: t('exVal', { v: '0' }), placeholderMax: t('exVal', { v: '4' }) })}
                   </div>
                   {renderImmeubleSharedRow(false)}
                 </>
@@ -1474,7 +1476,7 @@ export default function ResearchPage() {
           <Section title={t('sqRealisationStage')} icon={Sparkles}>
             <div className="flex flex-wrap gap-3">
               {REALISATION_STAGE_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={opt.label} onChange={() => setValue('realisationStage', opt.id as any)} />
+                <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={optLabel('REALISATION_STAGE_OPTIONS', opt)} onChange={() => setValue('realisationStage', opt.id as any)} />
               ))}
             </div>
           </Section>
@@ -1524,11 +1526,11 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burSpaceTypeTitle')} icon={Home}>
-        <OptionGroup label={t('burSpaceTypeLabel')} options={OFFICE_SPACE_TYPE_OPTIONS} field="baSpaceTypes" watch={watch} toggle={toggleArrayValue} />
+        <OptionGroup label={t('burSpaceTypeLabel')} options={OFFICE_SPACE_TYPE_OPTIONS} field="baSpaceTypes" watch={watch} toggle={toggleArrayValue} translateNs="OFFICE_SPACE_TYPE_OPTIONS" />
       </Section>
 
       <Section title={t('burEnergyTitle')} icon={Zap}>
-        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="baEnergie" watch={watch} toggle={toggleArrayValue} />
+        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="baEnergie" watch={watch} toggle={toggleArrayValue} translateNs="OFFICE_ENERGY_OPTIONS" />
       </Section>
 
       {renderLocalisationSection()}
@@ -1549,7 +1551,7 @@ export default function ResearchPage() {
       <Section title={t('burEtatGeneralTitle')} icon={Sparkles}>
         <div className="flex flex-wrap gap-3">
           {GENERAL_STATE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('bcEtatGeneral') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('bcEtatGeneral', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('bcEtatGeneral') || []).includes(opt.id)} label={optLabel('GENERAL_STATE_OPTIONS', opt)} onChange={() => toggleArrayValue('bcEtatGeneral', opt.id)} />
           ))}
         </div>
       </Section>
@@ -1557,7 +1559,7 @@ export default function ResearchPage() {
       <Section title={t('burZoneTypeTitle')} icon={Compass}>
         <div className="flex flex-wrap gap-3">
           {ZONE_TYPE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('bcZoneType') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('bcZoneType', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('bcZoneType') || []).includes(opt.id)} label={optLabel('ZONE_TYPE_OPTIONS', opt)} onChange={() => toggleArrayValue('bcZoneType', opt.id)} />
           ))}
         </div>
       </Section>
@@ -1565,7 +1567,7 @@ export default function ResearchPage() {
       <Section title={t('burVisibiliteTitle')} icon={Store}>
         <div className="flex flex-wrap gap-3">
           {VISIBILITY_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('bcVisibilite') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('bcVisibilite', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('bcVisibilite') || []).includes(opt.id)} label={optLabel('VISIBILITY_OPTIONS', opt)} onChange={() => toggleArrayValue('bcVisibilite', opt.id)} />
           ))}
         </div>
       </Section>
@@ -1594,14 +1596,14 @@ export default function ResearchPage() {
       <Section title={t('burStyleEtatTitle')} icon={Sparkles}>
         <div className="flex flex-wrap gap-3">
           {LOCAL_STYLE_ETAT_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('lcStyleEtat') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('lcStyleEtat', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('lcStyleEtat') || []).includes(opt.id)} label={optLabel('LOCAL_STYLE_ETAT_OPTIONS', opt)} onChange={() => toggleArrayValue('lcStyleEtat', opt.id)} />
           ))}
         </div>
       </Section>
 
       <Section title={t('burLocalEnvironmentTitle')} icon={Compass}>
         <div className="space-y-3">
-          <OptionGroup label={t('burLocalEnvironmentLabel')} options={LOCAL_ENVIRONMENT_OPTIONS} field="lcEnvironnement" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label={t('burLocalEnvironmentLabel')} options={LOCAL_ENVIRONMENT_OPTIONS} field="lcEnvironnement" watch={watch} toggle={toggleArrayValue} translateNs="LOCAL_ENVIRONMENT_OPTIONS" />
           {(watch('lcEnvironnement') || []).includes('AUTRE') && (
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
@@ -1613,7 +1615,7 @@ export default function ResearchPage() {
 
       <Section title={t('burLocalUsageTitle')} icon={Briefcase}>
         <div className="space-y-3">
-          <OptionGroup label={t('burLocalUsageLabel')} options={LOCAL_USAGE_OPTIONS} field="lcUsage" watch={watch} toggle={toggleArrayValue} />
+          <OptionGroup label={t('burLocalUsageLabel')} options={LOCAL_USAGE_OPTIONS} field="lcUsage" watch={watch} toggle={toggleArrayValue} translateNs="LOCAL_USAGE_OPTIONS" />
           {(watch('lcUsage') || []).includes('AUTRE') && (
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
@@ -1652,7 +1654,7 @@ export default function ResearchPage() {
       <Section title={t('hgUsageTitle')} icon={Warehouse}>
         <div className="flex flex-wrap gap-3">
           {HANGAR_USAGE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('hgUsageType') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('hgUsageType', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('hgUsageType') || []).includes(opt.id)} label={optLabel('HANGAR_USAGE_OPTIONS', opt)} onChange={() => toggleArrayValue('hgUsageType', opt.id)} />
           ))}
         </div>
       </Section>
@@ -1660,9 +1662,9 @@ export default function ResearchPage() {
       <Section title={t('resLocTypologyTitle')} icon={Ruler}>
         <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {renderBoxedRange(t('hgSurfaceTerrainLabel'), 'hgSurfaceTerrainMin', 'hgSurfaceTerrainMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 500', placeholderMax: 'Ex: 1000' })}
-            {renderBoxedRange(t('hgSurfaceCouverteLabel'), 'hgSurfaceCouverteMin', 'hgSurfaceCouverteMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 300', placeholderMax: 'Ex: 800' })}
-            {renderBoxedRange(t('hgHauteurLabel'), 'hgHauteurMin', 'hgHauteurMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: 'Ex: 5', placeholderMax: 'Ex: 8' })}
+            {renderBoxedRange(t('hgSurfaceTerrainLabel'), 'hgSurfaceTerrainMin', 'hgSurfaceTerrainMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '500' }), placeholderMax: t('exVal', { v: '1000' }) })}
+            {renderBoxedRange(t('hgSurfaceCouverteLabel'), 'hgSurfaceCouverteMin', 'hgSurfaceCouverteMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '300' }), placeholderMax: t('exVal', { v: '800' }) })}
+            {renderBoxedRange(t('hgHauteurLabel'), 'hgHauteurMin', 'hgHauteurMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '5' }), placeholderMax: t('exVal', { v: '8' }) })}
           </div>
           {renderIndustrielBudgetDateRow()}
         </div>
@@ -1671,13 +1673,13 @@ export default function ResearchPage() {
       <Section title={t('indEmplacementTitle')} icon={Compass}>
         <div className="flex flex-wrap gap-3">
           {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('hgZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('hgZone', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('hgZone') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('hgZone', opt.id)} />
           ))}
         </div>
       </Section>
 
       <Section title={t('burEnergyTitle')} icon={Zap}>
-        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="hgEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
+        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="hgEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="OFFICE_ENERGY_OPTIONS" />
       </Section>
 
       {renderLocalisationSection({ hideDate: true })}
@@ -1694,7 +1696,7 @@ export default function ResearchPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {USINE_ACTIVITY_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={natureList.includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('usNature', opt.id)} />
+                <PillOption key={opt.id} checked={natureList.includes(opt.id)} label={optLabel('USINE_ACTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('usNature', opt.id)} />
               ))}
             </div>
             {natureList.includes('AUTRE_ACTIVITE') && (
@@ -1709,7 +1711,7 @@ export default function ResearchPage() {
         <Section title={t('usEquipmentTitle')} icon={Wrench}>
           <div className="flex flex-wrap gap-3">
             {USINE_EQUIPMENT_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('usEquipement') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('usEquipement', opt.id)} />
+              <PillOption key={opt.id} checked={(watch('usEquipement') || []).includes(opt.id)} label={optLabel('USINE_EQUIPMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('usEquipement', opt.id)} />
             ))}
           </div>
         </Section>
@@ -1717,8 +1719,8 @@ export default function ResearchPage() {
         <Section title={t('resLocTypologyTitle')} icon={Ruler}>
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl">
-              {renderBoxedRange(t('usSurfaceTerrainLabel'), 'usSurfaceTerrainMin', 'usSurfaceTerrainMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 500', placeholderMax: 'Ex: 1500' })}
-              {renderBoxedRange(t('usSurfaceBatieLabel'), 'usSurfaceBatieMin', 'usSurfaceBatieMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 300', placeholderMax: 'Ex: 1000' })}
+              {renderBoxedRange(t('usSurfaceTerrainLabel'), 'usSurfaceTerrainMin', 'usSurfaceTerrainMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '500' }), placeholderMax: t('exVal', { v: '1500' }) })}
+              {renderBoxedRange(t('usSurfaceBatieLabel'), 'usSurfaceBatieMin', 'usSurfaceBatieMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '300' }), placeholderMax: t('exVal', { v: '1000' }) })}
             </div>
             {renderIndustrielBudgetDateRow()}
           </div>
@@ -1727,13 +1729,13 @@ export default function ResearchPage() {
         <Section title={t('indEmplacementTitle')} icon={Compass}>
           <div className="flex flex-wrap gap-3">
             {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('usZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('usZone', opt.id)} />
+              <PillOption key={opt.id} checked={(watch('usZone') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('usZone', opt.id)} />
             ))}
           </div>
         </Section>
 
         <Section title={t('burEnergyTitle')} icon={Zap}>
-          <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="usEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
+          <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="usEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="OFFICE_ENERGY_OPTIONS" />
         </Section>
 
         {renderLocalisationSection({ hideDate: true })}
@@ -1751,7 +1753,7 @@ export default function ResearchPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {CF_ACTIVITY_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={activiteList.includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('cfActivite', opt.id)} />
+                <PillOption key={opt.id} checked={activiteList.includes(opt.id)} label={optLabel('CF_ACTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('cfActivite', opt.id)} />
               ))}
             </div>
             {activiteList.includes('AUTRE_CF') && (
@@ -1766,7 +1768,7 @@ export default function ResearchPage() {
         <Section title={t('cfInfraTitle')} icon={Ruler}>
           <div className="space-y-5">
             <div className="max-w-xs">
-              {renderBoxedRange(t('cfCapaciteLabel'), 'cfCapaciteMin', 'cfCapaciteMax', { unit: 'm³', unitPosition: 'suffix', placeholderMin: 'Ex: 50', placeholderMax: 'Ex: 200' })}
+              {renderBoxedRange(t('cfCapaciteLabel'), 'cfCapaciteMin', 'cfCapaciteMax', { unit: 'm³', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '50' }), placeholderMax: t('exVal', { v: '200' }) })}
             </div>
             {renderIndustrielBudgetDateRow()}
           </div>
@@ -1775,7 +1777,7 @@ export default function ResearchPage() {
         <Section title={t('cfTypeFroidTitle')} icon={Thermometer}>
           <div className="flex flex-wrap gap-3">
             {CF_TYPE_FROID_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('cfTypeFroidChoices') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('cfTypeFroidChoices', opt.id)} />
+              <PillOption key={opt.id} checked={(watch('cfTypeFroidChoices') || []).includes(opt.id)} label={optLabel('CF_TYPE_FROID_OPTIONS', opt)} onChange={() => toggleArrayValue('cfTypeFroidChoices', opt.id)} />
             ))}
           </div>
         </Section>
@@ -1783,7 +1785,7 @@ export default function ResearchPage() {
         <Section title={t('cfModeGestionTitle')} icon={Users}>
           <div className="flex flex-wrap gap-3">
             {CF_MODE_GESTION_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('cfModeGestionChoices') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('cfModeGestionChoices', opt.id)} />
+              <PillOption key={opt.id} checked={(watch('cfModeGestionChoices') || []).includes(opt.id)} label={optLabel('CF_MODE_GESTION_OPTIONS', opt)} onChange={() => toggleArrayValue('cfModeGestionChoices', opt.id)} />
             ))}
           </div>
         </Section>
@@ -1828,7 +1830,7 @@ export default function ResearchPage() {
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlProfilGroupeLabel')}</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {HTL_PROFIL_GROUPE_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={watch('htlProfilGroupe') === opt.id} label={opt.label} onChange={() => setValue('htlProfilGroupe', opt.id as any)} />
+                  <PillOption key={opt.id} checked={watch('htlProfilGroupe') === opt.id} label={optLabel('HTL_PROFIL_GROUPE_OPTIONS', opt)} onChange={() => setValue('htlProfilGroupe', opt.id as any)} />
                 ))}
               </div>
             </div>
@@ -1852,7 +1854,7 @@ export default function ResearchPage() {
                   <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlClassementLabel')}</label>
                   <div className="flex flex-wrap gap-3">
                     {HTL_CLASSEMENT_OPTIONS.map((opt) => (
-                      <PillOption key={opt.id} checked={(watch('htlClassement') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlClassement', opt.id)} />
+                      <PillOption key={opt.id} checked={(watch('htlClassement') || []).includes(opt.id)} label={optLabel('HTL_CLASSEMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('htlClassement', opt.id)} />
                     ))}
                   </div>
                 </div>
@@ -1860,7 +1862,7 @@ export default function ResearchPage() {
                   <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlTypeEtablissementLabel')}</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {HTL_TYPE_ETABLISSEMENT_OPTIONS.map((opt) => (
-                      <PillOption key={opt.id} checked={(watch('htlTypeEtablissement') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlTypeEtablissement', opt.id)} />
+                      <PillOption key={opt.id} checked={(watch('htlTypeEtablissement') || []).includes(opt.id)} label={optLabel('HTL_TYPE_ETABLISSEMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('htlTypeEtablissement', opt.id)} />
                     ))}
                   </div>
                 </div>
@@ -1876,7 +1878,7 @@ export default function ResearchPage() {
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlFormuleLabel')}</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {HTL_FORMULE_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={formule === opt.id} label={opt.label} onChange={() => setValue('htlFormule', opt.id as any)} />
+                  <PillOption key={opt.id} checked={formule === opt.id} label={optLabel('HTL_FORMULE_OPTIONS', opt)} onChange={() => setValue('htlFormule', opt.id as any)} />
                 ))}
               </div>
             </div>
@@ -1886,7 +1888,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlGammeChambreLabel')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_GAMME_CHAMBRE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('htlGammeChambre') === opt.id} label={opt.label} onChange={() => setValue('htlGammeChambre', opt.id as any)} />
+                    <PillOption key={opt.id} checked={watch('htlGammeChambre') === opt.id} label={optLabel('HTL_GAMME_CHAMBRE_OPTIONS', opt)} onChange={() => setValue('htlGammeChambre', opt.id as any)} />
                   ))}
                 </div>
               </div>
@@ -1897,7 +1899,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlTypeCouchageLabel')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_TYPE_COUCHAGE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={(watch('htlTypeCouchage') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlTypeCouchage', opt.id)} />
+                    <PillOption key={opt.id} checked={(watch('htlTypeCouchage') || []).includes(opt.id)} label={optLabel('HTL_TYPE_COUCHAGE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlTypeCouchage', opt.id)} />
                   ))}
                 </div>
               </div>
@@ -1907,7 +1909,7 @@ export default function ResearchPage() {
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlNatureBienLabel')}</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {HTL_NATURE_BIEN_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={(watch('htlNatureBien') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlNatureBien', opt.id)} />
+                  <PillOption key={opt.id} checked={(watch('htlNatureBien') || []).includes(opt.id)} label={optLabel('HTL_NATURE_BIEN_OPTIONS', opt)} onChange={() => toggleArrayValue('htlNatureBien', opt.id)} />
                 ))}
               </div>
             </div>
@@ -1915,10 +1917,10 @@ export default function ResearchPage() {
             <div className="space-y-4">
               <label className="block text-sm font-bold text-gray-900">{t('htlExigencesTitle')}</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {renderHtlBoxedNumber(t('htlSurfaceMinLabel'), 'htlSurfaceMin', { unit: 'm²', placeholder: 'Ex: 60' })}
-                {renderHtlBoxedNumber(t('htlNbChambresMinLabel'), 'htlNbChambresMin', { placeholder: 'Ex: 2' })}
-                {renderHtlBoxedNumber(t('htlNbSalonsMinLabel'), 'htlNbSalonsMin', { placeholder: 'Ex: 1' })}
-                {renderHtlBoxedNumber(t('htlNbSdbMinLabel'), 'htlNbSdbMin', { placeholder: 'Ex: 1' })}
+                {renderHtlBoxedNumber(t('htlSurfaceMinLabel'), 'htlSurfaceMin', { unit: 'm²', placeholder: t('exVal', { v: '60' }) })}
+                {renderHtlBoxedNumber(t('htlNbChambresMinLabel'), 'htlNbChambresMin', { placeholder: t('exVal', { v: '2' }) })}
+                {renderHtlBoxedNumber(t('htlNbSalonsMinLabel'), 'htlNbSalonsMin', { placeholder: t('exVal', { v: '1' }) })}
+                {renderHtlBoxedNumber(t('htlNbSdbMinLabel'), 'htlNbSdbMin', { placeholder: t('exVal', { v: '1' }) })}
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlSuiteParentaleLabel')}</label>
@@ -1931,7 +1933,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAccessibiliteLabel')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_ACCESSIBILITE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('htlAccessibilite') === opt.id} label={opt.label} onChange={() => setValue('htlAccessibilite', opt.id as any)} />
+                    <PillOption key={opt.id} checked={watch('htlAccessibilite') === opt.id} label={optLabel('HTL_ACCESSIBILITE_OPTIONS', opt)} onChange={() => setValue('htlAccessibilite', opt.id as any)} />
                   ))}
                 </div>
               </div>
@@ -1946,7 +1948,7 @@ export default function ResearchPage() {
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAmbianceLabel')}</label>
               <div className="flex flex-wrap gap-3">
                 {HTL_AMBIANCE_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={ambiances.includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlAmbiances', opt.id)} />
+                  <PillOption key={opt.id} checked={ambiances.includes(opt.id)} label={optLabel('HTL_AMBIANCE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlAmbiances', opt.id)} />
                 ))}
               </div>
             </div>
@@ -1956,7 +1958,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlBalneaireTitle')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_BALNEAIRE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('htlBalneaire') === opt.id} label={opt.label} onChange={() => setValue('htlBalneaire', opt.id as any)} />
+                    <PillOption key={opt.id} checked={watch('htlBalneaire') === opt.id} label={optLabel('HTL_BALNEAIRE_OPTIONS', opt)} onChange={() => setValue('htlBalneaire', opt.id as any)} />
                   ))}
                 </div>
               </div>
@@ -1966,7 +1968,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlUrbainTitle')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_URBAIN_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={(watch('htlUrbain') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlUrbain', opt.id)} />
+                    <PillOption key={opt.id} checked={(watch('htlUrbain') || []).includes(opt.id)} label={optLabel('HTL_URBAIN_OPTIONS', opt)} onChange={() => toggleArrayValue('htlUrbain', opt.id)} />
                   ))}
                 </div>
               </div>
@@ -1976,7 +1978,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlSaharienTitle')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_SAHARIEN_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={(watch('htlSaharien') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlSaharien', opt.id)} />
+                    <PillOption key={opt.id} checked={(watch('htlSaharien') || []).includes(opt.id)} label={optLabel('HTL_SAHARIEN_OPTIONS', opt)} onChange={() => toggleArrayValue('htlSaharien', opt.id)} />
                   ))}
                 </div>
               </div>
@@ -1986,7 +1988,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlThermalTitle')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_THERMAL_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={(watch('htlThermal') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlThermal', opt.id)} />
+                    <PillOption key={opt.id} checked={(watch('htlThermal') || []).includes(opt.id)} label={optLabel('HTL_THERMAL_OPTIONS', opt)} onChange={() => toggleArrayValue('htlThermal', opt.id)} />
                   ))}
                 </div>
               </div>
@@ -1996,7 +1998,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlClimatiqueTitle')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_CLIMATIQUE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={(watch('htlClimatique') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlClimatique', opt.id)} />
+                    <PillOption key={opt.id} checked={(watch('htlClimatique') || []).includes(opt.id)} label={optLabel('HTL_CLIMATIQUE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlClimatique', opt.id)} />
                   ))}
                 </div>
               </div>
@@ -2006,7 +2008,7 @@ export default function ResearchPage() {
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlVueLabel')}</label>
               <div className="flex flex-wrap gap-3">
                 {HTL_VUE_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={(watch('htlVue') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlVue', opt.id)} />
+                  <PillOption key={opt.id} checked={(watch('htlVue') || []).includes(opt.id)} label={optLabel('HTL_VUE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlVue', opt.id)} />
                 ))}
               </div>
             </div>
@@ -2016,11 +2018,11 @@ export default function ResearchPage() {
         {/* 5. Équipements, Services & Secours Autonome */}
         <Section title={t('htlEquipementsTitle')} icon={Utensils}>
           <div className="space-y-4">
-            <OptionGroup label={t('htlServicesRepasLabel')} options={HTL_SERVICES_REPAS_OPTIONS} field="htlServicesRepas" watch={watch} toggle={toggleArrayValue} />
-            <OptionGroup label={t('htlCuisineLabel')} options={HTL_CUISINE_OPTIONS} field="htlCuisine" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
-            <OptionGroup label={t('htlConfortLabel')} options={HTL_CONFORT_OPTIONS} field="htlConfort" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" />
-            <OptionGroup label={t('htlFluidesLabel')} options={HTL_FLUIDES_OPTIONS} field="htlFluides" watch={watch} toggle={toggleArrayValue} />
-            <OptionGroup label={t('htlLoisirsLabel')} options={HTL_LOISIRS_OPTIONS} field="htlLoisirs" watch={watch} toggle={toggleArrayValue} />
+            <OptionGroup label={t('htlServicesRepasLabel')} options={HTL_SERVICES_REPAS_OPTIONS} field="htlServicesRepas" watch={watch} toggle={toggleArrayValue} translateNs="HTL_SERVICES_REPAS_OPTIONS" />
+            <OptionGroup label={t('htlCuisineLabel')} options={HTL_CUISINE_OPTIONS} field="htlCuisine" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="HTL_CUISINE_OPTIONS" />
+            <OptionGroup label={t('htlConfortLabel')} options={HTL_CONFORT_OPTIONS} field="htlConfort" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="HTL_CONFORT_OPTIONS" />
+            <OptionGroup label={t('htlFluidesLabel')} options={HTL_FLUIDES_OPTIONS} field="htlFluides" watch={watch} toggle={toggleArrayValue} translateNs="HTL_FLUIDES_OPTIONS" />
+            <OptionGroup label={t('htlLoisirsLabel')} options={HTL_LOISIRS_OPTIONS} field="htlLoisirs" watch={watch} toggle={toggleArrayValue} translateNs="HTL_LOISIRS_OPTIONS" />
           </div>
         </Section>
 
@@ -2028,7 +2030,7 @@ export default function ResearchPage() {
         <Section title={t('htlBudgetSectionTitle')} icon={Wallet}>
           <div className="space-y-5">
             <div className="max-w-xs">
-              {renderHtlBoxedNumber(t('htlBudgetMaxNuitLabel'), 'htlBudgetMaxNuit', { unit: 'DZD', placeholder: 'Ex: 8000' })}
+              {renderHtlBoxedNumber(t('htlBudgetMaxNuitLabel'), 'htlBudgetMaxNuit', { unit: 'DZD', placeholder: t('exVal', { v: '8000' }) })}
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlDeviseLabel')}</label>
@@ -2049,7 +2051,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#0094BD]" /> {t('htlPaiementsLocauxLabel')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_PAIEMENTS_LOCAUX_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={(watch('htlPaiementsLocaux') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlPaiementsLocaux', opt.id)} />
+                    <PillOption key={opt.id} checked={(watch('htlPaiementsLocaux') || []).includes(opt.id)} label={optLabel('HTL_PAIEMENTS_LOCAUX_OPTIONS', opt)} onChange={() => toggleArrayValue('htlPaiementsLocaux', opt.id)} />
                   ))}
                 </div>
               </div>
@@ -2057,7 +2059,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#0094BD]" /> {t('htlPaiementsIntlLabel')}</label>
                 <div className="flex flex-wrap gap-3">
                   {HTL_PAIEMENTS_INTL_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={(watch('htlPaiementsIntl') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('htlPaiementsIntl', opt.id)} />
+                    <PillOption key={opt.id} checked={(watch('htlPaiementsIntl') || []).includes(opt.id)} label={optLabel('HTL_PAIEMENTS_INTL_OPTIONS', opt)} onChange={() => toggleArrayValue('htlPaiementsIntl', opt.id)} />
                   ))}
                 </div>
               </div>
@@ -2081,13 +2083,13 @@ export default function ResearchPage() {
       <div className="flex items-center gap-1.5">
         <input
           type="number" inputMode="numeric" {...register('minSurface')}
-          placeholder="Ex: 500"
+          placeholder={t('exVal', { v: '500' })}
           className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         <span className="text-xs font-bold text-gray-400 shrink-0">{t('resLocTypologyTo')}</span>
         <input
           type="number" inputMode="numeric" {...register('maxSurface')}
-          placeholder="Ex: 2000"
+          placeholder={t('exVal', { v: '2000' })}
           className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         <select
@@ -2106,8 +2108,8 @@ export default function ResearchPage() {
       <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {renderTerSurfaceWithUnit()}
-          {renderBoxedRange(t('terAltitudeLabel'), 'terAgriAltitudeMin', 'terAgriAltitudeMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: 'Ex: 100', placeholderMax: 'Ex: 500' })}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+          {renderBoxedRange(t('terAltitudeLabel'), 'terAgriAltitudeMin', 'terAgriAltitudeMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '100' }), placeholderMax: t('exVal', { v: '500' }) })}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
         </div>
       </Section>
 
@@ -2115,7 +2117,7 @@ export default function ResearchPage() {
         <div className="space-y-3">
           <div className="flex flex-wrap gap-3">
             {TER_AGRI_CULTURE_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('terAgriCulture') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terAgriCulture', opt.id)} />
+              <PillOption key={opt.id} checked={(watch('terAgriCulture') || []).includes(opt.id)} label={optLabel('TER_AGRI_CULTURE_OPTIONS', opt)} onChange={() => toggleArrayValue('terAgriCulture', opt.id)} />
             ))}
           </div>
           {(watch('terAgriCulture') || []).includes('AUTRE') && (
@@ -2130,7 +2132,7 @@ export default function ResearchPage() {
       <Section title={t('terAgriEtatTitle')} icon={Sparkles}>
         <div className="flex flex-wrap gap-3">
           {TER_AGRI_ETAT_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('terAgriEtat') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terAgriEtat', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('terAgriEtat') || []).includes(opt.id)} label={optLabel('TER_AGRI_ETAT_OPTIONS', opt)} onChange={() => toggleArrayValue('terAgriEtat', opt.id)} />
           ))}
         </div>
       </Section>
@@ -2146,15 +2148,15 @@ export default function ResearchPage() {
     <>
       <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 500', placeholderMax: 'Ex: 2000' })}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '500' }), placeholderMax: t('exVal', { v: '2000' }) })}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
         </div>
       </Section>
 
       <Section title={t('terIndZoneTitle')} icon={Compass}>
         <div className="flex flex-wrap gap-3">
           {TER_IND_ZONE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('terIndZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terIndZone', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('terIndZone') || []).includes(opt.id)} label={optLabel('TER_IND_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('terIndZone', opt.id)} />
           ))}
         </div>
       </Section>
@@ -2170,15 +2172,15 @@ export default function ResearchPage() {
     <>
       <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: 'Ex: 200', placeholderMax: 'Ex: 600' })}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '200' }), placeholderMax: t('exVal', { v: '600' }) })}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
         </div>
       </Section>
 
       <Section title={t('terResZoneTitle')} icon={Compass}>
         <div className="flex flex-wrap gap-3">
           {TER_RES_ZONE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('terResZone') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terResZone', opt.id)} />
+            <PillOption key={opt.id} checked={(watch('terResZone') || []).includes(opt.id)} label={optLabel('TER_RES_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('terResZone', opt.id)} />
           ))}
         </div>
       </Section>
@@ -2195,7 +2197,7 @@ export default function ResearchPage() {
       <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {renderTerSurfaceWithUnit()}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: 'Ex: 1', placeholderMax: 'Ex: 2' })}
+          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
         </div>
       </Section>
 
@@ -2210,7 +2212,7 @@ export default function ResearchPage() {
         <div className="space-y-3">
           <div className="flex flex-wrap gap-3">
             {TER_TOU_VOCATION_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('terTouVocation') || []).includes(opt.id)} label={opt.label} onChange={() => toggleArrayValue('terTouVocation', opt.id)} />
+              <PillOption key={opt.id} checked={(watch('terTouVocation') || []).includes(opt.id)} label={optLabel('TER_TOU_VOCATION_OPTIONS', opt)} onChange={() => toggleArrayValue('terTouVocation', opt.id)} />
             ))}
           </div>
           {(watch('terTouVocation') || []).includes('AUTRE') && (
@@ -2305,7 +2307,7 @@ export default function ResearchPage() {
         <Field label={t('budgetCity')}>
           <select {...register('cityId', { valueAsNumber: true })} className={inputCls}>
             <option value="">{t('optSelect')}</option>
-            {cities.map((c) => <option key={c.id} value={c.id}>{c.nameFr || c.name}</option>)}
+            {cities.map((c) => <option key={c.id} value={c.id}>{place.city(c)}</option>)}
           </select>
         </Field>
 
@@ -2315,7 +2317,7 @@ export default function ResearchPage() {
 
         <Field label={t('budgetTowns')} full>
           <MultiSelectDropdown
-            options={towns.map((tw) => ({ id: tw.id, label: tw.nameFr || tw.name }))}
+            options={towns.map((tw) => ({ id: tw.id, label: place.town(tw) }))}
             selected={watch('towns') || []}
             onToggle={(id) => toggleArrayValue('towns', id)}
             placeholder={t('optSelect')}
@@ -2781,14 +2783,14 @@ export default function ResearchPage() {
           }}
           className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col"
         >
-          <div className="p-4 md:p-8 border-b border-gray-100 flex items-center">
+          <div className="p-4 md:p-8 border-b border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1">
             {currentStepIndex > 0 && (
               <button
                 type="button"
                 onClick={prevStep}
-                className="flex items-center gap-2 text-gray-500 hover:text-[#0094BD] transition-colors font-medium mr-4"
+                className="flex items-center gap-2 text-gray-500 hover:text-[#0094BD] transition-colors font-medium shrink-0"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
                 {t('back')}
               </button>
             )}

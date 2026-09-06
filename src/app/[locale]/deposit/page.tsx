@@ -30,6 +30,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { usePropertyTypeLabel, useLocalizedGeoName } from "@/lib/typeLabels"
 import { getCategoryColor } from "@/data/categoryColors"
 import { useRouter, usePathname } from "@/i18n/navigation"
 import { WILAYAS } from "@/data/wilayas"
@@ -1607,6 +1608,8 @@ function DepositPageComponent() {
   // Commerces qui partage les mêmes écrans) — .has() retombe sur le libellé français en dur tant
   // qu'un groupe d'options n'a pas encore été migré, même mécanisme que optLabel dans research/page.tsx.
   const tOpt = useTranslations("DepositOptions")
+  const ptLabel = usePropertyTypeLabel()
+  const geoName = useLocalizedGeoName()
   const optLabel = (group: string, item: { id: string; label: string }) => {
     const nestedKey = `${group}.${item.id}.label` // groupes label+description (USAGE_TYPES...)
     if (tOpt.has(nestedKey)) return tOpt(nestedKey)
@@ -1618,6 +1621,38 @@ function DepositPageComponent() {
     const key = `${group}.${item.id}.description`
     if (tOpt.has(key)) return tOpt(key)
     return item.description ?? item.desc ?? ""
+  }
+  // Renvoie une copie localisée d'un tableau d'options {id,label,info?,desc?,description?}.
+  // Chaque champ retombe sur la valeur française en dur tant que la clé n'existe pas dans
+  // DepositOptions.<group> — donc on peut migrer branche par branche sans rien casser.
+  // Utilisé sur chaque `.map`/`.filter` des tableaux d'options du wizard (voir DepositOptions
+  // dans messages/{fr,en,ar}.json).
+  const tGroup = <T extends { id: string; label?: string; info?: string; desc?: string; description?: string }>(
+    group: string,
+    arr: readonly T[],
+  ): T[] =>
+    arr.map((it) => {
+      const out: Record<string, unknown> = { ...it }
+      const nested = `${group}.${it.id}.label`
+      const flat = `${group}.${it.id}`
+      if (tOpt.has(nested)) out.label = tOpt(nested)
+      else if (tOpt.has(flat)) out.label = tOpt(flat)
+      if (tOpt.has(`${group}.${it.id}.info`)) out.info = tOpt(`${group}.${it.id}.info`)
+      if (tOpt.has(`${group}.${it.id}.description`)) {
+        const d = tOpt(`${group}.${it.id}.description`)
+        out.description = d
+        if ("desc" in it) out.desc = d
+      }
+      return out as T
+    })
+  // Libellés des catégories de photos (state figé en français ci-dessous) traduits au rendu par id.
+  const photoCatLabel = (id: string, fallback: string) => {
+    const map: Record<string, string> = {
+      other: "photoCatOther", bedrooms: "adBedrooms", bathrooms: "photoCatBathrooms",
+      kitchen: "f166", exterior: "photoCatExterior", common: "photoCatCommon",
+    }
+    const k = map[id]
+    return k && t.has(k) ? t(k) : fallback
   }
   const router = useRouter()
   const pathname = usePathname()
@@ -2079,12 +2114,12 @@ function DepositPageComponent() {
     // Affichage texte
     if (totalCentimes >= 1000000000) { 
         const milliards = totalCentimes / 1000000000;
-        setPriceCentimes(`${milliards.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} Milliards de centimes`)
+        setPriceCentimes(t('depCentimesMilliards', { v: milliards.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) }))
     } else if (totalCentimes >= 1000000) { 
         const millions = totalCentimes / 1000000;
-        setPriceCentimes(`${millions.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} Millions de centimes`)
+        setPriceCentimes(t('depCentimesMillions', { v: millions.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) }))
     } else {
-        setPriceCentimes(`${totalCentimes.toLocaleString('fr-FR')} Centimes`)
+        setPriceCentimes(t('depCentimes', { v: totalCentimes.toLocaleString('fr-FR') }))
     }
   }, [currentPrice, currentPriceUnit])
 
@@ -3364,30 +3399,11 @@ function DepositPageComponent() {
       case 1: return t("stepTransactionType")
       case 2: return t("stepRealEstateType")
       case 3: return t("stepDescribeProperty")
-      case 4:
-          if (propertyType === "VILLA") return "Fiche descriptive - Villa"
-          if (propertyType === "NIVEAU_VILLA") return "Fiche descriptive - Niveau de villa"
-          if (propertyType === "APPARTEMENT") return "Fiche descriptive - Appartement"
-          if (propertyType === "DUPLEX") return "Fiche descriptive - Duplex"
-          if (propertyType === "TRIPLEX") return "Fiche descriptive - Triplex"
-          if (propertyType === "STUDIO") return "Fiche descriptive - Studio"
-          if (propertyType === "IMMEUBLE_RESIDENTIEL") return "Fiche descriptive - Immeuble"
-          if (propertyType === "VILLA_COMMERCIALE") return "Fiche descriptive - Villa"
-          if (propertyType === "NIVEAU_VILLA_COMMERCIAL") return "Fiche descriptive - Niveau de villa"
-          if (propertyType === "APPARTEMENT_COMMERCIAL") return "Fiche descriptive - Appartement"
-          if (propertyType === "IMMEUBLE_BUREAU") return "Fiche descriptive - Immeuble d'appartement"
-          if (propertyType === "IMMEUBLE_COMMERCIAL") return "Fiche descriptive - Bloc commercial"
-          if (propertyType === "USINE") return "Fiche descriptive - Usine"
-          if (propertyType === "CHAMBRE_FROIDE") return "Fiche descriptive - Chambre froide"
-          if (propertyType === "HANGAR") return "Fiche descriptive - Hangar"
-          if (propertyType === "TERRAIN_RESIDENTIEL") return "Fiche descriptive - Terrain résidentiel"
-          if (propertyType === "TERRAIN_INDUSTRIEL") return "Fiche descriptive - Terrain industriel"
-          if (propertyType === "TERRAIN_AGRICOLE") return "Fiche descriptive - Terrain agricole"
-          if (propertyType === "TERRAIN_TOURISTIQUE") return "Fiche descriptive - Terrain touristique"
-          if (propertyType === "SHOWROOM") return "Fiche descriptive - Showroom"
-          if (propertyType === "LOCAL_COMMERCIAL") return "Fiche descriptive - Local commercial"
-          if (propertyType === "BLOC_ADMINISTRATIF") return "Fiche descriptive - Bloc administratif"
-          return t("stepDescriptiveSheet")
+      case 4: {
+          const sheet = t("stepDescriptiveSheet")
+          const typeObj = BASE_PROPERTY_TYPES.find(p => p.id === propertyType)
+          return typeObj ? `${sheet} - ${ptLabel(typeObj.id, typeObj.label)}` : sheet
+      }
       case 5: return (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? t("stepAvailability") : t("stepPriceModalities")
       case 6: return t("stepContactInfo")
       case 7: return t("stepMedia")
@@ -3488,13 +3504,13 @@ function DepositPageComponent() {
 
             {/* Main Card */}
             <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col">
-                <div className="p-4 md:p-8 border-b border-gray-100 flex items-center">
+                <div className="p-4 md:p-8 border-b border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1">
                     {currentStep > 1 && (
-                        <button 
+                        <button
                             onClick={prevStep}
-                            className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium mr-4"
+                            className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium shrink-0"
                         >
-                            <ArrowLeft className="h-5 w-5" />
+                            <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
                             {t("back")}
                         </button>
                     )}
@@ -3523,7 +3539,7 @@ function DepositPageComponent() {
                     </div>
                 )}
 
-                <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-left">
+                <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-start">
                     {!isFormAvailable && currentStep > 3 ? (
                         <div className="w-full max-w-2xl text-center space-y-6 py-12">
                             <div className="bg-orange-50 text-orange-600 p-8 rounded-2xl border border-orange-200">
@@ -3681,7 +3697,7 @@ function DepositPageComponent() {
                                                 "text-sm font-bold text-center max-w-[140px] transition-colors",
                                                 isSelected ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                             )}>
-                                                {type.label}
+                                                {ptLabel(type.id, type.label)}
                                             </span>
                                         </div>
                                     )
@@ -3694,16 +3710,14 @@ function DepositPageComponent() {
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Factory className="h-5 w-5 text-[#00BFA6]" />
-                                    Nature de l'activité &amp; Spécialisation
-                                </h2>
+                                    <Factory className="h-5 w-5 text-[#00BFA6]" />{t('f001')}</h2>
 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Secteur d&apos;activité</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f002')}</label>
                                         <input type="hidden" {...register("industrialSector")} />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                            {INDUSTRIAL_SECTORS.map((s) => (
+                                            {tGroup('INDUSTRIAL_SECTORS', INDUSTRIAL_SECTORS).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
                                                         type="radio"
@@ -3726,24 +3740,24 @@ function DepositPageComponent() {
 
                                     {industrialSectorList.includes("AUTRE_ACTIVITE") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Autre activité</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f003')}</label>
                                             <input
                                                 {...register("industrialSectorOther")}
                                                 type="text"
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Détail"
+                                                placeholder={t('f347')}
                                             />
                                             {errors.industrialSectorOther && <p className="text-red-500 text-sm mt-1">{errors.industrialSectorOther.message as any}</p>}
                                         </div>
                                     )}
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Précision du produit fabriqué</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f004')}</label>
                                         <input
                                             {...register("industrialProductDetail")}
                                             type="text"
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                            placeholder="Détail"
+                                            placeholder={t('f347')}
                                         />
                                         {errors.industrialProductDetail && <p className="text-red-500 text-sm mt-1">{errors.industrialProductDetail.message as any}</p>}
                                     </div>
@@ -3752,16 +3766,14 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Key className="h-5 w-5 text-[#00BFA6]" />
-                                    État &amp; Type de location
-                                </h2>
+                                    <Key className="h-5 w-5 text-[#00BFA6]" />{t('f005')}</h2>
 
                                 <div className="space-y-6">
                                     <div className="space-y-5">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">Type de location</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">{t('f006')}</label>
                                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
-                                                {INDUSTRIAL_RENTAL_TYPES.map((t) => (
+                                                {tGroup('INDUSTRIAL_RENTAL_TYPES', INDUSTRIAL_RENTAL_TYPES).map((t) => (
                                                     <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white min-w-0">
                                                         <input type="radio" value={t.id} {...register("industrialRentalType")} className="accent-[#00BFA6] w-4 h-4" />
                                                         <span className="font-bold text-gray-900 text-sm truncate whitespace-nowrap min-w-0" title={t.label}>{t.label}</span>
@@ -3777,7 +3789,7 @@ function DepositPageComponent() {
                                                             max={new Date().getFullYear() + 1}
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full h-[52px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] outline-none transition-all bg-white font-bold text-sm text-gray-900"
-                                                            placeholder="Année de mise en service (Ex: 2018)"
+                                                            placeholder={t('f348')}
                                                         />
                                                         {errors.industrialServiceYear && <p className="text-red-500 text-sm mt-1">{errors.industrialServiceYear.message as any}</p>}
                                                     </div>
@@ -3788,9 +3800,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">État global</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">{t('f007')}</label>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                            {INDUSTRIAL_GLOBAL_STATES.map((t) => (
+                                            {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((t) => (
                                                 <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white min-w-0">
                                                     <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
                                                     <span className="font-bold text-gray-900 text-sm truncate whitespace-nowrap min-w-0" title={t.label}>{t.label}</span>
@@ -3804,47 +3816,45 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Infrastructure &amp; Surfaces
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f008')}</h2>
 
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Répartition des surfaces</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f009')}</label>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface totale terrain</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f010')}</label>
                                                 <input
                                                     {...register("landArea")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 1200 m²"
+                                                    placeholder={t('f349')}
                                                 />
                                                 {errors.landArea && <p className="text-red-500 text-sm mt-1">{errors.landArea.message as any}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (Production)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f011')}</label>
                                                 <input
                                                     {...register("builtArea")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 400 m²"
+                                                    placeholder={t('f350')}
                                                 />
                                                 {errors.builtArea && <p className="text-red-500 text-sm mt-1">{errors.builtArea.message as any}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface libre (Cour/Parking)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f012')}</label>
                                                 <input
                                                     {...register("industrialSurfaceFree")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                    placeholder="Ex: 200 m²"
+                                                    placeholder={t('f351')}
                                                 />
                                                 {errors.industrialSurfaceFree && <p className="text-red-500 text-sm mt-1">{errors.industrialSurfaceFree.message as any}</p>}
                                             </div>
@@ -3855,15 +3865,13 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Emplacement &amp; Logistique
-                                </h2>
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f013')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Situation</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f014')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_SITUATIONS.map((x) => (
+                                            {tGroup('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSituation")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -3874,9 +3882,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Accès transport</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f015')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_ACCESS_TRANSPORT.map((x) => (
+                                            {tGroup('INDUSTRIAL_ACCESS_TRANSPORT', INDUSTRIAL_ACCESS_TRANSPORT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialAccessTransport")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -3890,32 +3898,26 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
-                                    Annexes &amp; Commodités
-                                </h2>
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f016')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Bureaux</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f017')}</div>
                                         <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={!!industrialOffices} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
-                                                Oui
-                                            </label>
+                                                <input type="radio" name="industrialOffices_choice" checked={!!industrialOffices} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />{t('f018')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
-                                                Non
-                                            </label>
+                                                <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />{t('f019')}</label>
                                             {!!industrialOffices && (
                                                 <div className="w-full mt-2">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
                                                     <input
                                                         {...register("industrialOfficesArea")}
                                                         type="number"
                                                         min="0"
                                                         onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                         className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                        placeholder="Ex: 80"
+                                                        placeholder={t('f352')}
                                                     />
                                                     {errors.industrialOfficesArea && <p className="text-red-500 text-sm mt-1">{errors.industrialOfficesArea.message as any}</p>}
                                                 </div>
@@ -3924,9 +3926,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f021')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_SOCIAL_LOCALES.map((x) => (
+                                            {tGroup('INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -3936,9 +3938,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Hébergement</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f022')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_HEBERGEMENT.map((x) => (
+                                            {tGroup('INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -3949,9 +3951,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Sécurité</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f023')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_SECURITY.map((x) => (
+                                            {tGroup('INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSecurity")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -3964,56 +3966,48 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
-                                    Énergie &amp; Fluides
-                                </h2>
+                                    <Zap className="h-5 w-5 text-[#00BFA6]" />{t('f024')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Électricité</div>
+                                        <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Poste transfo (KVA)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f026')}</label>
                                                 <input
                                                     {...register("industrialElectricityTransformerKva")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                    placeholder="Ex: 250"
+                                                    placeholder={t('f353')}
                                                 />
                                                 {errors.industrialElectricityTransformerKva && <p className="text-red-500 text-sm mt-1">{errors.industrialElectricityTransformerKva.message as any}</p>}
                                             </div>
                                             <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
                                                 <input type="checkbox" {...register("industrialElectricityForceMotrice")} className="accent-[#00BFA6] w-5 h-5" />
-                                                <span className="font-bold text-gray-900 text-sm">Force motrice (380V)</span>
+                                                <span className="font-bold text-gray-900 text-sm">{t('f027')}</span>
                                             </label>
                                         </div>
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Gaz</div>
+                                        <div className="font-bold text-gray-900">{t('f028')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Industriel
-                                            </label>
+                                                <input type="checkbox" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />{t('f029')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
-                                                De ville
-                                            </label>
+                                                <input type="checkbox" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />{t('f030')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Aucun
-                                            </label>
+                                                <input type="checkbox" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />{t('f031')}</label>
                                         </div>
                                         {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Eau</div>
+                                        <div className="font-bold text-gray-900">{t('f032')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_WATER_SOURCES.map((x) => (
+                                            {tGroup('INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialWaterSources")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4025,16 +4019,12 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Assainissement</div>
+                                        <div className="font-bold text-gray-900">{t('f033')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Réseau public
-                                            </label>
+                                                <input type="checkbox" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />{t('f034')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Fosse septique
-                                            </label>
+                                                <input type="checkbox" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />{t('f035')}</label>
                                         </div>
                                         {errors.industrialSanitation && <p className="text-red-500 text-sm mt-1">{errors.industrialSanitation.message as any}</p>}
                                     </div>
@@ -4043,15 +4033,13 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
-                                    Sécurité incendie &amp; Protection
-                                </h2>
+                                    <Siren className="h-5 w-5 text-[#00BFA6]" />{t('f036')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Réseau anti-incendie</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f037')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_FIRE_NETWORK.map((x) => (
+                                            {tGroup('INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialFireNetwork")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4061,9 +4049,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Équipements complémentaires</div>
+                                        <div className="font-bold text-gray-900">{t('f038')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_FIRE_EQUIPMENT.map((x) => (
+                                            {tGroup('INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialFireEquipment")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4073,7 +4061,7 @@ function DepositPageComponent() {
 
                                         {industrialFireEquipmentList.includes("BACHE_EAU") && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres) <span className="text-red-500">*</span></label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f172')} <span className="text-red-500">*</span></label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
                                                     type="text"
@@ -4084,7 +4072,7 @@ function DepositPageComponent() {
                                                         setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
                                                     }}
                                                     className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                    placeholder="Ex: 10 000"
+                                                    placeholder={t('f354')}
                                                 />
                                                 {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
                                             </div>
@@ -4102,45 +4090,43 @@ function DepositPageComponent() {
                             {/* Section 1 : Dimensions & Surface */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Dimensions &amp; Surface
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f039')}</h2>
 
                                 <div className="space-y-5">
                                     {/* Ligne 1 : Surface terrain | Surface couverte | État global */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
                                             <input
                                                 {...register("hangarSurfaceTerrain")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 400 m²"
+                                                placeholder={t('f350')}
                                             />
                                             {errors.hangarSurfaceTerrain && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceTerrain.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface couverte (m²)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f041')}</label>
                                             <input
                                                 {...register("hangarSurfaceCovered")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 800 m²"
+                                                placeholder={t('f355')}
                                             />
                                             {errors.hangarSurfaceCovered && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceCovered.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">État global</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f007')}</label>
                                             <select
                                                 {...register("industrialGlobalState")}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-900"
                                             >
-                                                <option value="">Sélectionner</option>
-                                                {INDUSTRIAL_GLOBAL_STATES.map((s) => (
+                                                <option value="">{t('f042')}</option>
+                                                {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((s) => (
                                                     <option key={s.id} value={s.id}>{s.label}</option>
                                                 ))}
                                             </select>
@@ -4150,38 +4136,38 @@ function DepositPageComponent() {
                                     {/* Ligne 2 : Longueur | Largeur | Hauteur sous crochet */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (ml)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f043')}</label>
                                             <input
                                                 {...register("hangarLength")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 50 ml"
+                                                placeholder={t('f356')}
                                             />
                                             {errors.hangarLength && <p className="text-red-500 text-sm mt-1">{errors.hangarLength.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (ml)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f044')}</label>
                                             <input
                                                 {...register("hangarWidth")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 20 ml"
+                                                placeholder={t('f357')}
                                             />
                                             {errors.hangarWidth && <p className="text-red-500 text-sm mt-1">{errors.hangarWidth.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous crochet (ml)</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f045')}</label>
                                             <input
                                                 {...register("hangarHeight")}
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white"
-                                                placeholder="Ex: 8 ml"
+                                                placeholder={t('f358')}
                                             />
                                             {errors.hangarHeight && <p className="text-red-500 text-sm mt-1">{errors.hangarHeight.message as any}</p>}
                                         </div>
@@ -4192,53 +4178,35 @@ function DepositPageComponent() {
                             {/* Section 2 : Infrastructure */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Warehouse className="h-5 w-5 text-[#00BFA6]" />
-                                    Infrastructure
-                                </h2>
+                                    <Warehouse className="h-5 w-5 text-[#00BFA6]" />{t('f046')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Type d&apos;utilisation</div>
+                                        <div className="font-bold text-gray-900">{t('f047')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" value="STOCKAGE_LOGISTIQUE" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Stockage
-                                        </label>
+                                            <input type="checkbox" value="STOCKAGE_LOGISTIQUE" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />{t('f048')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" value="PRODUCTION_INDUSTRIEL" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Production
-                                        </label>
+                                            <input type="checkbox" value="PRODUCTION_INDUSTRIEL" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />{t('f049')}</label>
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Toiture</div>
+                                        <div className="font-bold text-gray-900">{t('f050')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Tôle TN40
-                                        </label>
+                                            <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />{t('f051')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Panneaux Sandwich
-                                        </label>
+                                            <input type="checkbox" {...register("hangarStructurePanneauxSandwich")} className="accent-[#00BFA6] w-4 h-4" />{t('f052')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarToitureAutre")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Autre
-                                        </label>
+                                            <input type="checkbox" {...register("hangarToitureAutre")} className="accent-[#00BFA6] w-4 h-4" />{t('f053')}</label>
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Sol</div>
+                                        <div className="font-bold text-gray-900">{t('f054')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Béton
-                                        </label>
+                                            <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />{t('f055')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarSolResineEpoxy")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Résine Époxy
-                                        </label>
+                                            <input type="checkbox" {...register("hangarSolResineEpoxy")} className="accent-[#00BFA6] w-4 h-4" />{t('f056')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("hangarSolAutre")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Autre
-                                        </label>
+                                            <input type="checkbox" {...register("hangarSolAutre")} className="accent-[#00BFA6] w-4 h-4" />{t('f053')}</label>
                                     </div>
                                 </div>
                             </section>
@@ -4246,15 +4214,13 @@ function DepositPageComponent() {
                             {/* Section 3 : Emplacement */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Emplacement
-                                </h2>
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f057')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Situation</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f014')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_SITUATIONS.map((x) => (
+                                            {tGroup('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSituation")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4265,10 +4231,10 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Logistique</div>
-                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Accès transport</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f058')}</div>
+                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('f015')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_ACCESS_TRANSPORT.map((x) => (
+                                            {tGroup('INDUSTRIAL_ACCESS_TRANSPORT', INDUSTRIAL_ACCESS_TRANSPORT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialAccessTransport")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4282,32 +4248,26 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
-                                    Annexes &amp; Commodités
-                                </h2>
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f016')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Bureaux</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f017')}</div>
                                         <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={!!industrialOffices} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />
-                                                Oui
-                                            </label>
+                                                <input type="radio" name="industrialOffices_choice" checked={!!industrialOffices} onChange={() => { setValue("industrialOffices", true as any, { shouldValidate: true }); }} className="accent-[#00BFA6] w-4 h-4" />{t('f018')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />
-                                                Non
-                                            </label>
+                                                <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />{t('f019')}</label>
                                             {!!industrialOffices && (
                                                 <div className="w-full mt-2">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
                                                     <input
                                                         {...register("industrialOfficesArea")}
                                                         type="number"
                                                         min="0"
                                                         onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                         className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                        placeholder="Ex: 80"
+                                                        placeholder={t('f352')}
                                                     />
                                                     {errors.industrialOfficesArea && <p className="text-red-500 text-sm mt-1">{errors.industrialOfficesArea.message as any}</p>}
                                                 </div>
@@ -4316,9 +4276,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f021')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_SOCIAL_LOCALES.map((x) => (
+                                            {tGroup('INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4328,9 +4288,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Hébergement</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f022')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_HEBERGEMENT.map((x) => (
+                                            {tGroup('INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4340,9 +4300,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
-                                        <div className="font-bold text-gray-900 mb-3">Sécurité</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f023')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_SECURITY.map((x) => (
+                                            {tGroup('INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSecurity")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4355,56 +4315,48 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
-                                    Énergie &amp; Fluides
-                                </h2>
+                                    <Zap className="h-5 w-5 text-[#00BFA6]" />{t('f024')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Électricité</div>
+                                        <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Poste transfo (KVA)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f026')}</label>
                                                 <input
                                                     {...register("industrialElectricityTransformerKva")}
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                     className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                    placeholder="Ex: 250"
+                                                    placeholder={t('f353')}
                                                 />
                                                 {errors.industrialElectricityTransformerKva && <p className="text-red-500 text-sm mt-1">{errors.industrialElectricityTransformerKva.message as any}</p>}
                                             </div>
                                             <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
                                                 <input type="checkbox" {...register("industrialElectricityForceMotrice")} className="accent-[#00BFA6] w-5 h-5" />
-                                                <span className="font-bold text-gray-900 text-sm">Force motrice (380V)</span>
+                                                <span className="font-bold text-gray-900 text-sm">{t('f027')}</span>
                                             </label>
                                         </div>
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Gaz</div>
+                                        <div className="font-bold text-gray-900">{t('f028')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Industriel
-                                            </label>
+                                                <input type="checkbox" value="INDUSTRIEL" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />{t('f029')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
-                                                De ville
-                                            </label>
+                                                <input type="checkbox" value="VILLE" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />{t('f030')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Aucun
-                                            </label>
+                                                <input type="checkbox" value="AUCUN" {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />{t('f031')}</label>
                                         </div>
                                         {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Eau</div>
+                                        <div className="font-bold text-gray-900">{t('f032')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_WATER_SOURCES.map((x) => (
+                                            {tGroup('INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialWaterSources")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4415,16 +4367,12 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
-                                        <div className="font-bold text-gray-900">Assainissement</div>
+                                        <div className="font-bold text-gray-900">{t('f033')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Réseau public
-                                            </label>
+                                                <input type="checkbox" value="RESEAU_PUBLIC" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />{t('f034')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Fosse septique
-                                            </label>
+                                                <input type="checkbox" value="FOSSE_INDUSTRIELLE" {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />{t('f035')}</label>
                                         </div>
                                         {errors.industrialSanitation && <p className="text-red-500 text-sm mt-1">{errors.industrialSanitation.message as any}</p>}
                                     </div>
@@ -4433,15 +4381,13 @@ function DepositPageComponent() {
 
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
-                                    Sécurité incendie &amp; Protection
-                                </h2>
+                                    <Siren className="h-5 w-5 text-[#00BFA6]" />{t('f036')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Réseau anti-incendie</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f037')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_FIRE_NETWORK.map((x) => (
+                                            {tGroup('INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialFireNetwork")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4451,9 +4397,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Équipements complémentaires</div>
+                                        <div className="font-bold text-gray-900">{t('f038')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_FIRE_EQUIPMENT.map((x) => (
+                                            {tGroup('INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialFireEquipment")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4463,7 +4409,7 @@ function DepositPageComponent() {
 
                                         {industrialFireEquipmentList.includes("BACHE_EAU") && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres) <span className="text-red-500">*</span></label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f172')} <span className="text-red-500">*</span></label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
                                                     type="text"
@@ -4474,7 +4420,7 @@ function DepositPageComponent() {
                                                         setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
                                                     }}
                                                     className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
-                                                    placeholder="Ex: 10 000"
+                                                    placeholder={t('f354')}
                                                 />
                                                 {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
                                             </div>
@@ -4493,15 +4439,13 @@ function DepositPageComponent() {
                             {/* Section 1 : Activités & Usages autorisés */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Snowflake className="h-5 w-5 text-[#00BFA6]" />
-                                    Activités &amp; Usages autorisés
-                                </h2>
+                                    <Snowflake className="h-5 w-5 text-[#00BFA6]" />{t('f059')}</h2>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Secteur compatible</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f060')}</label>
                                         <input type="hidden" {...register("cfSector")} />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                            {CF_SECTORS.map((s) => (
+                                            {tGroup('CF_SECTORS', CF_SECTORS).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
                                                         type="radio"
@@ -4520,8 +4464,8 @@ function DepositPageComponent() {
                                     </div>
                                     {cfSectorList.includes("AUTRE_CF") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Préciser l&apos;activité</label>
-                                            <input {...register("cfSectorOther")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none bg-white" placeholder="Détail" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f061')}</label>
+                                            <input {...register("cfSectorOther")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none bg-white" placeholder={t('f347')} />
                                         </div>
                                     )}
                                 </div>
@@ -4530,31 +4474,29 @@ function DepositPageComponent() {
                             {/* Section 1b : Infrastructure & Surfaces */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Infrastructure &amp; Surfaces
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f008')}</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (ml)</label>
-                                        <input {...register("cfLength")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f043')}</label>
+                                        <input {...register("cfLength")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (ml)</label>
-                                        <input {...register("cfWidth")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 10" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f044')}</label>
+                                        <input {...register("cfWidth")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f360')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur (ml)</label>
-                                        <input {...register("cfHeight")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f062')}</label>
+                                        <input {...register("cfHeight")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f361')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Capacité (m³)</label>
-                                        <input {...register("cfCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 80" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f063')}</label>
+                                        <input {...register("cfCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f362')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">État global</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f007')}</label>
                                         <select {...register("cfEtatGlobal")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
-                                            <option value="">Sélectionner</option>
-                                            {INDUSTRIAL_GLOBAL_STATES.map((s) => (
+                                            <option value="">{t('f042')}</option>
+                                            {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((s) => (
                                                 <option key={s.id} value={s.id}>{s.label}</option>
                                             ))}
                                         </select>
@@ -4565,27 +4507,21 @@ function DepositPageComponent() {
                             {/* Annexes & Commodités */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
-                                    Annexes &amp; Commodités
-                                </h2>
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f016')}</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
                                     {/* Bureaux */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Bureaux</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f017')}</div>
                                         <div className="flex gap-4">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value="true" {...register("industrialOffices")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Oui
-                                            </label>
+                                                <input type="radio" value="true" {...register("industrialOffices")} className="accent-[#00BFA6] w-4 h-4" />{t('f018')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value="false" {...register("industrialOffices")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Non
-                                            </label>
+                                                <input type="radio" value="false" {...register("industrialOffices")} className="accent-[#00BFA6] w-4 h-4" />{t('f019')}</label>
                                         </div>
                                     </div>
                                     {/* Locaux sociaux */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Locaux sociaux</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f021')}</div>
                                         <div className="space-y-2">
                                             {[
                                                 { id: "VESTIAIRES", label: "Vestiaires" },
@@ -4601,7 +4537,7 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Hébergement */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Hébergement</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f022')}</div>
                                         <div className="space-y-2">
                                             {[
                                                 { id: "LOGEMENT", label: "Logement" },
@@ -4616,7 +4552,7 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Sécurité */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Sécurité</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f023')}</div>
                                         <div className="space-y-2">
                                             {[
                                                 { id: "POSTE_GARDE", label: "Poste de garde" },
@@ -4636,15 +4572,13 @@ function DepositPageComponent() {
                             {/* Section 2 : Configuration & Emplacement du site */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Configuration &amp; Emplacement du site
-                                </h2>
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f064')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
                                     {/* Localisation */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Localisation</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f065')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_SITUATIONS.map((x) => (
+                                            {tGroup('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("cfLocalisation")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4654,9 +4588,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Type de structure */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type de structure</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f066')}</div>
                                         <div className="space-y-2">
-                                            {CF_STRUCTURE_TYPES.map((x) => (
+                                            {tGroup('CF_STRUCTURE_TYPES', CF_STRUCTURE_TYPES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("cfStructureType")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4666,47 +4600,39 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Configuration */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Configuration</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f067')}</div>
                                         <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="PLAIN_PIED" {...register("cfConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Plain-pied (RDC)
-                                            </label>
+                                                <input type="radio" value="PLAIN_PIED" {...register("cfConfiguration")} className="accent-[#00BFA6] w-4 h-4" />{t('f068')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="ETAGES" {...register("cfConfiguration")} className="accent-[#00BFA6] w-4 h-4" />
-                                                À étages
-                                            </label>
+                                                <input type="radio" value="ETAGES" {...register("cfConfiguration")} className="accent-[#00BFA6] w-4 h-4" />{t('f069')}</label>
                                         </div>
                                         {cfConfiguration === "ETAGES" && (
                                             <div className="w-full mt-3">
-                                                <input {...register("cfFloorsCount")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Nombre d'étages" />
+                                                <input {...register("cfFloorsCount")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f139')} />
                                             </div>
                                         )}
                                     </div>
                                     {/* Logistique verticale */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Logistique verticale</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f070')}</div>
                                         <div className="flex gap-4 flex-wrap items-end">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="MONTE_CHARGE" {...register("cfLogistiqueVerticale")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Monte-charge
-                                            </label>
+                                                <input type="radio" value="MONTE_CHARGE" {...register("cfLogistiqueVerticale")} className="accent-[#00BFA6] w-4 h-4" />{t('f071')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="AUCUN" {...register("cfLogistiqueVerticale")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Aucun
-                                            </label>
+                                                <input type="radio" value="AUCUN" {...register("cfLogistiqueVerticale")} className="accent-[#00BFA6] w-4 h-4" />{t('f031')}</label>
                                             {cfLogistiqueVerticale === "MONTE_CHARGE" && (
                                                 <div className="w-full">
-                                                    <input {...register("cfMonteChargeCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Capacité (kg)" />
+                                                    <input {...register("cfMonteChargeCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f363')} />
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     {/* Accessibilité camions */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Accessibilité camions</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f072')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_ACCESS_TRANSPORT.map((x) => (
+                                            {tGroup('INDUSTRIAL_ACCESS_TRANSPORT', INDUSTRIAL_ACCESS_TRANSPORT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("cfAccessibilite")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4716,9 +4642,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Zone de déchargement */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Zone de déchargement</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f073')}</div>
                                         <div className="space-y-2">
-                                            {CF_ZONE_DECHARGEMENT.map((x) => (
+                                            {tGroup('CF_ZONE_DECHARGEMENT', CF_ZONE_DECHARGEMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("cfZoneDechargement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4732,30 +4658,28 @@ function DepositPageComponent() {
                             {/* Section 3 : Équipements de sécurité & Performance */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Shield className="h-5 w-5 text-[#00BFA6]" />
-                                    Équipements de sécurité &amp; Performance
-                                </h2>
+                                    <Shield className="h-5 w-5 text-[#00BFA6]" />{t('f074')}</h2>
                                 <div className="space-y-5">
                                     {/* Ligne 1 : Énergie de secours + Technique Froid */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         {/* Énergie de secours */}
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-3">Énergie de secours</div>
+                                            <div className="font-bold text-gray-900 mb-3">{t('f075')}</div>
                                             <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
                                                 <input type="checkbox" {...register("cfGenerateur")} className="accent-[#00BFA6] w-5 h-5" />
-                                                <span className="font-bold text-gray-900 text-sm">Groupe Électrogène Auto</span>
+                                                <span className="font-bold text-gray-900 text-sm">{t('f076')}</span>
                                             </label>
                                             {cfGenerateur && (
                                                 <div className="mt-3">
-                                                    <input {...register("cfGenerateurKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Puissance (KVA)" />
+                                                    <input {...register("cfGenerateurKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f364')} />
                                                 </div>
                                             )}
                                         </div>
                                         {/* Technique Froid */}
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-3">Technique froid</div>
+                                            <div className="font-bold text-gray-900 mb-3">{t('f077')}</div>
                                             <div className="space-y-2">
-                                                {CF_TECHNIQUE_FROID.map((x) => (
+                                                {tGroup('CF_TECHNIQUE_FROID', CF_TECHNIQUE_FROID).map((x) => (
                                                     <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                         <input type="checkbox" value={x.id} {...register("cfTechniqueFroid")} className="accent-[#00BFA6] w-4 h-4" />
                                                         {x.label}
@@ -4768,7 +4692,7 @@ function DepositPageComponent() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         {/* Type de froid */}
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-3">Type de froid</div>
+                                            <div className="font-bold text-gray-900 mb-3">{t('f078')}</div>
                                             <div className="space-y-2">
                                                 {[
                                                     { id: "POSITIF", label: "Positif" },
@@ -4784,7 +4708,7 @@ function DepositPageComponent() {
                                         </div>
                                         {/* Mode de diffusion */}
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-3">Mode de diffusion</div>
+                                            <div className="font-bold text-gray-900 mb-3">{t('f079')}</div>
                                             <div className="space-y-2">
                                                 {[
                                                     { id: "FROID_VENTILE", label: "Froid Ventilé" },
@@ -4804,15 +4728,13 @@ function DepositPageComponent() {
                             {/* Section 4 : Modalités de location & Flexibilité */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Key className="h-5 w-5 text-[#00BFA6]" />
-                                    Modalités de location &amp; Flexibilité
-                                </h2>
+                                    <Key className="h-5 w-5 text-[#00BFA6]" />{t('f080')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     {/* Mode de gestion */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Mode de gestion</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f081')}</div>
                                         <div className="space-y-3">
-                                            {CF_MODE_GESTION.map((x) => (
+                                            {tGroup('CF_MODE_GESTION', CF_MODE_GESTION).map((x) => (
                                                 <label key={x.id} className="flex items-start gap-2 cursor-pointer">
                                                     <input type="radio" value={x.id} {...register("cfModeGestion")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
                                                     <div>
@@ -4825,9 +4747,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Flexibilité d'espace */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Flexibilité d&apos;espace</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f082')}</div>
                                         <div className="space-y-3">
-                                            {CF_FLEXIBILITE.map((x) => (
+                                            {tGroup('CF_FLEXIBILITE', CF_FLEXIBILITE).map((x) => (
                                                 <label key={x.id} className="flex items-start gap-2 cursor-pointer">
                                                     <input type="checkbox" value={x.id} {...register("cfFlexibilite")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
                                                     <div>
@@ -4840,9 +4762,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Durée d'engagement */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Durée d&apos;engagement</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f083')}</div>
                                         <div className="space-y-2">
-                                            {CF_DUREE_ENGAGEMENT.map((x) => (
+                                            {tGroup('CF_DUREE_ENGAGEMENT', CF_DUREE_ENGAGEMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("cfDureeEngagement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4863,44 +4785,42 @@ function DepositPageComponent() {
                             {/* Section B : Caractéristiques Physiques */}
                             <section className="space-y-6 order-1">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Caractéristiques Physiques
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f084')}</h2>
                                 {/* Ligne 1 : Superficie / Altitude / Nb façades */}
                                 <div className={`grid grid-cols-1 gap-5 ${isTerrainAgricole ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
                                     {/* Surface terrain */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? "Superficie" : "Surface terrain"}</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? t('adSuperficie') : t('adLandArea')}</label>
                                         {isTerrainAgricole ? (
                                             <div className="relative">
                                                 <input
                                                     {...register("landArea")}
                                                     type="number" min="0" step="0.01"
                                                     onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()}
-                                                    className="w-full p-3 pr-32 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium"
-                                                    placeholder="ex: 5"
+                                                    className="w-full p-3 pe-32 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium"
+                                                    placeholder={t('f365')}
                                                 />
-                                                <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-1">
+                                                <div className="absolute end-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-1">
                                                     <select {...register("terrainAgricoleUnite")} className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none pr-1">
-                                                        <option value="">Unité</option>
-                                                        {TERRAIN_AGRICOLE_UNITE.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+                                                        <option value="">{t('f085')}</option>
+                                                        {tGroup('TERRAIN_AGRICOLE_UNITE', TERRAIN_AGRICOLE_UNITE).map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
                                                     </select>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <input {...register("landArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 300 m²" />
+                                            <input {...register("landArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f366')} />
                                         )}
                                     </div>
                                     {/* Altitude — uniquement terrain agricole */}
                                     {isTerrainAgricole && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Altitude (mètres)</label>
-                                            <input {...register("terrainAgricoleAltitude")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 800" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f086')}</label>
+                                            <input {...register("terrainAgricoleAltitude")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f367')} />
                                         </div>
                                     )}
                                     {/* Nombre de façades */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Nombre de façades</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f087')}</label>
                                         <div className="flex gap-3">
                                             {[1, 2, 3, 4].map((n) => (
                                                 <label key={n} className="cursor-pointer">
@@ -4915,19 +4835,19 @@ function DepositPageComponent() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Longueur façade principale */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur</label>
-                                        <input {...register("terrainFacadeLength")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 12 ml" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f088')}</label>
+                                        <input {...register("terrainFacadeLength")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f368')} />
                                     </div>
                                     {/* Profondeur terrain */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur</label>
-                                        <input {...register("terrainDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 25 m" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f089')}</label>
+                                        <input {...register("terrainDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f369')} />
                                     </div>
                                     {/* Topographie */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Topographie (Relief)</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f090')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_TOPOGRAPHIE.map((x) => (
+                                            {tGroup('TERRAIN_TOPOGRAPHIE', TERRAIN_TOPOGRAPHIE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainTopographie")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4938,37 +4858,29 @@ function DepositPageComponent() {
                                     {/* Statut de la zone / Viabilité selon le type de terrain */}
                                     {isTerrainAgricole ? (
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Viabilisation</div>
+                                        <div className="font-bold text-gray-900">{t('f091')}</div>
                                         <div className="flex gap-6 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />
-                                                Terrain viabilisé
-                                            </label>
+                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />{t('f092')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />
-                                                Non viabilisé
-                                            </label>
+                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />{t('f093')}</label>
                                         </div>
                                     </div>
                                     ) : isTerrainTouristique ? (
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Viabilisation</div>
+                                        <div className="font-bold text-gray-900">{t('f091')}</div>
                                         <div className="flex gap-6 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />
-                                                Terrain viabilisé
-                                            </label>
+                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />{t('f092')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />
-                                                Non viabilisé
-                                            </label>
+                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />{t('f093')}</label>
                                         </div>
                                     </div>
                                     ) : (
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Statut de la zone</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f094')}</div>
                                         <div className="space-y-2">
-                                            {(propertyType === "TERRAIN_INDUSTRIEL" ? TERRAIN_INDUSTRIEL_ZONE : TERRAIN_STATUT_ZONE).map((x) => (
+                                            {(propertyType === "TERRAIN_INDUSTRIEL" ? tGroup('TERRAIN_INDUSTRIEL_ZONE', TERRAIN_INDUSTRIEL_ZONE) : tGroup('TERRAIN_STATUT_ZONE', TERRAIN_STATUT_ZONE)).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("terrainStatutZone")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4983,15 +4895,13 @@ function DepositPageComponent() {
                             {/* Section C : État Juridique & Urbanisme */}
                             <section className={`space-y-6 ${isTerrainAgricole ? "order-3" : "order-2"}`}>
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <FileText className="h-5 w-5 text-[#00BFA6]" />
-                                    État Juridique &amp; Urbanisme
-                                </h2>
+                                    <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f095')}</h2>
                                 <div className="space-y-5">
                                     {/* Documents disponibles — tous sur une seule ligne */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Documents disponibles</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f096')}</div>
                                         <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                            {TERRAIN_DOCUMENTS.map((doc) => (
+                                            {tGroup('TERRAIN_DOCUMENTS', TERRAIN_DOCUMENTS).map((doc) => (
                                                 <label key={doc.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded-lg px-1 py-0.5">
                                                     <input type="checkbox" value={doc.id} {...register("terrainDocuments")} className="accent-[#00BFA6] w-4 h-4 shrink-0" />
                                                     <span className="font-medium text-gray-700 text-sm whitespace-nowrap">{doc.label}</span>
@@ -5001,22 +4911,18 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Viabilisation & Raccordements — masqué pour agricole et touristique (viabilité déjà dans Caractéristiques Physiques) */}
                                     {!isTerrainAgricole && !isTerrainTouristique && <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Viabilisation</div>
+                                        <div className="font-bold text-gray-900">{t('f091')}</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />
-                                                Terrain viabilisé
-                                            </label>
+                                                <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />{t('f092')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />
-                                                Non viabilisé
-                                            </label>
+                                                <input type="radio" value={"false" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", false as any)} checked={terrainViabilise === false} />{t('f093')}</label>
                                         </div>
                                         {terrainViabilise === false && !isTerrainAgricole && !isTerrainTouristique && (
                                             <div>
-                                                <div className="text-sm font-bold text-gray-700 mb-2">Raccordements à proximité</div>
+                                                <div className="text-sm font-bold text-gray-700 mb-2">{t('f097')}</div>
                                                 <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                    {TERRAIN_RACCORDEMENTS.map((r) => (
+                                                    {tGroup('TERRAIN_RACCORDEMENTS', TERRAIN_RACCORDEMENTS).map((r) => (
                                                         <label key={r.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                             <input type="checkbox" value={r.id} {...register("terrainRaccordements")} className="accent-[#00BFA6] w-4 h-4" />
                                                             <span className="whitespace-nowrap">{r.label}</span>
@@ -5034,15 +4940,13 @@ function DepositPageComponent() {
                             <>
                             <section className="space-y-6 order-2">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Leaf className="h-5 w-5 text-[#00BFA6]" />
-                                    Caractéristiques Agricoles
-                                </h2>
+                                    <Leaf className="h-5 w-5 text-[#00BFA6]" />{t('f098')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Vocation agricole */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Vocation / Type de culture</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f099')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_VOCATION.map((v) => (
+                                            {tGroup('TERRAIN_AGRICOLE_VOCATION', TERRAIN_AGRICOLE_VOCATION).map((v) => (
                                                 <label key={v.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={v.id} {...register("terrainAgricoleVocation")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {v.label}
@@ -5051,37 +4955,35 @@ function DepositPageComponent() {
                                         </div>
                                         {terrainAgricoleVocationList.includes("MIXTE") && (
                                             <div className="mt-3">
-                                                <input {...register("terrainAgricoleVocationAutre")} className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="Préciser les cultures…" />
+                                                <input {...register("terrainAgricoleVocationAutre")} className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder={t('f370')} />
                                             </div>
                                         )}
                                     </div>
                                     {/* Ressources en eau */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Ressources en eau</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f100')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_RESSOURCES_EAU.filter(r => r.id !== "FORAGE").map((r) => (
+                                            {tGroup('TERRAIN_AGRICOLE_RESSOURCES_EAU', TERRAIN_AGRICOLE_RESSOURCES_EAU).filter(r => r.id !== "FORAGE").map((r) => (
                                                 <label key={r.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={r.id} {...register("terrainAgricoleRessourcesEau")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {r.label}
                                                 </label>
                                             ))}
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="checkbox" value="FORAGE" {...register("terrainAgricoleRessourcesEau")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Forage
-                                            </label>
+                                                <input type="checkbox" value="FORAGE" {...register("terrainAgricoleRessourcesEau")} className="accent-[#00BFA6] w-4 h-4" />{t('f101')}</label>
                                         </div>
                                         {terrainAgricoleRessourcesEauList.includes("FORAGE") && (
                                             <div className="mt-3">
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Débit forage (m³/h)</label>
-                                                <input {...register("terrainAgricoleDebitForage")} type="number" min="0" step="0.1" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="ex: 12" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} />
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f102')}</label>
+                                                <input {...register("terrainAgricoleDebitForage")} type="number" min="0" step="0.1" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder={t('f371')} onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} />
                                             </div>
                                         )}
                                     </div>
                                     {/* Exposition */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Exposition</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f103')}</div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {TERRAIN_AGRICOLE_EXPOSITION.map((e) => (
+                                            {tGroup('TERRAIN_AGRICOLE_EXPOSITION', TERRAIN_AGRICOLE_EXPOSITION).map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={e.id} {...register("terrainAgricoleExposition")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {e.label}
@@ -5091,9 +4993,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Ensoleillement */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Ensoleillement</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f104')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_ENSOLEILLEMENT.map((e) => (
+                                            {tGroup('TERRAIN_AGRICOLE_ENSOLEILLEMENT', TERRAIN_AGRICOLE_ENSOLEILLEMENT).map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={e.id} {...register("terrainAgricoleEnsoleillement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {e.label}
@@ -5103,9 +5005,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Nature du sol */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Nature du sol</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f105')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_NATURE_SOL.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_NATURE_SOL', TERRAIN_AGRICOLE_NATURE_SOL).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("terrainAgricoleNatureSol")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5115,9 +5017,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Zone d'implantation — déplacée depuis Bâtiments */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Zone d&apos;implantation</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f106')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_ZONE.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_ZONE', TERRAIN_AGRICOLE_ZONE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainAgricoleZone")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5127,9 +5029,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Qualité de l'eau — juste avant Équipements hydrauliques */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Qualité de l&apos;eau</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f107')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_QUALITE_EAU.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_QUALITE_EAU', TERRAIN_AGRICOLE_QUALITE_EAU).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainAgricoleQualiteEau")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5139,9 +5041,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Équipements hydrauliques */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Équipements hydrauliques</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f108')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE', TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("terrainAgricoleEquipementHydro")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5151,16 +5053,12 @@ function DepositPageComponent() {
                                     </div>
                                     {/* État actuel du terrain */}
                                     <div className="md:col-span-2 bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">État actuel du terrain</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f109')}</div>
                                         <div className="flex gap-6 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="VIDE" {...register("terrainAgricoleEtatCulture")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Terrain vide / Nu
-                                            </label>
+                                                <input type="radio" value="VIDE" {...register("terrainAgricoleEtatCulture")} className="accent-[#00BFA6] w-4 h-4" />{t('f110')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                                <input type="radio" value="EXPLOITE" {...register("terrainAgricoleEtatCulture")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Terrain exploité / Planté
-                                            </label>
+                                                <input type="radio" value="EXPLOITE" {...register("terrainAgricoleEtatCulture")} className="accent-[#00BFA6] w-4 h-4" />{t('f111')}</label>
                                         </div>
                                     </div>
                                 </div>
@@ -5169,14 +5067,12 @@ function DepositPageComponent() {
                             {/* Section Accessibilité & Logistique — uniquement pour Terrain Agricole */}
                             <section className="space-y-6 order-4">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Navigation className="h-5 w-5 text-[#00BFA6]" />
-                                    Accessibilité &amp; Logistique
-                                </h2>
+                                    <Navigation className="h-5 w-5 text-[#00BFA6]" />{t('f112')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;accès principal</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f113')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_ACCES.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_ACCES', TERRAIN_AGRICOLE_ACCES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("terrainAgricoleAcces")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5185,9 +5081,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Accessibilité véhicules lourds</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f114')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_ACCES_LOURDS.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_ACCES_LOURDS', TERRAIN_AGRICOLE_ACCES_LOURDS).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("terrainAgricoleAccesLourds")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5201,14 +5097,12 @@ function DepositPageComponent() {
                             {/* Section Bâtiments & Clôture — uniquement pour Terrain Agricole */}
                             <section className="space-y-6 order-5">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Home className="h-5 w-5 text-[#00BFA6]" />
-                                    Bâtiments, Constructions &amp; Clôture
-                                </h2>
+                                    <Home className="h-5 w-5 text-[#00BFA6]" />{t('f115')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Constructions présentes</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f116')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_CONSTRUCTIONS.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_CONSTRUCTIONS', TERRAIN_AGRICOLE_CONSTRUCTIONS).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("terrainAgricoleConstructions")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5217,9 +5111,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Clôture du terrain</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f117')}</div>
                                         <div className="space-y-2">
-                                            {TERRAIN_AGRICOLE_CLOTURE.map((x) => (
+                                            {tGroup('TERRAIN_AGRICOLE_CLOTURE', TERRAIN_AGRICOLE_CLOTURE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainAgricoleCloture")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5236,17 +5130,15 @@ function DepositPageComponent() {
                             {isTerrainTouristique && (
                             <section className="space-y-6 order-2">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Palmtree className="h-5 w-5 text-[#00BFA6]" />
-                                    Statut &amp; Vocation Touristique
-                                </h2>
+                                    <Palmtree className="h-5 w-5 text-[#00BFA6]" />{t('f118')}</h2>
                                 <div className="space-y-5">
                                     {/* ZET + PAT */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-1">Zone d&apos;Expansion Touristique (Z.E.T)</div>
-                                            <div className="text-xs text-gray-500 mb-3">Le terrain est-il situé à l&apos;intérieur d&apos;une Z.E.T décrétée ?</div>
+                                            <div className="font-bold text-gray-900 mb-1">{t('f119')}</div>
+                                            <div className="text-xs text-gray-500 mb-3">{t('f120')}</div>
                                             <div className="space-y-2">
-                                                {TERRAIN_TOURISTIQUE_ZET.map((x) => (
+                                                {tGroup('TERRAIN_TOURISTIQUE_ZET', TERRAIN_TOURISTIQUE_ZET).map((x) => (
                                                     <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                         <input type="radio" value={x.id} {...register("terrainTouristiqueZet")} className="accent-[#00BFA6] w-4 h-4" />
                                                         {x.label}
@@ -5255,15 +5147,15 @@ function DepositPageComponent() {
                                             </div>
                                             {terrainTouristiqueZet === "OUI" && (
                                                 <div className="mt-3">
-                                                    <input {...register("terrainTouristiqueZetNom")} type="text" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder="Nom de la Z.E.T…" />
+                                                    <input {...register("terrainTouristiqueZetNom")} type="text" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder={t('f372')} />
                                                 </div>
                                             )}
                                         </div>
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                            <div className="font-bold text-gray-900 mb-1">Plan d&apos;Aménagement Touristique (P.A.T)</div>
-                                            <div className="text-xs text-gray-500 mb-3">Existe-t-il un P.A.T approuvé par le Ministère du Tourisme ?</div>
+                                            <div className="font-bold text-gray-900 mb-1">{t('f121')}</div>
+                                            <div className="text-xs text-gray-500 mb-3">{t('f122')}</div>
                                             <div className="space-y-2">
-                                                {TERRAIN_TOURISTIQUE_PAT.map((x) => (
+                                                {tGroup('TERRAIN_TOURISTIQUE_PAT', TERRAIN_TOURISTIQUE_PAT).map((x) => (
                                                     <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                         <input type="radio" value={x.id} {...register("terrainTouristiquePat")} className="accent-[#00BFA6] w-4 h-4" />
                                                         {x.label}
@@ -5274,10 +5166,10 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Classification de la zone */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Classification de la zone</div>
-                                        <div className="text-xs text-gray-500 mb-3">Cocher la vocation principale</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f123')}</div>
+                                        <div className="text-xs text-gray-500 mb-3">{t('f124')}</div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {TERRAIN_TOURISTIQUE_ZONE.map((x) => (
+                                            {tGroup('TERRAIN_TOURISTIQUE_ZONE', TERRAIN_TOURISTIQUE_ZONE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainTouristiqueZone")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5299,43 +5191,41 @@ function DepositPageComponent() {
                             {/* Section 1 : Informations Générales & Superficies */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Informations Générales &amp; Superficies
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f125')}</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
-                                        <input {...register("immeubleSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
+                                        <input {...register("immeubleSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f373')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m)</label>
-                                        <input {...register("immeubleSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 30" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f126')}</label>
+                                        <input {...register("immeubleSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f374')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
-                                        <input {...register("immeubleLargeur")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f127')}</label>
+                                        <input {...register("immeubleLargeur")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages (RDC inclus)</label>
-                                        <input {...register("immeubleNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f128')}</label>
+                                        <input {...register("immeubleNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f375')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
-                                        <input {...register("immeubleHsp")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3.5" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f129')}</label>
+                                        <input {...register("immeubleHsp")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f376')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de rideaux</label>
-                                        <input {...register("immeubleNbRideaux")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f130')}</label>
+                                        <input {...register("immeubleNbRideaux")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f377')} />
                                     </div>
                                     <div className="md:col-span-3">
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface linéaire façade (ml)</label>
-                                        <input {...register("immeubleFacadeLineaire")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f131')}</label>
+                                        <input {...register("immeubleFacadeLineaire")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f378')} />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">État général du bâtiment</label>
+                                    <label className="block text-sm font-bold text-gray-900 mb-3">{t('f132')}</label>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                        {IMMEUBLE_ETAT_GLOBAL.map((eg) => (
+                                        {tGroup('IMMEUBLE_ETAT_GLOBAL', IMMEUBLE_ETAT_GLOBAL).map((eg) => (
                                             <label key={eg.id} className="flex items-start gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6]/40 bg-white">
                                                 <input type="radio" value={eg.id} {...register("immeubleEtatGlobal")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
                                                 <div>
@@ -5351,14 +5241,12 @@ function DepositPageComponent() {
                             {/* Section 2 : Emplacement, Visibilité & Accès — 3 colonnes */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Emplacement, Visibilité &amp; Accès
-                                </h2>
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f133')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type de zone</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f134')}</div>
                                         <div className="space-y-2">
-                                            {IMMEUBLE_TYPE_ZONE.map((z) => (
+                                            {tGroup('IMMEUBLE_TYPE_ZONE', IMMEUBLE_TYPE_ZONE).map((z) => (
                                                 <label key={z.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={z.id} {...register("immeubleTypeZone")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {z.label}
@@ -5367,9 +5255,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Visibilité &amp; Flux</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f135')}</div>
                                         <div className="space-y-2">
-                                            {IMMEUBLE_VISIBILITE.map((v) => (
+                                            {tGroup('IMMEUBLE_VISIBILITE', IMMEUBLE_VISIBILITE).map((v) => (
                                                 <label key={v.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={v.id} {...register("immeubleVisibilite")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {v.label}
@@ -5378,15 +5266,15 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;accès &amp; Flux de circulation</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f136')}</div>
                                         <div className="space-y-2">
-                                            {IMMEUBLE_TYPE_ACCES.map((a) => (
+                                            {tGroup('IMMEUBLE_TYPE_ACCES', IMMEUBLE_TYPE_ACCES).map((a) => (
                                                 <label key={a.id} className="flex items-center gap-2 cursor-pointer">
                                                     <input type="radio" value={a.id} {...register("immeubleTypeAcces")} className="accent-[#00BFA6] w-4 h-4 shrink-0" />
                                                     <span className="font-medium text-gray-700 text-sm">{a.label}</span>
                                                     <div className="relative group">
                                                         <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
-                                                        <div className="absolute left-0 bottom-6 z-20 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-normal pointer-events-none">
+                                                        <div className="absolute start-0 bottom-6 z-20 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-normal pointer-events-none">
                                                             {a.desc}
                                                         </div>
                                                     </div>
@@ -5407,37 +5295,35 @@ function DepositPageComponent() {
                             {/* Superficies & Dimensions */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Superficies &amp; Dimensions
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f137')}</h2>
                                 {/* Ligne 1 : 3 colonnes */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
-                                        <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 500" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
+                                        <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f373')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²)</label>
-                                        <input {...register("showroomSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 350" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f138')}</label>
+                                        <input {...register("showroomSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f379')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages</label>
-                                        <input {...register("showroomNiveaux")} type="number" min="1" max="10" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 2" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f139')}</label>
+                                        <input {...register("showroomNiveaux")} type="number" min="1" max="10" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f380')} />
                                     </div>
                                 </div>
                                 {/* Ligne 2 : 3 colonnes */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m)</label>
-                                        <input {...register("showroomFacadeWidth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f126')}</label>
+                                        <input {...register("showroomFacadeWidth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
-                                        <input {...register("showroomFacadeDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 15" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f127')}</label>
+                                        <input {...register("showroomFacadeDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f378')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
-                                        <input {...register("showroomHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 4.5" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f129')}</label>
+                                        <input {...register("showroomHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f361')} />
                                     </div>
                                 </div>
                             </section>
@@ -5445,14 +5331,12 @@ function DepositPageComponent() {
                             {/* État & Style Architectural */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Paintbrush className="h-5 w-5 text-[#00BFA6]" />
-                                    État &amp; Style Architectural
-                                </h2>
+                                    <Paintbrush className="h-5 w-5 text-[#00BFA6]" />{t('f140')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Style architectural</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f141')}</div>
                                         <div className="space-y-2">
-                                            {SHOWROOM_STYLE.map((s) => (
+                                            {tGroup('SHOWROOM_STYLE', SHOWROOM_STYLE).map((s) => (
                                                 <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={s.id} {...register("showroomStyle")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {s.label}
@@ -5461,9 +5345,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Structure</div>
+                                        <div className="font-bold text-gray-900">{t('f142')}</div>
                                         <div className="space-y-2">
-                                            {SHOWROOM_STRUCTURE.map((s) => (
+                                            {tGroup('SHOWROOM_STRUCTURE', SHOWROOM_STRUCTURE).map((s) => (
                                                 <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={s.id} {...register("showroomStructure")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {s.label}
@@ -5471,7 +5355,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                         {showroomStructureList.includes("AUTRE") && (
-                                            <input {...register("showroomStructureAutre")} className="w-full p-2.5 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder="Préciser…" />
+                                            <input {...register("showroomStructureAutre")} className="w-full p-2.5 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm" placeholder={t('f381')} />
                                         )}
                                     </div>
                                 </div>
@@ -5480,27 +5364,21 @@ function DepositPageComponent() {
                             {/* Visibilité & Accessibilité */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Eye className="h-5 w-5 text-[#00BFA6]" />
-                                    Visibilité &amp; Accessibilité
-                                </h2>
+                                    <Eye className="h-5 w-5 text-[#00BFA6]" />{t('f143')}</h2>
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
                                     <div>
-                                        <div className="font-bold text-gray-900 mb-3">Visibilité depuis autoroute / voie rapide</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f144')}</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"true" as any} {...register("showroomVisibiliteAutoroute")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("showroomVisibiliteAutoroute", true as any)} checked={showroomVisibiliteAutoroute === true} />
-                                                Oui
-                                            </label>
+                                                <input type="radio" value={"true" as any} {...register("showroomVisibiliteAutoroute")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("showroomVisibiliteAutoroute", true as any)} checked={showroomVisibiliteAutoroute === true} />{t('f018')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"false" as any} {...register("showroomVisibiliteAutoroute")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("showroomVisibiliteAutoroute", false as any)} checked={showroomVisibiliteAutoroute === false} />
-                                                Non
-                                            </label>
+                                                <input type="radio" value={"false" as any} {...register("showroomVisibiliteAutoroute")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("showroomVisibiliteAutoroute", false as any)} checked={showroomVisibiliteAutoroute === false} />{t('f019')}</label>
                                         </div>
                                     </div>
                                     {showroomVisibiliteAutoroute === true && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Axe routier / adresse commerciale</label>
-                                            <input {...register("showroomAxeRoutier")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: RN5, Boulevard Didouche Mourad…" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f145')}</label>
+                                            <input {...register("showroomAxeRoutier")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f382')} />
                                         </div>
                                     )}
                                 </div>
@@ -5516,33 +5394,31 @@ function DepositPageComponent() {
                             {/* Superficies & Dimensions — PREMIÈRE SECTION */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Superficies &amp; Dimensions
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f137')}</h2>
                                 {/* Ligne 1 : 3 colonnes */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²)</label>
-                                        <input {...register("localSurfaceTotal")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 120" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
+                                        <input {...register("localSurfaceTotal")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f383')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Longueur (m)</label>
-                                        <input {...register("localVitrineLongueur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 8" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f126')}</label>
+                                        <input {...register("localVitrineLongueur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f384')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Largeur (m)</label>
-                                        <input {...register("localLargeur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 10" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f127')}</label>
+                                        <input {...register("localLargeur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f360')} />
                                     </div>
                                 </div>
                                 {/* Ligne 2 : 2 colonnes */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Hauteur sous plafond (m)</label>
-                                        <input {...register("localHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3.5" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f129')}</label>
+                                        <input {...register("localHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f376')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages</label>
-                                        <input {...register("localNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 1" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f139')}</label>
+                                        <input {...register("localNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f385')} />
                                     </div>
                                 </div>
                             </section>
@@ -5550,13 +5426,11 @@ function DepositPageComponent() {
                             {/* État & Style */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Paintbrush className="h-5 w-5 text-[#00BFA6]" />
-                                    État &amp; Style
-                                </h2>
+                                    <Paintbrush className="h-5 w-5 text-[#00BFA6]" />{t('f146')}</h2>
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                    <div className="font-bold text-gray-900 mb-3">Style du local</div>
+                                    <div className="font-bold text-gray-900 mb-3">{t('f147')}</div>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        {LOCAL_STYLE.map((s) => (
+                                        {tGroup('LOCAL_STYLE', LOCAL_STYLE).map((s) => (
                                             <label key={s.id} className="cursor-pointer">
                                                 <input type="radio" value={s.id} {...register("localStyle")} className="peer sr-only" />
                                                 <div className="w-full p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-gray-50">
@@ -5571,14 +5445,12 @@ function DepositPageComponent() {
                             {/* Emplacement & Flux */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Emplacement &amp; Flux
-                                </h2>
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f148')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type de zone</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f134')}</div>
                                         <div className="space-y-2">
-                                            {LOCAL_ZONE_TYPE.map((z) => (
+                                            {tGroup('LOCAL_ZONE_TYPE', LOCAL_ZONE_TYPE).map((z) => (
                                                 <label key={z.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={z.id} {...register("localZoneType")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {z.label}
@@ -5587,9 +5459,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Flux piéton</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f149')}</div>
                                         <div className="space-y-2">
-                                            {LOCAL_FLUX.map((f) => (
+                                            {tGroup('LOCAL_FLUX', LOCAL_FLUX).map((f) => (
                                                 <label key={f.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={f.id} {...register("localFluxPieton")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {f.label}
@@ -5598,9 +5470,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Flux véhicules</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f150')}</div>
                                         <div className="space-y-2">
-                                            {LOCAL_FLUX.map((f) => (
+                                            {tGroup('LOCAL_FLUX', LOCAL_FLUX).map((f) => (
                                                 <label key={f.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={f.id} {...register("localFluxVehicules")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {f.label}
@@ -5614,30 +5486,28 @@ function DepositPageComponent() {
                             {/* Environnement & Usage — DERNIÈRE SECTION (fusionnée) */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Store className="h-5 w-5 text-[#00BFA6]" />
-                                    Environnement &amp; Usage
-                                </h2>
+                                    <Store className="h-5 w-5 text-[#00BFA6]" />{t('f151')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Environnement */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Environnement du local</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f152')}</div>
                                         <div className="space-y-2">
-                                            {LOCAL_ENVIRONNEMENT.map((e) => (
+                                            {tGroup('LOCAL_ENVIRONNEMENT', LOCAL_ENVIRONNEMENT).map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={e.id} {...register("localEnvironnement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {e.label}
                                                 </label>
                                             ))}
                                             {(localEnvironnement as any)?.includes?.("AUTRE") && (
-                                                <input {...register("localEnvironnementAutre")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm mt-1" placeholder="Préciser l'environnement…" />
+                                                <input {...register("localEnvironnementAutre")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-sm mt-1" placeholder={t('f386')} />
                                             )}
                                         </div>
                                     </div>
                                     {/* Usage */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Usage du local</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f153')}</div>
                                         <div className="space-y-2">
-                                            {LOCAL_USAGE.map((u) => (
+                                            {tGroup('LOCAL_USAGE', LOCAL_USAGE).map((u) => (
                                                 <label key={u.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={u.id} {...register("localUsage")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {u.label}
@@ -5658,46 +5528,44 @@ function DepositPageComponent() {
                             {/* Caractéristiques Extérieures — redesignée */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Building2 className="h-5 w-5 text-[#00BFA6]" />
-                                    Caractéristiques Extérieures
-                                </h2>
+                                    <Building2 className="h-5 w-5 text-[#00BFA6]" />{t('f154')}</h2>
                                 {/* Ligne 1 : surfaces + étages */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²)</label>
-                                        <input {...register("blocSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 1200" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
+                                        <input {...register("blocSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f387')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²)</label>
-                                        <input {...register("blocSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 800" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f138')}</label>
+                                        <input {...register("blocSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f367')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages (R+)</label>
-                                        <input {...register("blocEtages")} type="number" min="0" max="20" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 3" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f155')}</label>
+                                        <input {...register("blocEtages")} type="number" min="0" max="20" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f377')} />
                                     </div>
                                 </div>
                                 {/* Ligne 2 : état général + garage + stationnement */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">État général</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f156')}</label>
                                         <select {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
-                                            <option value="">Sélectionner</option>
+                                            <option value="">{t('f042')}</option>
                                             {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
-                                        <input {...register("parkingCount")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 10" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
+                                        <input {...register("parkingCount")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f360')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
-                                        <input {...register("outdoorParking")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="ex: 20" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
+                                        <input {...register("outdoorParking")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                 </div>
                                 {/* Ligne 3 : façades + sous-sol */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
                                         <div className="flex gap-3">
                                             {[1,2,3,4].map((n) => (
                                                 <label key={n} className="cursor-pointer">
@@ -5708,16 +5576,12 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Sous-sol</div>
+                                        <div className="font-bold text-gray-900">{t('f159')}</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"true" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", true as any)} checked={blocSousSolVal === true} />
-                                                Oui
-                                            </label>
+                                                <input type="radio" value={"true" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", true as any)} checked={blocSousSolVal === true} />{t('f018')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="radio" value={"false" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", false as any)} checked={blocSousSolVal === false} />
-                                                Non
-                                            </label>
+                                                <input type="radio" value={"false" as any} {...register("blocSousSol")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocSousSol", false as any)} checked={blocSousSolVal === false} />{t('f019')}</label>
                                         </div>
                                     </div>
                                 </div>
@@ -5726,14 +5590,12 @@ function DepositPageComponent() {
                             {/* Type d'Espace (multi-choix) */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />
-                                    Type d&apos;Espace
-                                </h2>
+                                    <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f160')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type d&apos;espace bureautique</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f161')}</div>
                                         <div className="space-y-2">
-                                            {BLOC_TYPE_ESPACE.map((e) => (
+                                            {tGroup('BLOC_TYPE_ESPACE', BLOC_TYPE_ESPACE).map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={e.id} {...register("blocTypeEspace")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {e.label}
@@ -5742,9 +5604,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Type de cloisonnement</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f162')}</div>
                                         <div className="space-y-2">
-                                            {BLOC_CLOISONNEMENT.map((c) => (
+                                            {tGroup('BLOC_CLOISONNEMENT', BLOC_CLOISONNEMENT).map((c) => (
                                                 <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={c.id} {...register("blocTypeCloisonnement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {c.label}
@@ -5758,10 +5620,9 @@ function DepositPageComponent() {
                             {/* Extérieurs & Commodités — comme appartement résidentiel */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Trees className="text-[#00BFA6]" /> Extérieurs &amp; Commodités
-                                </h2>
+                                    <Trees className="text-[#00BFA6]" />{t('f163')}</h2>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
+                                    <label className="block text-sm font-bold text-gray-900 mb-3">{t('f164')}</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter(item => item.id !== 'barbecue').map((item) => {
                                             const Icon = IconMap[item.icon] || Trees
@@ -5779,7 +5640,7 @@ function DepositPageComponent() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Sécurité</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f023')}</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.security.map(s => {
                                                 const Icon = IconMap[s.icon] || Shield
@@ -5796,7 +5657,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Connectivité</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f165')}</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                 const Icon = IconMap[c.icon] || Wifi
@@ -5818,11 +5679,9 @@ function DepositPageComponent() {
                             {/* Cuisine */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Utensils className="h-5 w-5 text-[#00BFA6]" />
-                                    Cuisine
-                                </h2>
+                                    <Utensils className="h-5 w-5 text-[#00BFA6]" />{t('f166')}</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    {BLOC_CUISINE.map((c) => (
+                                    {tGroup('BLOC_CUISINE', BLOC_CUISINE).map((c) => (
                                         <label key={c.id} className="cursor-pointer">
                                             <input type="radio" value={c.id} {...register("blocCuisine")} className="peer sr-only" />
                                             <div className="w-full p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-300 bg-gray-50 text-sm">
@@ -5836,20 +5695,14 @@ function DepositPageComponent() {
                             {/* Logement de fonction */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Home className="h-5 w-5 text-[#00BFA6]" />
-                                    Logement de fonction
-                                </h2>
+                                    <Home className="h-5 w-5 text-[#00BFA6]" />{t('f167')}</h2>
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                    <div className="font-bold text-gray-900">Logement de fonction dans l&apos;immeuble</div>
+                                    <div className="font-bold text-gray-900">{t('f168')}</div>
                                     <div className="flex gap-6">
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                            <input type="radio" value={"true" as any} {...register("blocLogementFonction")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocLogementFonction", true as any)} checked={blocLogementFonction === true} />
-                                            Oui
-                                        </label>
+                                            <input type="radio" value={"true" as any} {...register("blocLogementFonction")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocLogementFonction", true as any)} checked={blocLogementFonction === true} />{t('f018')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                            <input type="radio" value={"false" as any} {...register("blocLogementFonction")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocLogementFonction", false as any)} checked={blocLogementFonction === false} />
-                                            Non
-                                        </label>
+                                            <input type="radio" value={"false" as any} {...register("blocLogementFonction")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("blocLogementFonction", false as any)} checked={blocLogementFonction === false} />{t('f019')}</label>
                                     </div>
                                 </div>
                             </section>
@@ -5857,14 +5710,12 @@ function DepositPageComponent() {
                             {/* Connectivité & Réseau */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Wifi className="h-5 w-5 text-[#00BFA6]" />
-                                    Connectivité &amp; Réseau
-                                </h2>
+                                    <Wifi className="h-5 w-5 text-[#00BFA6]" />{t('f169')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Mode de connexion</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f170')}</div>
                                         <div className="space-y-2">
-                                            {BLOC_CONNEXION.map((c) => (
+                                            {tGroup('BLOC_CONNEXION', BLOC_CONNEXION).map((c) => (
                                                 <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={c.id} {...register("blocTypeConnexion")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {c.label}
@@ -5873,9 +5724,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Équipements serveur</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f171')}</div>
                                         <div className="space-y-2">
-                                            {BLOC_EQUIPEMENT_SERVEUR.map((e) => (
+                                            {tGroup('BLOC_EQUIPEMENT_SERVEUR', BLOC_EQUIPEMENT_SERVEUR).map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={e.id} {...register("blocEquipementServeur")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {e.label}
@@ -5889,27 +5740,25 @@ function DepositPageComponent() {
                             {/* Énergie & Fluides */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Zap className="h-5 w-5 text-[#00BFA6]" />
-                                    Énergie &amp; Fluides
-                                </h2>
+                                    <Zap className="h-5 w-5 text-[#00BFA6]" />{t('f024')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Électricité</div>
+                                        <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Poste transfo (KVA)</label>
-                                                <input {...register("industrialElectricityTransformerKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder="Ex: 250" />
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f026')}</label>
+                                                <input {...register("industrialElectricityTransformerKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f353')} />
                                             </div>
                                             <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
                                                 <input type="checkbox" {...register("industrialElectricityForceMotrice")} className="accent-[#00BFA6] w-5 h-5" />
-                                                <span className="font-bold text-gray-900 text-sm">Force motrice (380V)</span>
+                                                <span className="font-bold text-gray-900 text-sm">{t('f027')}</span>
                                             </label>
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Gaz</div>
+                                        <div className="font-bold text-gray-900">{t('f028')}</div>
                                         <div className="space-y-2">
-                                            {[{ id: "INDUSTRIEL", label: "Industriel" }, { id: "VILLE", label: "De ville" }, { id: "AUCUN", label: "Aucun" }].map(g => (
+                                            {[{ id: "INDUSTRIEL", label: t('f029') }, { id: "VILLE", label: t('depGasCity') }, { id: "AUCUN", label: t('f031') }].map(g => (
                                                 <label key={g.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={g.id} {...register("industrialGas")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {g.label}
@@ -5918,9 +5767,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Eau</div>
+                                        <div className="font-bold text-gray-900">{t('f032')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_WATER_SOURCES.map((x) => (
+                                            {tGroup('INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialWaterSources")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5929,9 +5778,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Assainissement</div>
+                                        <div className="font-bold text-gray-900">{t('f033')}</div>
                                         <div className="space-y-2">
-                                            {[{ id: "RESEAU_PUBLIC", label: "Réseau public" }, { id: "FOSSE_INDUSTRIELLE", label: "Fosse septique" }].map(a => (
+                                            {[{ id: "RESEAU_PUBLIC", label: t('f034') }, { id: "FOSSE_INDUSTRIELLE", label: t('f035') }].map(a => (
                                                 <label key={a.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={a.id} {...register("industrialSanitation")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {a.label}
@@ -5945,14 +5794,12 @@ function DepositPageComponent() {
                             {/* Sécurité incendie & Protection */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Siren className="h-5 w-5 text-[#00BFA6]" />
-                                    Sécurité incendie &amp; Protection
-                                </h2>
+                                    <Siren className="h-5 w-5 text-[#00BFA6]" />{t('f036')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Réseau anti-incendie</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f037')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_FIRE_NETWORK.map((x) => (
+                                            {tGroup('INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialFireNetwork")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5961,9 +5808,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
-                                        <div className="font-bold text-gray-900">Équipements complémentaires</div>
+                                        <div className="font-bold text-gray-900">{t('f038')}</div>
                                         <div className="space-y-2">
-                                            {INDUSTRIAL_FIRE_EQUIPMENT.map((x) => (
+                                            {tGroup('INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialFireEquipment")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -5972,7 +5819,7 @@ function DepositPageComponent() {
                                         </div>
                                         {industrialFireEquipmentList.includes("BACHE_EAU") && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Volume (litres)</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f172')}</label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
                                                     type="text"
@@ -5983,7 +5830,7 @@ function DepositPageComponent() {
                                                         setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
                                                     }}
                                                     className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium"
-                                                    placeholder="Ex: 10 000"
+                                                    placeholder={t('f354')}
                                                 />
                                             </div>
                                         )}
@@ -6011,8 +5858,7 @@ function DepositPageComponent() {
                             {/* 1. Caractéristiques Générales & Structure */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Building2 className="text-[#00BFA6]" /> Caractéristiques Générales & Structure
-                                </h2>
+                                    <Building2 className="text-[#00BFA6]" />{t('f173')}</h2>
                                 
                                 <div className="flex flex-col gap-5">
                                     {(propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") ? (
@@ -6023,9 +5869,9 @@ function DepositPageComponent() {
                                                     isBuildingDemolition ? "md:grid-cols-2" : "md:grid-cols-1"
                                                 )}>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')} <span className="text-red-500">*</span></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
-                                                            <option value="">Sélectionner</option>
+                                                            <option value="">{t('f042')}</option>
                                                             {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                         </select>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
@@ -6033,14 +5879,14 @@ function DepositPageComponent() {
 
                                                     {isBuildingDemolition && (
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²) <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')} <span className="text-red-500">*</span></label>
                                                             <input
                                                                 {...register("landArea")}
                                                                 type="number"
                                                                 min="0"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                                placeholder="Ex: 400"
+                                                                placeholder={t('f388')}
                                                             />
                                                             {errors.landArea && <p className="text-red-500 text-xs mt-1">{errors.landArea.message as any}</p>}
                                                         </div>
@@ -6051,7 +5897,7 @@ function DepositPageComponent() {
                                             {!isBuildingDemolition && (
                                             <>
                                             <div className="min-w-0">
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f196')} <span className="text-red-500">*</span></label>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     {BUILDING_TYPOLOGY_MODES.map((m) => (
                                                         <label key={m.id} className="cursor-pointer">
@@ -6069,22 +5915,22 @@ function DepositPageComponent() {
                                                 <div className="flex flex-col gap-5">
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_1.1fr_1.4fr] gap-3 items-end">
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Nbr d&apos;étages dans l&apos;immeuble <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adImmFloorsCount')} <span className="text-red-500">*</span></label>
                                                             <input 
                                                                 {...register("floorCount")} 
                                                                 type="number" 
                                                                 min="0" max="50"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
-                                                                placeholder="Ex: 8"
+                                                                placeholder={t('f389')}
                                                             />
                                                             {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Typologie des appartements <span className="text-red-500">*</span></label>
-                                                            <div className="flex items-center gap-2">
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adAptTypology')} <span className="text-red-500">*</span></label>
+                                                            <div className="flex items-center gap-2" dir="ltr">
                                                                 <span className="font-bold text-gray-700 text-lg">F</span>
-                                                                <input 
+                                                                <input
                                                                     {...register("buildingApartmentTypologyCustom")}
                                                                     type="number" 
                                                                     min="1" max="99"
@@ -6096,25 +5942,25 @@ function DepositPageComponent() {
                                                                         setValue("typologyCustom", val)
                                                                     }}
                                                                     className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
-                                                                    placeholder="Ex: 4"
+                                                                    placeholder={t('f390')}
                                                                 />
                                                             </div>
                                                             {errors.buildingApartmentTypologyCustom && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologyCustom.message as any}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Nombre d&apos;appartements <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adAptCount')} <span className="text-red-500">*</span></label>
                                                             <input 
                                                                 {...register("buildingTotalApartments")} 
                                                                 type="number" 
                                                                 min="1"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" 
-                                                                placeholder="Ex: 24" 
+                                                                placeholder={t('f391')} 
                                                             />
                                                             {errors.buildingTotalApartments && <p className="text-red-500 text-xs mt-1">{errors.buildingTotalApartments.message as any}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">Surface <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adSurface')} <span className="text-red-500">*</span></label>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 border-2 border-gray-200 rounded-lg bg-white">
                                                                 {BUILDING_SURFACE_MODES.map((m) => (
                                                                     <label key={m.id} className="cursor-pointer">
@@ -6132,14 +5978,14 @@ function DepositPageComponent() {
                                                     {buildingSurfaceMode === "UNIQUE" && (
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
                                                             <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
+                                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')} <span className="text-red-500">*</span></label>
                                                                 <input 
                                                                     {...register("area")} 
                                                                     type="number" 
                                                                     min="0"
                                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                     className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                    placeholder="Ex: 120" 
+                                                                    placeholder={t('f392')} 
                                                                 />
                                                                 {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area.message as any}</p>}
                                                             </div>
@@ -6152,31 +5998,31 @@ function DepositPageComponent() {
                                                 <div className="flex flex-col gap-5">
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;étages dans l&apos;immeuble <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adImmFloorsCount')} <span className="text-red-500">*</span></label>
                                                             <input 
                                                                 {...register("floorCount")} 
                                                                 type="number" 
                                                                 min="0" max="50"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 8"
+                                                                placeholder={t('f389')}
                                                             />
                                                             {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Nombre d&apos;appartements <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adAptCount')} <span className="text-red-500">*</span></label>
                                                             <input 
                                                                 {...register("buildingTotalApartments")} 
                                                                 type="number" 
                                                                 min="1"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 24" 
+                                                                placeholder={t('f391')} 
                                                             />
                                                             {errors.buildingTotalApartments && <p className="text-red-500 text-xs mt-1">{errors.buildingTotalApartments.message as any}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Style d&apos;appartement <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adAptStyle')} <span className="text-red-500">*</span></label>
                                                             <div className="flex flex-wrap gap-3">
                                                                 {BUILDING_APARTMENT_STYLES.map((s) => (
                                                                     <label key={s.id} className="cursor-pointer">
@@ -6192,7 +6038,7 @@ function DepositPageComponent() {
                                                     </div>
 
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Typologies <span className="text-red-500">*</span></label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('adTypologies')} <span className="text-red-500">*</span></label>
                                                         <div className="flex gap-3 flex-wrap">
                                                             {BUILDING_APARTMENT_TYPOLOGIES.map((t) => (
                                                                 <label key={t.id} className="cursor-pointer">
@@ -6208,7 +6054,7 @@ function DepositPageComponent() {
 
                                                     {Array.isArray(buildingApartmentTypologies) && buildingApartmentTypologies.includes("F10_PLUS") && (
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Typologies au-delà de F10 <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adTypologiesBeyondF10')} <span className="text-red-500">*</span></label>
                                                             <div className="flex gap-3 flex-wrap mb-2">
                                                                 {["F11","F12","F13","F14","F15","F16","F17","F18","F19","F20+"].map((f) => {
                                                                     const currentOther = typeof buildingApartmentTypologyOther === "string" ? buildingApartmentTypologyOther : ""
@@ -6241,26 +6087,26 @@ function DepositPageComponent() {
                                             {isSaleBuilding ? (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
                                                         <input
                                                             {...register("parkingCount")}
                                                             type="number"
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                            placeholder="Ex: 1"
+                                                            placeholder={t('f393')}
                                                         />
                                                         {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
                                                         <input
                                                             {...register("outdoorParking")}
                                                             type="number"
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                            placeholder="Ex: 2"
+                                                            placeholder={t('f394')}
                                                         />
                                                         {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
                                                     </div>
@@ -6268,34 +6114,34 @@ function DepositPageComponent() {
                                             ) : (
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">État Général <span className="text-red-500">*</span></label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')} <span className="text-red-500">*</span></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
-                                                            <option value="">Sélectionner</option>
+                                                            <option value="">{t('f042')}</option>
                                                             {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                         </select>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
                                                         <input
                                                             {...register("parkingCount")}
                                                             type="number"
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                            placeholder="Ex: 1"
+                                                            placeholder={t('f393')}
                                                         />
                                                         {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
                                                         <input
                                                             {...register("outdoorParking")}
                                                             type="number"
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                            placeholder="Ex: 2"
+                                                            placeholder={t('f394')}
                                                         />
                                                         {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
                                                     </div>
@@ -6313,11 +6159,11 @@ function DepositPageComponent() {
                                             )}>
                                                 {!(propertyType === "VILLA" && isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Typologie <span className="text-red-500">*</span></label>
-                                                        <div className="flex items-center gap-2">
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f196')} <span className="text-red-500">*</span></label>
+                                                        <div className="flex items-center gap-2" dir="ltr">
                                                             <span className="font-bold text-gray-700 text-lg">F</span>
-                                                            <input 
-                                                                type="number" 
+                                                            <input
+                                                                type="number"
                                                                 min="1" max="10"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 onChange={(e) => {
@@ -6326,7 +6172,7 @@ function DepositPageComponent() {
                                                                     setValue("typologyCustom", val);
                                                                 }}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 4"
+                                                                placeholder={t('f390')}
                                                             />
                                                         </div>
                                                         {errors.typology && <p className="text-red-500 text-xs mt-1">{errors.typology.message}</p>}
@@ -6334,19 +6180,19 @@ function DepositPageComponent() {
                                                 )}
 
                                                 <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? "Nombre d'étages" : "Étage"} <span className="text-red-500">*</span></label>
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? t('f139') : t('adFloor')} <span className="text-red-500">*</span></label>
                                                     <div className="flex items-center gap-2">
                                                         {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && (
-                                                            <span className="font-bold text-gray-700 text-lg whitespace-nowrap">R +</span>
+                                                            <span className="font-bold text-gray-700 text-lg whitespace-nowrap">{t('f174')}</span>
                                                         )}
                                                         {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL") ? (
                                                             <select
                                                                 {...register("floorCount")}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
                                                             >
-                                                                <option value="">Sélectionner</option>
-                                                                <option value="0">Rez-de-chaussée</option>
-                                                                <option value="1">Étage supérieur</option>
+                                                                <option value="">{t('f042')}</option>
+                                                                <option value="0">{t('f175')}</option>
+                                                                <option value="1">{t('f176')}</option>
                                                             </select>
                                                         ) : (
                                                             <input 
@@ -6355,7 +6201,7 @@ function DepositPageComponent() {
                                                                 min="0" max="10"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 2"
+                                                                placeholder={t('f394')}
                                                             />
                                                         )}
                                                     </div>
@@ -6365,39 +6211,39 @@ function DepositPageComponent() {
                                                 {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? (
                                                     <>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface terrain (m²) <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')} <span className="text-red-500">*</span></label>
                                                             <input 
                                                                 {...register("landArea")} 
                                                                 type="number" 
                                                                 min="0"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 400" 
+                                                                placeholder={t('f388')} 
                                                             />
                                                             {errors.landArea && <p className="text-red-500 text-xs mt-1">{errors.landArea.message}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface bâtie (m²) <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f138')} <span className="text-red-500">*</span></label>
                                                             <input 
                                                                 {...register("builtArea")} 
                                                                 type="number" 
                                                                 min="0"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 250" 
+                                                                placeholder={t('f353')} 
                                                             />
                                                             {errors.builtArea && <p className="text-red-500 text-xs mt-1">{errors.builtArea.message}</p>}
                                                         </div>
                                                         {isSaleVillaDemolition && (
                                                             <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
                                                                 <input
                                                                     {...register("facadesCount")}
                                                                     type="number"
                                                                     min="0"
                                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                     className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                                    placeholder="Ex: 2"
+                                                                    placeholder={t('f394')}
                                                                 />
                                                                 {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
                                                             </div>
@@ -6406,27 +6252,27 @@ function DepositPageComponent() {
                                                 ) : (
                                                     <>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">Surface (m²) <span className="text-red-500">*</span></label>
+                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')} <span className="text-red-500">*</span></label>
                                                             <input 
                                                                 {...register("area")} 
                                                                 type="number" 
                                                                 min="0"
                                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                                placeholder="Ex: 120" 
+                                                                placeholder={t('f392')} 
                                                             />
                                                             {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area.message as any}</p>}
                                                         </div>
                                                         {(isSaleParticulierApartment || isSaleParticulierNiveauVilla) && (
                                                             <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
                                                                 <input
                                                                     {...register("facadesCount")}
                                                                     type="number"
                                                                     min="0"
                                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                                     className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                                    placeholder="Ex: 2"
+                                                                    placeholder={t('f394')}
                                                                 />
                                                                 {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
                                                             </div>
@@ -6441,51 +6287,51 @@ function DepositPageComponent() {
                                                 (propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? (isSaleVillaDemolition ? "md:grid-cols-1" : "md:grid-cols-4") : "md:grid-cols-3"
                                             )}>
                                                 <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">État Général</label>
+                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')}</label>
                                                     <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
-                                                        <option value="">Sélectionner</option>
+                                                        <option value="">{t('f042')}</option>
                                                         {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                     </select>
                                                     {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                 </div>
                                                 {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && !isSaleVillaDemolition && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de façades</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
                                                         <input
                                                             {...register("facadesCount")}
                                                             type="number"
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                            placeholder="Ex: 2"
+                                                            placeholder={t('f394')}
                                                         />
                                                         {errors.facadesCount && <p className="text-red-500 text-xs mt-1">{errors.facadesCount.message as any}</p>}
                                                     </div>
                                                 )}
                                                 {(!["VILLA", "VILLA_COMMERCIALE"].includes(propertyType) || !isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Garage (places)</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
                                                         <input
                                                             {...register("parkingCount")}
                                                             type="number"
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
-                                                            placeholder="Ex: 1"
+                                                            placeholder={t('f393')}
                                                         />
                                                         {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
                                                     </div>
                                                 )}
                                                 {(!["VILLA", "VILLA_COMMERCIALE"].includes(propertyType) || !isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Stationnement extérieur (places)</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
                                                         <input 
                                                             {...register("outdoorParking")} 
                                                             type="number" 
                                                             min="0"
                                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                             className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" 
-                                                            placeholder="Ex: 2" 
+                                                            placeholder={t('f394')} 
                                                         />
                                                         {errors.outdoorParking && <p className="text-red-500 text-xs mt-1">{errors.outdoorParking.message}</p>}
                                                     </div>
@@ -6500,12 +6346,11 @@ function DepositPageComponent() {
                             {!isVillaDemolition && !isBuildingDemolition && (
                                 <section className="space-y-6">
                                     <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                        <MapPin className="text-[#00BFA6]" /> Cadre et mode de vie
-                                    </h2>
+                                        <MapPin className="text-[#00BFA6]" />{t('f178')}</h2>
 
                                     {/* Environnement — choix multiple, commun à tous les types de biens d'habitation */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Environnement / type d'habitat du bien</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f179')}</label>
                                         <div className="flex flex-wrap gap-4">
                                             {APARTMENT_LIFESTYLE_TYPES.map((u) => (
                                                 <label key={u.id} className="cursor-pointer">
@@ -6521,14 +6366,14 @@ function DepositPageComponent() {
                                     {/* Usage — choix unique, villa uniquement */}
                                     {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Usage</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f180')}</label>
                                             <div className="flex flex-wrap gap-4">
                                                 {USAGE_TYPES.map((u) => (
                                                     <label key={u.id} className="cursor-pointer group relative">
                                                         <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
                                                         <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
                                                             {optLabel('USAGE_TYPES', u)}
-                                                            <div className="relative group/info ml-1">
+                                                            <div className="relative group/info ms-1">
                                                                 <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
                                                                     {optDesc('USAGE_TYPES', u)}
@@ -6546,14 +6391,14 @@ function DepositPageComponent() {
                                     {/* Type d'accès — choix unique, niveau de villa uniquement */}
                                     {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Type d&apos;accès</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f181')}</label>
                                             <div className="flex flex-wrap gap-4">
                                                 {ENTRY_ACCESS_TYPES.map((u) => (
                                                     <label key={u.id} className="cursor-pointer group relative">
                                                         <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
                                                         <div className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-900 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white shadow-sm hover:border-gray-400 flex items-center gap-2">
                                                             {optLabel('ENTRY_ACCESS_TYPES', u)}
-                                                            <div className="relative group/info ml-1">
+                                                            <div className="relative group/info ms-1">
                                                                 <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 text-center font-normal">
                                                                     {optDesc('ENTRY_ACCESS_TYPES', u)}
@@ -6574,14 +6419,14 @@ function DepositPageComponent() {
                             {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <BedDouble className="text-[#00BFA6]" /> {isCommercialPropertyType ? "Espace exploité" : "Espaces de Vie"}
+                                    <BedDouble className="text-[#00BFA6]" /> {isCommercialPropertyType ? t('adSpaceExploited') : t('adLivingSpaces')}
                                 </h2>
                                 
                                 <div className="flex flex-col gap-5">
                                     {/* Ligne 1: Chambres, Suites, Salons, Toilettes */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux (chambres)" : "Chambres"} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? t('adOfficesRooms') : t('adBedrooms')} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("bedrooms")} 
                                                 type="number" 
@@ -6592,7 +6437,7 @@ function DepositPageComponent() {
                                             {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Bureaux suites (avec sanitaires)" : "Suites parentales"}</label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? t('adOfficeSuites') : t('adMasterSuites')}</label>
                                             <input 
                                                 {...register("nbSuites")} 
                                                 type="number" 
@@ -6602,7 +6447,7 @@ function DepositPageComponent() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? "Grande salle (Salons)" : "Salons"} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? t('adBigRoomSalons') : t('adSalons')} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("livingRooms")} 
                                                 type="number" 
@@ -6613,7 +6458,7 @@ function DepositPageComponent() {
                                             {errors.livingRooms && <p className="text-red-500 text-sm mt-1">{errors.livingRooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">WC <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adWC')} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("wc")} 
                                                 type="number" 
@@ -6628,7 +6473,7 @@ function DepositPageComponent() {
                                     {/* Ligne 2: SDB, Type SDB */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">Salles de bain <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adBathrooms')} <span className="text-red-500">*</span></label>
                                             <input 
                                                 {...register("bathrooms")} 
                                                 type="number" 
@@ -6640,19 +6485,19 @@ function DepositPageComponent() {
                                         </div>
 
                                         <div className="md:col-span-2">
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">Type de salle de bain</label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('f182')}</label>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
                                                     <input type="radio" value="italian_shower" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-xs font-bold text-gray-900">Douche italienne</span>
+                                                    <span className="text-xs font-bold text-gray-900">{t('f183')}</span>
                                                 </label>
                                                 <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
                                                     <input type="radio" value="bathtub" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-xs font-bold text-gray-900">Baignoire</span>
+                                                    <span className="text-xs font-bold text-gray-900">{t('f184')}</span>
                                                 </label>
                                                 <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
                                                     <input type="radio" value="both" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-xs font-bold text-gray-900">Les deux</span>
+                                                    <span className="text-xs font-bold text-gray-900">{t('f185')}</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -6665,21 +6510,20 @@ function DepositPageComponent() {
                             {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Utensils className="text-[#00BFA6]" /> Cuisine et équipements
-                                </h2>
+                                    <Utensils className="text-[#00BFA6]" />{t('f186')}</h2>
                                 
                                 <div className="space-y-6">
                                     {/* Type de Cuisine */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Type de Cuisine</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f187')}</label>
                                         <div className="flex flex-wrap gap-4">
                                             {KITCHEN_TYPES.map(k => (
                                                 <label key={k.id} className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center relative group min-w-[140px]">
                                                     <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-4 h-4" /> 
                                                     <span className="text-sm font-bold text-gray-900">{optLabel('KITCHEN_TYPES', k)}</span>
-                                                    <div className="relative group/info ml-1">
+                                                    <div className="relative group/info ms-1">
                                                         <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
-                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 font-normal text-left">
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 font-normal text-start">
                                                             {optDesc('KITCHEN_TYPES', k)}
                                                             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                                                         </div>
@@ -6692,7 +6536,7 @@ function DepositPageComponent() {
 
                                     {/* Équipements de la cuisine */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">Équipements de la cuisine</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f188')}</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
@@ -6739,12 +6583,11 @@ function DepositPageComponent() {
                             {!isVillaDemolition && !isBuildingDemolition && (
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Trees className="text-[#00BFA6]" /> Extérieurs & Commodités
-                                </h2>
+                                    <Trees className="text-[#00BFA6]" />{t('f163')}</h2>
                                 
                                 {/* Extérieur Checkboxes */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">Espaces Extérieurs</label>
+                                    <label className="block text-sm font-bold text-gray-900 mb-3">{t('f164')}</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                             if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
@@ -6780,7 +6623,7 @@ function DepositPageComponent() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         {/* Chauffage */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Chauffage</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f189')}</label>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {HEATING_TYPES.map(h => {
                                                     const Icon = IconMap[h.icon] || Flame
@@ -6800,7 +6643,7 @@ function DepositPageComponent() {
 
                                         {/* Climatisation */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Climatisation</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f190')}</label>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {AC_TYPES.map(a => {
                                                     const Icon = IconMap[a.icon] || Fan
@@ -6822,7 +6665,7 @@ function DepositPageComponent() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         {/* Sécurité */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Sécurité</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f023')}</label>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.security.map(s => {
                                                     const Icon = IconMap[s.icon] || Shield
@@ -6845,7 +6688,7 @@ function DepositPageComponent() {
 
                                         {/* Connectivité */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">Connectivité</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f165')}</label>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                     const Icon = IconMap[c.icon] || Wifi
@@ -6873,33 +6716,32 @@ function DepositPageComponent() {
                             {/* 6. Énergie, Eau & Technique */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Zap className="text-[#00BFA6]" /> Énergie, Eau & Technique
-                                </h2>
+                                    <Zap className="text-[#00BFA6]" />{t('f191')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {/* Eau */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Droplet className="w-4 h-4 text-blue-500"/> Eau</h4>
+                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Droplet className="w-4 h-4 text-blue-500"/>{t('f032')}</h4>
                                         <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Individuel</label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Commun</label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f193')}</label>
                                         </div>
                                         {errors.waterCounter && <p className="text-red-500 text-sm mt-1">{errors.waterCounter.message}</p>}
                                     </div>
                                     {/* Électricité */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Zap className="w-4 h-4 text-yellow-500"/> Électricité</h4>
+                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Zap className="w-4 h-4 text-yellow-500"/>{t('f025')}</h4>
                                         <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Individuel</label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Commun</label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f193')}</label>
                                         </div>
                                         {errors.elecCounter && <p className="text-red-500 text-sm mt-1">{errors.elecCounter.message}</p>}
                                     </div>
                                     {/* Gaz */}
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Flame className="w-4 h-4 text-orange-500"/> Gaz</h4>
+                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Flame className="w-4 h-4 text-orange-500"/>{t('f028')}</h4>
                                         <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Individuel</label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/> Compteur Commun</label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
+                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f193')}</label>
                                         </div>
                                         {errors.gasCounter && <p className="text-red-500 text-sm mt-1">{errors.gasCounter.message}</p>}
                                     </div>
@@ -6931,7 +6773,7 @@ function DepositPageComponent() {
                             <div className="space-y-8">
                                 {/* Nombre d'étages - Limité à R+5 */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">Nombre d&apos;étages R+</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f194')}</label>
                                     <div className="flex gap-2 flex-wrap">
                                         {[0,1,2,3,4,5].map((num) => (
                                             <label key={num} className="cursor-pointer">
@@ -6952,7 +6794,7 @@ function DepositPageComponent() {
 
                                 {/* Niveaux supplémentaires */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">Niveaux supplémentaires</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f195')}</label>
                                     <div className="flex gap-4 flex-wrap">
                                         {EXTRA_FLOOR_TYPES.map((floor) => (
                                             <label key={floor.id} className="cursor-pointer">
@@ -6974,16 +6816,14 @@ function DepositPageComponent() {
                                                 {...register("extraFloor")} 
                                                 className="peer sr-only" 
                                             />
-                                            <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                Aucun
-                                            </div>
+                                            <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">{t('f031')}</div>
                                         </label>
                                     </div>
                                 </div>
 
                                 {/* Typologie - Sans chiffres prédéfinis */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">Typologie</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f196')}</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         {TYPOLOGIES.map((t) => (
                                             <label key={t.id} className="cursor-pointer">
@@ -7005,26 +6845,26 @@ function DepositPageComponent() {
                                 {/* Pièces */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? "Nombre de bureaux" : "Nombre de chambres"}</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? t('adOfficeCount') : t('adBedroomCount')}</label>
                                         <input 
                                             {...register("bedrooms")} 
                                             type="number" 
                                             min="0"
                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
-                                            placeholder="Ex: 3"
+                                            placeholder={t('f395')}
                                         />
                                         {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? "Nombre de salles de réunion" : "Nombre de salons"}</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? t('adMeetingRoomCount') : t('adSalonCount')}</label>
                                         <input 
                                             {...register("livingRooms")} 
                                             type="number" 
                                             min="0"
                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
-                                            placeholder="Ex: 2"
+                                            placeholder={t('f394')}
                                         />
                                         {errors.livingRooms && <p className="text-red-500 text-sm mt-1">{errors.livingRooms.message}</p>}
                                     </div>
@@ -7033,26 +6873,26 @@ function DepositPageComponent() {
                                 {/* Salles de bain et WC */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de salles de bain</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f197')}</label>
                                         <input 
                                             {...register("bathrooms")} 
                                             type="number" 
                                             min="0"
                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
-                                            placeholder="Ex: 2"
+                                            placeholder={t('f394')}
                                         />
                                         {errors.bathrooms && <p className="text-red-500 text-sm mt-1">{errors.bathrooms.message}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de WC</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f198')}</label>
                                         <input 
                                             {...register("wc")} 
                                             type="number" 
                                             min="0"
                                             onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
-                                            placeholder="Ex: 3"
+                                            placeholder={t('f395')}
                                         />
                                         {errors.wc && <p className="text-red-500 text-sm mt-1">{errors.wc.message}</p>}
                                     </div>
@@ -7060,7 +6900,7 @@ function DepositPageComponent() {
 
                                 {/* Type de salle de bain */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">Type de salle de bain principale</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f199')}</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                         {BATHROOM_TYPES.map((type) => {
                                             const Icon = IconMap[type.icon] || Bath
@@ -7087,7 +6927,7 @@ function DepositPageComponent() {
                                                 className="peer sr-only" 
                                             />
                                             <div className="p-4 border-2 rounded-xl flex flex-col items-center justify-center gap-2 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                <span className="text-sm font-medium text-gray-600 peer-checked:text-[#00BFA6]">Les deux</span>
+                                                <span className="text-sm font-medium text-gray-600 peer-checked:text-[#00BFA6]">{t('f185')}</span>
                                             </div>
                                         </label>
                                         <label className="cursor-pointer">
@@ -7098,7 +6938,7 @@ function DepositPageComponent() {
                                                 className="peer sr-only" 
                                             />
                                             <div className="p-4 border-2 rounded-xl flex flex-col items-center justify-center gap-2 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
-                                                <span className="text-sm font-medium text-gray-600 peer-checked:text-[#00BFA6]">Non spécifié</span>
+                                                <span className="text-sm font-medium text-gray-600 peer-checked:text-[#00BFA6]">{t('f200')}</span>
                                             </div>
                                         </label>
                                     </div>
@@ -7106,29 +6946,29 @@ function DepositPageComponent() {
 
                                 {/* Mesures & Capacité */}
                                 <div className="border-t pt-6">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Mesures & Capacité</h3>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('f201')}</h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Surface Terrain (m²)</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f202')}</label>
                                             <input 
                                                 {...register("landArea")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
-                                                placeholder="Ex: 500"
+                                                placeholder={t('f396')}
                                             />
                                             {errors.landArea && <p className="text-red-500 text-sm mt-1">{errors.landArea.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Surface Bâtie (m²)</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f203')}</label>
                                             <input 
                                                 {...register("builtArea")} 
                                                 type="number" 
                                                 min="0"
                                                 onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-gray-50 focus:bg-white" 
-                                                placeholder="Ex: 250"
+                                                placeholder={t('f353')}
                                             />
                                             {errors.builtArea && <p className="text-red-500 text-sm mt-1">{errors.builtArea.message}</p>}
                                         </div>
@@ -7137,12 +6977,12 @@ function DepositPageComponent() {
 
                                 {/* Équipements & Commodités avec icônes */}
                                 <div className="border-t pt-6">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Équipements & Commodités</h3>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('f204')}</h3>
                                     
                                     {/* Cuisine */}
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">Cuisine</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f166')}</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
@@ -7186,7 +7026,7 @@ function DepositPageComponent() {
                                     {/* Extérieur */}
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">Extérieur</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f205')}</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                                 if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
@@ -7229,7 +7069,7 @@ function DepositPageComponent() {
 
                                     {/* Eau/Énergie */}
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">Eau/Énergie</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f206')}</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.utilities.map((item) => {
                                                 const Icon = IconMap[item.icon] || Droplet
@@ -7257,7 +7097,7 @@ function DepositPageComponent() {
 
                                     {/* Stationnement */}
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">Garage</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f207')}</label>
                                         <div className="space-y-4">
                                             <label className="flex items-center gap-4 cursor-pointer p-4 border-2 rounded-xl hover:border-gray-400 bg-gray-50 peer-checked:border-[#00BFA6]">
                                                 <input 
@@ -7270,18 +7110,18 @@ function DepositPageComponent() {
                                                     }}
                                                     className="w-5 h-5 text-[#00BFA6] rounded border-gray-300 focus:ring-[#00BFA6]" 
                                                 />
-                                                <span className="text-gray-700 font-medium">Présence d&apos;un garage</span>
+                                                <span className="text-gray-700 font-medium">{t('f208')}</span>
                                             </label>
                                             
                                             {garageHasCapacity && (
-                                                <div className="ml-8">
-                                                    <label className="block text-sm font-medium text-gray-600 mb-2">Capacité (Volume)</label>
+                                                <div className="ms-8">
+                                                    <label className="block text-sm font-medium text-gray-600 mb-2">{t('f209')}</label>
                                                     <input 
                                                         {...register("garageCapacity")} 
                                                         type="number" 
                                                         min="0"
                                                         onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        placeholder="Nombre de véhicules"
+                                                        placeholder={t('f397')}
                                                         className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-gray-50 focus:bg-white" 
                                                     />
                                                 </div>
@@ -7300,11 +7140,9 @@ function DepositPageComponent() {
                             {/* Étape 1.1 – Cible clientèle */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Users className="h-5 w-5 text-[#00BFA6]" />
-                                    Cible et profil de clientèle
-                                </h2>
+                                    <Users className="h-5 w-5 text-[#00BFA6]" />{t('f210')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {HAB_CLIENT_PROFILES.map((p) => (
+                                    {tGroup('HAB_CLIENT_PROFILES', HAB_CLIENT_PROFILES).map((p) => (
                                         <label key={p.id} className="cursor-pointer">
                                             <input type="radio" value={p.id} {...register("habClientProfile")} className="peer sr-only" />
                                             <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400">
@@ -7320,11 +7158,9 @@ function DepositPageComponent() {
                             {/* Étape 1.2 – Formule de location */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <BedDouble className="h-5 w-5 text-[#00BFA6]" />
-                                    Formule de location
-                                </h2>
+                                    <BedDouble className="h-5 w-5 text-[#00BFA6]" />{t('f211')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {HAB_FORMULES.map((f) => (
+                                    {tGroup('HAB_FORMULES', HAB_FORMULES).map((f) => (
                                         <label key={f.id} className="cursor-pointer">
                                             <input type="radio" value={f.id} {...register("habFormule")} className="peer sr-only" />
                                             <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center">
@@ -7339,24 +7175,24 @@ function DepositPageComponent() {
                                 {/* Détails logement entier */}
                                 {habFormule === "LOGEMENT_ENTIER" && (
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
-                                        <div className="font-bold text-gray-800 text-sm">Détails du logement entier</div>
+                                        <div className="font-bold text-gray-800 text-sm">{t('f212')}</div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Nb. chambres</label>
-                                                <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 3" />
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f213')}</label>
+                                                <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f377')} />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Nb. salons</label>
-                                                <input {...register("habNbSalons")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 1" />
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f214')}</label>
+                                                <input {...register("habNbSalons")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f385')} />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Nb. WC / Salles de bain</label>
-                                                <input {...register("habNbSdb")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 2" />
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f215')}</label>
+                                                <input {...register("habNbSdb")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f380')} />
                                             </div>
                                             <div className="flex flex-col justify-end">
                                                 <label className="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl bg-white hover:border-[#00BFA6] transition-all h-[46px]">
                                                     <input type="checkbox" {...register("habSuiteParentale")} className="accent-[#00BFA6] w-4 h-4" />
-                                                    <span className="text-xs font-bold text-gray-700">Suite parentale</span>
+                                                    <span className="text-xs font-bold text-gray-700">{t('f216')}</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -7366,7 +7202,7 @@ function DepositPageComponent() {
                                 {/* Détails Chambre privée / Lit seul */}
                                 {(habFormule === "CHAMBRE_PRIVEE" || habFormule === "LIT_SEUL") && (
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
-                                        <div className="font-bold text-gray-800 text-sm">Type de chambre proposée</div>
+                                        <div className="font-bold text-gray-800 text-sm">{t('f217')}</div>
                                         <div className="flex flex-wrap gap-3">
                                             {[
                                                 { id: "STANDARD", label: "Standard" },
@@ -7387,11 +7223,9 @@ function DepositPageComponent() {
                             {/* Étape 1.3 – Type de propriété */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Home className="h-5 w-5 text-[#00BFA6]" />
-                                    Type de propriété / Unité
-                                </h2>
+                                    <Home className="h-5 w-5 text-[#00BFA6]" />{t('f218')}</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    {HAB_UNIT_TYPES.map((u) => (
+                                    {tGroup('HAB_UNIT_TYPES', HAB_UNIT_TYPES).map((u) => (
                                         <label key={u.id} className="cursor-pointer">
                                             <input type="radio" value={u.id} {...register("habUnitType")} className="peer sr-only" />
                                             <div className="p-3 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center">
@@ -7402,8 +7236,8 @@ function DepositPageComponent() {
                                 </div>
                                 {habUnitType === "INSOLITE" && (
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Précisez le type d'hébergement insolite</label>
-                                        <input {...register("habUnitTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Roulotte, Yourte, Cabane dans les arbres..." />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f219')}</label>
+                                        <input {...register("habUnitTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f398')} />
                                     </div>
                                 )}
                                 {errors.habUnitType && <p className="text-red-500 text-sm">{errors.habUnitType.message as any}</p>}
@@ -7412,29 +7246,26 @@ function DepositPageComponent() {
                             {/* Étape 1.4 – Caractéristiques physiques */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                    Caractéristiques physiques
-                                </h2>
+                                    <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f220')}</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Surface habitable (m²)</label>
-                                        <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 80" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f221')}</label>
+                                        <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">Étage (0 = RDC)</label>
                                         <input {...register("habFloor")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="0" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Nombre de niveaux</label>
-                                        <input {...register("habNbNiveaux")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 1" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f222')}</label>
+                                        <input {...register("habNbNiveaux")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f385')} />
                                     </div>
                                 </div>
 
                                 {/* Configuration des lits */}
                                 <div>
                                     <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Bed className="h-4 w-4 text-[#00BFA6]" /> Configuration des lits
-                                    </h3>
+                                        <Bed className="h-4 w-4 text-[#00BFA6]" />{t('f223')}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {[
                                             { field: "habBedKingPremium", label: "Lit King Size Premium (200×200 cm)" },
@@ -7467,13 +7298,11 @@ function DepositPageComponent() {
                             {/* Étape 2.1 – Ambiance / Vocation */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                                    Cadre &amp; Environnement
-                                </h2>
+                                    <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f224')}</h2>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">Ambiance / Vocation du lieu (plusieurs choix possibles)</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f225')}</label>
                                     <div className="flex flex-wrap gap-3">
-                                        {HAB_AMBIANCES.map((a) => (
+                                        {tGroup('HAB_AMBIANCES', HAB_AMBIANCES).map((a) => (
                                             <label key={a.id} className="cursor-pointer">
                                                 <input type="checkbox" value={a.id} {...register("habAmbiances")} className="peer sr-only" />
                                                 <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{a.label}</div>
@@ -7485,9 +7314,9 @@ function DepositPageComponent() {
                                 {/* Balnéaire */}
                                 {habAmbiancesList.includes("BALNEAIRE") && (
                                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 space-y-3">
-                                        <div className="font-bold text-blue-900 text-sm flex items-center gap-2"><Waves className="h-4 w-4" /> Accès à la plage</div>
+                                        <div className="font-bold text-blue-900 text-sm flex items-center gap-2"><Waves className="h-4 w-4" />{t('f226')}</div>
                                         <div className="flex flex-wrap gap-3">
-                                            {HAB_PLAGE_ACCES.map((p) => (
+                                            {tGroup('HAB_PLAGE_ACCES', HAB_PLAGE_ACCES).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="radio" value={p.id} {...register("habPlageAcces")} className="peer sr-only" />
                                                     <div className="px-4 py-2 border-2 border-blue-200 rounded-full text-sm font-bold text-blue-700 peer-checked:border-blue-500 peer-checked:bg-blue-100 transition-all bg-white">{p.label}</div>
@@ -7500,9 +7329,9 @@ function DepositPageComponent() {
                                 {/* Urbain */}
                                 {habAmbiancesList.includes("URBAIN") && (
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
-                                        <div className="font-bold text-gray-800 text-sm flex items-center gap-2"><Building className="h-4 w-4 text-[#00BFA6]" /> Commodités immédiates à proximité</div>
+                                        <div className="font-bold text-gray-800 text-sm flex items-center gap-2"><Building className="h-4 w-4 text-[#00BFA6]" />{t('f227')}</div>
                                         <div className="space-y-2">
-                                            {HAB_URBAIN_COMMODITES.map((c) => (
+                                            {tGroup('HAB_URBAIN_COMMODITES', HAB_URBAIN_COMMODITES).map((c) => (
                                                 <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={c.id} {...register("habUrbainCommodites")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {c.label}
@@ -7515,9 +7344,9 @@ function DepositPageComponent() {
                                 {/* Saharien */}
                                 {habAmbiancesList.includes("SAHARIEN") && (
                                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3">
-                                        <div className="font-bold text-amber-900 text-sm flex items-center gap-2"><Palmtree className="h-4 w-4" /> Sorties et activités proposées</div>
+                                        <div className="font-bold text-amber-900 text-sm flex items-center gap-2"><Palmtree className="h-4 w-4" />{t('f228')}</div>
                                         <div className="space-y-2">
-                                            {HAB_SAHARIEN_ACTIVITES.map((a) => (
+                                            {tGroup('HAB_SAHARIEN_ACTIVITES', HAB_SAHARIEN_ACTIVITES).map((a) => (
                                                 <label key={a.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={a.id} {...register("habSaharienActivites")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {a.label}
@@ -7530,34 +7359,34 @@ function DepositPageComponent() {
                                 {/* Thermal */}
                                 {habAmbiancesList.includes("THERMAL") && (
                                     <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 space-y-4">
-                                        <div className="font-bold text-teal-900 text-sm flex items-center gap-2"><Droplet className="h-4 w-4" /> Spécificités thermales</div>
+                                        <div className="font-bold text-teal-900 text-sm flex items-center gap-2"><Droplet className="h-4 w-4" />{t('f229')}</div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 mb-2">Localisation du Hammam / Bain thermal</label>
+                                            <label className="block text-xs font-bold text-gray-700 mb-2">{t('f230')}</label>
                                             <div className="flex flex-wrap gap-3">
                                                 <label className="cursor-pointer">
                                                     <input type="radio" value="INTEGRE" {...register("habThermalLocalisation")} className="peer sr-only" />
-                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">Intégré à l'établissement</div>
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{t('f231')}</div>
                                                 </label>
                                                 <label className="cursor-pointer">
                                                     <input type="radio" value="PROXIMITE" {...register("habThermalLocalisation")} className="peer sr-only" />
-                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">À proximité (déplacement requis)</div>
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{t('f232')}</div>
                                                 </label>
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Distance (si à proximité)</label>
-                                            <input {...register("habThermalDistance")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 500 mètres / 2 km" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f233')}</label>
+                                            <input {...register("habThermalDistance")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f399')} />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 mb-2">Conditions d'accès pour les clients</label>
+                                            <label className="block text-xs font-bold text-gray-700 mb-2">{t('f234')}</label>
                                             <div className="flex flex-wrap gap-3">
                                                 <label className="cursor-pointer">
                                                     <input type="radio" value="GRATUIT" {...register("habThermalAcces")} className="peer sr-only" />
-                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">Accès gratuit / Inclus</div>
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{t('f235')}</div>
                                                 </label>
                                                 <label className="cursor-pointer">
                                                     <input type="radio" value="PAYANT" {...register("habThermalAcces")} className="peer sr-only" />
-                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">Accès payant (tarif préférentiel)</div>
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{t('f236')}</div>
                                                 </label>
                                             </div>
                                         </div>
@@ -7567,9 +7396,9 @@ function DepositPageComponent() {
                                 {/* Climatique */}
                                 {habAmbiancesList.includes("CLIMATIQUE") && (
                                     <div className="bg-green-50 border border-green-200 rounded-xl p-5 space-y-4">
-                                        <div className="font-bold text-green-900 text-sm flex items-center gap-2"><Trees className="h-4 w-4" /> Infrastructures nature &amp; montagne</div>
+                                        <div className="font-bold text-green-900 text-sm flex items-center gap-2"><Trees className="h-4 w-4" />{t('f237')}</div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 mb-2">Accès à l'espace nature / forêt</label>
+                                            <label className="block text-xs font-bold text-gray-700 mb-2">{t('f238')}</label>
                                             <div className="flex flex-wrap gap-3">
                                                 {[
                                                     { id: "INTEGRE", label: "Intégré (domaine arboré / forêt privée)" },
@@ -7585,28 +7414,24 @@ function DepositPageComponent() {
                                         </div>
                                         {habClimatAcces === "EN_VOITURE" && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">Temps de trajet estimé (min)</label>
-                                                <input {...register("habClimatTempsVoiture")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 15" />
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f239')}</label>
+                                                <input {...register("habClimatTempsVoiture")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f378')} />
                                             </div>
                                         )}
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="checkbox" {...register("habClimatVisitesGuidees")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Service de visites guidées / Excursions organisées (randonnées, trekking)
-                                            </label>
+                                                <input type="checkbox" {...register("habClimatVisitesGuidees")} className="accent-[#00BFA6] w-4 h-4" />{t('f240')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                                <input type="checkbox" {...register("habClimatPisteSki")} className="accent-[#00BFA6] w-4 h-4" />
-                                                Station / Piste de ski à proximité immédiate
-                                            </label>
+                                                <input type="checkbox" {...register("habClimatPisteSki")} className="accent-[#00BFA6] w-4 h-4" />{t('f241')}</label>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Étape 2.2 – Vue */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">Vue depuis le logement (plusieurs choix possibles)</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f242')}</label>
                                     <div className="flex flex-wrap gap-3">
-                                        {HAB_VUES.map((v) => (
+                                        {tGroup('HAB_VUES', HAB_VUES).map((v) => (
                                             <label key={v.id} className="cursor-pointer">
                                                 <input type="checkbox" value={v.id} {...register("habVues")} className="peer sr-only" />
                                                 <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{v.label}</div>
@@ -7619,27 +7444,25 @@ function DepositPageComponent() {
                             {/* Étape 3 – Transports & Attractions */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Navigation className="h-5 w-5 text-[#00BFA6]" />
-                                    Transports &amp; Attractions de Proximité
-                                </h2>
+                                    <Navigation className="h-5 w-5 text-[#00BFA6]" />{t('f243')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Aéroport le plus proche</label>
-                                        <input {...register("habAirport")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Aéroport d'Oran Es Sénia" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f244')}</label>
+                                        <input {...register("habAirport")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f400')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Distance de l'aéroport (km)</label>
-                                        <input {...register("habAirportKm")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 12" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f245')}</label>
+                                        <input {...register("habAirportKm")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f371')} />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-2">Transports en commun proches (Bus, Tram, Métro)</label>
-                                    <input {...register("habTransportCommuns")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Bus ligne 12, Tramway arrêt Centre-ville..." />
+                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f246')}</label>
+                                    <input {...register("habTransportCommuns")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f401')} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">À moins de 20 minutes du logement</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f247')}</label>
                                     <div className="flex flex-wrap gap-3">
-                                        {HAB_ATTRACTIONS.map((a) => (
+                                        {tGroup('HAB_ATTRACTIONS', HAB_ATTRACTIONS).map((a) => (
                                             <label key={a.id} className="cursor-pointer">
                                                 <input type="checkbox" value={a.id} {...register("habAttractions")} className="peer sr-only" />
                                                 <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{a.label}</div>
@@ -7652,15 +7475,13 @@ function DepositPageComponent() {
                             {/* Étape 4 – Équipements & Services */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Utensils className="h-5 w-5 text-[#00BFA6]" />
-                                    Équipements &amp; Services
-                                </h2>
+                                    <Utensils className="h-5 w-5 text-[#00BFA6]" />{t('f248')}</h2>
 
                                 {/* Services et Repas */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
-                                    <div className="font-bold text-gray-900">Restauration incluse</div>
+                                    <div className="font-bold text-gray-900">{t('f249')}</div>
                                     <div className="flex flex-wrap gap-3">
-                                        {HAB_REPAS.map((r) => (
+                                        {tGroup('HAB_REPAS', HAB_REPAS).map((r) => (
                                             <label key={r.id} className="cursor-pointer">
                                                 <input type="checkbox" value={r.id} {...register("habRepas")} className="peer sr-only" />
                                                 <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{r.label}</div>
@@ -7672,9 +7493,9 @@ function DepositPageComponent() {
                                 {/* Linge & Hygiène */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Linge de maison</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f250')}</div>
                                         <div className="space-y-2">
-                                            {HAB_LINGE.map((l) => (
+                                            {tGroup('HAB_LINGE', HAB_LINGE).map((l) => (
                                                 <label key={l.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={l.id} {...register("habLinge")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {l.label}
@@ -7683,23 +7504,19 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-2">
-                                        <div className="font-bold text-gray-900 mb-3">Produits &amp; Services</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f251')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("habHygiene")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Produits d'hygiène fournis (Shampoing, Savon, Papier toilette)
-                                        </label>
+                                            <input type="checkbox" {...register("habHygiene")} className="accent-[#00BFA6] w-4 h-4" />{t('f252')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                                            <input type="checkbox" {...register("habLivraison")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Service de livraison de courses disponible
-                                        </label>
+                                            <input type="checkbox" {...register("habLivraison")} className="accent-[#00BFA6] w-4 h-4" />{t('f253')}</label>
                                     </div>
                                 </div>
 
                                 {/* Cuisine */}
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                    <div className="font-bold text-gray-900 mb-3">Équipements Cuisine</div>
+                                    <div className="font-bold text-gray-900 mb-3">{t('f254')}</div>
                                     <div className="flex flex-wrap gap-3">
-                                        {HAB_EQUIPEMENTS_CUISINE.map((e) => (
+                                        {tGroup('HAB_EQUIPEMENTS_CUISINE', HAB_EQUIPEMENTS_CUISINE).map((e) => (
                                             <label key={e.id} className="cursor-pointer">
                                                 <input type="checkbox" value={e.id} {...register("habCuisineEquipements")} className="peer sr-only" />
                                                 <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{e.label}</div>
@@ -7710,9 +7527,9 @@ function DepositPageComponent() {
 
                                 {/* Confort & Multimédia */}
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                    <div className="font-bold text-gray-900 mb-3">Confort &amp; Multimédia</div>
+                                    <div className="font-bold text-gray-900 mb-3">{t('f255')}</div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                                        {HAB_CONFORT.map((c) => (
+                                        {tGroup('HAB_CONFORT', HAB_CONFORT).map((c) => (
                                             <label key={c.id} className="cursor-pointer">
                                                 <input type="checkbox" value={c.id} {...register("habConfort")} className="peer sr-only" />
                                                 <div className="p-3 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-gray-50 hover:border-gray-400">{c.label}</div>
@@ -7723,9 +7540,9 @@ function DepositPageComponent() {
 
                                 {/* Loisirs & Bien-être */}
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                    <div className="font-bold text-gray-900 mb-3">Infrastructures Loisirs &amp; Bien-être</div>
+                                    <div className="font-bold text-gray-900 mb-3">{t('f256')}</div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        {HAB_LOISIRS.map((l) => (
+                                        {tGroup('HAB_LOISIRS', HAB_LOISIRS).map((l) => (
                                             <label key={l.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="checkbox" value={l.id} {...register("habLoisirs")} className="accent-[#00BFA6] w-4 h-4" />
                                                 {l.label}
@@ -7737,10 +7554,9 @@ function DepositPageComponent() {
                                 {/* Équipements de Secours */}
                                 <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-xl">
                                     <div className="font-bold text-orange-900 mb-3 flex items-center gap-2">
-                                        <Zap className="h-4 w-4" /> Équipements de Secours (Essentiels en Algérie)
-                                    </div>
+                                        <Zap className="h-4 w-4" />{t('f257')}</div>
                                     <div className="space-y-2">
-                                        {HAB_SECOURS.map((s) => (
+                                        {tGroup('HAB_SECOURS', HAB_SECOURS).map((s) => (
                                             <label key={s.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="checkbox" value={s.id} {...register("habSecours")} className="accent-orange-500 w-4 h-4" />
                                                 {s.label}
@@ -7753,14 +7569,12 @@ function DepositPageComponent() {
                             {/* Étape 5 – Stationnement & Accessibilité */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <ParkingCircle className="h-5 w-5 text-[#00BFA6]" />
-                                    Stationnement &amp; Accessibilité
-                                </h2>
+                                    <ParkingCircle className="h-5 w-5 text-[#00BFA6]" />{t('f258')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Parking (plusieurs choix possibles)</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f259')}</div>
                                         <div className="space-y-2">
-                                            {HAB_PARKING.map((p) => (
+                                            {tGroup('HAB_PARKING', HAB_PARKING).map((p) => (
                                                 <label key={p.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={p.id} {...register("habParking")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {p.label}
@@ -7769,9 +7583,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                        <div className="font-bold text-gray-900 mb-3">Accessibilité</div>
+                                        <div className="font-bold text-gray-900 mb-3">{t('f260')}</div>
                                         <div className="space-y-2">
-                                            {HAB_ACCESSIBILITE.map((a) => (
+                                            {tGroup('HAB_ACCESSIBILITE', HAB_ACCESSIBILITE).map((a) => (
                                                 <label key={a.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={a.id} {...register("habAccessibilite")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {a.label}
@@ -7785,13 +7599,11 @@ function DepositPageComponent() {
                             {/* Étape 6 – Règlement intérieur & Logistique */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <FileText className="h-5 w-5 text-[#00BFA6]" />
-                                    Règlement Intérieur &amp; Logistique
-                                </h2>
+                                    <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f261')}</h2>
 
                                 {/* Âge minimal */}
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                    <div className="font-bold text-gray-900 mb-3">Critère d'âge minimal pour réserver (Responsable de groupe)</div>
+                                    <div className="font-bold text-gray-900 mb-3">{t('f262')}</div>
                                     <div className="flex gap-4">
                                         {[{ id: "18", label: "18 ans révolus" }, { id: "21", label: "21 ans révolus" }].map((opt) => (
                                             <label key={opt.id} className="cursor-pointer">
@@ -7804,39 +7616,33 @@ function DepositPageComponent() {
 
                                 {/* Autorisations */}
                                 <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
-                                    <div className="font-bold text-gray-900 mb-3">Autorisations générales</div>
+                                    <div className="font-bold text-gray-900 mb-3">{t('f263')}</div>
                                     <div className="flex flex-wrap gap-4">
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                            <input type="checkbox" {...register("habFumeurs")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Fumeurs acceptés
-                                        </label>
+                                            <input type="checkbox" {...register("habFumeurs")} className="accent-[#00BFA6] w-4 h-4" />{t('f264')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                            <input type="checkbox" {...register("habAnimaux")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Animaux acceptés
-                                        </label>
+                                            <input type="checkbox" {...register("habAnimaux")} className="accent-[#00BFA6] w-4 h-4" />{t('f265')}</label>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                                            <input type="checkbox" {...register("habFetes")} className="accent-[#00BFA6] w-4 h-4" />
-                                            Fêtes / Soirées autorisées
-                                        </label>
+                                            <input type="checkbox" {...register("habFetes")} className="accent-[#00BFA6] w-4 h-4" />{t('f266')}</label>
                                     </div>
                                 </div>
 
                                 {/* Check-in / Check-out */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
-                                    <div className="font-bold text-gray-900">Réception, Arrivée et Départ</div>
+                                    <div className="font-bold text-gray-900">{t('f267')}</div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Check-in à partir de</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f268')}</label>
                                             <input {...register("habCheckIn")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Check-out avant</label>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f269')}</label>
                                             <input {...register("habCheckOut")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Service de Réception</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f270')}</label>
                                         <div className="flex gap-4">
                                             {[
                                                 { id: "24H", label: "Réception ouverte 24h/24" },
@@ -7852,11 +7658,11 @@ function DepositPageComponent() {
                                     {habReceptionMode === "HORAIRES" && (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-0">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Ouverte de</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f271')}</label>
                                                 <input {...register("habReceptionStart")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Jusqu'à</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f272')}</label>
                                                 <input {...register("habReceptionEnd")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                             </div>
                                         </div>
@@ -7864,7 +7670,7 @@ function DepositPageComponent() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Remise des clés</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f273')}</label>
                                             <div className="flex flex-col gap-2">
                                                 {[
                                                     { id: "EN_MAIN_PROPRE", label: "En main propre à l'accueil / par l'hôte" },
@@ -7878,7 +7684,7 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Contrôle d'identité</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f274')}</label>
                                             <div className="flex flex-col gap-2">
                                                 {[
                                                     { id: "RETENTION", label: "Rétention de la pièce d'identité originale durant le séjour" },
@@ -7904,31 +7710,30 @@ function DepositPageComponent() {
                             {/* Prix par nuitée */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <Star className="h-5 w-5 text-[#00BFA6]" />
-                                    Prix &amp; Tarification
-                                </h2>
+                                    <Star className="h-5 w-5 text-[#00BFA6]" />{t('f275')}</h2>
                                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
-                                    <div className="font-bold text-gray-900">Prix par nuitée</div>
+                                    <div className="font-bold text-gray-900">{t('f276')}</div>
                                     <div className="flex gap-4 items-center">
                                         <div className="relative flex-1">
                                             <input
                                                 {...register("price")}
+                                                dir="ltr"
                                                 type="text"
                                                 onChange={(e) => {
                                                     const val = e.target.value.replace(/[^0-9]/g, "")
                                                     const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
                                                     setValue("price", formatted, { shouldValidate: true })
                                                 }}
-                                                className="w-full p-4 pr-24 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg"
+                                                className="w-full p-4 pe-24 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg"
                                                 placeholder="0"
                                             />
-                                            <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-3 font-bold text-gray-700 text-sm">DA / nuit</div>
+                                            <div className="absolute end-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-3 font-bold text-gray-700 text-sm">{t('f277')}</div>
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="text-sm font-bold text-gray-700 mb-2">Type de prix</div>
+                                        <div className="text-sm font-bold text-gray-700 mb-2">{t('f278')}</div>
                                         <div className="flex gap-3">
-                                            {[{ id: "FIXED", label: "Fixe" }, { id: "NEGOTIABLE", label: "Négociable" }].map((opt) => (
+                                            {[{ id: "FIXED", label: t('depPriceFixed') }, { id: "NEGOTIABLE", label: t('depPriceNegotiable') }].map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer">
                                                     <input type="radio" value={opt.id} {...register("priceType")} className="peer sr-only" />
                                                     <div className="px-5 py-2 border-2 border-gray-200 rounded-full font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-sm">{opt.label}</div>
@@ -7940,9 +7745,9 @@ function DepositPageComponent() {
 
                                 {/* Condition de paiement */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-3">
-                                    <div className="font-bold text-gray-900">Condition de Paiement</div>
+                                    <div className="font-bold text-gray-900">{t('f279')}</div>
                                     <div className="space-y-2">
-                                        {HAB_CONDITION_PAIEMENT.map((c) => (
+                                        {tGroup('HAB_CONDITION_PAIEMENT', HAB_CONDITION_PAIEMENT).map((c) => (
                                             <label key={c.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="radio" value={c.id} {...register("habConditionPaiement")} className="accent-[#00BFA6] w-4 h-4" />
                                                 {c.label}
@@ -7950,17 +7755,17 @@ function DepositPageComponent() {
                                         ))}
                                     </div>
                                     {habConditionPaiement === "ACOMPTE" && (
-                                        <div className="ml-6 mt-3 space-y-2">
-                                            <div className="text-sm font-bold text-gray-700">Pourcentage de l'acompte</div>
+                                        <div className="ms-6 mt-3 space-y-2">
+                                            <div className="text-sm font-bold text-gray-700">{t('f280')}</div>
                                             <div className="flex gap-3">
-                                                {HAB_ACOMPTE_OPTIONS.map((a) => (
+                                                {tGroup('HAB_ACOMPTE_OPTIONS', HAB_ACOMPTE_OPTIONS).map((a) => (
                                                     <label key={a.id} className="cursor-pointer">
                                                         <input type="radio" value={a.id} {...register("habAcompte")} className="peer sr-only" />
                                                         <div className="px-5 py-2 border-2 border-gray-200 rounded-full font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-sm">{a.label}</div>
                                                     </label>
                                                 ))}
                                                 <div className="flex items-center gap-2">
-                                                    <input {...register("habAcompte")} type="text" placeholder="Autre %" className="p-2 border-2 border-gray-300 rounded-lg w-24 font-medium text-gray-900 text-sm focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6]" />
+                                                    <input {...register("habAcompte")} type="text" placeholder={t('f402')} className="p-2 border-2 border-gray-300 rounded-lg w-24 font-medium text-gray-900 text-sm focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6]" />
                                                 </div>
                                             </div>
                                         </div>
@@ -7969,23 +7774,23 @@ function DepositPageComponent() {
 
                                 {/* Politique d'annulation */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
-                                    <div className="font-bold text-gray-900">Politique d'Annulation</div>
+                                    <div className="font-bold text-gray-900">{t('f281')}</div>
                                     <div className="flex gap-4">
                                         <label className="cursor-pointer flex-1">
                                             <input type="radio" value="NON_ACCEPTEE" {...register("habAnnulation")} className="peer sr-only" />
-                                            <div className="p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-red-400 peer-checked:bg-red-50 peer-checked:text-red-600 transition-all bg-white text-sm">Non remboursable</div>
+                                            <div className="p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-red-400 peer-checked:bg-red-50 peer-checked:text-red-600 transition-all bg-white text-sm">{t('f282')}</div>
                                         </label>
                                         <label className="cursor-pointer flex-1">
                                             <input type="radio" value="FLEXIBLE" {...register("habAnnulation")} className="peer sr-only" />
-                                            <div className="p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white text-sm">Annulation Flexible</div>
+                                            <div className="p-3 border-2 border-gray-200 rounded-xl text-center font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white text-sm">{t('f283')}</div>
                                         </label>
                                     </div>
                                     {habAnnulation === "FLEXIBLE" && (
                                         <div className="space-y-4">
                                             <div>
-                                                <div className="text-sm font-bold text-gray-700 mb-2">Délai requis avant l'arrivée</div>
+                                                <div className="text-sm font-bold text-gray-700 mb-2">{t('f284')}</div>
                                                 <div className="flex flex-wrap gap-3">
-                                                    {HAB_DELAI_ANNULATION.map((d) => (
+                                                    {tGroup('HAB_DELAI_ANNULATION', HAB_DELAI_ANNULATION).map((d) => (
                                                         <label key={d.id} className="cursor-pointer">
                                                             <input type="radio" value={d.id} {...register("habDelaiAnnulation")} className="peer sr-only" />
                                                             <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{d.label}</div>
@@ -7994,9 +7799,9 @@ function DepositPageComponent() {
                                                 </div>
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-gray-700 mb-2">Si le délai n'est pas respecté</div>
+                                                <div className="text-sm font-bold text-gray-700 mb-2">{t('f285')}</div>
                                                 <div className="flex flex-wrap gap-3">
-                                                    {HAB_NON_RESPECT.map((n) => (
+                                                    {tGroup('HAB_NON_RESPECT', HAB_NON_RESPECT).map((n) => (
                                                         <label key={n.id} className="cursor-pointer">
                                                             <input type="radio" value={n.id} {...register("habNonRespect")} className="peer sr-only" />
                                                             <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-orange-400 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all bg-white">{n.label}</div>
@@ -8011,40 +7816,40 @@ function DepositPageComponent() {
                                 {/* Frais annexes */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Caution (Dépôt de garantie)</div>
+                                        <div className="font-bold text-gray-900">{t('f286')}</div>
                                         <div className="flex gap-3">
                                             <label className="cursor-pointer flex-1">
                                                 <input type="radio" value="false" {...register("habCaution")} className="peer sr-only" />
-                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-gray-500 peer-checked:bg-gray-100 transition-all bg-white">Non</div>
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-gray-500 peer-checked:bg-gray-100 transition-all bg-white">{t('f019')}</div>
                                             </label>
                                             <label className="cursor-pointer flex-1">
                                                 <input type="radio" value="true" {...register("habCaution")} className="peer sr-only" />
-                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white">Oui</div>
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white">{t('f018')}</div>
                                             </label>
                                         </div>
                                         {habCaution && (
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Montant (DZD)</label>
-                                                <input {...register("habCautionMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 10 000" />
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f287')}</label>
+                                                <input {...register("habCautionMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f403')} />
                                             </div>
                                         )}
                                     </div>
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
-                                        <div className="font-bold text-gray-900">Frais de ménage</div>
+                                        <div className="font-bold text-gray-900">{t('f288')}</div>
                                         <div className="flex gap-3">
                                             <label className="cursor-pointer flex-1">
                                                 <input type="radio" value="INCLUS" {...register("habFraisMenage")} className="peer sr-only" />
-                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white">Inclus</div>
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-green-50 peer-checked:text-[#00BFA6] transition-all bg-white">{t('f289')}</div>
                                             </label>
                                             <label className="cursor-pointer flex-1">
                                                 <input type="radio" value="SUPPLEMENT" {...register("habFraisMenage")} className="peer sr-only" />
-                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-orange-400 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all bg-white">En supplément</div>
+                                                <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-orange-400 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all bg-white">{t('f290')}</div>
                                             </label>
                                         </div>
                                         {habFraisMenage === "SUPPLEMENT" && (
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">Montant (DZD)</label>
-                                                <input {...register("habFraisMenageMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="ex: 2 000" />
+                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f287')}</label>
+                                                <input {...register("habFraisMenageMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f404')} />
                                             </div>
                                         )}
                                     </div>
@@ -8052,11 +7857,11 @@ function DepositPageComponent() {
 
                                 {/* Modes de paiement */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
-                                    <div className="font-bold text-gray-900">Solutions de paiement acceptées</div>
+                                    <div className="font-bold text-gray-900">{t('f291')}</div>
                                     <div>
-                                        <div className="text-sm font-bold text-gray-600 mb-2">Paiements locaux (Algérie)</div>
+                                        <div className="text-sm font-bold text-gray-600 mb-2">{t('f292')}</div>
                                         <div className="flex flex-wrap gap-3">
-                                            {HAB_PAIEMENTS_LOCAUX.map((p) => (
+                                            {tGroup('HAB_PAIEMENTS_LOCAUX', HAB_PAIEMENTS_LOCAUX).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("habPaiements")} className="peer sr-only" />
                                                     <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{p.label}</div>
@@ -8065,9 +7870,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="text-sm font-bold text-gray-600 mb-2">Paiements internationaux</div>
+                                        <div className="text-sm font-bold text-gray-600 mb-2">{t('f293')}</div>
                                         <div className="flex flex-wrap gap-3">
-                                            {HAB_PAIEMENTS_INTL.map((p) => (
+                                            {tGroup('HAB_PAIEMENTS_INTL', HAB_PAIEMENTS_INTL).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("habPaiements")} className="peer sr-only" />
                                                     <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{p.label}</div>
@@ -8081,19 +7886,17 @@ function DepositPageComponent() {
                             {/* Disponibilités */}
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <CalendarIcon className="h-5 w-5 text-[#00BFA6]" />
-                                    Disponibilités
-                                </h2>
+                                    <CalendarIcon className="h-5 w-5 text-[#00BFA6]" />{t('f294')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Durée minimale de séjour (nuits)</label>
-                                        <input {...register("habDureeMin")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: 2" />
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f295')}</label>
+                                        <input {...register("habDureeMin")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f380')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Délai de préparation entre réservations</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f296')}</label>
                                         <div className="flex gap-2">
-                                            {[{ id: "AUCUN", label: "Aucun" }, { id: "1_NUIT", label: "1 nuit de battement" }].map((opt) => (
+                                            {[{ id: "AUCUN", label: t('f031') }, { id: "1_NUIT", label: t('depBuffer1Night') }].map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer flex-1">
                                                     <input type="radio" value={opt.id} {...register("habDelaiPreparation")} className="peer sr-only" />
                                                     <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{opt.label}</div>
@@ -8102,9 +7905,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Période d'ouverture</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f297')}</label>
                                         <div className="flex gap-2">
-                                            {[{ id: "TOUTE_ANNEE", label: "Toute l'année" }, { id: "SAISONNIER", label: "Saisonnier" }].map((opt) => (
+                                            {[{ id: "TOUTE_ANNEE", label: t('depAllYear') }, { id: "SAISONNIER", label: t('depSeasonal') }].map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer flex-1">
                                                     <input type="radio" value={opt.id} {...register("habPeriodeOuverture")} className="peer sr-only" />
                                                     <div className="p-2 border-2 border-gray-200 rounded-xl text-center text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white">{opt.label}</div>
@@ -8117,24 +7920,24 @@ function DepositPageComponent() {
                                 {habPeriodeOuverture === "SAISONNIER" && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Début de saison</label>
-                                            <input {...register("habDebutSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Juin" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f298')}</label>
+                                            <input {...register("habDebutSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f405')} />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">Fin de saison</label>
-                                            <input {...register("habFinSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="ex: Septembre" />
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f299')}</label>
+                                            <input {...register("habFinSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f406')} />
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                                    <div className="font-bold text-blue-900 mb-1 text-sm">Documents obligatoires à l'arrivée (Conformes à la loi algérienne)</div>
+                                    <div className="font-bold text-blue-900 mb-1 text-sm">{t('f300')}</div>
                                     <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
-                                        <li>Citoyens locaux / Résidents : CNI ou Permis de conduire original</li>
-                                        <li>Voyageurs internationaux : Passeport original avec visa valide</li>
-                                        <li>Couples et familles : Livret de famille original</li>
+                                        <li>{t('f301')}</li>
+                                        <li>{t('f302')}</li>
+                                        <li>{t('f303')}</li>
                                     </ul>
-                                    <p className="text-xs text-blue-700 mt-2 font-medium">Aucune remise de clé ne sera effectuée sans présentation de ces documents.</p>
+                                    <p className="text-xs text-blue-700 mt-2 font-medium">{t('f304')}</p>
                                 </div>
                             </section>
                         </div>
@@ -8146,13 +7949,13 @@ function DepositPageComponent() {
                         <div className="w-full max-w-2xl animate-fade-in">
                             <div className="space-y-8">
                                 <section className="space-y-6">
-                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2">Disponibilité</h2>
+                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2">{t('f305')}</h2>
                                     <div className="relative">
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Disponibilité</label>
+                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f305')}</label>
                                         <div className="flex gap-4">
                                             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
                                                 <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => { setAvailabilityMode('IMMEDIATE'); setIsCalendarOpen(false); }} className="accent-[#00BFA6] w-4 h-4" />
-                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Immédiate</span>
+                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">{t('f306')}</span>
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]" onClick={() => { if (availabilityMode === 'DATE') setIsCalendarOpen(!isCalendarOpen); }}>
                                                 <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => { setAvailabilityMode('DATE'); setIsCalendarOpen(true); }} className="accent-[#00BFA6] w-4 h-4" />
@@ -8164,7 +7967,7 @@ function DepositPageComponent() {
                                         {errors.availableDate && <p className="text-red-500 text-sm mt-1">{errors.availableDate.message}</p>}
 
                                         {availabilityMode === 'DATE' && isCalendarOpen && (
-                                            <div className="absolute right-0 top-full mt-2 z-[100] animate-fade-in">
+                                            <div className="absolute end-0 top-full mt-2 z-[100] animate-fade-in">
                                                 <div className="bg-white shadow-2xl rounded-xl p-4 border border-gray-200 relative">
                                                     <button type="button" onClick={() => setIsCalendarOpen(false)} className="absolute top-2 right-2 p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors">
                                                         <X className="w-4 h-4" />
@@ -8184,7 +7987,7 @@ function DepositPageComponent() {
                                     </div>
 
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-4">
-                                        <div className="font-bold text-gray-900">Voulez-vous afficher le prix de location ?</div>
+                                        <div className="font-bold text-gray-900">{t('f307')}</div>
                                         <div className="flex gap-4 flex-wrap">
                                             <label className="cursor-pointer">
                                                 <input
@@ -8194,9 +7997,7 @@ function DepositPageComponent() {
                                                     checked={usineShowPrice === true}
                                                     onChange={() => setUsineShowPrice(true)}
                                                 />
-                                                <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white">
-                                                    Oui
-                                                </div>
+                                                <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white">{t('f018')}</div>
                                             </label>
                                             <label className="cursor-pointer">
                                                 <input
@@ -8206,40 +8007,38 @@ function DepositPageComponent() {
                                                     checked={usineShowPrice === false}
                                                     onChange={() => setUsineShowPrice(false)}
                                                 />
-                                                <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white">
-                                                    Non
-                                                </div>
+                                                <div className="px-6 py-3 border-2 rounded-xl font-medium text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-white">{t('f019')}</div>
                                             </label>
                                         </div>
 
                                         {usineShowPrice && (
                                             <div className="space-y-4">
                                                 <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Prix de location</label>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">{t('f308')}</label>
                                                     <div className="flex flex-col md:flex-row gap-4">
                                                         <div className="relative flex-1">
                                                             <input 
-                                                                {...register("price")} 
+                                                                {...register("price")} dir="ltr"
                                                                 type="text"
                                                                 onChange={(e) => {
                                                                     const val = e.target.value.replace(/[^0-9]/g, '');
                                                                     const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
                                                                     setValue("price", formatted, { shouldValidate: true });
                                                                 }}
-                                                                className="w-full p-4 pr-32 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
+                                                                className="w-full p-4 pe-32 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
                                                                 placeholder="0"
                                                             />
-                                                            <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
+                                                            <div className="absolute end-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
                                                                 <select 
                                                                     value={currentPriceUnit}
                                                                     onChange={(e) => handlePriceUnitChange(e.target.value as any)}
                                                                     className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none"
                                                                 >
-                                                                    <option value="DA">DA</option>
-                                                                    <option value="DA_M2">DA / m²</option>
-                                                                    <option value="MILLION">Millions</option>
-                                                                    <option value="MILLION_M2">Millions / m²</option>
-                                                                    <option value="MILLIARD">Milliards</option>
+                                                                    <option value="DA">{t('curDA')}</option>
+                                                                    <option value="DA_M2">{t('f309')}</option>
+                                                                    <option value="MILLION">{t('f310')}</option>
+                                                                    <option value="MILLION_M2">{t('f311')}</option>
+                                                                    <option value="MILLIARD">{t('f312')}</option>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -8247,15 +8046,11 @@ function DepositPageComponent() {
                                                         <div className="flex gap-2">
                                                             <label className="cursor-pointer">
                                                                 <input type="radio" value="FIXED" {...register("priceType")} className="peer sr-only" />
-                                                                <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[100px]">
-                                                                    Fixe
-                                                                </div>
+                                                                <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[100px]">{t('f313')}</div>
                                                             </label>
                                                             <label className="cursor-pointer">
                                                                 <input type="radio" value="NEGOTIABLE" {...register("priceType")} className="peer sr-only" />
-                                                                <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[120px]">
-                                                                    Négociable
-                                                                </div>
+                                                                <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[120px]">{t('f314')}</div>
                                                             </label>
                                                         </div>
                                                     </div>
@@ -8276,36 +8071,36 @@ function DepositPageComponent() {
                             <div className="space-y-8">
                                 {/* Prix & Unité */}
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Prix</h3>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('f315')}</h3>
                                     <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                {transactionType === 'RENTAL' ? (propertyType === "IMMEUBLE_RESIDENTIEL" ? "Location de l'immeuble" : "Loyer mensuel") : "Prix de vente"}
+                                                {transactionType === 'RENTAL' ? (propertyType === "IMMEUBLE_RESIDENTIEL" ? t('adBuildingRent') : t('adMonthlyRent')) : t('adSalePrice')}
                                             </label>
                                             <div className="flex flex-col md:flex-row gap-4">
                                                 <div className="relative flex-1">
                                                     <input 
-                                                        {...register("price")} 
+                                                        {...register("price")} dir="ltr"
                                                         type="text"
                                                         onChange={(e) => {
                                                             const val = e.target.value.replace(/[^0-9]/g, '');
                                                             const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
                                                             setValue("price", formatted, { shouldValidate: true });
                                                         }}
-                                                        className="w-full p-4 pr-32 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
+                                                        className="w-full p-4 pe-32 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white font-bold text-lg" 
                                                         placeholder="0"
                                                     />
-                                                    <div className="absolute right-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
+                                                    <div className="absolute end-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
                                                         <select 
                                                             value={currentPriceUnit}
                                                             onChange={(e) => handlePriceUnitChange(e.target.value as any)}
                                                             className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none"
                                                         >
-                                                            <option value="DA">DA</option>
-                                                            <option value="DA_M2">DA / m²</option>
-                                                            <option value="MILLION">Millions</option>
-                                                            <option value="MILLION_M2">Millions / m²</option>
-                                                            <option value="MILLIARD">Milliards</option>
+                                                            <option value="DA">{t('curDA')}</option>
+                                                            <option value="DA_M2">{t('f309')}</option>
+                                                            <option value="MILLION">{t('f310')}</option>
+                                                            <option value="MILLION_M2">{t('f311')}</option>
+                                                            <option value="MILLIARD">{t('f312')}</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -8314,15 +8109,11 @@ function DepositPageComponent() {
                                                 <div className="flex gap-2">
                                                     <label className="cursor-pointer">
                                                         <input type="radio" value="FIXED" {...register("priceType")} className="peer sr-only" />
-                                                        <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[100px]">
-                                                            Fixe
-                                                        </div>
+                                                        <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[100px]">{t('f313')}</div>
                                                     </label>
                                                     <label className="cursor-pointer">
                                                         <input type="radio" value="NEGOTIABLE" {...register("priceType")} className="peer sr-only" />
-                                                        <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[120px]">
-                                                            Négociable
-                                                        </div>
+                                                        <div className="h-full px-6 flex items-center justify-center border-2 rounded-xl font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:text-[#00BFA6] peer-checked:bg-green-50 transition-all hover:border-gray-300 bg-white min-w-[120px]">{t('f314')}</div>
                                                     </label>
                                                 </div>
                                             </div>
@@ -8340,24 +8131,23 @@ function DepositPageComponent() {
                                 {transactionType === 'RENTAL' && (
                                     <section className="space-y-6 pt-6 border-t">
                                         <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                            <FileText className="text-[#00BFA6]" /> Conditions de Location
-                                        </h2>
+                                            <FileText className="text-[#00BFA6]" />{t('f316')}</h2>
 
                                         {/* Usage croisé résidentiel <-> bureaux et commerces, sans créer ni gérer de doublon */}
                                         {!isCommercialPropertyType ? (
                                             <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white max-w-xl">
                                                 <input type="checkbox" {...register("acceptsCrossUsage")} className="accent-[#00BFA6] w-5 h-5 mt-0.5 shrink-0" />
                                                 <span>
-                                                    <span className="font-bold text-gray-900 text-sm block">Acceptez-vous également un usage commercial ou bureau ?</span>
-                                                    <span className="text-xs text-gray-500">La même annonce sera aussi visible dans Bureaux et Commerces, sans créer ni gérer de doublon.</span>
+                                                    <span className="font-bold text-gray-900 text-sm block">{t('f317')}</span>
+                                                    <span className="text-xs text-gray-500">{t('f318')}</span>
                                                 </span>
                                             </label>
                                         ) : (
                                             <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors bg-white max-w-xl">
                                                 <input type="checkbox" {...register("acceptsCrossUsage")} className="accent-[#00BFA6] w-5 h-5 mt-0.5 shrink-0" />
                                                 <span>
-                                                    <span className="font-bold text-gray-900 text-sm block">Acceptez-vous également un usage habitation ?</span>
-                                                    <span className="text-xs text-gray-500">La même annonce sera aussi visible dans le Résidentiel, sans créer ni gérer de doublon.</span>
+                                                    <span className="font-bold text-gray-900 text-sm block">{t('f319')}</span>
+                                                    <span className="text-xs text-gray-500">{t('f320')}</span>
                                                 </span>
                                             </label>
                                         )}
@@ -8368,7 +8158,7 @@ function DepositPageComponent() {
                                                 <div className="flex items-end gap-4 flex-wrap md:flex-nowrap">
                                                     {/* Caution */}
                                                     <div className="w-32 flex-shrink-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Caution (Mois)</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f321')}</label>
                                                         <input 
                                                             {...register("depositMonths")} 
                                                             type="number" 
@@ -8386,17 +8176,17 @@ function DepositPageComponent() {
                                                                 <Zap className="w-4 h-4" />
                                                             </div>
                                                             <input type="checkbox" {...register("chargesIncluded")} className="accent-[#00BFA6] w-5 h-5" />
-                                                            <span className="font-bold text-gray-900 text-sm">Charges Comprises</span>
+                                                            <span className="font-bold text-gray-900 text-sm">{t('f322')}</span>
                                                         </label>
                                                     </div>
 
                                                     {/* Disponibilité */}
                                                     <div className="flex-1 relative">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">Disponibilité</label>
+                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f305')}</label>
                                                         <div className="flex gap-4">
                                                             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
                                                                 <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => { setAvailabilityMode('IMMEDIATE'); setIsCalendarOpen(false); }} className="accent-[#00BFA6] w-4 h-4" />
-                                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">Immédiate</span>
+                                                                <span className="text-gray-900 font-bold text-sm group-hover:text-[#00BFA6]">{t('f306')}</span>
                                                             </label>
                                                             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]" onClick={() => { if (availabilityMode === 'DATE') setIsCalendarOpen(!isCalendarOpen); }}>
                                                                 <input type="radio" name="availabilityMode" value="DATE" checked={availabilityMode === 'DATE'} onChange={() => { setAvailabilityMode('DATE'); setIsCalendarOpen(true); }} className="accent-[#00BFA6] w-4 h-4" />
@@ -8409,7 +8199,7 @@ function DepositPageComponent() {
 
                                                         {/* Calendar Popover */}
                                                         {availabilityMode === 'DATE' && isCalendarOpen && (
-                                                            <div className="absolute right-0 top-full mt-2 z-[100] animate-fade-in">
+                                                            <div className="absolute end-0 top-full mt-2 z-[100] animate-fade-in">
                                                                 <div className="bg-white shadow-2xl rounded-xl p-4 border border-gray-200 relative">
                                                                     <button type="button" onClick={() => setIsCalendarOpen(false)} className="absolute top-2 right-2 p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors">
                                                                         <X className="w-4 h-4" />
@@ -8439,29 +8229,22 @@ function DepositPageComponent() {
                                 {transactionType === "SALE" && (
                                     <section className="space-y-6 pt-6 border-t">
                                         <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                            <FileText className="text-[#00BFA6]" /> Conditions de Vente
-                                        </h2>
+                                            <FileText className="text-[#00BFA6]" />{t('f323')}</h2>
                                         <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-3">Accepte crédit Bancaire</label>
+                                                <label className="block text-sm font-bold text-gray-900 mb-3">{t('f324')}</label>
                                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                     <label className="cursor-pointer">
                                                         <input type="radio" value="YES" {...register("acceptsBankCredit")} className="peer sr-only" />
-                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">
-                                                            Oui
-                                                        </div>
+                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">{t('f018')}</div>
                                                     </label>
                                                     <label className="cursor-pointer">
                                                         <input type="radio" value="NO" {...register("acceptsBankCredit")} className="peer sr-only" />
-                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">
-                                                            Non
-                                                        </div>
+                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">{t('f019')}</div>
                                                     </label>
                                                     <label className="cursor-pointer">
                                                         <input type="radio" value="NO_PREFERENCE" {...register("acceptsBankCredit")} className="peer sr-only" />
-                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">
-                                                            Pas de préférence
-                                                        </div>
+                                                        <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">{t('f325')}</div>
                                                     </label>
                                                 </div>
                                                 {errors.acceptsBankCredit && <p className="text-red-500 text-sm mt-1">{errors.acceptsBankCredit.message as any}</p>}
@@ -8473,8 +8256,7 @@ function DepositPageComponent() {
                                 {transactionType === "SALE" && (
                                     <section className="space-y-6 pt-2">
                                         <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                            <FileText className="text-[#00BFA6]" /> Documents Juridiques
-                                        </h2>
+                                            <FileText className="text-[#00BFA6]" />{t('f326')}</h2>
                                         <div className="flex flex-wrap gap-3">
                                             {[
                                                 { id: "ACTE_PROPRIETE", label: "Acte de propriété" },
@@ -8504,18 +8286,17 @@ function DepositPageComponent() {
                                 {/* Informations de l'annonce */}
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <FileText className="text-[#00BFA6]" /> Informations de l'annonce
-                                    </h3>
+                                        <FileText className="text-[#00BFA6]" />{t('f327')}</h3>
                                     
                                     <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                Titre accrocheur <span className="text-gray-400 font-normal">(Optionnel)</span>
+                                                {t('depCatchTitle')} <span className="text-gray-400 font-normal">{t('f328')}</span>
                                             </label>
                                             <input 
                                                 type="text" 
                                                 {...register("title")}
-                                                placeholder="Ex: Magnifique villa avec piscine vue sur mer..." 
+                                                placeholder={t('f407')} 
                                                 className="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 placeholder:text-gray-500 bg-white font-medium"
                                             />
                                             {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
@@ -8523,12 +8304,12 @@ function DepositPageComponent() {
 
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                Description courte <span className="text-gray-400 font-normal">(Optionnel)</span>
+                                                {t('depShortDesc')} <span className="text-gray-400 font-normal">{t('f328')}</span>
                                             </label>
                                             <textarea 
                                                 {...register("shortDescription")}
                                                 rows={4}
-                                                placeholder="Décrivez brièvement les points forts de votre bien..." 
+                                                placeholder={t('f408')} 
                                                 className="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 placeholder:text-gray-500 bg-white resize-none font-medium"
                                             ></textarea>
                                             {errors.shortDescription && <p className="text-red-500 text-sm mt-1">{errors.shortDescription.message}</p>}
@@ -8539,18 +8320,15 @@ function DepositPageComponent() {
                                 {/* Contacts */}
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Phone className="text-[#00BFA6]" /> Contacts
-                                    </h3>
-                                    <p className="text-gray-600 mb-4 text-sm">
-                                        Ajoutez les numéros de téléphone sur lesquels les clients peuvent vous contacter.
-                                    </p>
+                                        <Phone className="text-[#00BFA6]" />{t('f329')}</h3>
+                                    <p className="text-gray-600 mb-4 text-sm">{t('f330')}</p>
 
                                     {/* Option to use profile phone if not already used */}
                                     {userProfilePhone && contacts[0]?.phone !== normalizeDzPhoneToIntlDigits(userProfilePhone) && (
                                         <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center justify-between animate-fade-in">
                                             <div>
                                                 <p className="font-bold text-blue-900 text-sm">Numéro de votre profil ({userProfilePhone})</p>
-                                                <p className="text-blue-700 text-xs">Voulez-vous utiliser ce numéro pour cette annonce ?</p>
+                                                <p className="text-blue-700 text-xs">{t('f331')}</p>
                                             </div>
                                             <button 
                                                 onClick={() => {
@@ -8579,7 +8357,7 @@ function DepositPageComponent() {
                                                 
                                                 <div className="flex-1 w-full">
                                                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                        {index === 0 ? "Numéro principal" : "Autre numéro"}
+                                                        {index === 0 ? t('adPrimaryNumber') : t('adOtherNumber')}
                                                     </label>
                                                     <div className="relative">
                                                         <PhoneInput
@@ -8612,9 +8390,7 @@ function DepositPageComponent() {
                                                     </div>
                                                     {index === 0 && userProfilePhone && contact.phone === normalizeDzPhoneToIntlDigits(userProfilePhone) && (
                                                         <div className="mt-2 flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded-lg text-xs font-bold border border-green-100">
-                                                            <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                                            Numéro de profil utilisé
-                                                        </div>
+                                                            <div className="h-2 w-2 rounded-full bg-green-500"></div>{t('f332')}</div>
                                                     )}
                                                 </div>
                                                 
@@ -8626,7 +8402,7 @@ function DepositPageComponent() {
                                                             onChange={(e) => updateContact(index, 'hasWhatsapp', e.target.checked)}
                                                             className="accent-[#25D366] w-4 h-4" 
                                                         />
-                                                        <span className="font-medium text-gray-700 text-sm">WhatsApp</span>
+                                                        <span className="font-medium text-gray-700 text-sm">{t('f333')}</span>
                                                     </label>
                                                     <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#7360f2] transition-colors">
                                                         <input 
@@ -8635,7 +8411,7 @@ function DepositPageComponent() {
                                                             onChange={(e) => updateContact(index, 'hasViber', e.target.checked)}
                                                             className="accent-[#7360f2] w-4 h-4" 
                                                         />
-                                                        <span className="font-medium text-gray-700 text-sm">Viber</span>
+                                                        <span className="font-medium text-gray-700 text-sm">{t('f334')}</span>
                                                     </label>
                                                     <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#0088cc] transition-colors">
                                                         <input 
@@ -8644,7 +8420,7 @@ function DepositPageComponent() {
                                                             onChange={(e) => updateContact(index, 'hasTelegram', e.target.checked)}
                                                             className="accent-[#0088cc] w-4 h-4" 
                                                         />
-                                                        <span className="font-medium text-gray-700 text-sm">Telegram</span>
+                                                        <span className="font-medium text-gray-700 text-sm">{t('f335')}</span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -8663,47 +8439,46 @@ function DepositPageComponent() {
                                 {/* Localisation */}
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <MapPin className="text-[#00BFA6]" /> Localisation
-                                    </h3>
+                                        <MapPin className="text-[#00BFA6]" />{t('f065')}</h3>
                                     <div className="space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
                                         {/* Wilaya, Commune, Quartier - Inline */}
                                         <div className="flex flex-col md:flex-row gap-4">
                                             <div className="flex-1">
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Wilaya</label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('f336')}</label>
                                                 <select {...register("city")} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white">
-                                                    <option value="">Sélectionner...</option>
+                                                    <option value="">{t('f337')}</option>
                                                     {WILAYAS.map((wilaya) => (
-                                                        <option key={wilaya.id} value={wilaya.name}>{wilaya.code} - {wilaya.name}</option>
+                                                        <option key={wilaya.id} value={wilaya.name}>{wilaya.code} - {geoName(wilaya)}</option>
                                                     ))}
                                                 </select>
                                                 {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>}
                                             </div>
 
                                             <div className="flex-1">
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Commune</label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('f338')}</label>
                                                 <select {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100 disabled:text-gray-400">
-                                                    <option value="">Sélectionner...</option>
+                                                    <option value="">{t('f337')}</option>
                                                     {filteredCommunes.map((commune) => (
-                                                        <option key={commune.id} value={commune.name}>{commune.name}</option>
+                                                        <option key={commune.id} value={commune.name}>{geoName(commune)}</option>
                                                     ))}
                                                 </select>
                                                 {errors.commune && <p className="text-red-500 text-sm mt-1">{errors.commune.message}</p>}
                                             </div>
 
                                             <div className="flex-[2]">
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Quartier (Adresse)</label>
-                                                <input {...register("address")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" placeholder="Nom du quartier, rue..." />
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('f339')}</label>
+                                                <input {...register("address")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" placeholder={t('f409')} />
                                                 {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Lien Google Maps (Optionnel)</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f340')}</label>
                                             <input 
                                                 {...register("mapsLink")} 
                                                 type="url" 
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" 
-                                                placeholder="https://maps.google.com/..." 
+                                                placeholder={t('f410')} 
                                             />
                                             {errors.mapsLink && <p className="text-red-500 text-sm mt-1">{errors.mapsLink.message}</p>}
                                         </div>
@@ -8723,8 +8498,7 @@ function DepositPageComponent() {
                                     {/* SECTION PHOTOS */}
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                            <ImageIcon className="text-[#00BFA6]" /> Photos
-                                        </h3>
+                                            <ImageIcon className="text-[#00BFA6]" />{t('f341')}</h3>
                                         <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
                                             <input 
                                                 type="file" 
@@ -8739,9 +8513,7 @@ function DepositPageComponent() {
                                                     ? `${selectedFiles.length} photo(s) sélectionnée(s)` 
                                                     : "Ajouter des photos"}
                                             </p>
-                                            <p className="text-xs text-gray-400">
-                                                JPG, PNG (max 10MB)
-                                            </p>
+                                            <p className="text-xs text-gray-400">{t('f342')}</p>
                                         </div>
 
                                         {selectedFiles.length > 0 && (
@@ -8766,21 +8538,21 @@ function DepositPageComponent() {
                                                                     mainPhoto === file ? "bg-[#00BFA6] text-white" : "bg-white text-gray-900 hover:bg-gray-100"
                                                                 )}
                                                             >
-                                                                {mainPhoto === file ? "Couverture" : "Définir couverture"}
+                                                                {mainPhoto === file ? t('adCover') : t('adSetCover')}
                                                             </button>
                                                             
                                                             <div className="flex gap-2 w-full">
                                                                 <button 
                                                                     onClick={() => rotateImage(file)}
                                                                     className="flex-1 bg-white/20 hover:bg-white/40 text-white rounded-lg p-1.5 flex items-center justify-center transition-colors"
-                                                                    title="Pivoter"
+                                                                    title={t('f411')}
                                                                 >
                                                                     <RotateCw className="h-3 w-3" />
                                                                 </button>
                                                                 <button 
                                                                     onClick={() => removeFile(idx)}
                                                                     className="flex-1 bg-red-500/80 hover:bg-red-600 text-white rounded-lg p-1.5 flex items-center justify-center transition-colors"
-                                                                    title="Supprimer"
+                                                                    title={t('f412')}
                                                                 >
                                                                     <X className="h-3 w-3" />
                                                                 </button>
@@ -8801,8 +8573,7 @@ function DepositPageComponent() {
                                     {/* SECTION VIDEOS */}
                                     <div className="pt-6 border-t border-gray-100">
                                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                            <VideoIcon className="text-[#00BFA6]" /> Vidéos (Optionnel)
-                                        </h3>
+                                            <VideoIcon className="text-[#00BFA6]" />{t('f343')}</h3>
                                         <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
                                             <input 
                                                 type="file" 
@@ -8817,9 +8588,7 @@ function DepositPageComponent() {
                                                     ? `${selectedVideos.length} vidéo(s) sélectionnée(s)` 
                                                     : "Ajouter une vidéo"}
                                             </p>
-                                            <p className="text-xs text-gray-400">
-                                                MP4, MOV (max 50MB) - Max 2 vidéos
-                                            </p>
+                                            <p className="text-xs text-gray-400">{t('f344')}</p>
                                         </div>
 
                                         {selectedVideos.length > 0 && (
@@ -8847,7 +8616,7 @@ function DepositPageComponent() {
                                                                 mainVideo === file ? "bg-[#00BFA6] text-white" : "bg-white/90 text-gray-900 opacity-0 group-hover:opacity-100 hover:bg-white"
                                                             )}
                                                         >
-                                                            {mainVideo === file ? "Couverture" : "Définir couverture"}
+                                                            {mainVideo === file ? t('adCover') : t('adSetCover')}
                                                         </button>
                                                         <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                                                             {(file.size / (1024 * 1024)).toFixed(1)} MB
@@ -8871,16 +8640,14 @@ function DepositPageComponent() {
                             ) : (
                                 /* Étape 2: Organisation par catégorie */
                                 <div className="space-y-8">
-                                    <p className="text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                        Sélectionnez une ou plusieurs photos en cliquant dessus, puis utilisez les boutons pour les déplacer, ou glissez-déposez les directement.
-                                    </p>
+                                    <p className="text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-200">{t('f345')}</p>
 
                                     <DragDropContext onDragEnd={handleDragEnd}>
                                         {photoCategories.map((category) => (
                                             <div key={category.id} className={cn("border rounded-xl p-6", category.id === "non_classees" ? "bg-blue-50 border-blue-200" : "bg-gray-50")}>
                                                 <div className="flex items-center gap-3 mb-4">
                                                     <category.icon className="h-6 w-6 text-[#00BFA6]" />
-                                                    <h3 className="text-lg font-bold text-gray-700">{category.label}</h3>
+                                                    <h3 className="text-lg font-bold text-gray-700">{photoCatLabel(category.id, category.label)}</h3>
                                                     <span className="text-sm text-gray-500 ml-auto bg-white px-3 py-1 rounded-full border border-gray-200">
                                                         {category.photos.length} photo(s)
                                                     </span>
@@ -8889,7 +8656,7 @@ function DepositPageComponent() {
                                                 {/* Menu pour déplacer vers d'autres catégories — au-dessus des photos pour rester visible même avec beaucoup de photos */}
                                                 {category.photos.length > 0 && selectedPhotos.some(p => category.photos.includes(p)) && (
                                                     <div className="mb-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                                        <p className="text-sm font-bold text-gray-700 mb-3">Déplacer la sélection vers :</p>
+                                                        <p className="text-sm font-bold text-gray-700 mb-3">{t('f346')}</p>
                                                         <div className="flex gap-2 flex-wrap">
                                                             {photoCategories
                                                                 .filter(c => c.id !== category.id)
@@ -8899,7 +8666,7 @@ function DepositPageComponent() {
                                                                         onClick={() => moveSelectedPhotos(targetCat.id)}
                                                                         className="text-sm px-4 py-2 bg-gray-50 border border-gray-300 rounded-full text-gray-800 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] transition-all font-bold"
                                                                     >
-                                                                        {targetCat.label}
+                                                                        {photoCatLabel(targetCat.id, targetCat.label)}
                                                                     </button>
                                                                 ))}
                                                         </div>

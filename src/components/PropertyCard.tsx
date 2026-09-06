@@ -4,6 +4,7 @@ import axios from "axios";
 import { useTranslations } from "next-intl";
 import { Camera, Eye, Heart, MapPin, Building2, Play, Images, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePropertyTypeLabel, useLocalizedPlaceName } from "@/lib/typeLabels";
 import { PROPERTY_TYPES } from "@/data/propertyTypes";
 import { getCategoryColor } from "@/data/categoryColors";
 
@@ -38,6 +39,7 @@ const CATEGORY_OVERLAY_COLOR: Record<string, string> = {
 // Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
 // Hébergement & Séjour non traité pour l'instant (aucun bandeau affiché).
 function PhotoOverlaySpecs({ announce }: { announce: any }) {
+    const t = useTranslations("PropertyCard");
     const property = announce.property || {};
     const pType = (property._displayPropertyType || property.propertyType || "").toUpperCase();
     const typeObj = PROPERTY_TYPES.find((t) => t.id === pType);
@@ -50,14 +52,14 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     if (categoryId === "RESIDENTIEL" || categoryId === "BUREAUX_COMMERCES") {
         if (property.typology) items.push(property.typology);
         if (property.area) items.push(`${property.area} m²`);
-        if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(`Étage ${property.nbFloors}`);
+        if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloor", { n: property.nbFloors }));
     } else if (categoryId === "INDUSTRIEL") {
-        if (property.landArea) items.push(`Terrain ${property.landArea} m²`);
-        if (property.builtArea) items.push(`Couverte ${property.builtArea} m²`);
+        if (property.landArea) items.push(t("overlayLand", { v: property.landArea }));
+        if (property.builtArea) items.push(t("overlayCovered", { v: property.builtArea }));
     } else if (categoryId === "TERRAIN_FONCIER") {
-        if (property.landArea || property.area) items.push(`Terrain ${property.landArea || property.area} m²`);
+        if (property.landArea || property.area) items.push(t("overlayLand", { v: property.landArea || property.area }));
         const topo = amenities?.terrain?.topographie;
-        if (topo) items.push(TERRAIN_TOPOGRAPHIE_LABELS[topo] || topo);
+        if (topo) items.push(t.has(`overlayTopo${topo}`) ? t(`overlayTopo${topo}`) : (TERRAIN_TOPOGRAPHIE_LABELS[topo] || topo));
     }
 
     if (items.length === 0) return null;
@@ -123,17 +125,19 @@ type PropertyCardProps = {
 
 export const PropertyCard = ({ announce, autoPlay = false, variant = "default", initialFavorite = false, onFavoriteChange }: PropertyCardProps) => {
   const t = useTranslations("PropertyCard");
+  const ptLabel = usePropertyTypeLabel();
+  const place = useLocalizedPlaceName();
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
   const isHomeVariant = variant === "home";
 
-  const commune = announce.property?.address?.town?.nameFr;
-  const wilaya = announce.property?.address?.town?.city?.nameFr;
+  const commune = place.town(announce.property?.address?.town);
+  const wilaya = place.city(announce.property?.address?.town?.city);
   const locationLabel = [commune, wilaya].filter(Boolean).join(" - ") || t("defaultCountry");
 
   // Normalize Property Type for Display — use cross-display type if available (cross-category context)
   const pType = announce.property?._displayPropertyType || announce.property?.propertyType;
   const typeObj = PROPERTY_TYPES.find((pt) => pt.id === pType?.toUpperCase() || pt.label === pType);
-  const categoryName = typeObj ? typeObj.label : (pType || t("defaultCategory"));
+  const categoryName = typeObj ? ptLabel(typeObj.id, typeObj.label) : (pType || t("defaultCategory"));
   const isSale = announce.type === "SALE";
 
   const fullTitle = announce.title || t("titleFallback", { category: categoryName, location: locationLabel });

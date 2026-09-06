@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
+import { usePropertyTypeLabel, useLocalizedPlaceName } from "@/lib/typeLabels"
 import { Link, useRouter } from "@/i18n/navigation"
 
   // Helper for Image URLs
@@ -267,6 +268,11 @@ const LABELS: any = {
 
 export default function AnnounceDetailsPage() {
   const t = useTranslations("AnnounceDetail")
+  const ptLabel = usePropertyTypeLabel()
+  const place = useLocalizedPlaceName()
+  const tL = useTranslations("AnnounceDetailLabels")
+  // Résout un id d'enum stocké en base vers son libellé traduit ; repli sur la map FR locale LABELS.
+  const L = (id: any): any => (id != null && tL.has(String(id)) ? tL(String(id)) : ((LABELS as any)[id] ?? id))
   const params = useParams()
   const router = useRouter()
   const [announce, setAnnounce] = useState<any>(null)
@@ -687,22 +693,22 @@ export default function AnnounceDetailsPage() {
       normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" &&
       (normalizedState === "A_DEMOLIR" || normalizedState.includes("DEMOLIR"))
   const isSaleDemolition = isSaleVillaDemolition || isSaleBuildingDemolition
-  const propertyTypeLabel = PROPERTY_TYPES.find((t) => t.id === normalizedPropertyType)?.label || property.propertyType;
+  const propertyTypeLabel = ptLabel(normalizedPropertyType, PROPERTY_TYPES.find((t) => t.id === normalizedPropertyType)?.label || property.propertyType);
   const hasElevator = exteriorFeatures.includes("elevator");
   const displayArea = property.area ?? property.habitableArea ?? property.builtArea ?? property.landArea;
   const formatUnitFloor = (v: any) => {
       const n = Number(v);
       if (!Number.isFinite(n)) return String(v);
       const i = Math.trunc(n);
-      if (i === 0) return "RDC";
+      if (i === 0) return t('adGf');
       if (i === 1) return "1er";
       return `${i}ème`;
   }
 
   const formatFloorsLabel = (v: any) => {
       const n = Number(v)
-      if (!Number.isFinite(n)) return "Étages"
-      return n === 1 ? "Étage" : "Étages"
+      if (!Number.isFinite(n)) return t('adFloorsMany')
+      return n === 1 ? t('adFloorOne') : t('adFloorsMany')
   }
   
   const tagBaseClass = "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold leading-none";
@@ -728,18 +734,18 @@ export default function AnnounceDetailsPage() {
 
   const getLegalDocumentLabel = (id: string) => {
       const up = String(id || "").toUpperCase()
-      if (up.includes("ACTE")) return "Acte de propriété"
-      if (up.includes("LIVRET")) return "Livret foncier"
-      if (up.includes("CONFORM")) return "Certificat de conformité"
-      return (LABELS as any)[id] || id
+      if (up.includes("ACTE")) return t('adDocActe')
+      if (up.includes("LIVRET")) return t('adDocLivret')
+      if (up.includes("CONFORM")) return t('adDocConform')
+      return L(id)
   }
 
   const acceptsBankCreditValue: any = (property as any)?.acceptsBankCredit ?? (announce as any)?.acceptsBankCredit
   const acceptsBankCreditLabel =
-      acceptsBankCreditValue === "YES" ? "Oui" :
-      acceptsBankCreditValue === "NO" ? "Non" :
-      acceptsBankCreditValue === "NO_PREFERENCE" ? "Pas de préférence" :
-      acceptsBankCreditValue ? String(acceptsBankCreditValue) : "Non spécifié"
+      acceptsBankCreditValue === "YES" ? t('f019') :
+      acceptsBankCreditValue === "NO" ? t('adNo') :
+      acceptsBankCreditValue === "NO_PREFERENCE" ? t('adNoPref') :
+      acceptsBankCreditValue ? String(acceptsBankCreditValue) : t('f014')
 
   const toIntlDigits = (raw: string) => {
       const digits = String(raw || "").replace(/\D/g, "")
@@ -946,7 +952,7 @@ export default function AnnounceDetailsPage() {
                                 onClick={() => { setActiveTab(cat); setActiveImage(0) }}
                                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-colors shrink-0 ${activeTab === cat ? 'border-[#00BFA6] bg-[#00BFA6] text-white' : 'border-white/15 bg-white/10 hover:bg-white/20 text-white'}`}
                             >
-                                {LABELS[cat] || cat} ({imagesByCategory[cat].length})
+                                {L(cat)} ({imagesByCategory[cat].length})
                             </button>
                         ))}
                         {videosList.length > 0 && (
@@ -1018,28 +1024,28 @@ export default function AnnounceDetailsPage() {
                       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{propertyTypeLabel}</h1>
                       {isHangarRental && hangar?.globalState && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
-                              {LABELS[hangar.globalState] || hangar.globalState}
+                              {L(hangar.globalState)}
                           </span>
                       )}
                       {isFactoryRental && industrialFactory?.globalState && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
-                              {LABELS[industrialFactory.globalState] || industrialFactory.globalState}
+                              {L(industrialFactory.globalState)}
                           </span>
                       )}
                       {isColdRoomRental && coldRoom?.etatGlobal && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
-                              {LABELS[coldRoom.etatGlobal] || coldRoom.etatGlobal}
+                              {L(coldRoom.etatGlobal)}
                           </span>
                       )}
                       {property.state && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
-                              {LABELS[property.state] || property.state}
+                              {L(property.state)}
                           </span>
                       )}
                   </div>
                   <div className="flex items-center text-gray-500 dark:text-white/50 text-lg">
                     <MapPin className="h-5 w-5 mr-2 text-[#00BFA6]" />
-                    {property.address?.town?.nameFr || property.address?.street}, {property.address?.town?.city?.nameFr}
+                    {place.town(property.address?.town) || property.address?.street}, {place.city(property.address?.town?.city)}
                     {property.mapsLink && (
                       <a href={property.mapsLink} target="_blank" rel="noopener noreferrer" className="ml-3 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-700 font-medium">
                         <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -1096,9 +1102,9 @@ export default function AnnounceDetailsPage() {
                           <div className="font-bold text-base truncate">
                             {industrialFactory.sector[0] === "AUTRE_ACTIVITE"
                               ? (industrialFactory.sectorOther || "Autre activité")
-                              : (LABELS[industrialFactory.sector[0]] || industrialFactory.sector[0])}
+                              : (L(industrialFactory.sector[0]))}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Activité compatible</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f001')}</div>
                         </div>
                       </div>
                     )}
@@ -1109,7 +1115,7 @@ export default function AnnounceDetailsPage() {
                         <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{industrialFactory.surfaces.landArea} m²</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Terrain</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f002')}</div>
                         </div>
                       </div>
                     )}
@@ -1120,7 +1126,7 @@ export default function AnnounceDetailsPage() {
                         <Warehouse className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{industrialFactory.surfaces.builtArea} m²</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Bâtie</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f003')}</div>
                         </div>
                       </div>
                     )}
@@ -1131,7 +1137,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{industrialFactory.surfaces.freeArea} m²</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Libre</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f004')}</div>
                         </div>
                       </div>
                     )}
@@ -1142,8 +1148,8 @@ export default function AnnounceDetailsPage() {
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                         <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                          <div className="font-bold text-base">{LABELS[coldRoom.structureType] || coldRoom.structureType}</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Structure</div>
+                          <div className="font-bold text-base">{L(coldRoom.structureType)}</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f005')}</div>
                         </div>
                       </div>
                     )}
@@ -1153,7 +1159,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{coldRoom.dimensions.length} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Longueur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f006')}</div>
                         </div>
                       </div>
                     )}
@@ -1163,7 +1169,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{coldRoom.dimensions.width} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Largeur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f007')}</div>
                         </div>
                       </div>
                     )}
@@ -1173,7 +1179,7 @@ export default function AnnounceDetailsPage() {
                         <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{coldRoom.dimensions.height} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Hauteur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f008')}</div>
                         </div>
                       </div>
                     )}
@@ -1185,7 +1191,7 @@ export default function AnnounceDetailsPage() {
                         <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.surfaces.terrain} m²</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Terrain</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f002')}</div>
                         </div>
                       </div>
                     )}
@@ -1195,7 +1201,7 @@ export default function AnnounceDetailsPage() {
                         <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.surfaces.covered} m²</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Couverte</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f009')}</div>
                         </div>
                       </div>
                     )}
@@ -1205,7 +1211,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.dimensions.length} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Longueur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f006')}</div>
                         </div>
                       </div>
                     )}
@@ -1215,7 +1221,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.dimensions.width} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Largeur</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f007')}</div>
                         </div>
                       </div>
                     )}
@@ -1225,7 +1231,7 @@ export default function AnnounceDetailsPage() {
                         <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{hangar.dimensions.height} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Ht. sous crochet</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f010')}</div>
                         </div>
                       </div>
                     )}
@@ -1238,7 +1244,7 @@ export default function AnnounceDetailsPage() {
                         <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                           <div className="font-bold text-base">{property.landArea} m²</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">Surf. Terrain</div>
+                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f002')}</div>
                         </div>
                       </div>
                     )}
@@ -1250,7 +1256,7 @@ export default function AnnounceDetailsPage() {
                           <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
                             <div className="font-bold text-base">{terrain.facadeLength} ml</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">Longueur</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f006')}</div>
                           </div>
                         </div>
                       </>
@@ -1263,7 +1269,7 @@ export default function AnnounceDetailsPage() {
                           <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
                             <div className="font-bold text-base">{terrain.depth} m</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">Largeur</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f007')}</div>
                           </div>
                         </div>
                       </>
@@ -1275,8 +1281,8 @@ export default function AnnounceDetailsPage() {
                         <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                           <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
-                            <div className="font-bold text-base">{LABELS[terrain.topographie] || terrain.topographie}</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">Topographie</div>
+                            <div className="font-bold text-base">{L(terrain.topographie)}</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f011')}</div>
                           </div>
                         </div>
                       </>
@@ -1289,7 +1295,7 @@ export default function AnnounceDetailsPage() {
                           <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
                             <div className="font-bold text-base">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">Façades</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f012')}</div>
                           </div>
                         </div>
                       </>
@@ -1300,7 +1306,7 @@ export default function AnnounceDetailsPage() {
                       <Key className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                       <div>
                         <div className="font-bold text-base">{terrain?.viabilise ? "Viabilisé" : "Non viabilisé"}</div>
-                        <div className="text-xs text-gray-500 dark:text-white/50">Viabilisation</div>
+                        <div className="text-xs text-gray-500 dark:text-white/50">{t('f013')}</div>
                       </div>
                     </div>
                   </div>
@@ -1311,9 +1317,9 @@ export default function AnnounceDetailsPage() {
                             {property.landArea !== undefined && property.landArea !== null && Number(property.landArea) > 0 ? (
                                 <div className="font-bold text-xl">{property.landArea} m²</div>
                             ) : (
-                                <div className="font-bold text-xl text-gray-400 dark:text-white/40">Non spécifié</div>
+                                <div className="font-bold text-xl text-gray-400 dark:text-white/40">{t('f014')}</div>
                             )}
-                            <div className="text-sm text-gray-500 dark:text-white/50">Surf. terrain</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f015')}</div>
                         </div>
                     </div>
                 ) : (
@@ -1323,7 +1329,7 @@ export default function AnnounceDetailsPage() {
                         <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.typology}</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">Typologie</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f016')}</div>
                         </div>
                     </div>
                 )}
@@ -1333,7 +1339,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.landArea} m²</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">Surf. terrain</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f015')}</div>
                         </div>
                     </div>
                 )}
@@ -1343,7 +1349,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.builtArea} m²</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">Surf. bâtie</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f017')}</div>
                         </div>
                     </div>
                 )}
@@ -1354,7 +1360,7 @@ export default function AnnounceDetailsPage() {
                         <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{displayArea} m²</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">Surface</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f018')}</div>
                         </div>
                     </div>
                 )}
@@ -1376,7 +1382,7 @@ export default function AnnounceDetailsPage() {
                         <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             <div className="font-bold text-xl">{property.facadesCount}</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">Façades</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f012')}</div>
                         </div>
                     </div>
                 )}
@@ -1385,8 +1391,8 @@ export default function AnnounceDetailsPage() {
                     <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">Oui</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">Ascenseur</div>
+                            <div className="font-bold text-xl">{t('f019')}</div>
+                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f020')}</div>
                         </div>
                     </div>
                 )}
@@ -1398,9 +1404,9 @@ export default function AnnounceDetailsPage() {
                                 <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">
-                                        {buildingTypology.mode === "SIMILAIRES" ? "Similaires" : buildingTypology.mode === "DIFFERENTES" ? "Différentes" : buildingTypology.mode}
+                                        {buildingTypology.mode === "SIMILAIRES" ? t('adTypoSimilar') : buildingTypology.mode === "DIFFERENTES" ? t('adTypoDifferent') : buildingTypology.mode}
                                     </div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">Typologie</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f016')}</div>
                                 </div>
                             </div>
                         )}
@@ -1409,7 +1415,7 @@ export default function AnnounceDetailsPage() {
                                 <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">{buildingTypology.totalApartments}</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">Appartements</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f021')}</div>
                                 </div>
                             </div>
                         )}
@@ -1426,8 +1432,8 @@ export default function AnnounceDetailsPage() {
                             <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                                 <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">Oui</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">Ascenseur</div>
+                                    <div className="font-bold text-xl">{t('f019')}</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f020')}</div>
                                 </div>
                             </div>
                         )}
@@ -1436,15 +1442,15 @@ export default function AnnounceDetailsPage() {
                                 <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
                                     <div className="font-bold text-xl">{property.area} m²</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">Surface unique</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f022')}</div>
                                 </div>
                             </div>
                         ) : buildingTypology?.mode === "DIFFERENTES" ? (
                             <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                                 <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">Variable</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">Surfaces</div>
+                                    <div className="font-bold text-xl">{t('f023')}</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f024')}</div>
                                 </div>
                             </div>
                         ) : null}
@@ -1455,7 +1461,7 @@ export default function AnnounceDetailsPage() {
                     <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Car className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div className="flex flex-col gap-1.5">
-                            <div className="font-bold text-gray-900 dark:text-white leading-none">Parking</div>
+                            <div className="font-bold text-gray-900 dark:text-white leading-none">{t('f025')}</div>
                             <div className="flex flex-col gap-1">
                                 {property.parkingCount > 0 && (
                                     <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-[10px] font-bold rounded uppercase w-fit">
@@ -1558,17 +1564,17 @@ export default function AnnounceDetailsPage() {
                                           </a>
                                       )}
                                       {contact.hasWhatsapp && (
-                                          <a href={`https://wa.me/${toIntlDigits(contact.phone)}`} onClick={() => trackContact('WHATSAPP')} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-[#25D366]/10 text-[#25D366] rounded-lg transition-colors" title="WhatsApp">
+                                          <a href={`https://wa.me/${toIntlDigits(contact.phone)}`} onClick={() => trackContact('WHATSAPP')} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-[#25D366]/10 text-[#25D366] rounded-lg transition-colors" title={t('f172')}>
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                                           </a>
                                       )}
                                       {contact.hasViber && (
-                                          <a href={`viber://add?number=+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('VIBER')} className="p-2 hover:bg-[#7360f2]/10 text-[#7360f2] rounded-lg transition-colors" title="Viber">
+                                          <a href={`viber://add?number=+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('VIBER')} className="p-2 hover:bg-[#7360f2]/10 text-[#7360f2] rounded-lg transition-colors" title={t('f173')}>
                                               <svg viewBox="0 0 512 512" className="h-5 w-5 fill-current"><path d="M437.1 146.4c-6.1-24.5-22.3-43.9-46.7-48.4-38.3-6.9-106.8-6.9-134.4-6.9-27.6 0-96.1 0-134.4 6.9-24.4 4.5-40.6 23.9-46.7 48.4-5.3 21.6-5.3 64.1-5.3 109.6s0 88 5.3 109.6c6.1 24.5 22.3 43.9 46.7 48.4 38.3 6.9 106.8 6.9 134.4 6.9 27.6 0 96.1 0 134.4-6.9 24.4-4.5 40.6-23.9 46.7-48.4 5.3-21.6 5.3-64.1 5.3-109.6s0-88-5.3-109.6zm-175 145.4v13.5c0 23.8-19.3 43.1-43.1 43.1h-43.1c-23.8 0-43.1-19.3-43.1-43.1v-43.1c0-23.8 19.3-43.1 43.1-43.1h13.5v-67h-13.5c-23.8 0-43.1-19.3-43.1-43.1V66c0-23.8 19.3-43.1 43.1-43.1h43.1c23.8 0 43.1 19.3 43.1 43.1v43.1c0 23.8-19.3 43.1-43.1 43.1h-13.5v67zm120.3 43.1c0 23.8-19.3 43.1-43.1 43.1h-43.1c-23.8 0-43.1-19.3-43.1-43.1v-43.1c0-23.8 19.3-43.1 43.1-43.1h13.5v-67h-13.5c-23.8 0-43.1-19.3-43.1-43.1V66c0-23.8 19.3-43.1 43.1-43.1h43.1c23.8 0 43.1 19.3 43.1 43.1v43.1c0 23.8-19.3 43.1-43.1 43.1h-13.5v67h13.5c23.8 0 43.1 19.3 43.1 43.1v43.1z"/></svg>
                                           </a>
                                       )}
                                       {contact.hasTelegram && (
-                                          <a href={`https://t.me/+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('TELEGRAM')} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title="Telegram">
+                                          <a href={`https://t.me/+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('TELEGRAM')} className="p-2 hover:bg-[#0088cc]/10 text-[#0088cc] rounded-lg transition-colors" title={t('f174')}>
                                               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm5.894-17.502L15.34 20.35c-.208.92-.746 1.144-1.503.682l-4.16-3.07-2.006 1.93c-.22.22-.405.405-.83.405l.3-4.225 7.684-6.94c.334-.3-.074-.466-.518-.214L4.8 15.38.704 14.1c-.89-.28-.908-.89.186-1.316l15.68-6.04c.725-.268 1.356.168 1.324 1.15z"/></svg>
                                           </a>
                                       )}
@@ -1678,46 +1684,46 @@ export default function AnnounceDetailsPage() {
               {/* 4 colonnes Informations Générales */}
               {industrialFactory && (
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f026')}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     {/* Colonne 1: État & Type de location */}
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Key className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">État &amp; Types d&apos;offre</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f027')}</h3>
                       </div>
                       <div className="space-y-3">
                         {industrialFactory.rentalType && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Type de location</span>
-                            <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[industrialFactory.rentalType] || industrialFactory.rentalType}</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f028')}</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{L(industrialFactory.rentalType)}</span>
                           </div>
                         )}
                         {industrialFactory.globalState && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">État global</span>
-                            <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[industrialFactory.globalState] || industrialFactory.globalState}</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f029')}</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{L(industrialFactory.globalState)}</span>
                           </div>
                         )}
                         {industrialFactory.configuration && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Configuration</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f030')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">
-                              {LABELS[industrialFactory.configuration] || industrialFactory.configuration}
+                              {L(industrialFactory.configuration)}
                               {industrialFactory.configuration === "ETAGES" && industrialFactory.floorsCount ? ` — ${industrialFactory.floorsCount} étage(s)` : ""}
                             </span>
                           </div>
                         )}
                         {industrialFactory.rentalType === "EQUIPEE" && industrialFactory.serviceYear && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Mise en service</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f031')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">{industrialFactory.serviceYear}</span>
                           </div>
                         )}
                         {industrialFactory.productDetail && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Produit fabriqué</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f032')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">{industrialFactory.productDetail}</span>
                           </div>
                         )}
@@ -1728,32 +1734,32 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Emplacement</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f033')}</h3>
                       </div>
                       <div className="space-y-3">
                         {industrialFactory.logistics?.situation?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Situation</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f034')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.logistics.situation.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.logistics?.accessTransport?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Accès transport</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f035')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.logistics.accessTransport.map((a: string) => (
-                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(a)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.logistics?.highwayDistanceKm != null && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Distance autoroute</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f036')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">{industrialFactory.logistics.highwayDistanceKm} km</span>
                           </div>
                         )}
@@ -1764,43 +1770,43 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Layers className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Annexes</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f037')}</h3>
                       </div>
                       <div className="space-y-3">
                         {industrialFactory.annexes?.offices != null && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Bureaux</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f038')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">
-                              {industrialFactory.annexes.offices ? `Oui${industrialFactory.annexes.officesArea ? ` — ${industrialFactory.annexes.officesArea} m²` : ""}` : "Non"}
+                              {industrialFactory.annexes.offices ? `${t('f019')}${industrialFactory.annexes.officesArea ? ` — ${industrialFactory.annexes.officesArea} m²` : ""}` : t('adNo')}
                             </span>
                           </div>
                         )}
                         {industrialFactory.annexes?.socialLocales?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Locaux sociaux</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f039')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.annexes.socialLocales.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.annexes?.hebergement?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Hébergement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f040')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.annexes.hebergement.map((h: string) => (
-                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(h)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.annexes?.security?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f041')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.annexes.security.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
@@ -1812,69 +1818,69 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Énergie &amp; Fluides</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f042')}</h3>
                       </div>
                       <div className="space-y-3">
                         {(industrialFactory.energy?.transformerKva != null || industrialFactory.energy?.forceMotrice380) && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Électricité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f043')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.energy.transformerKva != null && (
                                 <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Transfo {industrialFactory.energy.transformerKva} KVA</span>
                               )}
                               {industrialFactory.energy.forceMotrice380 && (
-                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Force motrice 380V</span>
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f044')}</span>
                               )}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(industrialFactory.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").length > 0 && (
                             <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                              <span className="text-gray-500 dark:text-white/50 text-xs">Gaz</span>
+                              <span className="text-gray-500 dark:text-white/50 text-xs">{t('f045')}</span>
                               <div className="flex flex-wrap gap-1.5">
                                 {splitEnumValues(industrialFactory.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").map((g: string) => (
-                                  <span key={g} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
+                                  <span key={g} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(g)}</span>
                                 ))}
                               </div>
                             </div>
                         )}
                         {industrialFactory.energy?.waterSources?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Eau</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f046')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.energy.waterSources.map((w: string) => (
-                                <span key={w} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
+                                <span key={w} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(w)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(industrialFactory.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).length > 0 && (
                             <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                              <span className="text-gray-500 dark:text-white/50 text-xs">Assainissement</span>
+                              <span className="text-gray-500 dark:text-white/50 text-xs">{t('f047')}</span>
                               <div className="flex flex-wrap gap-1.5">
                                 {splitEnumValues(industrialFactory.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).map((s: string) => (
-                                  <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                  <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                                 ))}
                               </div>
                             </div>
                         )}
                         {industrialFactory.fireSafety?.network?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs flex items-center gap-1"><Shield className="h-3 w-3" />{t('f048')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.fireSafety.network.map((n: string) => (
-                                <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[n] || n}</span>
+                                <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{L(n)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {industrialFactory.fireSafety?.equipment?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Équipements complémentaires</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f049')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {industrialFactory.fireSafety.equipment.map((e: string) => (
                                 <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
-                                  {LABELS[e] || e}
+                                  {L(e)}
                                   {e === "BACHE_EAU" && industrialFactory.fireSafety?.waterReserveLiters
                                     ? ` — ${industrialFactory.fireSafety.waterReserveLiters.toLocaleString("fr-DZ")} L`
                                     : ""}
@@ -1894,9 +1900,7 @@ export default function AnnounceDetailsPage() {
               {announce.shortDescription && (
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-[#00BFA6]" />
-                    Description
-                  </h2>
+                    <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
                   <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
                 </div>
               )}
@@ -1909,7 +1913,7 @@ export default function AnnounceDetailsPage() {
             <>
               {coldRoom && (
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f026')}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     {/* Col 1 — Configuration & Structure */}
@@ -1917,39 +1921,39 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <Layers className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Configuration</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f030')}</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.structureType && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Structure</span>
-                            <span className="font-bold text-gray-900 dark:text-white text-sm">{(LABELS[coldRoom.structureType] || coldRoom.structureType).replace(/\s*\([^)]*\)/g, '').trim()}</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f005')}</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{(L(coldRoom.structureType)).replace(/\s*\([^)]*\)/g, '').trim()}</span>
                           </div>
                         )}
                         {coldRoom.configuration && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Configuration</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f030')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">
-                              {LABELS[coldRoom.configuration] || coldRoom.configuration}
+                              {L(coldRoom.configuration)}
                               {coldRoom.configuration === "ETAGES" && coldRoom.floorsCount ? ` — ${coldRoom.floorsCount} étage(s)` : ""}
                             </span>
                           </div>
                         )}
                         {coldRoom.logistiqueVerticale && coldRoom.logistiqueVerticale !== "AUCUN" && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Logistique verticale</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f051')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">
-                              {LABELS[coldRoom.logistiqueVerticale] || coldRoom.logistiqueVerticale}
+                              {L(coldRoom.logistiqueVerticale)}
                               {coldRoom.logistiqueVerticale === "MONTE_CHARGE" && coldRoom.monteChargeCapacity ? ` — ${coldRoom.monteChargeCapacity} Tonnes` : ""}
                             </span>
                           </div>
                         )}
                         {coldRoom.zoneDechargement?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Zone de déchargement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f052')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.zoneDechargement.map((z: string) => (
-                                <span key={z} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[z] || z}</span>
+                                <span key={z} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(z)}</span>
                               ))}
                             </div>
                           </div>
@@ -1961,52 +1965,52 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Équipements</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f053')}</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.typeFroid?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Type de froid</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f054')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.typeFroid.map((t: string) => (
-                                <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
+                                <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{L(t)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.modeDiffusion?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Mode de diffusion</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f055')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.modeDiffusion.map((m: string) => (
-                                <span key={m} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[m] || m}</span>
+                                <span key={m} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(m)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.techniqueFroid?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Technique froid</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f056')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.techniqueFroid.map((t: string) => (
-                                <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
+                                <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">{L(t)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.tracabilite?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Traçabilité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f057')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.tracabilite.map((t: string) => (
-                                <span key={t} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[t] || t}</span>
+                                <span key={t} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(t)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.generateur && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Générateur de secours</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f058')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">
                               Oui{coldRoom.generateurKva ? ` — ${coldRoom.generateurKva} KVA` : ""}
                             </span>
@@ -2014,8 +2018,8 @@ export default function AnnounceDetailsPage() {
                         )}
                         {coldRoom.securiteHumaine && (
                           <div className="flex flex-col gap-1 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité humaine</span>
-                            <span className="font-bold text-gray-900 dark:text-white text-sm">Dispositif anti-enfermement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f059')}</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{t('f060')}</span>
                           </div>
                         )}
                       </div>
@@ -2025,25 +2029,25 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <MapPin className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Localisation et modalités</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f061')}</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.localisation?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Situation</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f034')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.localisation.map((l: string) => (
-                                <span key={l} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[l] || l}</span>
+                                <span key={l} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{L(l)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.accessibilite?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Accès camions</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f062')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.accessibilite.map((a: string) => (
-                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(a)}</span>
                               ))}
                             </div>
                           </div>
@@ -2051,26 +2055,26 @@ export default function AnnounceDetailsPage() {
                         <div className="border-b border-gray-100 dark:border-white/10" />
                         {coldRoom.modeGestion && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Mode de gestion</span>
-                            <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[coldRoom.modeGestion] || coldRoom.modeGestion}</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f063')}</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm">{L(coldRoom.modeGestion)}</span>
                           </div>
                         )}
                         {coldRoom.flexibilite?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Flexibilité d&apos;espace</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f064')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.flexibilite.map((f: string) => (
-                                <span key={f} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[f] || f}</span>
+                                <span key={f} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{L(f)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.dureeEngagement?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Durée d&apos;engagement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f065')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.dureeEngagement.map((d: string) => (
-                                <span key={d} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
+                                <span key={d} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(d)}</span>
                               ))}
                             </div>
                           </div>
@@ -2082,41 +2086,41 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                         <LayoutGrid className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Annexes</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f037')}</h3>
                       </div>
                       <div className="space-y-3">
                         {coldRoom.annexes?.offices != null && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Bureaux</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f038')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">{coldRoom.annexes.offices ? "Oui" : "Non"}</span>
                           </div>
                         )}
                         {coldRoom.annexes?.socialLocales?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Locaux sociaux</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f039')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.annexes.socialLocales.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.annexes?.hebergement?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Hébergement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f040')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.annexes.hebergement.map((h: string) => (
-                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(h)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {coldRoom.annexes?.security?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f041')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {coldRoom.annexes.security.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
@@ -2132,9 +2136,7 @@ export default function AnnounceDetailsPage() {
               {announce.shortDescription && (
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-[#00BFA6]" />
-                    Description
-                  </h2>
+                    <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
                   <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
                 </div>
               )}
@@ -2146,44 +2148,44 @@ export default function AnnounceDetailsPage() {
           {(isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty) && (
             <>
               <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f026')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                   {/* Col 1 — Caractéristiques physiques */}
                   <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                     <div className="flex items-start gap-2 min-h-[40px] mb-3">
                       <Ruler className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Caractéristiques</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f066')}</h3>
                     </div>
                     <div className="space-y-3">
                       {property.landArea != null && (
                         <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Surface terrain</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f067')}</span>
                           <span className="font-bold text-gray-900 dark:text-white text-sm">{property.landArea} m²</span>
                         </div>
                       )}
                       {property.facadesCount != null && (
                         <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Nombre de façades</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f068')}</span>
                           <span className="font-bold text-gray-900 dark:text-white text-sm">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</span>
                         </div>
                       )}
                       {terrain?.facadeLength != null && (
                         <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Longueur</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f006')}</span>
                           <span className="font-bold text-gray-900 dark:text-white text-sm">{terrain.facadeLength} ml</span>
                         </div>
                       )}
                       {terrain?.depth != null && (
                         <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Largeur</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f007')}</span>
                           <span className="font-bold text-gray-900 dark:text-white text-sm">{terrain.depth} m</span>
                         </div>
                       )}
                       {terrain?.topographie && (
                         <div className="flex flex-col gap-1 py-1.5">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Topographie (Relief)</span>
-                          <span className="font-bold text-gray-900 dark:text-white text-sm">{LABELS[terrain.topographie] || terrain.topographie}</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f069')}</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">{L(terrain.topographie)}</span>
                         </div>
                       )}
                     </div>
@@ -2193,25 +2195,25 @@ export default function AnnounceDetailsPage() {
                   <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                     <div className="flex items-start gap-2 min-h-[40px] mb-3">
                       <FileText className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Statut & Documents</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f070')}</h3>
                     </div>
                     <div className="space-y-3">
                       {terrain?.statutZone?.length > 0 && (
                         <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Statut de la zone</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f071')}</span>
                           <div className="flex flex-wrap gap-1.5">
                             {terrain.statutZone.map((s: string) => (
-                              <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                              <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{L(s)}</span>
                             ))}
                           </div>
                         </div>
                       )}
                       {terrain?.documents?.length > 0 && (
                         <div className="flex flex-col gap-2 py-1.5">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Documents disponibles</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f072')}</span>
                           <div className="flex flex-wrap gap-1.5">
                             {terrain.documents.map((d: string) => (
-                              <span key={d} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[d] || d}</span>
+                              <span key={d} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(d)}</span>
                             ))}
                           </div>
                         </div>
@@ -2224,21 +2226,21 @@ export default function AnnounceDetailsPage() {
                   <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                     <div className="flex items-start gap-2 min-h-[40px] mb-3">
                       <Zap className="h-5 w-5 text-[#00BFA6] mt-0.5 shrink-0" />
-                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Viabilisation</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f013')}</h3>
                     </div>
                     <div className="space-y-3">
                       <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                        <span className="text-gray-500 dark:text-white/50 text-xs">État de viabilisation</span>
+                        <span className="text-gray-500 dark:text-white/50 text-xs">{t('f073')}</span>
                         <span className={`font-bold text-sm ${terrain?.viabilise ? "text-[#00BFA6]" : "text-orange-600"}`}>
-                          {terrain?.viabilise ? "Terrain viabilisé" : "Non viabilisé"}
+                          {terrain?.viabilise ? t('adLandServiced') : t('adLandNotServiced')}
                         </span>
                       </div>
                       {!terrain?.viabilise && terrain?.raccordements?.length > 0 && (
                         <div className="flex flex-col gap-2 py-1.5">
-                          <span className="text-gray-500 dark:text-white/50 text-xs">Raccordements à proximité</span>
+                          <span className="text-gray-500 dark:text-white/50 text-xs">{t('f074')}</span>
                           <div className="flex flex-wrap gap-1.5">
                             {terrain.raccordements.map((r: string) => (
-                              <span key={r} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[r] || r}</span>
+                              <span key={r} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(r)}</span>
                             ))}
                           </div>
                         </div>
@@ -2254,9 +2256,7 @@ export default function AnnounceDetailsPage() {
               {announce.shortDescription && (
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-[#00BFA6]" />
-                    Description
-                  </h2>
+                    <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
                   <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
                 </div>
               )}
@@ -2274,9 +2274,7 @@ export default function AnnounceDetailsPage() {
                           {announce.shortDescription && (
                               <div>
                                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                      <Layers className="h-5 w-5 text-[#00BFA6]" />
-                                      Description
-                                  </h2>
+                                      <Layers className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
                                   <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
                                       {announce.shortDescription}
                                   </p>
@@ -2286,12 +2284,10 @@ export default function AnnounceDetailsPage() {
                           {hangar.usage?.length > 0 && (
                               <div>
                                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                      <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                                      Type d&apos;utilisation
-                                  </h2>
+                                      <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f075')}</h2>
                                   <div className="flex flex-wrap gap-2">
                                       {hangar.usage.map((u: string) => (
-                                          <span key={u} className="px-3 py-1.5 rounded-full bg-[#00BFA6]/10 text-[#00BFA6] font-bold text-sm">{LABELS[u] || u}</span>
+                                          <span key={u} className="px-3 py-1.5 rounded-full bg-[#00BFA6]/10 text-[#00BFA6] font-bold text-sm">{L(u)}</span>
                                       ))}
                                   </div>
                               </div>
@@ -2302,7 +2298,7 @@ export default function AnnounceDetailsPage() {
 
               {hangar && (
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f026')}</h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
@@ -2310,7 +2306,7 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Ruler className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Infrastructure</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f076')}</h3>
                       </div>
 
                       <div className="space-y-3">
@@ -2319,31 +2315,31 @@ export default function AnnounceDetailsPage() {
                           <div className="space-y-3">
                             {hangar.usage?.length > 0 && (
                               <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                                <span className="text-gray-500 dark:text-white/50 text-xs">Type d&apos;utilisation</span>
+                                <span className="text-gray-500 dark:text-white/50 text-xs">{t('f075')}</span>
                                 <div className="flex flex-wrap gap-1.5">
                                   {hangar.usage.map((u: string) => (
-                                    <span key={u} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[u] || u}</span>
+                                    <span key={u} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{L(u)}</span>
                                   ))}
                                 </div>
                               </div>
                             )}
                             {(hangar.toiture?.toleTH40 || hangar.toiture?.panneauxSandwich || hangar.toiture?.autre) && (
                               <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                                <span className="text-gray-500 dark:text-white/50 text-xs">Toiture</span>
+                                <span className="text-gray-500 dark:text-white/50 text-xs">{t('f077')}</span>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Tôle TN40</span>}
-                                  {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Panneaux Sandwich</span>}
-                                  {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Autre</span>}
+                                  {hangar.toiture.toleTH40 && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f078')}</span>}
+                                  {hangar.toiture.panneauxSandwich && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f079')}</span>}
+                                  {hangar.toiture.autre && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f080')}</span>}
                                 </div>
                               </div>
                             )}
                             {(hangar.sol?.beton || hangar.sol?.resineEpoxy || hangar.sol?.autre) && (
                               <div className="flex flex-col gap-2 py-1.5">
-                                <span className="text-gray-500 dark:text-white/50 text-xs">Sol</span>
+                                <span className="text-gray-500 dark:text-white/50 text-xs">{t('f081')}</span>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {hangar.sol.beton && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Béton</span>}
-                                  {hangar.sol.resineEpoxy && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Résine Époxy</span>}
-                                  {hangar.sol.autre && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Autre</span>}
+                                  {hangar.sol.beton && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f082')}</span>}
+                                  {hangar.sol.resineEpoxy && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f083')}</span>}
+                                  {hangar.sol.autre && <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f080')}</span>}
                                 </div>
                               </div>
                             )}
@@ -2356,26 +2352,26 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Emplacement</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f033')}</h3>
                       </div>
                       <div className="space-y-3">
                         {hangar.logistics?.situation?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Situation</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f034')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.logistics.situation.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.logistics?.accessTransport?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="font-bold text-gray-900 dark:text-white text-sm mb-1">Logistique</span>
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Accès transport</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-sm mb-1">{t('f084')}</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f035')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.logistics.accessTransport.map((a: string) => (
-                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[a] || a}</span>
+                                <span key={a} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(a)}</span>
                               ))}
                             </div>
                           </div>
@@ -2387,43 +2383,43 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Layers className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Annexes</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f037')}</h3>
                       </div>
                       <div className="space-y-3">
                         {hangar.annexes?.offices != null && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Bureaux</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f038')}</span>
                             <span className="font-bold text-gray-900 dark:text-white text-sm">
-                              {hangar.annexes.offices ? `Oui${hangar.annexes.officesArea ? ` — ${hangar.annexes.officesArea} m²` : ""}` : "Non"}
+                              {hangar.annexes.offices ? `${t('f019')}${hangar.annexes.officesArea ? ` — ${hangar.annexes.officesArea} m²` : ""}` : t('adNo')}
                             </span>
                           </div>
                         )}
                         {hangar.annexes?.socialLocales?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Locaux sociaux</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f039')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.annexes.socialLocales.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.annexes?.hebergement?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Hébergement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f040')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.annexes.hebergement.map((h: string) => (
-                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[h] || h}</span>
+                                <span key={h} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(h)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.annexes?.security?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Sécurité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f041')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.annexes.security.map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
@@ -2435,69 +2431,69 @@ export default function AnnounceDetailsPage() {
                     <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-4">
                       <div className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-[#00BFA6]" />
-                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Énergie &amp; Fluides</h3>
+                        <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">{t('f042')}</h3>
                       </div>
                       <div className="space-y-3">
                         {(hangar.energy?.transformerKva != null || hangar.energy?.forceMotrice380) && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Électricité</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f043')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.energy.transformerKva != null && (
                                 <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Transfo {hangar.energy.transformerKva} KVA</span>
                               )}
                               {hangar.energy.forceMotrice380 && (
-                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">Force motrice 380V</span>
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{t('f044')}</span>
                               )}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(hangar.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").length > 0 && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Gaz</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f045')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {splitEnumValues(hangar.energy?.gas, ["INDUSTRIEL", "VILLE", "AUCUN"]).filter((g) => g !== "AUCUN").map((g: string) => (
-                                <span key={g} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[g] || g}</span>
+                                <span key={g} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(g)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.energy?.waterSources?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Eau</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f046')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.energy.waterSources.map((w: string) => (
-                                <span key={w} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[w] || w}</span>
+                                <span key={w} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(w)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {splitEnumValues(hangar.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).length > 0 && (
                           <div className="flex flex-col gap-1 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Assainissement</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f047')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {splitEnumValues(hangar.energy?.sanitation, ["RESEAU_PUBLIC", "FOSSE_INDUSTRIELLE"]).map((s: string) => (
-                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{LABELS[s] || s}</span>
+                                <span key={s} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">{L(s)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.fireSafety?.network?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5 border-b border-gray-100 dark:border-white/10">
-                            <span className="text-gray-500 dark:text-white/50 text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Réseau anti-incendie</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs flex items-center gap-1"><Shield className="h-3 w-3" />{t('f048')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.fireSafety.network.map((n: string) => (
-                                <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{LABELS[n] || n}</span>
+                                <span key={n} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">{L(n)}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {hangar.fireSafety?.equipment?.length > 0 && (
                           <div className="flex flex-col gap-2 py-1.5">
-                            <span className="text-gray-500 dark:text-white/50 text-xs">Équipements incendie</span>
+                            <span className="text-gray-500 dark:text-white/50 text-xs">{t('f085')}</span>
                             <div className="flex flex-wrap gap-1.5">
                               {hangar.fireSafety.equipment.map((e: string) => (
                                 <span key={e} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs font-bold rounded-full">
-                                  {LABELS[e] || e}
+                                  {L(e)}
                                   {e === "BACHE_EAU" && hangar.fireSafety?.waterReserveLiters
                                     ? ` — ${hangar.fireSafety.waterReserveLiters.toLocaleString("fr-DZ")} L`
                                     : ""}
@@ -2519,37 +2515,37 @@ export default function AnnounceDetailsPage() {
           {/* ===== SECTION SHOWROOM ===== */}
           {isShowroomProperty && showroom && (
             <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Fiche Showroom</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f086')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Superficies & Dimensions */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f087')}</h3>
                   <div className="space-y-2">
-                    {showroom.surfaces?.terrain != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Surface terrain</span><span className="font-bold">{showroom.surfaces.terrain} m²</span></div>}
-                    {showroom.surfaces?.batie != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Surface bâtie / expo</span><span className="font-bold">{showroom.surfaces.batie} m²</span></div>}
-                    {showroom.dimensions?.niveaux != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Niveaux</span><span className="font-bold">{showroom.dimensions.niveaux}</span></div>}
-                    {showroom.dimensions?.hauteurPlafond != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Hauteur plafond</span><span className="font-bold">{showroom.dimensions.hauteurPlafond} m</span></div>}
-                    {showroom.dimensions?.facadeWidth != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Longueur façade</span><span className="font-bold">{showroom.dimensions.facadeWidth} m</span></div>}
-                    {showroom.dimensions?.facadeDepth != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Profondeur</span><span className="font-bold">{showroom.dimensions.facadeDepth} m</span></div>}
+                    {showroom.surfaces?.terrain != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f067')}</span><span className="font-bold">{showroom.surfaces.terrain} m²</span></div>}
+                    {showroom.surfaces?.batie != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f088')}</span><span className="font-bold">{showroom.surfaces.batie} m²</span></div>}
+                    {showroom.dimensions?.niveaux != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f089')}</span><span className="font-bold">{showroom.dimensions.niveaux}</span></div>}
+                    {showroom.dimensions?.hauteurPlafond != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f090')}</span><span className="font-bold">{showroom.dimensions.hauteurPlafond} m</span></div>}
+                    {showroom.dimensions?.facadeWidth != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f091')}</span><span className="font-bold">{showroom.dimensions.facadeWidth} m</span></div>}
+                    {showroom.dimensions?.facadeDepth != null && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f092')}</span><span className="font-bold">{showroom.dimensions.facadeDepth} m</span></div>}
                   </div>
                 </div>
                 {/* Style & Visibilité */}
                 <div className="space-y-6">
                   {(showroom.style || showroom.structure) && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Style Architectural</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />{t('f093')}</h3>
                       <div className="space-y-2">
-                        {showroom.style && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Style</span><span className="font-bold">{LABELS[showroom.style] || showroom.style}</span></div>}
-                        {showroom.structure && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Structure</span><span className="font-bold">{LABELS[showroom.structure] || showroom.structure}</span></div>}
+                        {showroom.style && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f094')}</span><span className="font-bold">{L(showroom.style)}</span></div>}
+                        {showroom.structure && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f005')}</span><span className="font-bold">{L(showroom.structure)}</span></div>}
                       </div>
                     </div>
                   )}
                   {showroom.visibilite && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Visibilité</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f095')}</h3>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Visible depuis autoroute</span><span className="font-bold">{showroom.visibilite.autoroute ? "Oui" : "Non"}</span></div>
-                        {showroom.visibilite.axeRoutier && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Axe routier</span><span className="font-bold">{showroom.visibilite.axeRoutier}</span></div>}
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f096')}</span><span className="font-bold">{showroom.visibilite.autoroute ? "Oui" : "Non"}</span></div>
+                        {showroom.visibilite.axeRoutier && <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f097')}</span><span className="font-bold">{showroom.visibilite.axeRoutier}</span></div>}
                       </div>
                     </div>
                   )}
@@ -2562,52 +2558,52 @@ export default function AnnounceDetailsPage() {
           {/* ===== SECTION LOCAL COMMERCIAL ===== */}
           {isLocalCommercialProperty && local && (
             <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Fiche Local Commercial</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f098')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Environnement & Usage */}
                 <div className="space-y-6">
                   {local.environnement && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />Environnement</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f099')}</h3>
                       <div className="space-y-1 text-sm">
-                        <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Type</span><span className="font-bold">{LABELS[local.environnement] || local.environnement}</span></div>
-                        {local.environnementAutre && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Précision</span><span className="font-bold">{local.environnementAutre}</span></div>}
+                        <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f100')}</span><span className="font-bold">{L(local.environnement)}</span></div>
+                        {local.environnementAutre && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f101')}</span><span className="font-bold">{local.environnementAutre}</span></div>}
                       </div>
                     </div>
                   )}
                   {local.emplacement && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-[#00BFA6]" />Emplacement &amp; Flux</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-[#00BFA6]" />{t('f102')}</h3>
                       <div className="space-y-1 text-sm">
-                        {local.emplacement.zoneType && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Zone</span><span className="font-bold">{LABELS[local.emplacement.zoneType] || local.emplacement.zoneType}</span></div>}
-                        {local.emplacement.fluxPieton && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Flux piéton</span><span className="font-bold">{LABELS[local.emplacement.fluxPieton] || local.emplacement.fluxPieton}</span></div>}
-                        {local.emplacement.fluxVehicules && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Flux véhicules</span><span className="font-bold">{LABELS[local.emplacement.fluxVehicules] || local.emplacement.fluxVehicules}</span></div>}
+                        {local.emplacement.zoneType && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f103')}</span><span className="font-bold">{L(local.emplacement.zoneType)}</span></div>}
+                        {local.emplacement.fluxPieton && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f104')}</span><span className="font-bold">{L(local.emplacement.fluxPieton)}</span></div>}
+                        {local.emplacement.fluxVehicules && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f105')}</span><span className="font-bold">{L(local.emplacement.fluxVehicules)}</span></div>}
                       </div>
                     </div>
                   )}
                   {local.usage && (
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Key className="h-5 w-5 text-[#00BFA6]" />Usage</h3>
-                      <span className="inline-block bg-[#00BFA6]/10 text-[#00BFA6] px-3 py-1 rounded-full text-sm font-bold">{LABELS[local.usage] || local.usage}</span>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Key className="h-5 w-5 text-[#00BFA6]" />{t('f106')}</h3>
+                      <span className="inline-block bg-[#00BFA6]/10 text-[#00BFA6] px-3 py-1 rounded-full text-sm font-bold">{L(local.usage)}</span>
                     </div>
                   )}
                 </div>
                 {/* Dimensions */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />Superficies &amp; Dimensions</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f087')}</h3>
                   <div className="space-y-2 text-sm">
-                    {local.surfaces?.total != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface totale</span><span className="font-bold">{local.surfaces.total} m²</span></div>}
-                    {local.surfaces?.vitrineLongueur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Longueur vitrine</span><span className="font-bold">{local.surfaces.vitrineLongueur} ml</span></div>}
-                    {local.surfaces?.largeur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Largeur</span><span className="font-bold">{local.surfaces.largeur} m</span></div>}
-                    {local.surfaces?.profondeur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Profondeur</span><span className="font-bold">{local.surfaces.profondeur} m</span></div>}
-                    {local.surfaces?.hauteurPlafond != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Hauteur plafond</span><span className="font-bold">{local.surfaces.hauteurPlafond} m</span></div>}
+                    {local.surfaces?.total != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f107')}</span><span className="font-bold">{local.surfaces.total} m²</span></div>}
+                    {local.surfaces?.vitrineLongueur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f108')}</span><span className="font-bold">{local.surfaces.vitrineLongueur} ml</span></div>}
+                    {local.surfaces?.largeur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f007')}</span><span className="font-bold">{local.surfaces.largeur} m</span></div>}
+                    {local.surfaces?.profondeur != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f092')}</span><span className="font-bold">{local.surfaces.profondeur} m</span></div>}
+                    {local.surfaces?.hauteurPlafond != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f090')}</span><span className="font-bold">{local.surfaces.hauteurPlafond} m</span></div>}
                     {local.mezzanine?.present === true && (
                       <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/10">
-                        <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Mezzanine</span><span className="font-bold text-[#00BFA6]">Oui</span></div>
-                        {local.mezzanine.surface != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface mezzanine</span><span className="font-bold">{local.mezzanine.surface} m²</span></div>}
+                        <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f109')}</span><span className="font-bold text-[#00BFA6]">{t('f019')}</span></div>
+                        {local.mezzanine.surface != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f110')}</span><span className="font-bold">{local.mezzanine.surface} m²</span></div>}
                       </div>
                     )}
-                    {local.style && <div className="flex justify-between mt-2"><span className="text-gray-500 dark:text-white/50">Style</span><span className="font-bold">{LABELS[local.style] || local.style}</span></div>}
+                    {local.style && <div className="flex justify-between mt-2"><span className="text-gray-500 dark:text-white/50">{t('f094')}</span><span className="font-bold">{L(local.style)}</span></div>}
                   </div>
                 </div>
               </div>
@@ -2618,47 +2614,47 @@ export default function AnnounceDetailsPage() {
           {/* ===== SECTION BLOC ADMINISTRATIF ===== */}
           {isBlocAdministratifProperty && bloc && (
             <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Fiche Bloc Administratif</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f111')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Structure */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />Structure</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Building2 className="h-5 w-5 text-[#00BFA6]" />{t('f005')}</h3>
                   <div className="space-y-2 text-sm">
-                    {bloc.surfaces?.terrain != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface terrain</span><span className="font-bold">{bloc.surfaces.terrain} m²</span></div>}
-                    {bloc.surfaces?.batie != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Surface bâtie</span><span className="font-bold">{bloc.surfaces.batie} m²</span></div>}
-                    {bloc.structure?.etages != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Étages (R+)</span><span className="font-bold">{bloc.structure.etages}</span></div>}
-                    {bloc.structure?.facades != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Façades</span><span className="font-bold">{bloc.structure.facades}</span></div>}
-                    <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Sous-sol</span><span className="font-bold">{bloc.structure?.sousSol ? "Oui" : "Non"}</span></div>
+                    {bloc.surfaces?.terrain != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f067')}</span><span className="font-bold">{bloc.surfaces.terrain} m²</span></div>}
+                    {bloc.surfaces?.batie != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f112')}</span><span className="font-bold">{bloc.surfaces.batie} m²</span></div>}
+                    {bloc.structure?.etages != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f113')}</span><span className="font-bold">{bloc.structure.etages}</span></div>}
+                    {bloc.structure?.facades != null && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f012')}</span><span className="font-bold">{bloc.structure.facades}</span></div>}
+                    <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f114')}</span><span className="font-bold">{bloc.structure?.sousSol ? "Oui" : "Non"}</span></div>
                   </div>
                 </div>
                 {/* Espace */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-[#00BFA6]" />Type d&apos;Espace</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-[#00BFA6]" />{t('f115')}</h3>
                   <div className="space-y-2 text-sm">
-                    {bloc.espace?.typeEspace && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Espace</span><span className="font-bold">{LABELS[bloc.espace.typeEspace] || bloc.espace.typeEspace}</span></div>}
+                    {bloc.espace?.typeEspace && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f116')}</span><span className="font-bold">{L(bloc.espace.typeEspace)}</span></div>}
                     {bloc.espace?.typeCloisonnement?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 dark:text-white/50 block mb-1">Cloisonnement</span>
-                        <div className="flex flex-wrap gap-1">{bloc.espace.typeCloisonnement.map((c: string) => <span key={c} className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
+                        <span className="text-gray-500 dark:text-white/50 block mb-1">{t('f117')}</span>
+                        <div className="flex flex-wrap gap-1">{bloc.espace.typeCloisonnement.map((c: string) => <span key={c} className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 px-2 py-0.5 rounded text-xs font-medium">{L(c)}</span>)}</div>
                       </div>
                     )}
                   </div>
                 </div>
                 {/* Connectivité */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Zap className="h-5 w-5 text-[#00BFA6]" />Connectivité</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Zap className="h-5 w-5 text-[#00BFA6]" />{t('f118')}</h3>
                   <div className="space-y-2 text-sm">
-                    {bloc.connectivite?.type && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">Connexion</span><span className="font-bold">{LABELS[bloc.connectivite.type] || bloc.connectivite.type}</span></div>}
+                    {bloc.connectivite?.type && <div className="flex justify-between"><span className="text-gray-500 dark:text-white/50">{t('f119')}</span><span className="font-bold">{L(bloc.connectivite.type)}</span></div>}
                     {bloc.connectivite?.typeConnexion?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 dark:text-white/50 block mb-1">Mode</span>
-                        <div className="flex flex-wrap gap-1">{bloc.connectivite.typeConnexion.map((c: string) => <span key={c} className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 px-2 py-0.5 rounded text-xs font-medium">{LABELS[c] || c}</span>)}</div>
+                        <span className="text-gray-500 dark:text-white/50 block mb-1">{t('f120')}</span>
+                        <div className="flex flex-wrap gap-1">{bloc.connectivite.typeConnexion.map((c: string) => <span key={c} className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 px-2 py-0.5 rounded text-xs font-medium">{L(c)}</span>)}</div>
                       </div>
                     )}
                     {bloc.connectivite?.equipementServeur?.length > 0 && (
                       <div className="mt-2">
-                        <span className="text-gray-500 dark:text-white/50 block mb-1">Équipements serveur</span>
-                        <div className="flex flex-wrap gap-1">{bloc.connectivite.equipementServeur.map((e: string) => <span key={e} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{LABELS[e] || e}</span>)}</div>
+                        <span className="text-gray-500 dark:text-white/50 block mb-1">{t('f121')}</span>
+                        <div className="flex flex-wrap gap-1">{bloc.connectivite.equipementServeur.map((e: string) => <span key={e} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{L(e)}</span>)}</div>
                       </div>
                     )}
                   </div>
@@ -2671,35 +2667,35 @@ export default function AnnounceDetailsPage() {
           {/* ===== SECTION TERRAIN AGRICOLE ===== */}
           {isTerrainAgricoleProperty && terrain?.agricole && (
             <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Caractéristiques Agricoles</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f122')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   {(terrain.agricole.unite) && (
-                    <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Unité de mesure</span><span className="font-bold">{LABELS[terrain.agricole.unite] || terrain.agricole.unite}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f123')}</span><span className="font-bold">{L(terrain.agricole.unite)}</span></div>
                   )}
                   {terrain.agricole.vocation?.length > 0 && (
                     <div>
-                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">Vocation / Culture</span>
-                      <div className="flex flex-wrap gap-2">{terrain.agricole.vocation.map((v: string) => <span key={v} className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[v] || v}</span>)}</div>
+                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">{t('f124')}</span>
+                      <div className="flex flex-wrap gap-2">{terrain.agricole.vocation.map((v: string) => <span key={v} className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">{L(v)}</span>)}</div>
                       {terrain.agricole.vocationAutre && <p className="text-sm text-gray-600 dark:text-white/60 mt-2">{terrain.agricole.vocationAutre}</p>}
                     </div>
                   )}
                   {terrain.agricole.ensoleillement && (
-                    <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">Ensoleillement</span><span className="font-bold">{LABELS[terrain.agricole.ensoleillement] || terrain.agricole.ensoleillement}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-500 dark:text-white/50">{t('f125')}</span><span className="font-bold">{L(terrain.agricole.ensoleillement)}</span></div>
                   )}
                 </div>
                 <div className="space-y-4">
                   {terrain.agricole.ressourcesEau?.length > 0 && (
                     <div>
-                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">Ressources en eau</span>
-                      <div className="flex flex-wrap gap-2">{terrain.agricole.ressourcesEau.map((r: string) => <span key={r} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[r] || r}</span>)}</div>
+                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">{t('f126')}</span>
+                      <div className="flex flex-wrap gap-2">{terrain.agricole.ressourcesEau.map((r: string) => <span key={r} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{L(r)}</span>)}</div>
                       {terrain.agricole.debitForage && <p className="text-sm text-gray-600 dark:text-white/60 mt-1">Débit forage : {terrain.agricole.debitForage} m³/h</p>}
                     </div>
                   )}
                   {terrain.agricole.exposition?.length > 0 && (
                     <div>
-                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">Exposition</span>
-                      <div className="flex flex-wrap gap-2">{terrain.agricole.exposition.map((e: string) => <span key={e} className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">{LABELS[e] || e}</span>)}</div>
+                      <span className="text-sm text-gray-500 dark:text-white/50 block mb-2">{t('f127')}</span>
+                      <div className="flex flex-wrap gap-2">{terrain.agricole.exposition.map((e: string) => <span key={e} className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">{L(e)}</span>)}</div>
                     </div>
                   )}
                 </div>
@@ -2716,9 +2712,7 @@ export default function AnnounceDetailsPage() {
                       {announce.shortDescription && (
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                  <Layers className="h-5 w-5 text-[#00BFA6]" />
-                                  Description
-                              </h2>
+                                  <Layers className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
                               <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
                                   {announce.shortDescription}
                               </p>
@@ -2729,13 +2723,11 @@ export default function AnnounceDetailsPage() {
                       {buildingUsageTypes.length > 0 && (
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                  <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  Cadre et mode de vie
-                              </h2>
+                                  <Users className="h-5 w-5 text-[#00BFA6]" />{t('f128')}</h2>
                               <div className="flex flex-wrap gap-2">
                                   {buildingUsageTypes.map((u: string) => (
                                       <span key={u} className="px-3 py-1.5 rounded-full bg-[#00BFA6]/10 text-[#00BFA6] font-bold text-sm">
-                                          {LABELS[u] || u}
+                                          {L(u)}
                                       </span>
                                   ))}
                               </div>
@@ -2747,44 +2739,44 @@ export default function AnnounceDetailsPage() {
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Type d'accès" : "Usage"}
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? t('f181') : t('f180')}
                               </h2>
                               <div className="flex gap-4">
                                   {property.usageType === 'UNIQUE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage unique (Communicante)</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f129')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f130')}</span>
                                       </div>
                                   ) : property.usageType === 'SEPARE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage séparé (appartement)</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(chaque étage est indépendant)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f131')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f132')}</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée indépendante</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès indépendant au niveau de villa)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f133')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f134')}</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_COMMUNE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée commune</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès partagé / entrée commune)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f135')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f136')}</span>
                                       </div>
                                   ) : property.usageType === 'QUARTIER_OUVERT' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Quartier classique</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f137')}</span>
                                       </div>
                                   ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Résidence clôturée</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f138')}</span>
                                       </div>
                                   ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Promotion immobilière</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f139')}</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{LABELS[property.usageType] || property.usageType}</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{L(property.usageType)}</span>
                                       </div>
                                   )}
                               </div>
@@ -2797,7 +2789,7 @@ export default function AnnounceDetailsPage() {
 
           {/* Informations Générales (Detailed) - Résidentiel uniquement */}
           {!isSpecialRental && <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">Informations Générales</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10">{t('f026')}</h2>
 
               <div className={isSaleDemolition ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"}>
                   {/* Colonne 01: Espace de Vie */}
@@ -2806,48 +2798,48 @@ export default function AnnounceDetailsPage() {
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <BedDouble className="h-5 w-5 text-[#00BFA6] mt-0.5" />
                           <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">
-                              {normalizedPropertyType === "APPARTEMENT_COMMERCIAL" ? "Espace exploité" : "Espace de Vie"}
+                              {normalizedPropertyType === "APPARTEMENT_COMMERCIAL" ? t('adSpaceExploited') : t('adLivingSpace')}
                           </h3>
                       </div>
                       <div className="space-y-4 flex-1">
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">Chambres</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f140')}</span>
                               <span className="font-bold text-gray-900 dark:text-white">{property.nbPieces || 0}</span>
                           </div>
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">Suites parentales</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f141')}</span>
                               <span className="font-bold text-gray-900 dark:text-white">{property.nbSuites || 0}</span>
                           </div>
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">Salons</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f142')}</span>
                               <span className="font-bold text-gray-900 dark:text-white">{property.nbLivingRooms || 0}</span>
                           </div>
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">WC / Toilettes</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f143')}</span>
                               <span className="font-bold text-gray-900 dark:text-white">{property.nbToilets || 0}</span>
                           </div>
                           <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">Salles de bain</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f144')}</span>
                               <span className="font-bold text-gray-900 dark:text-white">{property.nbBathrooms || 0}</span>
                           </div>
                           <div className="flex flex-col gap-2 pt-1">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">Type de salle de bain</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f145')}</span>
                               <div className="flex flex-wrap gap-2">
                                   {bathroomTypes.length > 0 ? (
                                       bathroomTypes.map((t, i) => (
                                           <span key={i} className={tagNeutralClass}>
-                                              {LABELS[t] || t}
+                                              {L(t)}
                                           </span>
                                       ))
                                   ) : (
                                       (property.bathroomType === 'LES_DEUX' || property.bathroomType === 'both') ? (
                                           <>
-                                              <span className={tagNeutralClass}>Baignoire</span>
-                                              <span className={tagNeutralClass}>Douche italienne</span>
+                                              <span className={tagNeutralClass}>{t('f146')}</span>
+                                              <span className={tagNeutralClass}>{t('f147')}</span>
                                           </>
                                       ) : property.bathroomType ? (
                                           <span className={tagNeutralClass}>
-                                              {LABELS[property.bathroomType] || property.bathroomType}
+                                              {L(property.bathroomType)}
                                           </span>
                                       ) : null
                                   )}
@@ -2863,21 +2855,21 @@ export default function AnnounceDetailsPage() {
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <Wind className="h-5 w-5 text-[#00BFA6] mt-0.5" />
                           <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">
-                              <span className="xl:hidden">Cuisine</span>
-                              <span className="hidden xl:inline">Cuisine &amp; équipements</span>
+                              <span className="xl:hidden">{t('f148')}</span>
+                              <span className="hidden xl:inline">{t('f149')}</span>
                           </h3>
                       </div>
                       <div className="space-y-4 flex-1">
                           <div className="flex flex-col gap-2 border-b border-gray-50 dark:border-white/5 pb-4">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">Type de cuisine</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f150')}</span>
                               {property.kitchenType && (
                                   <span className={tagPrimaryClass}>
-                                      {LABELS[property.kitchenType] || property.kitchenType}
+                                      {L(property.kitchenType)}
                                   </span>
                               )}
                           </div>
                           <div className="flex flex-col gap-3">
-                              <span className="text-gray-500 dark:text-white/50 text-sm">Équipements</span>
+                              <span className="text-gray-500 dark:text-white/50 text-sm">{t('f053')}</span>
                               <div className="flex flex-wrap gap-2">
                                   {kitchenEquipments.length > 0 ? (
                                       kitchenEquipments.map((k, i) => (
@@ -2892,7 +2884,7 @@ export default function AnnounceDetailsPage() {
                                           </span>
                                       ))
                                   ) : (
-                                      <span className="text-gray-400 dark:text-white/40 text-xs italic">Non équipé</span>
+                                      <span className="text-gray-400 dark:text-white/40 text-xs italic">{t('f151')}</span>
                                   )}
                               </div>
                           </div>
@@ -2905,24 +2897,24 @@ export default function AnnounceDetailsPage() {
                       <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Building2 className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Composition</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f152')}</h3>
                           </div>
                           <div className="space-y-3 flex-1">
                               {buildingTypology.apartmentTypology && (
                                   <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                                      <span className="text-gray-500 dark:text-white/50 text-sm">Typologie des appartements</span>
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">{t('f153')}</span>
                                       <span className="font-bold text-gray-900 dark:text-white">{buildingTypology.apartmentTypology}</span>
                                   </div>
                               )}
                               {buildingTypology.totalApartments !== undefined && (
                                   <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                                      <span className="text-gray-500 dark:text-white/50 text-sm">Nombre d'appartements</span>
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">{t('f154')}</span>
                                       <span className="font-bold text-gray-900 dark:text-white">{buildingTypology.totalApartments}</span>
                                   </div>
                               )}
                               {(buildingTypology.apartmentTypologies?.length || buildingTypology.apartmentTypologiesOther?.length) && (
                                   <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                      <span className="text-gray-500 dark:text-white/50 text-sm">Typologies</span>
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">{t('f155')}</span>
                                       <div className="flex flex-wrap gap-2">
                                           {[...(Array.isArray(buildingTypology.apartmentTypologies) ? buildingTypology.apartmentTypologies : []), ...(Array.isArray(buildingTypology.apartmentTypologiesOther) ? buildingTypology.apartmentTypologiesOther : [])].map((t: string, i: number) => (
                                               <span key={i} className={tagNeutralClass}>
@@ -2934,7 +2926,7 @@ export default function AnnounceDetailsPage() {
                               )}
                               {(Array.isArray(buildingTypology.apartmentStyle) ? buildingTypology.apartmentStyle.length > 0 : !!buildingTypology.apartmentStyle) && (
                                   <div className="flex flex-col gap-2 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                      <span className="text-gray-500 dark:text-white/50 text-sm">Style d&apos;appartement</span>
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">{t('f156')}</span>
                                       <div className="flex flex-wrap gap-1.5">
                                           {(Array.isArray(buildingTypology.apartmentStyle) ? buildingTypology.apartmentStyle : [buildingTypology.apartmentStyle]).map((s: string, i: number) => (
                                               <span key={i} className="px-2.5 py-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/70 text-xs font-bold rounded-full">
@@ -2947,19 +2939,19 @@ export default function AnnounceDetailsPage() {
                               {buildingTypology.mode === "SIMILAIRES" ? (
                                   (property.area !== undefined && property.area !== null && Number(property.area) > 0) ? (
                                       <div className="flex justify-between items-center py-1.5">
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">Surface</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f018')}</span>
                                           <span className="font-bold text-gray-900 dark:text-white">{property.area} m²</span>
                                       </div>
                                   ) : (
                                       <div className="flex justify-between items-center py-1.5">
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">Surface</span>
-                                          <span className="text-gray-400 dark:text-white/40 text-xs italic">Non spécifié</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f018')}</span>
+                                          <span className="text-gray-400 dark:text-white/40 text-xs italic">{t('f014')}</span>
                                       </div>
                                   )
                               ) : (
                                   buildingTypology.surfaceMode && (
                                       <div className="flex justify-between items-center py-1.5">
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">Surface</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f018')}</span>
                                           <span className="font-bold text-gray-900 dark:text-white">{buildingTypology.surfaceMode === "UNIQUE" ? "Unique" : buildingTypology.surfaceMode === "MULTI" ? "Multi-surfaces" : buildingTypology.surfaceMode}</span>
                                       </div>
                                   )
@@ -2972,14 +2964,14 @@ export default function AnnounceDetailsPage() {
                   <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                       <div className="flex items-start gap-2 min-h-[40px] mb-3">
                           <Check className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                          <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Commodités</h3>
+                          <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f157')}</h3>
                       </div>
                       <div className="space-y-6 flex-1">
                           
                           {/* Espaces Extérieurs */}
                           {(exteriorFeatures.length > 0) && (
                               <div className="space-y-2">
-                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Espaces Extérieurs</h4>
+                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f158')}</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {exteriorFeatures.map((item, idx) => (
                                           <span key={`ext-${idx}`} className={tagNeutralClass}>
@@ -2995,17 +2987,17 @@ export default function AnnounceDetailsPage() {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {property.heatingType && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Chauffage</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f159')}</h4>
                                           <span className={tagNeutralClass}>
-                                              {LABELS[property.heatingType] || property.heatingType}
+                                              {L(property.heatingType)}
                                           </span>
                                       </div>
                                   )}
                                   {property.acType && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Climatisation</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f160')}</h4>
                                           <span className={tagNeutralClass}>
-                                              {LABELS[property.acType] || property.acType}
+                                              {L(property.acType)}
                                           </span>
                                       </div>
                                   )}
@@ -3017,7 +3009,7 @@ export default function AnnounceDetailsPage() {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {securityFeatures.length > 0 && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Sécurité</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f041')}</h4>
                                           <div className="flex flex-wrap gap-2">
                                               {securityFeatures.map((item, idx) => (
                                                   <span key={`sec-${idx}`} className={tagNeutralClass}>
@@ -3029,7 +3021,7 @@ export default function AnnounceDetailsPage() {
                                   )}
                                   {connectivityFeatures.length > 0 && (
                                       <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Connectivité</h4>
+                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f118')}</h4>
                                           <div className="flex flex-wrap gap-2">
                                               {connectivityFeatures.map((item, idx) => (
                                                   <span key={`con-${idx}`} className={tagNeutralClass}>
@@ -3045,7 +3037,7 @@ export default function AnnounceDetailsPage() {
                           {/* Other active amenities fallback */}
                           {[...conveniences, ...heaters, ...otherPieces, ...advantages].length > 0 && (
                               <div className="space-y-2">
-                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Autres Commodités</h4>
+                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f161')}</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {[...conveniences, ...heaters, ...otherPieces, ...advantages].slice(0, 10).map((item, idx) => (
                                           <span key={idx} className={tagNeutralClass}>
@@ -3058,23 +3050,23 @@ export default function AnnounceDetailsPage() {
 
                           {/* Counters Section */}
                           <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-white/10">
-                              <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">Compteurs</h4>
+                              <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">{t('f162')}</h4>
                               <div className="flex flex-col gap-2">
                                   {property.waterCounter && (
                                       <div className="flex justify-between items-center px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100">
-                                          <span className="text-blue-700 text-[10px] font-bold uppercase">Eau</span>
+                                          <span className="text-blue-700 text-[10px] font-bold uppercase">{t('f046')}</span>
                                           <span className="text-blue-900 text-[10px] font-black uppercase">{property.waterCounter === 'INDIVIDUAL' || property.waterCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
                                       </div>
                                   )}
                                   {property.elecCounter && (
                                       <div className="flex justify-between items-center px-3 py-2 bg-yellow-50/50 rounded-lg border border-yellow-100">
-                                          <span className="text-yellow-700 text-[10px] font-bold uppercase">Électricité</span>
+                                          <span className="text-yellow-700 text-[10px] font-bold uppercase">{t('f043')}</span>
                                           <span className="text-yellow-900 text-[10px] font-black uppercase">{property.elecCounter === 'INDIVIDUAL' || property.elecCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
                                       </div>
                                   )}
                                   {property.gasCounter && (
                                       <div className="flex justify-between items-center px-3 py-2 bg-orange-50/50 rounded-lg border border-orange-100">
-                                          <span className="text-orange-700 text-[10px] font-bold uppercase">Gaz</span>
+                                          <span className="text-orange-700 text-[10px] font-bold uppercase">{t('f045')}</span>
                                           <span className="text-orange-900 text-[10px] font-black uppercase">{property.gasCounter === 'INDIVIDUAL' || property.gasCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
                                       </div>
                                   )}
@@ -3087,7 +3079,7 @@ export default function AnnounceDetailsPage() {
                       <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <FileText className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Documents</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f163')}</h3>
                           </div>
                           <div className="space-y-4 flex-1">
                               <div className="flex flex-wrap gap-2">
@@ -3098,7 +3090,7 @@ export default function AnnounceDetailsPage() {
                                           </span>
                                       ))
                                   ) : (
-                                      <span className="text-gray-400 dark:text-white/40 text-xs italic">Non spécifié</span>
+                                      <span className="text-gray-400 dark:text-white/40 text-xs italic">{t('f014')}</span>
                                   )}
                               </div>
                           </div>
@@ -3109,11 +3101,11 @@ export default function AnnounceDetailsPage() {
                       <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Conditions de vente</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f164')}</h3>
                           </div>
                           <div className="space-y-4 flex-1">
                               <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                  <span className="text-gray-500 dark:text-white/50 text-sm">Accepte crédit bancaire</span>
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">{t('f165')}</span>
                                   <span className="font-bold text-gray-900 dark:text-white text-sm">{acceptsBankCreditLabel}</span>
                               </div>
                           </div>
@@ -3124,18 +3116,18 @@ export default function AnnounceDetailsPage() {
                       <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Vente</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f166')}</h3>
                           </div>
                           <div className="space-y-5 flex-1">
                               <div className="space-y-2">
-                                  <div className="text-gray-500 dark:text-white/50 text-sm">Conditions de vente</div>
+                                  <div className="text-gray-500 dark:text-white/50 text-sm">{t('f164')}</div>
                                   <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                                      <span className="text-gray-500 dark:text-white/50 text-sm">Accepte crédit bancaire</span>
+                                      <span className="text-gray-500 dark:text-white/50 text-sm">{t('f165')}</span>
                                       <span className="font-bold text-gray-900 dark:text-white text-sm">{acceptsBankCreditLabel}</span>
                                   </div>
                               </div>
                               <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-white/10">
-                                  <div className="text-gray-500 dark:text-white/50 text-sm">Documents</div>
+                                  <div className="text-gray-500 dark:text-white/50 text-sm">{t('f163')}</div>
                                   <div className="flex flex-wrap gap-2">
                                       {legalDocuments.length > 0 ? (
                                           legalDocuments.map((d: string, i: number) => (
@@ -3144,7 +3136,7 @@ export default function AnnounceDetailsPage() {
                                               </span>
                                           ))
                                       ) : (
-                                          <span className="text-gray-400 dark:text-white/40 text-xs italic">Non spécifié</span>
+                                          <span className="text-gray-400 dark:text-white/40 text-xs italic">{t('f014')}</span>
                                       )}
                                   </div>
                               </div>
@@ -3156,11 +3148,11 @@ export default function AnnounceDetailsPage() {
                       <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Search className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Conditions</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f167')}</h3>
                           </div>
                           <div className="space-y-4 flex-1">
                               <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                  <span className="text-gray-500 dark:text-white/50 text-sm">Usage Autorisé</span>
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">{t('f168')}</span>
                                   {(() => {
                                       const rentalUsageList: string[] = property.rentalUsage
                                           ? (typeof property.rentalUsage === 'string' && property.rentalUsage.startsWith('['))
@@ -3170,16 +3162,16 @@ export default function AnnounceDetailsPage() {
                                       return rentalUsageList.length > 0 ? (
                                           <div className="flex flex-wrap gap-1.5 mt-0.5">
                                               {rentalUsageList.map((u: string, i: number) => (
-                                                  <span key={i} className={tagPrimaryClass}>{LABELS[u] || u}</span>
+                                                  <span key={i} className={tagPrimaryClass}>{L(u)}</span>
                                               ))}
                                           </div>
                                       ) : (
-                                          <span className="font-bold text-gray-900 dark:text-white text-sm">Non spécifié</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-sm">{t('f014')}</span>
                                       );
                                   })()}
                               </div>
                               <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                  <span className="text-gray-500 dark:text-white/50 text-sm">Cautionnement</span>
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">{t('f169')}</span>
                                   <span className="font-bold text-gray-900 dark:text-white text-sm">
                                       {property.depositMonths > 0 
                                           ? `${property.depositMonths} Mois` 
@@ -3187,7 +3179,7 @@ export default function AnnounceDetailsPage() {
                                   </span>
                               </div>
                               <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                  <span className="text-gray-500 dark:text-white/50 text-sm">Charges</span>
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">{t('f170')}</span>
                                   <span className="font-bold text-gray-900 dark:text-white text-sm">
                                       {property.chargesIncluded === 1 || property.chargesIncluded === true || String(property.chargesIncluded).trim() === '1' || String(property.chargesIncluded).trim() === '01' || String(property.chargesIncluded).toLowerCase() === 'true'
                                           ? 'Charges incluses' 
@@ -3195,7 +3187,7 @@ export default function AnnounceDetailsPage() {
                                   </span>
                               </div>
                               <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                  <span className="text-gray-500 dark:text-white/50 text-sm">Disponibilité</span>
+                                  <span className="text-gray-500 dark:text-white/50 text-sm">{t('f171')}</span>
                                   <span className="font-bold text-[#00BFA6] text-sm">
                                       {property.availableDate
                                           ? (() => {
@@ -3224,9 +3216,7 @@ export default function AnnounceDetailsPage() {
                       {announce.shortDescription && (
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                  <Layers className="h-5 w-5 text-[#00BFA6]" />
-                                  Description
-                              </h2>
+                                  <Layers className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
                               <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
                                   {announce.shortDescription}
                               </p>
@@ -3236,13 +3226,11 @@ export default function AnnounceDetailsPage() {
                       {buildingUsageTypes.length > 0 && (
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                  <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  Cadre et mode de vie
-                              </h2>
+                                  <Users className="h-5 w-5 text-[#00BFA6]" />{t('f128')}</h2>
                               <div className="flex flex-wrap gap-2">
                                   {buildingUsageTypes.map((u: string) => (
                                       <span key={u} className="px-3 py-1.5 rounded-full bg-[#00BFA6]/10 text-[#00BFA6] font-bold text-sm">
-                                          {LABELS[u] || u}
+                                          {L(u)}
                                       </span>
                                   ))}
                               </div>
@@ -3253,44 +3241,44 @@ export default function AnnounceDetailsPage() {
                           <div>
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
-                                  {normalizedPropertyType === "NIVEAU_VILLA" ? "Type d'accès" : "Usage"}
+                                  {normalizedPropertyType === "NIVEAU_VILLA" ? t('f181') : t('f180')}
                               </h2>
                               <div className="flex gap-4">
                                   {property.usageType === 'UNIQUE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage unique (Communicante)</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(les étages de la villa communiquent de l'intérieur)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f129')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f130')}</span>
                                       </div>
                                   ) : property.usageType === 'SEPARE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Usage séparé (appartement)</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(chaque étage est indépendant)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f131')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f132')}</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_INDEPENDANTE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée indépendante</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès indépendant au niveau de villa)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f133')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f134')}</span>
                                       </div>
                                   ) : property.usageType === 'ENTREE_COMMUNE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Entrée commune</span>
-                                          <span className="text-gray-500 dark:text-white/50 text-sm">(accès partagé / entrée commune)</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f135')}</span>
+                                          <span className="text-gray-500 dark:text-white/50 text-sm">{t('f136')}</span>
                                       </div>
                                   ) : property.usageType === 'QUARTIER_OUVERT' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Quartier classique</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f137')}</span>
                                       </div>
                                   ) : property.usageType === 'RESIDENCE_CLOTUREE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Résidence clôturée</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f138')}</span>
                                       </div>
                                   ) : property.usageType === 'PROMOTION_IMMOBILIERE' ? (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">Promotion immobilière</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{t('f139')}</span>
                                       </div>
                                   ) : (
                                       <div className="flex flex-col gap-1 w-full py-2">
-                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{LABELS[property.usageType] || property.usageType}</span>
+                                          <span className="font-bold text-gray-900 dark:text-white text-lg">{L(property.usageType)}</span>
                                       </div>
                                   )}
                               </div>

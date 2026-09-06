@@ -7,6 +7,7 @@ import { useRouter } from "@/i18n/navigation"
 import { AnnounceFilter } from "@/components/AnnounceFilter"
 import { Button } from "@/components/ui/button"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
+import { usePropertyTypeLabel, useLocalizedPlaceName } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
 import { getCategoryColor } from "@/data/categoryColors"
 import { LayoutGrid, LayoutDashboard, List, Building2, MapPin } from "lucide-react"
@@ -21,6 +22,8 @@ const getImageUrl = (url: string) => {
 
 function AnnouncesContent() {
   const t = useTranslations("AnnouncesPage")
+  const ptLabel = usePropertyTypeLabel()
+  const place = useLocalizedPlaceName()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [announces, setAnnounces] = useState<any[]>([])
@@ -311,7 +314,7 @@ function AnnouncesContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                   {announces.map((a) => {
                     const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
-                    const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
+                    const city = place.city(a.property?.address?.town?.city) || place.town(a.property?.address?.town) || ''
                     const tx = a.type || a.transactionType || a.transaction
                     return (
                       <a key={a.id} href={`/announces/${a.id}`} className="group bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all duration-300">
@@ -323,7 +326,7 @@ function AnnouncesContent() {
                         </div>
                         <div className="p-5">
                           <h3 className="font-bold text-gray-900 dark:text-white text-base group-hover:text-[#0094BD] transition-colors line-clamp-2">
-                            {a.title || PROPERTY_TYPES?.find((pt: any) => pt.id === a.property?.propertyType?.toUpperCase())?.label || a.property?.propertyType}
+                            {a.title || ptLabel(a.property?.propertyType, a.property?.propertyType)}
                           </h3>
                           {city && <p className="flex items-center gap-1 text-gray-500 dark:text-white/50 text-sm mt-2"><MapPin className="h-3.5 w-3.5 shrink-0" />{city}</p>}
                           <div className="mt-4 flex items-center justify-between">
@@ -339,9 +342,9 @@ function AnnouncesContent() {
                 <div className="flex flex-col gap-4">
                   {announces.map((a) => {
                     const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
-                    const city = a.property?.address?.town?.city?.nameFr || a.property?.address?.town?.nameFr || ''
+                    const city = place.city(a.property?.address?.town?.city) || place.town(a.property?.address?.town) || ''
                     const tx = a.type || a.transactionType || a.transaction
-                    const pType = PROPERTY_TYPES?.find((pt: any) => pt.id === a.property?.propertyType?.toUpperCase())?.label || a.property?.propertyType
+                    const pType = ptLabel(a.property?.propertyType, a.property?.propertyType)
                     return (
                       <a key={a.id} href={`/announces/${a.id}`} className="group flex bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden hover:shadow-lg transition-all">
                         <div className="w-44 h-36 shrink-0 overflow-hidden bg-gray-100 dark:bg-white/10">

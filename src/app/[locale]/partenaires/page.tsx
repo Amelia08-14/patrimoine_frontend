@@ -370,7 +370,7 @@ export default function PartenairesPage() {
                       </div>
                       <div>
                         <h2 className="text-xl font-extrabold text-[#003B4A]">{cat.label}</h2>
-                        <p className="text-xs text-gray-400 dark:text-white/40">{total} partenaire{total > 1 ? 's' : ''}</p>
+                        <p className="text-xs text-gray-400 dark:text-white/40">{t('partnersCount', { count: total })}</p>
                       </div>
                     </div>
 
@@ -388,7 +388,7 @@ export default function PartenairesPage() {
                         <div>
                           {subGroups.length > 0 && (
                             <h3 className="text-sm font-bold text-gray-500 dark:text-white/50 uppercase tracking-wide mb-4 pb-2 border-b border-gray-200 dark:border-white/10">
-                              Autres
+                              {t('otherGroup')}
                             </h3>
                           )}
                           <PartnerCarousel partners={unclassified} />
@@ -406,8 +406,8 @@ export default function PartenairesPage() {
                       <Handshake className="h-5 w-5 text-gray-400 dark:text-white/40" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-extrabold text-[#003B4A]">Autres partenaires</h2>
-                      <p className="text-xs text-gray-400 dark:text-white/40">{uncategorized.length} partenaire{uncategorized.length > 1 ? 's' : ''}</p>
+                      <h2 className="text-xl font-extrabold text-[#003B4A]">{t('otherPartnersTitle')}</h2>
+                      <p className="text-xs text-gray-400 dark:text-white/40">{t('partnersCount', { count: uncategorized.length })}</p>
                     </div>
                   </div>
                   <div className="px-1">

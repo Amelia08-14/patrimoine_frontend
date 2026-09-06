@@ -9,6 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation"
 import axios from "axios"
 import { motion, useReducedMotion, type Variants } from "framer-motion"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
+import { useLocalizedGeoName } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
@@ -200,6 +201,7 @@ function HeroSearchBar() {
   const router = useRouter();
   const t = useTranslations("HomePage");
   const tc = useTranslations("Categories");
+  const geoName = useLocalizedGeoName();
   const [transactionType, setTransactionType] = useState<"" | "SALE" | "RENTAL">("")
   const [category, setCategory] = useState("")
   const [wilaya, setWilaya] = useState("")
@@ -251,7 +253,7 @@ function HeroSearchBar() {
         <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
         <select value={wilaya} onChange={(e) => { setWilaya(e.target.value); setCommune("") }} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate">
           <option value="">{t("searchWilayaPlaceholder")}</option>
-          {WILAYAS.map((w) => <option key={w.code} value={w.code}>{w.name}</option>)}
+          {WILAYAS.map((w) => <option key={w.code} value={w.code}>{geoName(w)}</option>)}
         </select>
       </div>
 
@@ -259,7 +261,7 @@ function HeroSearchBar() {
         <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
         <select value={commune} onChange={(e) => setCommune(e.target.value)} disabled={!wilaya} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate disabled:text-gray-400">
           <option value="">{t("searchCommunePlaceholder")}</option>
-          {filteredCommunes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {filteredCommunes.map((c) => <option key={c.id} value={c.id}>{geoName(c)}</option>)}
         </select>
       </div>
 
