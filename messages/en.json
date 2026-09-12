@@ -1903,7 +1903,77 @@
     "depCentimesMillions": "{v} million centimes",
     "depCentimesMilliards": "{v} billion centimes",
     "depCentimes": "{v} centimes",
-    "curDA": "DA"
+    "curDA": "DA",
+    "hsSectionClassification": "Classification and establishment type",
+    "hsClassificationLabel": "Rated or unrated establishment",
+    "hsClassifieEtoile": "Star-rated establishment",
+    "hsClassifieNonEtoile": "Non-rated establishment",
+    "hsNbEtoiles": "Number of stars",
+    "hsTypeEtablissementLabel": "Establishment / structure type",
+    "hsTypeEtablissementAutrePrecise": "Specify the establishment type",
+    "hsPlaceholderAutreEtablissement": "E.g. Riad, Eco-lodge...",
+    "hsSectionTypeBien": "Type of property offered",
+    "hsTypeBienLabel": "Select the type of property you are offering",
+    "hsMaisonComplete": "Entire home",
+    "hsMaisonCompleteDesc": "Entire home, exclusive access for guest(s)",
+    "hsChambre": "Room",
+    "hsChambreDesc": "Private or shared room within the home",
+    "hsPlaceDeLit": "Bed in a shared room",
+    "hsPlaceDeLitDesc": "Bed in a shared space (dormitory style)",
+    "hsChezHabitant": "Room in host's home",
+    "hsPrecisionChambre": "Room details",
+    "hsChambreIndividuelle": "Private room",
+    "hsChambreIndividuelleDesc": "Private room exclusively for the guest(s)",
+    "hsChambrePartagee": "Shared room",
+    "hsChambrePartageeDesc": "Room shared with the host or other guests",
+    "hsSectionStructure": "Structure / building type",
+    "hsInsolitePrecise": "Specify the type of unusual stay",
+    "hsSectionCaracteristiques": "Characteristics and layout of the home",
+    "hsSurfaceHabitable": "Living area (m²)",
+    "hsSurfaceChambre": "Room area (m²)",
+    "hsSituationBatiment": "Position in the building / floor",
+    "hsRdc": "Ground floor",
+    "hsEtageSup": "Upper floor",
+    "hsAscenseurQuestion": "Is there an elevator?",
+    "hsOui": "Yes",
+    "hsNon": "No",
+    "hsCompositionPieces": "Room composition",
+    "hsNbChambres": "Number of bedrooms",
+    "hsSuiteParentaleQuestion": "Is there a master suite (bedroom with private bathroom/dressing room)?",
+    "hsNbSalons": "Number of living rooms",
+    "hsNbSdb": "Number of bathrooms",
+    "hsNbWc": "Number of separate toilets (if applicable)",
+    "hsSectionLits": "Bed details",
+    "hsLitsTotal": "Total number of beds",
+    "hsTypesLits": "Available bed types",
+    "hsLitKing": "King size bed",
+    "hsLitQueen": "Queen size bed",
+    "hsLitDouble": "Standard double bed",
+    "hsLitSimple": "Single bed",
+    "hsLitSuperpose": "Bunk bed",
+    "hsLitGigogne": "Trundle / pull-out bed",
+    "hsLitBebe": "Crib / travel cot",
+    "hsNombre": "Number",
+    "hsSectionSalon": "Living room type",
+    "hsNbCanapesConvertibles": "Number of sofa beds",
+    "hsNbCouchagesAppoint": "Number of extra sleeping spaces obtained",
+    "hsSectionProfil": "Profile / Suitability",
+    "hsVoyageursMax": "Maximum number of guests",
+    "hsPolitiqueEnfants": "Children policy",
+    "hsAdultesEnfants": "Accepts adults and children",
+    "hsAdultesUniquement": "Adults only (no children)",
+    "hsSectionEspacesCommuns": "Common areas and shared services",
+    "hsAccesPartiesCommunes": "Access to common areas",
+    "hsNbDouches": "Number of showers",
+    "hsSectionPlaceLit": "Bed space characteristics",
+    "hsTypeCouchage": "Bed type",
+    "hsLitSimpleStandard": "Standard single bed",
+    "hsLitSuperposePosition": "Bunk bed",
+    "hsPositionHaut": "Top",
+    "hsPositionBas": "Bottom",
+    "hsConfigEspacePartage": "Shared space configuration",
+    "hsNbLitsPiecePartagee": "Total number of beds in this shared room",
+    "hsEquipementsInclus": "Amenities included for the guest"
   },
   "HomePage": {
     "categoryLabel": "Category",
@@ -3518,6 +3588,80 @@
       "MASTERCARD": {
         "label": "MasterCard"
       }
+    },
+    "HS_STRUCTURE_TYPES": {
+      "VILLA": "Villa",
+      "NIVEAU_VILLA": "Villa level (independent floor or apartment within a villa)",
+      "APPARTEMENT": "Apartment (in a building)",
+      "BUNGALOW": "Bungalow",
+      "CHALET": "Chalet",
+      "INSOLITE": "Unique / unusual stay"
+    },
+    "HS_TYPE_ETABLISSEMENT": {
+      "HOTEL": "Hotel",
+      "COMPLEXE_TOURISTIQUE": "Tourist resort",
+      "APPARTHOTEL": "Aparthotel",
+      "VILLA_VACANCES": "Holiday villa",
+      "RESIDENCE_HOTELIERE": "Hotel residence",
+      "CAMPING_TOURISTIQUE": "Tourist campsite",
+      "AUTRE": "Other establishment"
+    },
+    "HS_TYPE_SALON": {
+      "CANAPE_CONVERTIBLE": {
+        "label": "Living room with sofa bed(s)",
+        "description": "Area with one or more sofas that convert into extra beds for guests"
+      },
+      "ASSISES_FIXES": {
+        "label": "Fixed-seating living room",
+        "description": "Living area fitted only with sofas, benches or armchairs that do not convert into beds, dedicated solely to relaxing"
+      }
+    },
+    "HS_PROFIL_ADAPTATION": {
+      "FAMILLES": {
+        "label": "Family-friendly",
+        "description": "Ideal space for traveling with children, suitably configured"
+      },
+      "GROUPES_AMIS": {
+        "label": "Suited to groups of friends",
+        "description": "Several single or bunk beds to share the stay"
+      },
+      "PROFESSIONNELS": {
+        "label": "Suited to professionals (Corporate)",
+        "description": "Dedicated workspace with desk and comfortable chair, good Wi-Fi connection"
+      }
+    },
+    "HS_PROFIL_ADAPTATION_PLACE_LIT": {
+      "SOLO_TRAVELERS": {
+        "label": "Suited to solo travelers",
+        "description": "Hikers, backpackers, people traveling alone for work or tourism"
+      },
+      "GROUPES_AMIS": {
+        "label": "Suited to groups of friends",
+        "description": "Friends wanting to share the same room or space for a stay, weekend or event"
+      },
+      "PROFESSIONNELS_NOMADS": {
+        "label": "Suited to professionals / digital nomads",
+        "description": "Business travelers or remote workers looking for an affordable solution or workspace"
+      },
+      "FAMILLES": {
+        "label": "Suited to families",
+        "description": "Only suitable if the family books the entire shared room for itself"
+      },
+      "STAGIAIRES_ETUDIANTS": {
+        "label": "Suited to interns, students or temporary workers",
+        "description": "People needing a place to stay for a few weeks or months"
+      }
+    },
+    "HS_ESPACES_COMMUNS": {
+      "SDB_PARTAGEE": "Shared bathroom",
+      "CUISINE_PARTAGEE": "Shared, equipped kitchen",
+      "SALON_PARTAGE": "Shared living / lounge area",
+      "JARDIN_TERRASSE": "Garden, terrace or outdoor space"
+    },
+    "HS_EQUIPEMENTS_PLACE_LIT": {
+      "CASIER_SECURISE": "Secure locker / safe",
+      "LINGE_FOURNI": "Bed linen provided (sheets, pillow)",
+      "PRISE_LISEUSE": "Individual power outlet / reading light by the bed"
     }
   },
   "PropertyTypes": {
@@ -3561,7 +3705,9 @@
     "SALLE_CONFERENCE": "Conference room",
     "SALLE_FORMATION": "Training room",
     "SALLE_DINER": "Dining hall",
-    "IMMEUBLE_COMMERCIAL": "Commercial block"
+    "IMMEUBLE_COMMERCIAL": "Commercial block",
+    "HEBERGEMENT_SEJOUR": "Vacation / short-term stay",
+    "ETABLISSEMENT_HEBERGEMENT": "Accommodation establishment"
   },
   "AnnounceDetailLabels": {
     "NEW": "New / First-hand",

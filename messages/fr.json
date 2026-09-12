@@ -1903,7 +1903,77 @@
     "depCentimesMillions": "{v} Millions de centimes",
     "depCentimesMilliards": "{v} Milliards de centimes",
     "depCentimes": "{v} Centimes",
-    "curDA": "DA"
+    "curDA": "DA",
+    "hsSectionClassification": "Classification et type d'établissement",
+    "hsClassificationLabel": "Établissement classé ou non",
+    "hsClassifieEtoile": "Établissement étoilé",
+    "hsClassifieNonEtoile": "Établissement non étoilé",
+    "hsNbEtoiles": "Nombre d'étoiles",
+    "hsTypeEtablissementLabel": "Type de structure / établissement",
+    "hsTypeEtablissementAutrePrecise": "Précisez le type d'établissement",
+    "hsPlaceholderAutreEtablissement": "Ex: Riad, Éco-lodge...",
+    "hsSectionTypeBien": "Type de bien proposé",
+    "hsTypeBienLabel": "Sélectionnez le type de bien que vous proposez",
+    "hsMaisonComplete": "Maison complète",
+    "hsMaisonCompleteDesc": "Logement entier, accès exclusif pour le(s) voyageur(s)",
+    "hsChambre": "Chambre",
+    "hsChambreDesc": "Chambre individuelle ou partagée au sein du logement",
+    "hsPlaceDeLit": "Place de lit",
+    "hsPlaceDeLitDesc": "Lit dans un espace partagé (type dortoir)",
+    "hsChezHabitant": "Chambre chez l'habitant",
+    "hsPrecisionChambre": "Précision sur la chambre",
+    "hsChambreIndividuelle": "Chambre individuelle",
+    "hsChambreIndividuelleDesc": "Chambre privative rien que pour le/les voyageur(s)",
+    "hsChambrePartagee": "Chambre partagée",
+    "hsChambrePartageeDesc": "Chambre partagée avec l'hôte ou d'autres voyageurs",
+    "hsSectionStructure": "Type de structure / bâtiment",
+    "hsInsolitePrecise": "Précisez le type d'hébergement insolite",
+    "hsSectionCaracteristiques": "Caractéristiques et composition du logement",
+    "hsSurfaceHabitable": "Surface habitable (m²)",
+    "hsSurfaceChambre": "Surface de la chambre (m²)",
+    "hsSituationBatiment": "Situation dans le bâtiment / étage",
+    "hsRdc": "Rez-de-chaussée (RDC)",
+    "hsEtageSup": "Étage supérieur",
+    "hsAscenseurQuestion": "Y a-t-il un ascenseur ?",
+    "hsOui": "Oui",
+    "hsNon": "Non",
+    "hsCompositionPieces": "Composition des pièces",
+    "hsNbChambres": "Nombre de chambres",
+    "hsSuiteParentaleQuestion": "Y a-t-il une suite parentale (chambre avec salle de bain/dressing privatif) ?",
+    "hsNbSalons": "Nombre de salons / séjour",
+    "hsNbSdb": "Nombre de salles de bain",
+    "hsNbWc": "Nombre de WC séparés (si applicable)",
+    "hsSectionLits": "Détail des lits",
+    "hsLitsTotal": "Nombre total de lits",
+    "hsTypesLits": "Types de lits disponibles",
+    "hsLitKing": "Lit King Size",
+    "hsLitQueen": "Lit Queen Size",
+    "hsLitDouble": "Lit double standard",
+    "hsLitSimple": "Lit simple",
+    "hsLitSuperpose": "Lit superposé",
+    "hsLitGigogne": "Lit tiroir / Gigogne",
+    "hsLitBebe": "Lit bébé / Parapluie",
+    "hsNombre": "Nombre",
+    "hsSectionSalon": "Type de salon",
+    "hsNbCanapesConvertibles": "Nombre de canapés convertibles",
+    "hsNbCouchagesAppoint": "Nombre de couchages d'appoint obtenus",
+    "hsSectionProfil": "Profil / Adaptation",
+    "hsVoyageursMax": "Nombre de voyageurs maximum",
+    "hsPolitiqueEnfants": "Politique concernant les enfants",
+    "hsAdultesEnfants": "Accepte adultes et enfants",
+    "hsAdultesUniquement": "Accepte adultes uniquement (pas d'enfants)",
+    "hsSectionEspacesCommuns": "Espaces communs et services partagés",
+    "hsAccesPartiesCommunes": "Accès aux parties communes",
+    "hsNbDouches": "Nombre de douches",
+    "hsSectionPlaceLit": "Caractéristiques de la place de lit",
+    "hsTypeCouchage": "Type de couchage",
+    "hsLitSimpleStandard": "Lit simple standard",
+    "hsLitSuperposePosition": "Lit superposé",
+    "hsPositionHaut": "Haut",
+    "hsPositionBas": "Bas",
+    "hsConfigEspacePartage": "Configuration de l'espace partagé",
+    "hsNbLitsPiecePartagee": "Nombre total de lits dans cette même pièce partagée",
+    "hsEquipementsInclus": "Équipements inclus pour le voyageur"
   },
   "HomePage": {
     "categoryLabel": "Catégorie",
@@ -3518,6 +3588,80 @@
       "MASTERCARD": {
         "label": "MasterCard"
       }
+    },
+    "HS_STRUCTURE_TYPES": {
+      "VILLA": "Villa",
+      "NIVEAU_VILLA": "Niveau de villa (appartement ou étage indépendant dans une villa)",
+      "APPARTEMENT": "Appartement (en immeuble)",
+      "BUNGALOW": "Bungalow",
+      "CHALET": "Chalet",
+      "INSOLITE": "Hébergement insolite"
+    },
+    "HS_TYPE_ETABLISSEMENT": {
+      "HOTEL": "Hôtel",
+      "COMPLEXE_TOURISTIQUE": "Complexe touristique",
+      "APPARTHOTEL": "Apparthôtel",
+      "VILLA_VACANCES": "Villa de vacances",
+      "RESIDENCE_HOTELIERE": "Résidence hôtelière",
+      "CAMPING_TOURISTIQUE": "Camping touristique",
+      "AUTRE": "Autre structure"
+    },
+    "HS_TYPE_SALON": {
+      "CANAPE_CONVERTIBLE": {
+        "label": "Salon avec canapé(s) convertible(s)",
+        "description": "Espace comprenant un ou plusieurs canapés transformables en lits d'appoint pour les voyageurs"
+      },
+      "ASSISES_FIXES": {
+        "label": "Salon à assises fixes",
+        "description": "Espace de vie équipé uniquement de canapés, banquettes ou fauteuils non transformables en lits, dédiés exclusivement à la détente"
+      }
+    },
+    "HS_PROFIL_ADAPTATION": {
+      "FAMILLES": {
+        "label": "Adaptée aux familles",
+        "description": "Espace idéal pour voyager avec des enfants, configuration adaptée"
+      },
+      "GROUPES_AMIS": {
+        "label": "Adaptée aux groupes d'amis",
+        "description": "Plusieurs couchages simples ou superposés pour partager le séjour"
+      },
+      "PROFESSIONNELS": {
+        "label": "Adaptée aux professionnels (Corporate)",
+        "description": "Espace bureau dédié avec plan de travail et chaise confortable, bonne connexion Wi-Fi"
+      }
+    },
+    "HS_PROFIL_ADAPTATION_PLACE_LIT": {
+      "SOLO_TRAVELERS": {
+        "label": "Adapté aux Solo Travelers / Voyageurs solitaires",
+        "description": "Randonneurs, routards, baroudeurs, personnes voyageant seules pour le travail ou le tourisme"
+      },
+      "GROUPES_AMIS": {
+        "label": "Adapté aux Groupes d'amis",
+        "description": "Amis souhaitant partager la même chambre ou le même espace lors d'un séjour, d'un week-end ou d'un événement"
+      },
+      "PROFESSIONNELS_NOMADS": {
+        "label": "Adapté aux Professionnels / Digital Nomads",
+        "description": "Voyageurs d'affaires ou travailleurs à distance recherchant une solution économique ou un espace bureau"
+      },
+      "FAMILLES": {
+        "label": "Adapté aux Familles",
+        "description": "Convient uniquement si la famille réserve l'intégralité d'une chambre partagée pour elle seule"
+      },
+      "STAGIAIRES_ETUDIANTS": {
+        "label": "Adapté aux Stagiaires, Étudiants ou Travailleurs en mission temporaire",
+        "description": "Personnes ayant besoin d'un pied-à-terre pour quelques semaines ou mois"
+      }
+    },
+    "HS_ESPACES_COMMUNS": {
+      "SDB_PARTAGEE": "Salle de bain partagée",
+      "CUISINE_PARTAGEE": "Cuisine partagée et équipée",
+      "SALON_PARTAGE": "Salon / Espace détente partagé",
+      "JARDIN_TERRASSE": "Jardin, terrasse ou espace extérieur"
+    },
+    "HS_EQUIPEMENTS_PLACE_LIT": {
+      "CASIER_SECURISE": "Casier sécurisé / Coffre",
+      "LINGE_FOURNI": "Linge de lit fourni (draps, oreiller)",
+      "PRISE_LISEUSE": "Prise de courant / liseuse individuelle près du lit"
     }
   },
   "PropertyTypes": {
@@ -3561,7 +3705,9 @@
     "SALLE_CONFERENCE": "Salle de conférence",
     "SALLE_FORMATION": "Salle de formation",
     "SALLE_DINER": "Salle de dîner",
-    "IMMEUBLE_COMMERCIAL": "Bloc commercial"
+    "IMMEUBLE_COMMERCIAL": "Bloc commercial",
+    "HEBERGEMENT_SEJOUR": "Location de séjour / vacances",
+    "ETABLISSEMENT_HEBERGEMENT": "Établissement d'hébergement"
   },
   "AnnounceDetailLabels": {
     "NEW": "Neuf / Première main",

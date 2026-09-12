@@ -43,6 +43,7 @@ export const PROPERTY_TYPES = [
   { id: "BUNGALOW", label: "Bungalow", categoryId: "HOTELIER", iconName: "Tent" },
   { id: "TERRAIN_HOTELIER", label: "Terrain Hôtelier", categoryId: "HOTELIER", iconName: "Trees" },
   { id: "AUTRE_HOTEL", label: "Autre structure hôtelière", categoryId: "HOTELIER", iconName: "Hotel" },
+  { id: "ETABLISSEMENT_HEBERGEMENT", label: "Établissement d'hébergement", categoryId: "HOTELIER", iconName: "Hotel" },
 
   // Industriels
   { id: "HANGAR", label: "Hangar", categoryId: "INDUSTRIEL", iconName: "Warehouse" },
@@ -56,6 +57,7 @@ export const PROPERTY_TYPES = [
   { id: "MAISON_HOTES", label: "Maison d'hôtes", categoryId: "HEBERGEMENT", iconName: "Home" },
   { id: "COMPLEXE_TOURISTIQUE_HEBERGEMENT", label: "Complexe Touristique", categoryId: "HEBERGEMENT", iconName: "Palmtree" },
   { id: "AUTRE_HEBERGEMENT", label: "Autre hébergement", categoryId: "HEBERGEMENT", iconName: "BedDouble" },
+  { id: "HEBERGEMENT_SEJOUR", label: "Location de séjour / vacances", categoryId: "HEBERGEMENT", iconName: "BedDouble" },
 
   // Évènementiels
   { id: "SALLE_FETES", label: "Salle des fêtes", categoryId: "EVENEMENTIEL", iconName: "PartyPopper" },

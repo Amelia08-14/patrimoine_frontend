@@ -76,6 +76,7 @@ const IconMap: Record<string, React.ElementType> = {
   LocalCommercial: Store,
   HebergementEtoile: Star,
   HebergementSansEtoile: Hotel,
+  SejourVacances: BedDouble,
   ComplexeEtoile: Sparkles,
   ComplexeSansEtoile: Trees,
   TerrainFoncier: Trees,
@@ -173,8 +174,10 @@ const BASE_PROPERTY_TYPES = [
   { id: "SALLE_DINER", label: "Salle de dîner", categoryId: "EVENEMENTIEL", iconName: "SalleDiner" },
   { id: "SALLE_FETES", label: "Salle des fêtes", categoryId: "EVENEMENTIEL", iconName: "SalleFetes" },
   { id: "TERRAIN_HOTELIER", label: "Terrain hôtelier", categoryId: "HOTELIER", iconName: "TerrainHotel" },
-  { id: "HOTEL", label: "Hôtel", categoryId: "HOTELIER", iconName: "HotelEtoile" },
-  { id: "AUTRE_HOTEL", label: "Autre structure hôtelière", categoryId: "HOTELIER", iconName: "StructureHoteliere" },
+  // HOTEL et AUTRE_HOTEL n'avaient aucune fiche dédiée (fiche générique/legacy par défaut) — remplacés
+  // par ETABLISSEMENT_HEBERGEMENT, qui ouvre le bloc Classification puis la fiche Type de bien
+  // (Maison complète / Chambre / Place de lit), partagée avec HEBERGEMENT_SEJOUR côté particulier.
+  { id: "ETABLISSEMENT_HEBERGEMENT", label: "Établissement d'hébergement", categoryId: "HOTELIER", iconName: "StructureHoteliere" },
   // Ordre volontaire : L01 (4) tronc commun résidentiel-pro, L02 (4) locaux commerciaux, L03 (3) réservé pro
   // (Centre d'affaires, Espace co-working, Bureau flexible filtrés pour les particuliers dans getFilteredPropertyTypes).
   { id: "APPARTEMENT_COMMERCIAL", label: "Appartement", categoryId: "BUREAUX_COMMERCES", iconName: "AppartementBureau" },
@@ -192,6 +195,10 @@ const BASE_PROPERTY_TYPES = [
   { id: "AUTRE_HEBERGEMENT", label: "Hébergement hôtelier sans étoile", categoryId: "HEBERGEMENT", iconName: "HebergementSansEtoile" },
   { id: "COMPLEXE_TOURISTIQUE_HEBERGEMENT", label: "Complexe touristique étoilé", categoryId: "HEBERGEMENT", iconName: "ComplexeEtoile" },
   { id: "COMPLEXE_TOURISTIQUE", label: "Complexe touristique sans étoile", categoryId: "HEBERGEMENT", iconName: "ComplexeSansEtoile" },
+  // Coexiste avec HEBERGEMENT_HABITANT (formule imposée par getFilteredPropertyTypes en location pour
+  // les particuliers) : fiche Type de bien (Maison complète / Chambre / Place de lit), pendant
+  // particulier de ETABLISSEMENT_HEBERGEMENT côté professionnel.
+  { id: "HEBERGEMENT_SEJOUR", label: "Location de séjour / vacances", categoryId: "HEBERGEMENT", iconName: "SejourVacances" },
 ]
 
 // Types d'étages supplémentaires
@@ -759,6 +766,53 @@ const HAB_PAIEMENTS_INTL = [
 ]
 // ===========================
 
+// ===== HÉBERGEMENT & SÉJOUR (Particulier : location de séjour / Professionnel : établissement) =====
+const HS_STRUCTURE_TYPES = [
+  { id: "VILLA", label: "Villa" },
+  { id: "NIVEAU_VILLA", label: "Niveau de villa (appartement ou étage indépendant dans une villa)" },
+  { id: "APPARTEMENT", label: "Appartement (en immeuble)" },
+  { id: "BUNGALOW", label: "Bungalow" },
+  { id: "CHALET", label: "Chalet" },
+  { id: "INSOLITE", label: "Hébergement insolite" },
+]
+const HS_TYPE_ETABLISSEMENT = [
+  { id: "HOTEL", label: "Hôtel" },
+  { id: "COMPLEXE_TOURISTIQUE", label: "Complexe touristique" },
+  { id: "APPARTHOTEL", label: "Apparthôtel" },
+  { id: "VILLA_VACANCES", label: "Villa de vacances" },
+  { id: "RESIDENCE_HOTELIERE", label: "Résidence hôtelière" },
+  { id: "CAMPING_TOURISTIQUE", label: "Camping touristique" },
+  { id: "AUTRE", label: "Autre structure" },
+]
+const HS_TYPE_SALON = [
+  { id: "CANAPE_CONVERTIBLE", label: "Salon avec canapé(s) convertible(s)", desc: "Espace comprenant un ou plusieurs canapés transformables en lits d'appoint pour les voyageurs" },
+  { id: "ASSISES_FIXES", label: "Salon à assises fixes", desc: "Espace de vie équipé uniquement de canapés, banquettes ou fauteuils non transformables en lits, dédiés exclusivement à la détente" },
+]
+const HS_PROFIL_ADAPTATION = [
+  { id: "FAMILLES", label: "Adaptée aux familles", desc: "Espace idéal pour voyager avec des enfants, configuration adaptée" },
+  { id: "GROUPES_AMIS", label: "Adaptée aux groupes d'amis", desc: "Plusieurs couchages simples ou superposés pour partager le séjour" },
+  { id: "PROFESSIONNELS", label: "Adaptée aux professionnels (Corporate)", desc: "Espace bureau dédié avec plan de travail et chaise confortable, bonne connexion Wi-Fi" },
+]
+const HS_PROFIL_ADAPTATION_PLACE_LIT = [
+  { id: "SOLO_TRAVELERS", label: "Adapté aux Solo Travelers / Voyageurs solitaires", desc: "Randonneurs, routards, baroudeurs, personnes voyageant seules pour le travail ou le tourisme" },
+  { id: "GROUPES_AMIS", label: "Adapté aux Groupes d'amis", desc: "Amis souhaitant partager la même chambre ou le même espace lors d'un séjour, d'un week-end ou d'un événement" },
+  { id: "PROFESSIONNELS_NOMADS", label: "Adapté aux Professionnels / Digital Nomads", desc: "Voyageurs d'affaires ou travailleurs à distance recherchant une solution économique ou un espace bureau" },
+  { id: "FAMILLES", label: "Adapté aux Familles", desc: "Convient uniquement si la famille réserve l'intégralité d'une chambre partagée pour elle seule" },
+  { id: "STAGIAIRES_ETUDIANTS", label: "Adapté aux Stagiaires, Étudiants ou Travailleurs en mission temporaire", desc: "Personnes ayant besoin d'un pied-à-terre pour quelques semaines ou mois" },
+]
+const HS_ESPACES_COMMUNS = [
+  { id: "SDB_PARTAGEE", label: "Salle de bain partagée" },
+  { id: "CUISINE_PARTAGEE", label: "Cuisine partagée et équipée" },
+  { id: "SALON_PARTAGE", label: "Salon / Espace détente partagé" },
+  { id: "JARDIN_TERRASSE", label: "Jardin, terrasse ou espace extérieur" },
+]
+const HS_EQUIPEMENTS_PLACE_LIT = [
+  { id: "CASIER_SECURISE", label: "Casier sécurisé / Coffre" },
+  { id: "LINGE_FOURNI", label: "Linge de lit fourni (draps, oreiller)" },
+  { id: "PRISE_LISEUSE", label: "Prise de courant / liseuse individuelle près du lit" },
+]
+// ===========================
+
 const USAGE_TYPES = [
     {
         id: "UNIQUE",
@@ -1300,6 +1354,64 @@ const formSchema = z.object({
   habDebutSaison: z.string().optional(),
   habFinSaison: z.string().optional(),
   habDelaiPreparation: z.string().optional(),
+
+  // Hébergement & Séjour (fiche "Type de bien" — particulier : location de séjour, professionnel :
+  // établissement précédé du bloc classification)
+  hsClassification: z.string().optional(),
+  hsNombreEtoiles: z.string().optional(),
+  hsTypeEtablissement: z.string().optional(),
+  hsTypeEtablissementAutre: z.string().optional(),
+  hsTypeBien: z.string().optional(),
+  hsStructureType: z.string().optional(),
+  hsStructureTypeInsolite: z.string().optional(),
+  hsMcSurface: z.string().optional(),
+  hsMcEtage: z.string().optional(),
+  hsMcAscenseur: z.string().optional(),
+  hsMcNbChambres: z.string().optional(),
+  hsMcSuiteParentale: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hsMcNbSalons: z.string().optional(),
+  hsMcNbSdb: z.string().optional(),
+  hsMcNbWc: z.string().optional(),
+  hsMcLitsTotal: z.string().optional(),
+  hsMcLitKing: z.string().optional(),
+  hsMcLitQueen: z.string().optional(),
+  hsMcLitDouble: z.string().optional(),
+  hsMcLitSimple: z.string().optional(),
+  hsMcLitSuperpose: z.string().optional(),
+  hsMcLitGigogne: z.string().optional(),
+  hsMcLitBebe: z.string().optional(),
+  hsMcTypeSalon: z.string().optional(),
+  hsMcNbCanapesConvertibles: z.string().optional(),
+  hsMcNbCouchagesAppoint: z.string().optional(),
+  hsMcProfilAdaptation: stringArrayOptional,
+  hsMcVoyageursMax: z.string().optional(),
+  hsMcPolitiqueEnfants: z.string().optional(),
+  hsChPrecision: z.string().optional(),
+  hsChChezHabitant: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
+  hsChSurface: z.string().optional(),
+  hsChLitsTotal: z.string().optional(),
+  hsChLitKing: z.string().optional(),
+  hsChLitQueen: z.string().optional(),
+  hsChLitDouble: z.string().optional(),
+  hsChLitSimple: z.string().optional(),
+  hsChLitSuperpose: z.string().optional(),
+  hsChLitBebe: z.string().optional(),
+  hsChEspacesCommuns: stringArrayOptional,
+  hsChNbDouches: z.string().optional(),
+  hsChNbWc: z.string().optional(),
+  hsChProfilAdaptation: stringArrayOptional,
+  hsChVoyageursMax: z.string().optional(),
+  hsChPolitiqueEnfants: z.string().optional(),
+  hsPlTypeCouchage: z.string().optional(),
+  hsPlPosition: z.string().optional(),
+  hsPlNbLitsPiece: z.string().optional(),
+  hsPlEquipements: stringArrayOptional,
+  hsPlEspacesCommuns: stringArrayOptional,
+  hsPlNbDouches: z.string().optional(),
+  hsPlNbWc: z.string().optional(),
+  hsPlProfilAdaptation: stringArrayOptional,
+  hsPlVoyageursMax: z.string().optional(),
+  hsPlPolitiqueEnfants: z.string().optional(),
 
   acceptsCrossUsage: z.preprocess((v) => { if (v === "true") return true; if (v === "false") return false; return v }, z.boolean().optional()),
   acceptsBankCredit: z.enum(["YES", "NO", "NO_PREFERENCE"]).optional(),
@@ -1949,6 +2061,23 @@ function DepositPageComponent() {
   const isHebergementHabitant =
     transactionType === "RENTAL" &&
     propertyType === "HEBERGEMENT_HABITANT"
+  // Fiche "Type de bien" (Maison complète / Chambre / Place de lit), partagée entre le particulier
+  // (location de séjour/vacances) et le professionnel (établissement d'hébergement, précédé du bloc
+  // Classification). Coexiste avec isHebergementHabitant (formule "chez l'habitant", inchangée).
+  const isHebergementSejourParticulier =
+    transactionType === "RENTAL" &&
+    propertyType === "HEBERGEMENT_SEJOUR"
+  const isEtablissementHebergement =
+    propertyType === "ETABLISSEMENT_HEBERGEMENT"
+  const isHebergementSejourFiche = isHebergementSejourParticulier || isEtablissementHebergement
+  const hsClassification = watch("hsClassification")
+  const hsTypeEtablissement = watch("hsTypeEtablissement")
+  const hsTypeBien = watch("hsTypeBien")
+  const hsMcEtage = watch("hsMcEtage")
+  const hsMcTypeSalon = watch("hsMcTypeSalon")
+  const hsChEspacesCommunsList = normalizeToStringArray(watch("hsChEspacesCommuns"))
+  const hsPlTypeCouchage = watch("hsPlTypeCouchage")
+  const hsPlEspacesCommunsList = normalizeToStringArray(watch("hsPlEspacesCommuns"))
 
   const cfSector = watch("cfSector")
   const cfConfiguration = watch("cfConfiguration")
@@ -2308,12 +2437,20 @@ function DepositPageComponent() {
       types = types.filter(t => t.id !== "CO_STOCKAGE")
       types = types.filter(t => !["CENTRE_AFFAIRES", "COWORKING", "BUREAU_FLEXIBLE"].includes(t.id))
       if (realEstateType === "HEBERGEMENT" && transactionType === "RENTAL") {
-        types = [{
-          id: "HEBERGEMENT_HABITANT",
-          label: "FORMULE HEBERGEMENT CHEZ L'HABITANT",
-          categoryId: "HEBERGEMENT",
-          iconName: "Home"
-        }]
+        types = [
+          {
+            id: "HEBERGEMENT_HABITANT",
+            label: "FORMULE HEBERGEMENT CHEZ L'HABITANT",
+            categoryId: "HEBERGEMENT",
+            iconName: "Home"
+          },
+          {
+            id: "HEBERGEMENT_SEJOUR",
+            label: "Location de séjour / vacances",
+            categoryId: "HEBERGEMENT",
+            iconName: "SejourVacances"
+          },
+        ]
       }
     }
     if (userType === "SOCIETE") {
@@ -2688,6 +2825,10 @@ function DepositPageComponent() {
             "habFormule",
             "habUnitType",
         ], { shouldFocus: true })
+    } else if (isHebergementSejourFiche) {
+        const hsFields: any[] = ["hsTypeBien"]
+        if (isEtablissementHebergement) hsFields.push("hsClassification", "hsTypeEtablissement")
+        isValid = await trigger(hsFields, { shouldFocus: true })
     } else if (isImmeubleCommercialParticulier) {
         isValid = true
     } else if (propertyType === "VILLA_COMMERCIALE") {
@@ -3229,6 +3370,104 @@ function DepositPageComponent() {
         else formData.append('rooms', '0')
     }
 
+    // Fiche "Type de bien" Hébergement & Séjour (particulier : location de séjour ; professionnel :
+    // établissement, précédé du bloc classification) — mêmes champs `hsXxx` non déclarés
+    // individuellement dans le DTO, regroupés dans amenities.hebergementSejour comme ci-dessus pour
+    // isHebergementHabitantPayload.
+    const isHebergementSejourPayload =
+        (data.transactionType === "RENTAL" && data.propertyType === "HEBERGEMENT_SEJOUR") ||
+        data.propertyType === "ETABLISSEMENT_HEBERGEMENT"
+    if (isHebergementSejourPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const isPro = data.propertyType === "ETABLISSEMENT_HEBERGEMENT"
+        const amenitiesPayload: any = {
+            hebergementSejour: {
+                classification: isPro ? {
+                    type: data.hsClassification || undefined,
+                    nombreEtoiles: toNum(data.hsNombreEtoiles),
+                    typeEtablissement: data.hsTypeEtablissement || undefined,
+                    typeEtablissementAutre: data.hsTypeEtablissementAutre || undefined,
+                } : undefined,
+                typeBien: data.hsTypeBien || undefined,
+                structure: {
+                    type: data.hsStructureType || undefined,
+                    insolitePrecision: data.hsStructureTypeInsolite || undefined,
+                },
+                maisonComplete: data.hsTypeBien === "MAISON_COMPLETE" ? {
+                    surface: toNum(data.hsMcSurface),
+                    etage: data.hsMcEtage || undefined,
+                    ascenseur: data.hsMcAscenseur === "OUI",
+                    nbChambres: toNum(data.hsMcNbChambres),
+                    suiteParentale: (data.hsMcSuiteParentale as any) === true,
+                    nbSalons: toNum(data.hsMcNbSalons),
+                    nbSdb: toNum(data.hsMcNbSdb),
+                    nbWc: toNum(data.hsMcNbWc),
+                    lits: {
+                        total: toNum(data.hsMcLitsTotal),
+                        king: toNum(data.hsMcLitKing),
+                        queen: toNum(data.hsMcLitQueen),
+                        double: toNum(data.hsMcLitDouble),
+                        simple: toNum(data.hsMcLitSimple),
+                        superpose: toNum(data.hsMcLitSuperpose),
+                        gigogne: toNum(data.hsMcLitGigogne),
+                        bebe: toNum(data.hsMcLitBebe),
+                    },
+                    typeSalon: data.hsMcTypeSalon || undefined,
+                    nbCanapesConvertibles: toNum(data.hsMcNbCanapesConvertibles),
+                    nbCouchagesAppoint: toNum(data.hsMcNbCouchagesAppoint),
+                    profilAdaptation: data.hsMcProfilAdaptation?.length ? data.hsMcProfilAdaptation : undefined,
+                    voyageursMax: toNum(data.hsMcVoyageursMax),
+                    politiqueEnfants: data.hsMcPolitiqueEnfants || undefined,
+                } : undefined,
+                chambre: data.hsTypeBien === "CHAMBRE" ? {
+                    precision: data.hsChPrecision || undefined,
+                    chezHabitant: (data.hsChChezHabitant as any) === true,
+                    surface: toNum(data.hsChSurface),
+                    lits: {
+                        total: toNum(data.hsChLitsTotal),
+                        king: toNum(data.hsChLitKing),
+                        queen: toNum(data.hsChLitQueen),
+                        double: toNum(data.hsChLitDouble),
+                        simple: toNum(data.hsChLitSimple),
+                        superpose: toNum(data.hsChLitSuperpose),
+                        bebe: toNum(data.hsChLitBebe),
+                    },
+                    espacesCommuns: data.hsChEspacesCommuns?.length ? data.hsChEspacesCommuns : undefined,
+                    nbDouches: toNum(data.hsChNbDouches),
+                    nbWc: toNum(data.hsChNbWc),
+                    profilAdaptation: data.hsChProfilAdaptation?.length ? data.hsChProfilAdaptation : undefined,
+                    voyageursMax: toNum(data.hsChVoyageursMax),
+                    politiqueEnfants: data.hsChPolitiqueEnfants || undefined,
+                } : undefined,
+                placeDeLit: data.hsTypeBien === "PLACE_DE_LIT" ? {
+                    typeCouchage: data.hsPlTypeCouchage || undefined,
+                    position: data.hsPlPosition || undefined,
+                    nbLitsPiece: toNum(data.hsPlNbLitsPiece),
+                    equipements: data.hsPlEquipements?.length ? data.hsPlEquipements : undefined,
+                    espacesCommuns: data.hsPlEspacesCommuns?.length ? data.hsPlEspacesCommuns : undefined,
+                    nbDouches: toNum(data.hsPlNbDouches),
+                    nbWc: toNum(data.hsPlNbWc),
+                    profilAdaptation: data.hsPlProfilAdaptation?.length ? data.hsPlProfilAdaptation : undefined,
+                    voyageursMax: toNum(data.hsPlVoyageursMax),
+                    politiqueEnfants: data.hsPlPolitiqueEnfants || undefined,
+                } : undefined,
+            },
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+
+        // area/rooms génériques (requis par le backend) — mappés depuis la surface/le nombre de
+        // chambres du type de bien sélectionné, comme pour isHebergementHabitantPayload ci-dessus.
+        const derivedArea = data.hsTypeBien === "CHAMBRE" ? data.hsChSurface : data.hsMcSurface
+        const derivedRooms = data.hsTypeBien === "MAISON_COMPLETE" ? data.hsMcNbChambres : undefined
+        if (!data.area && derivedArea) formData.append('area', derivedArea)
+        else if (data.area) formData.append('area', data.area)
+        else formData.append('area', '0')
+
+        if (!data.rooms && derivedRooms) formData.append('rooms', derivedRooms)
+        else if (data.rooms) formData.append('rooms', data.rooms)
+        else formData.append('rooms', '0')
+    }
+
     const shouldSkipIndustrialFields = isFactoryRentalPayload || isColdRoomRentalPayload || isHangarRentalPayload
 
     // Usage Autorisé (affiché dans la carte "Conditions" de l'annonce, location uniquement) — dérivé
@@ -3259,6 +3498,7 @@ function DepositPageComponent() {
       if (isLocalCommercialPayload && key.startsWith("local")) return;
       if (isBlocAdministratifPayload && key.startsWith("bloc")) return;
       if (isHebergementHabitantPayload && (key.startsWith("hab") || key === "area" || key === "rooms")) return;
+      if (isHebergementSejourPayload && (key.startsWith("hs") || key === "area" || key === "rooms")) return;
 
       // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
       // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend
@@ -3446,7 +3686,8 @@ function DepositPageComponent() {
       (userType === "PARTICULIER" && transactionType === "SALE" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU", "IMMEUBLE_COMMERCIAL"].includes(propertyType)) ||
       (userType === "PARTICULIER" && ["RENTAL", "SALE"].includes(transactionType) && ["SHOWROOM", "LOCAL_COMMERCIAL", "BLOC_ADMINISTRATIF"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType)) ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_HABITANT");
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_HABITANT") ||
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_SEJOUR");
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
@@ -6767,7 +7008,8 @@ function DepositPageComponent() {
                         isHangarRentalParticulier ||
                         isTerrainRentalParticulier ||
                         isBureauCommerceSpecialParticulier ||
-                        isHebergementHabitant
+                        isHebergementHabitant ||
+                        isHebergementSejourFiche
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             <div className="space-y-8">
@@ -7700,6 +7942,565 @@ function DepositPageComponent() {
                                     </div>
                                 </div>
                             </section>
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive – Hébergement & Séjour (Type de bien) */}
+                    {currentStep === 4 && isHebergementSejourFiche && (
+                        <div className="w-full max-w-4xl animate-fade-in space-y-10">
+
+                            {/* Classification (Professionnel uniquement) */}
+                            {isEtablissementHebergement && (
+                                <section className="space-y-6">
+                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                        <Star className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionClassification')}</h2>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsClassificationLabel')}</label>
+                                        <div className="flex flex-wrap gap-3">
+                                            {[
+                                                { id: "ETOILE", label: t('hsClassifieEtoile') },
+                                                { id: "NON_ETOILE", label: t('hsClassifieNonEtoile') },
+                                            ].map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer">
+                                                    <input type="radio" value={opt.id} {...register("hsClassification")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{opt.label}</div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.hsClassification && <p className="text-red-500 text-sm mt-1">{errors.hsClassification.message as any}</p>}
+                                    </div>
+
+                                    {hsClassification === "ETOILE" && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsNbEtoiles')}</label>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {[1, 2, 3, 4, 5].map((n) => (
+                                                    <label key={n} className="cursor-pointer">
+                                                        <input type="radio" value={String(n)} {...register("hsNombreEtoiles")} className="peer sr-only" />
+                                                        <div className="w-14 h-12 border-2 rounded-xl flex items-center justify-center font-bold text-gray-600 peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all hover:border-gray-400 bg-gray-50">
+                                                            {n}★
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeEtablissementLabel')}</label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                            {tGroup('HS_TYPE_ETABLISSEMENT', HS_TYPE_ETABLISSEMENT).map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer">
+                                                    <input type="radio" value={opt.id} {...register("hsTypeEtablissement")} className="peer sr-only" />
+                                                    <div className="p-3 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center">
+                                                        <div className="font-bold text-gray-900 text-sm">{opt.label}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {errors.hsTypeEtablissement && <p className="text-red-500 text-sm mt-1">{errors.hsTypeEtablissement.message as any}</p>}
+                                        {hsTypeEtablissement === "AUTRE" && (
+                                            <div className="mt-3">
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsTypeEtablissementAutrePrecise')}</label>
+                                                <input {...register("hsTypeEtablissementAutre")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('hsPlaceholderAutreEtablissement')} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Type de bien proposé */}
+                            <section className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Home className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionTypeBien')}</h2>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeBienLabel')}</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        {[
+                                            { id: "MAISON_COMPLETE", label: t('hsMaisonComplete'), desc: t('hsMaisonCompleteDesc'), icon: Home },
+                                            { id: "CHAMBRE", label: t('hsChambre'), desc: t('hsChambreDesc'), icon: BedIcon },
+                                            { id: "PLACE_DE_LIT", label: t('hsPlaceDeLit'), desc: t('hsPlaceDeLitDesc'), icon: BedDouble },
+                                        ].map((opt) => {
+                                            const Icon = opt.icon
+                                            return (
+                                                <label key={opt.id} className="cursor-pointer">
+                                                    <input type="radio" value={opt.id} {...register("hsTypeBien")} className="peer sr-only" />
+                                                    <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center flex flex-col items-center gap-2">
+                                                        <Icon className="h-6 w-6 text-gray-500 peer-checked:text-[#00BFA6]" />
+                                                        <div className="font-bold text-gray-900 text-sm">{opt.label}</div>
+                                                        <div className="text-xs text-gray-500">{opt.desc}</div>
+                                                    </div>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                    {errors.hsTypeBien && <p className="text-red-500 text-sm mt-1">{errors.hsTypeBien.message as any}</p>}
+                                </div>
+                            </section>
+
+                            {/* ===== MAISON COMPLETE ===== */}
+                            {hsTypeBien === "MAISON_COMPLETE" && (
+                                <>
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Building className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionStructure')}</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                            {tGroup('HS_STRUCTURE_TYPES', HS_STRUCTURE_TYPES).map((s) => (
+                                                <label key={s.id} className="cursor-pointer">
+                                                    <input type="radio" value={s.id} {...register("hsStructureType")} className="peer sr-only" />
+                                                    <div className="p-3 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center">
+                                                        <div className="font-bold text-gray-900 text-sm">{s.label}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {watch("hsStructureType") === "INSOLITE" && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsInsolitePrecise')}</label>
+                                                <input {...register("hsStructureTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f398')} />
+                                            </div>
+                                        )}
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionCaracteristiques')}</h2>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSurfaceHabitable')}</label>
+                                                <input {...register("hsMcSurface")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSituationBatiment')}</label>
+                                                <div className="flex gap-3 flex-wrap mt-2">
+                                                    {[
+                                                        { id: "RDC", label: t('hsRdc') },
+                                                        { id: "ETAGE_SUP", label: t('hsEtageSup') },
+                                                    ].map((opt) => (
+                                                        <label key={opt.id} className="cursor-pointer">
+                                                            <input type="radio" value={opt.id} {...register("hsMcEtage")} className="peer sr-only" />
+                                                            <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{opt.label}</div>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {hsMcEtage === "ETAGE_SUP" && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('hsAscenseurQuestion')}</label>
+                                                <div className="flex gap-3">
+                                                    {[
+                                                        { id: "OUI", label: t('hsOui') },
+                                                        { id: "NON", label: t('hsNon') },
+                                                    ].map((opt) => (
+                                                        <label key={opt.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="radio" value={opt.id} {...register("hsMcAscenseur")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            {opt.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <h3 className="text-base font-bold text-gray-800 mb-4">{t('hsCompositionPieces')}</h3>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbChambres')}</label>
+                                                    <input {...register("hsMcNbChambres")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f377')} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbSalons')}</label>
+                                                    <input {...register("hsMcNbSalons")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f385')} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbSdb')}</label>
+                                                    <input {...register("hsMcNbSdb")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f380')} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbWc')}</label>
+                                                    <input {...register("hsMcNbWc")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f394')} />
+                                                </div>
+                                                <div className="flex items-end">
+                                                    <label className="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-xl bg-white hover:border-[#00BFA6] transition-all h-[46px] w-full">
+                                                        <input type="checkbox" {...register("hsMcSuiteParentale")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        <span className="text-xs font-bold text-gray-700">{t('hsSuiteParentaleQuestion')}</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Bed className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionLits')}</h2>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsLitsTotal')}</label>
+                                            <input {...register("hsMcLitsTotal")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-bold text-gray-800 mb-4">{t('hsTypesLits')}</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {[
+                                                    { field: "hsMcLitKing", label: t('hsLitKing') },
+                                                    { field: "hsMcLitQueen", label: t('hsLitQueen') },
+                                                    { field: "hsMcLitDouble", label: t('hsLitDouble') },
+                                                    { field: "hsMcLitSimple", label: t('hsLitSimple') },
+                                                    { field: "hsMcLitSuperpose", label: t('hsLitSuperpose') },
+                                                    { field: "hsMcLitGigogne", label: t('hsLitGigogne') },
+                                                    { field: "hsMcLitBebe", label: t('hsLitBebe') },
+                                                ].map((bed) => (
+                                                    <div key={bed.field} className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-3">
+                                                        <span className="text-sm font-medium text-gray-700 flex-1">{bed.label}</span>
+                                                        <input
+                                                            {...register(bed.field as any)}
+                                                            type="number" min="0" max="20"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-20 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-bold text-gray-900 text-center text-sm"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Sofa className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionSalon')}</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {tGroup('HS_TYPE_SALON', HS_TYPE_SALON).map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer">
+                                                    <input type="radio" value={opt.id} {...register("hsMcTypeSalon")} className="peer sr-only" />
+                                                    <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400">
+                                                        <div className="font-bold text-gray-900 text-sm">{opt.label}</div>
+                                                        <div className="text-xs text-gray-500 mt-1">{opt.desc}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {hsMcTypeSalon === "CANAPE_CONVERTIBLE" && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbCanapesConvertibles')}</label>
+                                                    <input {...register("hsMcNbCanapesConvertibles")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbCouchagesAppoint')}</label>
+                                                    <input {...register("hsMcNbCouchagesAppoint")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {tGroup('HS_PROFIL_ADAPTATION', HS_PROFIL_ADAPTATION).map((p) => (
+                                                <label key={p.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={p.id} {...register("hsMcProfilAdaptation")} className="peer sr-only" />
+                                                    <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400">
+                                                        <div className="font-bold text-gray-900 text-sm">{p.label}</div>
+                                                        <div className="text-xs text-gray-500 mt-1">{p.desc}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
+                                                <input {...register("hsMcVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsPolitiqueEnfants')}</label>
+                                                <div className="flex flex-col gap-2 mt-2">
+                                                    {[
+                                                        { id: "ADULTES_ENFANTS", label: t('hsAdultesEnfants') },
+                                                        { id: "ADULTES_UNIQUEMENT", label: t('hsAdultesUniquement') },
+                                                    ].map((opt) => (
+                                                        <label key={opt.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="radio" value={opt.id} {...register("hsMcPolitiqueEnfants")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            {opt.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </>
+                            )}
+
+                            {/* ===== CHAMBRE ===== */}
+                            {hsTypeBien === "CHAMBRE" && (
+                                <>
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <DoorOpen className="h-5 w-5 text-[#00BFA6]" />{t('hsPrecisionChambre')}</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {[
+                                                { id: "INDIVIDUELLE", label: t('hsChambreIndividuelle'), desc: t('hsChambreIndividuelleDesc') },
+                                                { id: "PARTAGEE", label: t('hsChambrePartagee'), desc: t('hsChambrePartageeDesc') },
+                                            ].map((opt) => (
+                                                <label key={opt.id} className="cursor-pointer">
+                                                    <input type="radio" value={opt.id} {...register("hsChPrecision")} className="peer sr-only" />
+                                                    <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400">
+                                                        <div className="font-bold text-gray-900 text-sm">{opt.label}</div>
+                                                        <div className="text-xs text-gray-500 mt-1">{opt.desc}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900 w-fit">
+                                            <input type="checkbox" {...register("hsChChezHabitant")} className="accent-[#00BFA6] w-4 h-4" />
+                                            {t('hsChezHabitant')}
+                                        </label>
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Building className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionStructure')}</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                            {tGroup('HS_STRUCTURE_TYPES', HS_STRUCTURE_TYPES).map((s) => (
+                                                <label key={s.id} className="cursor-pointer">
+                                                    <input type="radio" value={s.id} {...register("hsStructureType")} className="peer sr-only" />
+                                                    <div className="p-3 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400 text-center">
+                                                        <div className="font-bold text-gray-900 text-sm">{s.label}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {watch("hsStructureType") === "INSOLITE" && (
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsInsolitePrecise')}</label>
+                                                <input {...register("hsStructureTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f398')} />
+                                            </div>
+                                        )}
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionCaracteristiques')}</h2>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSurfaceChambre')}</label>
+                                            <input {...register("hsChSurface")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsLitsTotal')}</label>
+                                            <input {...register("hsChLitsTotal")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-bold text-gray-800 mb-4">{t('hsTypesLits')}</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {[
+                                                    { field: "hsChLitKing", label: t('hsLitKing') },
+                                                    { field: "hsChLitQueen", label: t('hsLitQueen') },
+                                                    { field: "hsChLitDouble", label: t('hsLitDouble') },
+                                                    { field: "hsChLitSimple", label: t('hsLitSimple') },
+                                                    { field: "hsChLitSuperpose", label: t('hsLitSuperpose') },
+                                                    { field: "hsChLitBebe", label: t('hsLitBebe') },
+                                                ].map((bed) => (
+                                                    <div key={bed.field} className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-3">
+                                                        <span className="text-sm font-medium text-gray-700 flex-1">{bed.label}</span>
+                                                        <input
+                                                            {...register(bed.field as any)}
+                                                            type="number" min="0" max="20"
+                                                            onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                            className="w-20 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-bold text-gray-900 text-center text-sm"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Key className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionEspacesCommuns')}</h2>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsAccesPartiesCommunes')}</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                {tGroup('HS_ESPACES_COMMUNS', HS_ESPACES_COMMUNS).map((c) => (
+                                                    <label key={c.id} className="cursor-pointer">
+                                                        <input type="checkbox" value={c.id} {...register("hsChEspacesCommuns")} className="peer sr-only" />
+                                                        <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{c.label}</div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {hsChEspacesCommunsList.includes("SDB_PARTAGEE") && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbDouches')}</label>
+                                                    <input {...register("hsChNbDouches")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbWc')}</label>
+                                                    <input {...register("hsChNbWc")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {tGroup('HS_PROFIL_ADAPTATION', HS_PROFIL_ADAPTATION).map((p) => (
+                                                <label key={p.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={p.id} {...register("hsChProfilAdaptation")} className="peer sr-only" />
+                                                    <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400">
+                                                        <div className="font-bold text-gray-900 text-sm">{p.label}</div>
+                                                        <div className="text-xs text-gray-500 mt-1">{p.desc}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
+                                                <input {...register("hsChVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsPolitiqueEnfants')}</label>
+                                                <div className="flex flex-col gap-2 mt-2">
+                                                    {[
+                                                        { id: "ADULTES_ENFANTS", label: t('hsAdultesEnfants') },
+                                                        { id: "ADULTES_UNIQUEMENT", label: t('hsAdultesUniquement') },
+                                                    ].map((opt) => (
+                                                        <label key={opt.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="radio" value={opt.id} {...register("hsChPolitiqueEnfants")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            {opt.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </>
+                            )}
+
+                            {/* ===== PLACE DE LIT ===== */}
+                            {hsTypeBien === "PLACE_DE_LIT" && (
+                                <>
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Bed className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionPlaceLit')}</h2>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeCouchage')}</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                <label className="cursor-pointer">
+                                                    <input type="radio" value="LIT_SIMPLE" {...register("hsPlTypeCouchage")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{t('hsLitSimpleStandard')}</div>
+                                                </label>
+                                                <label className="cursor-pointer">
+                                                    <input type="radio" value="LIT_SUPERPOSE" {...register("hsPlTypeCouchage")} className="peer sr-only" />
+                                                    <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{t('hsLitSuperposePosition')}</div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {hsPlTypeCouchage === "LIT_SUPERPOSE" && (
+                                            <div className="flex gap-3">
+                                                {[
+                                                    { id: "HAUT", label: t('hsPositionHaut') },
+                                                    { id: "BAS", label: t('hsPositionBas') },
+                                                ].map((opt) => (
+                                                    <label key={opt.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                        <input type="radio" value={opt.id} {...register("hsPlPosition")} className="accent-[#00BFA6] w-4 h-4" />
+                                                        {opt.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsConfigEspacePartage')}</label>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">{t('hsNbLitsPiecePartagee')}</label>
+                                            <input {...register("hsPlNbLitsPiece")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsEquipementsInclus')}</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                {tGroup('HS_EQUIPEMENTS_PLACE_LIT', HS_EQUIPEMENTS_PLACE_LIT).map((e) => (
+                                                    <label key={e.id} className="cursor-pointer">
+                                                        <input type="checkbox" value={e.id} {...register("hsPlEquipements")} className="peer sr-only" />
+                                                        <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{e.label}</div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Key className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionEspacesCommuns')}</h2>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsAccesPartiesCommunes')}</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                {tGroup('HS_ESPACES_COMMUNS', HS_ESPACES_COMMUNS).map((c) => (
+                                                    <label key={c.id} className="cursor-pointer">
+                                                        <input type="checkbox" value={c.id} {...register("hsPlEspacesCommuns")} className="peer sr-only" />
+                                                        <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">{c.label}</div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {hsPlEspacesCommunsList.includes("SDB_PARTAGEE") && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbDouches')}</label>
+                                                    <input {...register("hsPlNbDouches")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbWc')}</label>
+                                                    <input {...register("hsPlNbWc")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </section>
+
+                                    <section className="space-y-6">
+                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                            <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {tGroup('HS_PROFIL_ADAPTATION_PLACE_LIT', HS_PROFIL_ADAPTATION_PLACE_LIT).map((p) => (
+                                                <label key={p.id} className="cursor-pointer">
+                                                    <input type="checkbox" value={p.id} {...register("hsPlProfilAdaptation")} className="peer sr-only" />
+                                                    <div className="p-4 border-2 border-gray-200 rounded-xl bg-white peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 transition-all hover:border-gray-400">
+                                                        <div className="font-bold text-gray-900 text-sm">{p.label}</div>
+                                                        <div className="text-xs text-gray-500 mt-1">{p.desc}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
+                                                <input {...register("hsPlVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsPolitiqueEnfants')}</label>
+                                                <div className="flex flex-col gap-2 mt-2">
+                                                    {[
+                                                        { id: "ADULTES_ENFANTS", label: t('hsAdultesEnfants') },
+                                                        { id: "ADULTES_UNIQUEMENT", label: t('hsAdultesUniquement') },
+                                                    ].map((opt) => (
+                                                        <label key={opt.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                                                            <input type="radio" value={opt.id} {...register("hsPlPolitiqueEnfants")} className="accent-[#00BFA6] w-4 h-4" />
+                                                            {opt.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </>
+                            )}
                         </div>
                     )}
 

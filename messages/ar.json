@@ -1903,7 +1903,77 @@
     "depCentimesMillions": "{v} مليون سنتيم",
     "depCentimesMilliards": "{v} مليار سنتيم",
     "depCentimes": "{v} سنتيم",
-    "curDA": "دج"
+    "curDA": "دج",
+    "hsSectionClassification": "التصنيف ونوع المنشأة",
+    "hsClassificationLabel": "منشأة مصنفة أو غير مصنفة",
+    "hsClassifieEtoile": "منشأة مصنفة بالنجوم",
+    "hsClassifieNonEtoile": "منشأة غير مصنفة",
+    "hsNbEtoiles": "عدد النجوم",
+    "hsTypeEtablissementLabel": "نوع المنشأة / الهيكل",
+    "hsTypeEtablissementAutrePrecise": "حدد نوع المنشأة",
+    "hsPlaceholderAutreEtablissement": "مثال: رياض، نزل بيئي...",
+    "hsSectionTypeBien": "نوع العقار المعروض",
+    "hsTypeBienLabel": "اختر نوع العقار الذي تعرضه",
+    "hsMaisonComplete": "منزل كامل",
+    "hsMaisonCompleteDesc": "سكن كامل، وصول حصري للنزلاء",
+    "hsChambre": "غرفة",
+    "hsChambreDesc": "غرفة فردية أو مشتركة داخل السكن",
+    "hsPlaceDeLit": "سرير في غرفة مشتركة",
+    "hsPlaceDeLitDesc": "سرير في فضاء مشترك (على شكل مهجع)",
+    "hsChezHabitant": "غرفة عند صاحب المسكن",
+    "hsPrecisionChambre": "تفاصيل الغرفة",
+    "hsChambreIndividuelle": "غرفة فردية",
+    "hsChambreIndividuelleDesc": "غرفة خاصة للنزيل/النزلاء فقط",
+    "hsChambrePartagee": "غرفة مشتركة",
+    "hsChambrePartageeDesc": "غرفة مشتركة مع المضيف أو نزلاء آخرين",
+    "hsSectionStructure": "نوع الهيكل / البناية",
+    "hsInsolitePrecise": "حدد نوع الإقامة غير التقليدية",
+    "hsSectionCaracteristiques": "خصائص وتكوين السكن",
+    "hsSurfaceHabitable": "المساحة السكنية (م²)",
+    "hsSurfaceChambre": "مساحة الغرفة (م²)",
+    "hsSituationBatiment": "الموقع في البناية / الطابق",
+    "hsRdc": "الطابق الأرضي",
+    "hsEtageSup": "طابق علوي",
+    "hsAscenseurQuestion": "هل يوجد مصعد؟",
+    "hsOui": "نعم",
+    "hsNon": "لا",
+    "hsCompositionPieces": "تكوين الغرف",
+    "hsNbChambres": "عدد الغرف",
+    "hsSuiteParentaleQuestion": "هل توجد جناح رئيسي (غرفة بحمام/غرفة ملابس خاصة)؟",
+    "hsNbSalons": "عدد الصالونات / غرف المعيشة",
+    "hsNbSdb": "عدد الحمامات",
+    "hsNbWc": "عدد المراحيض المنفصلة (إن وجدت)",
+    "hsSectionLits": "تفاصيل الأسرّة",
+    "hsLitsTotal": "العدد الإجمالي للأسرّة",
+    "hsTypesLits": "أنواع الأسرّة المتوفرة",
+    "hsLitKing": "سرير كينغ سايز",
+    "hsLitQueen": "سرير كوين سايز",
+    "hsLitDouble": "سرير مزدوج عادي",
+    "hsLitSimple": "سرير فردي",
+    "hsLitSuperpose": "سرير بطابقين",
+    "hsLitGigogne": "سرير قابل للسحب (جيغوني)",
+    "hsLitBebe": "سرير أطفال / سرير محمول",
+    "hsNombre": "العدد",
+    "hsSectionSalon": "نوع الصالون",
+    "hsNbCanapesConvertibles": "عدد الأرائك القابلة للتحويل",
+    "hsNbCouchagesAppoint": "عدد الأسرّة الإضافية المتحصل عليها",
+    "hsSectionProfil": "الفئة المستهدفة / الملاءمة",
+    "hsVoyageursMax": "العدد الأقصى للنزلاء",
+    "hsPolitiqueEnfants": "سياسة استقبال الأطفال",
+    "hsAdultesEnfants": "يقبل البالغين والأطفال",
+    "hsAdultesUniquement": "يقبل البالغين فقط (بدون أطفال)",
+    "hsSectionEspacesCommuns": "الفضاءات المشتركة والخدمات المشتركة",
+    "hsAccesPartiesCommunes": "الوصول إلى الأجزاء المشتركة",
+    "hsNbDouches": "عدد الدشات",
+    "hsSectionPlaceLit": "خصائص مكان النوم",
+    "hsTypeCouchage": "نوع النوم",
+    "hsLitSimpleStandard": "سرير فردي عادي",
+    "hsLitSuperposePosition": "سرير بطابقين",
+    "hsPositionHaut": "العلوي",
+    "hsPositionBas": "السفلي",
+    "hsConfigEspacePartage": "تهيئة الفضاء المشترك",
+    "hsNbLitsPiecePartagee": "العدد الإجمالي للأسرّة في هذه الغرفة المشتركة",
+    "hsEquipementsInclus": "التجهيزات المشمولة للنزيل"
   },
   "HomePage": {
     "categoryLabel": "الفئة",
@@ -3518,6 +3588,80 @@
       "MASTERCARD": {
         "label": "MasterCard"
       }
+    },
+    "HS_STRUCTURE_TYPES": {
+      "VILLA": "فيلا",
+      "NIVEAU_VILLA": "طابق من فيلا (شقة أو طابق مستقل داخل فيلا)",
+      "APPARTEMENT": "شقة (في عمارة)",
+      "BUNGALOW": "بونغالو",
+      "CHALET": "شاليه",
+      "INSOLITE": "إقامة غير تقليدية"
+    },
+    "HS_TYPE_ETABLISSEMENT": {
+      "HOTEL": "فندق",
+      "COMPLEXE_TOURISTIQUE": "مركب سياحي",
+      "APPARTHOTEL": "شقق فندقية",
+      "VILLA_VACANCES": "فيلا للعطلات",
+      "RESIDENCE_HOTELIERE": "إقامة فندقية",
+      "CAMPING_TOURISTIQUE": "مخيم سياحي",
+      "AUTRE": "منشأة أخرى"
+    },
+    "HS_TYPE_SALON": {
+      "CANAPE_CONVERTIBLE": {
+        "label": "صالة بأريكة (أرائك) قابلة للتحويل",
+        "description": "فضاء يحتوي على أريكة أو أكثر قابلة للتحويل إلى أسرّة إضافية للنزلاء"
+      },
+      "ASSISES_FIXES": {
+        "label": "صالة بمقاعد ثابتة",
+        "description": "فضاء معيشة مجهز فقط بأرائك أو مقاعد أو كراسي بذراعين غير قابلة للتحويل إلى أسرّة، مخصص حصراً للاسترخاء"
+      }
+    },
+    "HS_PROFIL_ADAPTATION": {
+      "FAMILLES": {
+        "label": "مناسبة للعائلات",
+        "description": "فضاء مثالي للسفر مع الأطفال، بتهيئة ملائمة"
+      },
+      "GROUPES_AMIS": {
+        "label": "مناسبة لمجموعات الأصدقاء",
+        "description": "عدة أسرّة فردية أو بطابقين لمشاركة الإقامة"
+      },
+      "PROFESSIONNELS": {
+        "label": "مناسبة للمهنيين (أعمال)",
+        "description": "فضاء مكتبي مخصص بطاولة عمل وكرسي مريح، واتصال Wi-Fi جيد"
+      }
+    },
+    "HS_PROFIL_ADAPTATION_PLACE_LIT": {
+      "SOLO_TRAVELERS": {
+        "label": "مناسب للمسافرين المنفردين",
+        "description": "المتجولون والرحّالة والأشخاص المسافرون بمفردهم للعمل أو السياحة"
+      },
+      "GROUPES_AMIS": {
+        "label": "مناسب لمجموعات الأصدقاء",
+        "description": "أصدقاء يرغبون في مشاركة نفس الغرفة أو الفضاء خلال إقامة أو عطلة نهاية أسبوع أو مناسبة"
+      },
+      "PROFESSIONNELS_NOMADS": {
+        "label": "مناسب للمهنيين / الرحّل الرقميين",
+        "description": "المسافرون لأعمال أو العاملون عن بعد الباحثون عن حل اقتصادي أو فضاء مكتبي"
+      },
+      "FAMILLES": {
+        "label": "مناسب للعائلات",
+        "description": "يصلح فقط إذا حجزت العائلة الغرفة المشتركة بأكملها لنفسها"
+      },
+      "STAGIAIRES_ETUDIANTS": {
+        "label": "مناسب للمتربصين أو الطلبة أو العاملين المؤقتين",
+        "description": "أشخاص بحاجة إلى مكان إقامة لبضعة أسابيع أو أشهر"
+      }
+    },
+    "HS_ESPACES_COMMUNS": {
+      "SDB_PARTAGEE": "حمام مشترك",
+      "CUISINE_PARTAGEE": "مطبخ مشترك ومجهز",
+      "SALON_PARTAGE": "صالة / فضاء استرخاء مشترك",
+      "JARDIN_TERRASSE": "حديقة أو شرفة أو فضاء خارجي"
+    },
+    "HS_EQUIPEMENTS_PLACE_LIT": {
+      "CASIER_SECURISE": "خزانة آمنة / صندوق أمانات",
+      "LINGE_FOURNI": "بياضات سرير موفرة (ملاءات، وسادة)",
+      "PRISE_LISEUSE": "مقبس كهربائي / إضاءة قراءة فردية بجانب السرير"
     }
   },
   "PropertyTypes": {
@@ -3561,7 +3705,9 @@
     "SALLE_CONFERENCE": "قاعة مؤتمرات",
     "SALLE_FORMATION": "قاعة تكوين",
     "SALLE_DINER": "قاعة عشاء",
-    "IMMEUBLE_COMMERCIAL": "كتلة تجارية"
+    "IMMEUBLE_COMMERCIAL": "كتلة تجارية",
+    "HEBERGEMENT_SEJOUR": "إيجار سياحي / موسمي",
+    "ETABLISSEMENT_HEBERGEMENT": "مؤسسة إيواء سياحي"
   },
   "AnnounceDetailLabels": {
     "NEW": "جديد / أول يد",
