@@ -197,7 +197,7 @@ export default function VitrineTypePage() {
     try {
       const userStr = localStorage.getItem('user')
       const user = userStr ? JSON.parse(userStr) : null
-      if (user?.userType !== 'SOCIETE') { router.push('/profile'); return }
+      if (user?.userType !== 'SOCIETE') { router.push('/profile/info'); return }
       setIsPro(true)
       setUserId(user.id)
     } catch { /* ignore */ }
@@ -248,7 +248,7 @@ export default function VitrineTypePage() {
           </div>
           {activeSub && (
             <Link href={`/boutique/${boutiqueSlug || userId}`} target="_blank" className="text-sm font-bold text-[#00BFA6] hover:underline flex items-center gap-1.5">
-              {t("vitrineCustomizeCta")} <ArrowRight className="h-4 w-4" />
+              {t("vitrineCustomizeCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </Link>
           )}
         </div>

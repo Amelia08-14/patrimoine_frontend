@@ -196,7 +196,7 @@ export function EntrustedResearchCard({ research: r, variant = "public" }: { res
             </div>
           )}
           <Link href="/contact" className="mt-auto pt-2 flex items-center gap-1.5 text-[#00BFA6] font-bold text-sm hover:underline">
-            {t("contactToRespond")} <ArrowRight className="h-4 w-4" />
+            {t("contactToRespond")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           </Link>
         </>
       ) : (

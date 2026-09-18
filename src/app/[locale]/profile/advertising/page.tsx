@@ -21,8 +21,8 @@ export default function AdvertisingSpacePage() {
         >
           <Coins className="h-4 w-4" /> {t("goToPoints")}
         </Link>
-        <Link href="/profile" className="mt-1 inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-white/40 hover:text-gray-600 transition-colors">
-          <ArrowLeft className="h-3.5 w-3.5" /> {t("backToProfile")}
+        <Link href="/profile/info" className="mt-1 inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-white/40 hover:text-gray-600 transition-colors">
+          <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" /> {t("backToProfile")}
         </Link>
       </div>
     </div>

@@ -1233,6 +1233,7 @@
     "f007": "العرض",
     "f008": "الارتفاع",
     "f009": "المساحة المغطّاة",
+    "adCapacityM3": "السعة (م³)",
     "f010": "الارتفاع تحت الخطّاف",
     "f011": "التضاريس",
     "f012": "الواجهات",
@@ -1352,6 +1353,8 @@
     "f126": "الموارد المائية",
     "f127": "التوجيه",
     "f128": "الإطار ونمط العيش",
+    "f180": "الاستعمال",
+    "f181": "نوع الوصول",
     "f129": "استعمال موحّد (متّصل)",
     "f130": "(طوابق الفيلا متّصلة من الداخل)",
     "f131": "استعمال منفصل (شقة)",
@@ -1892,6 +1895,20 @@
     "photoCatBathrooms": "الحمّامات والمراحيض",
     "photoCatExterior": "الخارج (حديقة، مسبح)",
     "photoCatCommon": "الفضاءات المشتركة",
+    "photoCatUploaded": "الصور المرفوعة",
+    "photoCatEquipments": "التجهيزات",
+    "photoCatOffices": "المكاتب والملحقات",
+    "photoCatAccommodation": "الإقامة",
+    "photoCatOthers": "أخرى",
+    "photoCatGeneralView": "نظرة عامة",
+    "photoCatEnvironment": "البيئة المحيطة / الجوار",
+    "depAddPhotos": "إضافة صور",
+    "depPhotosSelectedCount": "{count, plural, one {# صورة محدّدة} other {# صور محدّدة}}",
+    "depAddVideo": "إضافة فيديو",
+    "depVideosSelectedCount": "{count, plural, one {# فيديو محدّد} other {# فيديوهات محدّدة}}",
+    "depOrganizePhotos": "تنظيم الصور",
+    "depPhotoCountSuffix": "{count, plural, one {# صورة} other {# صور}}",
+    "depMainBadge": "الرئيسية",
     "depGasCity": "غاز المدينة",
     "depPriceFixed": "ثابت",
     "depPriceNegotiable": "قابل للتفاوض",
@@ -2708,6 +2725,25 @@
         "label": "إذابة الصقيع الآلية"
       }
     },
+    "CF_TYPE_FROID": {
+      "POSITIF": {
+        "label": "تبريد إيجابي (فوق الصفر)"
+      },
+      "NEGATIF": {
+        "label": "تبريد سلبي (تحت الصفر)"
+      },
+      "ULTRA_FROID": {
+        "label": "تبريد فائق (نفق التجميد)"
+      }
+    },
+    "CF_MODE_DIFFUSION": {
+      "FROID_VENTILE": {
+        "label": "تبريد بالتهوية"
+      },
+      "FROID_STATIQUE": {
+        "label": "تبريد ساكن"
+      }
+    },
     "CF_MODE_GESTION": {
       "SANS_GESTION": {
         "label": "بدون إدارة (الفضاء فقط)",
@@ -2770,6 +2806,17 @@
       },
       "ZONE_ACTIVITE": {
         "label": "منطقة نشاطات"
+      }
+    },
+    "LEGAL_DOCUMENTS_SALE": {
+      "ACTE_PROPRIETE": {
+        "label": "عقد الملكية"
+      },
+      "LIVRET_FONCIER": {
+        "label": "الدفتر العقاري"
+      },
+      "CERTIFICAT_CONFORMITE": {
+        "label": "شهادة المطابقة"
       }
     },
     "TERRAIN_DOCUMENTS": {
@@ -3600,8 +3647,8 @@
     "HS_TYPE_ETABLISSEMENT": {
       "HOTEL": "فندق",
       "COMPLEXE_TOURISTIQUE": "مركب سياحي",
+      "VILLAGE_VACANCES": "قرية عطل",
       "APPARTHOTEL": "شقق فندقية",
-      "VILLA_VACANCES": "فيلا للعطلات",
       "RESIDENCE_HOTELIERE": "إقامة فندقية",
       "CAMPING_TOURISTIQUE": "مخيم سياحي",
       "AUTRE": "منشأة أخرى"

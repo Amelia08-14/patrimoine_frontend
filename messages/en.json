@@ -1233,6 +1233,7 @@
     "f007": "Width",
     "f008": "Height",
     "f009": "Covered area",
+    "adCapacityM3": "Capacity (m³)",
     "f010": "Height under hook",
     "f011": "Topography",
     "f012": "Façades",
@@ -1352,6 +1353,8 @@
     "f126": "Water resources",
     "f127": "Exposure",
     "f128": "Setting and lifestyle",
+    "f180": "Use",
+    "f181": "Access type",
     "f129": "Single use (interconnected)",
     "f130": "(the villa's floors interconnect internally)",
     "f131": "Separate use (apartment)",
@@ -1892,6 +1895,20 @@
     "photoCatBathrooms": "Bathrooms & Toilets",
     "photoCatExterior": "Exterior (garden, pool)",
     "photoCatCommon": "Common areas",
+    "photoCatUploaded": "Uploaded photos",
+    "photoCatEquipments": "Equipment",
+    "photoCatOffices": "Offices & Annexes",
+    "photoCatAccommodation": "Accommodation",
+    "photoCatOthers": "Others",
+    "photoCatGeneralView": "General view",
+    "photoCatEnvironment": "Environment / Surroundings",
+    "depAddPhotos": "Add photos",
+    "depPhotosSelectedCount": "{count, plural, one {# photo selected} other {# photos selected}}",
+    "depAddVideo": "Add a video",
+    "depVideosSelectedCount": "{count, plural, one {# video selected} other {# videos selected}}",
+    "depOrganizePhotos": "Organize photos",
+    "depPhotoCountSuffix": "{count, plural, one {# photo} other {# photos}}",
+    "depMainBadge": "MAIN",
     "depGasCity": "Town gas",
     "depPriceFixed": "Fixed",
     "depPriceNegotiable": "Negotiable",
@@ -2708,6 +2725,25 @@
         "label": "Automatic defrost"
       }
     },
+    "CF_TYPE_FROID": {
+      "POSITIF": {
+        "label": "Positive"
+      },
+      "NEGATIF": {
+        "label": "Negative"
+      },
+      "ULTRA_FROID": {
+        "label": "Ultra-cold (freezing tunnel)"
+      }
+    },
+    "CF_MODE_DIFFUSION": {
+      "FROID_VENTILE": {
+        "label": "Ventilated cold"
+      },
+      "FROID_STATIQUE": {
+        "label": "Static cold"
+      }
+    },
     "CF_MODE_GESTION": {
       "SANS_GESTION": {
         "label": "NO MANAGEMENT (space only)",
@@ -2770,6 +2806,17 @@
       },
       "ZONE_ACTIVITE": {
         "label": "Business park"
+      }
+    },
+    "LEGAL_DOCUMENTS_SALE": {
+      "ACTE_PROPRIETE": {
+        "label": "Title deed"
+      },
+      "LIVRET_FONCIER": {
+        "label": "Land register booklet"
+      },
+      "CERTIFICAT_CONFORMITE": {
+        "label": "Certificate of conformity"
       }
     },
     "TERRAIN_DOCUMENTS": {
@@ -3600,8 +3647,8 @@
     "HS_TYPE_ETABLISSEMENT": {
       "HOTEL": "Hotel",
       "COMPLEXE_TOURISTIQUE": "Tourist resort",
+      "VILLAGE_VACANCES": "Holiday village",
       "APPARTHOTEL": "Aparthotel",
-      "VILLA_VACANCES": "Holiday villa",
       "RESIDENCE_HOTELIERE": "Hotel residence",
       "CAMPING_TOURISTIQUE": "Tourist campsite",
       "AUTRE": "Other establishment"

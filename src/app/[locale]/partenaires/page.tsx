@@ -82,9 +82,9 @@ function PartnerCarousel({ partners }: { partners: any[] }) {
         <button
           onClick={() => scroll(-1)}
           aria-label={t('previous')}
-          className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white dark:bg-white/5 shadow-md border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/50 hover:text-[#00BFA6] hover:border-[#00BFA6] transition-colors"
+          className="absolute -start-4 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white dark:bg-white/5 shadow-md border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/50 hover:text-[#00BFA6] hover:border-[#00BFA6] transition-colors"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
         </button>
       )}
       <div
@@ -101,9 +101,9 @@ function PartnerCarousel({ partners }: { partners: any[] }) {
         <button
           onClick={() => scroll(1)}
           aria-label={t('next')}
-          className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white dark:bg-white/5 shadow-md border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/50 hover:text-[#00BFA6] hover:border-[#00BFA6] transition-colors"
+          className="absolute -end-4 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white dark:bg-white/5 shadow-md border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/50 hover:text-[#00BFA6] hover:border-[#00BFA6] transition-colors"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </button>
       )}
     </div>
@@ -300,7 +300,7 @@ export default function PartenairesPage() {
             onClick={(e) => { e.preventDefault(); document.getElementById("devenir-partenaire")?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
             className="mt-7 inline-flex items-center gap-2 bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-6 py-3 font-bold shadow-lg shadow-[#00BFA6]/20 transition-colors"
           >
-            {t("becomePartnerCta")} <ArrowRight className="h-4 w-4" />
+            {t("becomePartnerCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           </a>
         </div>
       </div>

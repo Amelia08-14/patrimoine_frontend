@@ -353,6 +353,15 @@ const CF_TECHNIQUE_FROID = [
     { id: "SOL_CHAUFFANT", label: "Sol chauffant (Anti-gel dalle)" },
     { id: "DEGIVRAGE_AUTO", label: "Dégivrage Auto" },
 ]
+const CF_TYPE_FROID = [
+    { id: "POSITIF", label: "Positif" },
+    { id: "NEGATIF", label: "Négatif" },
+    { id: "ULTRA_FROID", label: "Ultra Froid (Tunnel de congélation)" },
+]
+const CF_MODE_DIFFUSION = [
+    { id: "FROID_VENTILE", label: "Froid Ventilé" },
+    { id: "FROID_STATIQUE", label: "Froid Statique" },
+]
 const CF_MODE_GESTION = [
     { id: "SANS_GESTION", label: "SANS GESTION (Murs seuls)", desc: "Le locataire gère son personnel et ses flux." },
     { id: "AVEC_GESTION", label: "AVEC GESTION (Service complet)", desc: "Vous assurez la manutention et le stockage." },
@@ -383,6 +392,11 @@ const TERRAIN_INDUSTRIEL_ZONE = [
     { id: "ZONE_INDUSTRIELLE", label: "Zone Industrielle" },
     { id: "ZONE_URBAINE_IND", label: "Zone Urbaine" },
     { id: "ZONE_ACTIVITE", label: "Zone d'Activité" },
+]
+const LEGAL_DOCUMENTS_SALE = [
+    { id: "ACTE_PROPRIETE", label: "Acte de propriété" },
+    { id: "LIVRET_FONCIER", label: "Livret foncier" },
+    { id: "CERTIFICAT_CONFORMITE", label: "Certificat de conformité" },
 ]
 const TERRAIN_DOCUMENTS = [
     { id: "ACTE_PROPRIETE", label: "Acte de propriété (Notarié)" },
@@ -778,8 +792,8 @@ const HS_STRUCTURE_TYPES = [
 const HS_TYPE_ETABLISSEMENT = [
   { id: "HOTEL", label: "Hôtel" },
   { id: "COMPLEXE_TOURISTIQUE", label: "Complexe touristique" },
+  { id: "VILLAGE_VACANCES", label: "Village de vacances" },
   { id: "APPARTHOTEL", label: "Apparthôtel" },
-  { id: "VILLA_VACANCES", label: "Villa de vacances" },
   { id: "RESIDENCE_HOTELIERE", label: "Résidence hôtelière" },
   { id: "CAMPING_TOURISTIQUE", label: "Camping touristique" },
   { id: "AUTRE", label: "Autre structure" },
@@ -1762,6 +1776,10 @@ function DepositPageComponent() {
     const map: Record<string, string> = {
       other: "photoCatOther", bedrooms: "adBedrooms", bathrooms: "photoCatBathrooms",
       kitchen: "f166", exterior: "photoCatExterior", common: "photoCatCommon",
+      non_classees: "photoCatUploaded", equipements: "photoCatEquipments",
+      bureaux: "photoCatOffices", hebergement: "photoCatAccommodation",
+      espaces_communs: "photoCatCommon", autres: "photoCatOthers",
+      vue_generale: "photoCatGeneralView", environnement: "photoCatEnvironment",
     }
     const k = map[id]
     return k && t.has(k) ? t(k) : fallback
@@ -4764,11 +4782,7 @@ function DepositPageComponent() {
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f021')}</div>
                                         <div className="space-y-2">
-                                            {[
-                                                { id: "VESTIAIRES", label: "Vestiaires" },
-                                                { id: "REFECTOIRE", label: "Réfectoire" },
-                                                { id: "SANITAIRES_HF", label: "Sanitaires H/F" },
-                                            ].map((x) => (
+                                            {tGroup('INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSocialLocales")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4780,10 +4794,7 @@ function DepositPageComponent() {
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f022')}</div>
                                         <div className="space-y-2">
-                                            {[
-                                                { id: "LOGEMENT", label: "Logement" },
-                                                { id: "DORTOIRS", label: "Dortoirs" },
-                                            ].map((x) => (
+                                            {tGroup('INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialHebergement")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4795,11 +4806,7 @@ function DepositPageComponent() {
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f023')}</div>
                                         <div className="space-y-2">
-                                            {[
-                                                { id: "POSTE_GARDE", label: "Poste de garde" },
-                                                { id: "CLOTURE_MACONNEE", label: "Clôture maçonnée" },
-                                                { id: "CAMERAS", label: "Caméras" },
-                                            ].map((x) => (
+                                            {tGroup('INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={x.id} {...register("industrialSecurity")} className="accent-[#00BFA6] w-4 h-4" />
                                                     {x.label}
@@ -4935,11 +4942,7 @@ function DepositPageComponent() {
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-3">{t('f078')}</div>
                                             <div className="space-y-2">
-                                                {[
-                                                    { id: "POSITIF", label: "Positif" },
-                                                    { id: "NEGATIF", label: "Négatif" },
-                                                    { id: "ULTRA_FROID", label: "Ultra Froid (Tunnel de congélation)" },
-                                                ].map((x) => (
+                                                {tGroup('CF_TYPE_FROID', CF_TYPE_FROID).map((x) => (
                                                     <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                         <input type="checkbox" value={x.id} {...register("cfTypeFroid")} className="accent-[#00BFA6] w-4 h-4" />
                                                         {x.label}
@@ -4951,10 +4954,7 @@ function DepositPageComponent() {
                                         <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-3">{t('f079')}</div>
                                             <div className="space-y-2">
-                                                {[
-                                                    { id: "FROID_VENTILE", label: "Froid Ventilé" },
-                                                    { id: "FROID_STATIQUE", label: "Froid Statique" },
-                                                ].map((x) => (
+                                                {tGroup('CF_MODE_DIFFUSION', CF_MODE_DIFFUSION).map((x) => (
                                                     <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                         <input type="checkbox" value={x.id} {...register("cfModeDiffusion")} className="accent-[#00BFA6] w-4 h-4" />
                                                         {x.label}
@@ -5872,7 +5872,7 @@ function DepositPageComponent() {
                                                     <input type="checkbox" value={item.id} {...register("exteriorFeatures")} className="peer sr-only" />
                                                     <div className="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
                                                         <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                        <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{item.label}</span>
+                                                        <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('VILLA_EQUIPMENTS_EXTERIOR', item)}</span>
                                                     </div>
                                                 </label>
                                             )
@@ -5890,7 +5890,7 @@ function DepositPageComponent() {
                                                         <input type="checkbox" value={s.id} {...register("securityFeatures")} className="peer sr-only" />
                                                         <div className="flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
                                                             <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                            <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{s.label}</span>
+                                                            <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('VILLA_EQUIPMENTS_SECURITY', s)}</span>
                                                         </div>
                                                     </label>
                                                 )
@@ -5907,7 +5907,7 @@ function DepositPageComponent() {
                                                         <input type="checkbox" value={c.id} {...register("connectivity")} className="peer sr-only" />
                                                         <div className="flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] peer-checked:border-[#00BFA6] peer-checked:bg-green-50/50 peer-checked:text-[#00BFA6] transition-all bg-white h-24">
                                                             <Icon className="h-6 w-6 text-gray-400 group-hover:text-gray-600 peer-checked:text-[#00BFA6]" />
-                                                            <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{c.label}</span>
+                                                            <span className="text-xs font-bold text-center leading-tight text-gray-700 peer-checked:text-[#00BFA6]">{optLabel('VILLA_EQUIPMENTS_CONNECTIVITY', c)}</span>
                                                         </div>
                                                     </label>
                                                 )
@@ -9059,11 +9059,7 @@ function DepositPageComponent() {
                                         <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <FileText className="text-[#00BFA6]" />{t('f326')}</h2>
                                         <div className="flex flex-wrap gap-3">
-                                            {[
-                                                { id: "ACTE_PROPRIETE", label: "Acte de propriété" },
-                                                { id: "LIVRET_FONCIER", label: "Livret foncier" },
-                                                { id: "CERTIFICAT_CONFORMITE", label: "Certificat de conformité" },
-                                            ].map((d) => (
+                                            {tGroup('LEGAL_DOCUMENTS_SALE', LEGAL_DOCUMENTS_SALE).map((d) => (
                                                 <label key={d.id} className="cursor-pointer">
                                                     <input type="checkbox" value={d.id} {...register("legalDocuments")} className="peer sr-only" />
                                                     <div className="px-4 py-2 border-2 border-gray-200 rounded-full text-sm font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white hover:border-gray-300">
@@ -9160,7 +9156,7 @@ function DepositPageComponent() {
                                                     <label className="block text-sm font-bold text-gray-700 mb-2">
                                                         {index === 0 ? t('adPrimaryNumber') : t('adOtherNumber')}
                                                     </label>
-                                                    <div className="relative">
+                                                    <div className="relative" dir="ltr">
                                                         <PhoneInput
                                                             country={'dz'}
                                                             value={contact.phone}
@@ -9310,9 +9306,9 @@ function DepositPageComponent() {
                                             />
                                             <Upload className="h-10 w-10 text-[#00BFA6] mx-auto mb-3" />
                                             <p className="text-gray-600 mb-1 font-medium">
-                                                {selectedFiles.length > 0 
-                                                    ? `${selectedFiles.length} photo(s) sélectionnée(s)` 
-                                                    : "Ajouter des photos"}
+                                                {selectedFiles.length > 0
+                                                    ? t('depPhotosSelectedCount', { count: selectedFiles.length })
+                                                    : t('depAddPhotos')}
                                             </p>
                                             <p className="text-xs text-gray-400">{t('f342')}</p>
                                         </div>
@@ -9362,7 +9358,7 @@ function DepositPageComponent() {
                                                         
                                                         {mainPhoto === file && (
                                                             <div className="absolute top-2 left-2 bg-[#00BFA6] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                                                                PRINCIPALE
+                                                                {t('depMainBadge')}
                                                             </div>
                                                         )}
                                                     </div>
@@ -9385,9 +9381,9 @@ function DepositPageComponent() {
                                             />
                                             <VideoIcon className="h-10 w-10 text-[#00BFA6] mx-auto mb-3" />
                                             <p className="text-gray-600 mb-1 font-medium">
-                                                {selectedVideos.length > 0 
-                                                    ? `${selectedVideos.length} vidéo(s) sélectionnée(s)` 
-                                                    : "Ajouter une vidéo"}
+                                                {selectedVideos.length > 0
+                                                    ? t('depVideosSelectedCount', { count: selectedVideos.length })
+                                                    : t('depAddVideo')}
                                             </p>
                                             <p className="text-xs text-gray-400">{t('f344')}</p>
                                         </div>
@@ -9434,7 +9430,7 @@ function DepositPageComponent() {
                                             disabled={selectedFiles.length < 3}
                                             className="w-full bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Organiser les photos
+                                            {t('depOrganizePhotos')}
                                         </Button>
                                     </div>
                                 </div>
@@ -9450,7 +9446,7 @@ function DepositPageComponent() {
                                                     <category.icon className="h-6 w-6 text-[#00BFA6]" />
                                                     <h3 className="text-lg font-bold text-gray-700">{photoCatLabel(category.id, category.label)}</h3>
                                                     <span className="text-sm text-gray-500 ml-auto bg-white px-3 py-1 rounded-full border border-gray-200">
-                                                        {category.photos.length} photo(s)
+                                                        {t('depPhotoCountSuffix', { count: category.photos.length })}
                                                     </span>
                                                 </div>
 

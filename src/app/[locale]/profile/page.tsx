@@ -31,7 +31,7 @@ export default function ProfilePage() {
       return
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/users/me`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/me`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

@@ -141,7 +141,7 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
             </div>
           </div>
           <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-bold hover:underline sm:text-sm" style={{ color: catColor.hex }}>
-            {t("viewAllListings")} <ArrowRight className="h-4 w-4" />
+            {t("viewAllListings")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           </Link>
         </div>
         <div className={cn("w-16 h-1 rounded-full mb-6", getCategoryColorById(categoryId))}></div>
@@ -468,7 +468,7 @@ export default function HomePage() {
               <motion.div variants={heroItem} className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
                 <Link href="/announces">
                   <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
-                    {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2" />
+                    {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                   </Button>
                 </Link>
                 <Link href="/faq">
@@ -624,7 +624,7 @@ export default function HomePage() {
               <p className="text-gray-500 dark:text-white/60 leading-relaxed mb-7">{t("ownerDesc")}</p>
               <Link href="/deposit">
                 <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white font-bold py-5 px-7 rounded-full">
-                  {t("entrustMyProperty")} <ArrowRight className="h-4 w-4 ml-2" />
+                  {t("entrustMyProperty")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                 </Button>
               </Link>
             </div>
@@ -637,7 +637,7 @@ export default function HomePage() {
               <p className="text-white/60 leading-relaxed mb-7">{t("seekerDesc")}</p>
               <Link href="/research">
                 <Button className="bg-white text-[#003B4A] hover:bg-white/90 font-bold py-5 px-7 rounded-full">
-                  {t("entrustMySearch")} <ArrowRight className="h-4 w-4 ml-2" />
+                  {t("entrustMySearch")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                 </Button>
               </Link>
             </div>
@@ -677,7 +677,7 @@ export default function HomePage() {
               </div>
 
               <Link href="/profile/points" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#00BFA6] transition-colors">
-                {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4" />
+                {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
             </div>
 
@@ -718,7 +718,7 @@ export default function HomePage() {
               </div>
 
               <Link href="/profile/boutique" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#00BFA6] transition-colors">
-                {t("pointsProCta")} <ArrowRight className="h-4 w-4" />
+                {t("pointsProCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
             </div>
           </div>
@@ -735,7 +735,7 @@ export default function HomePage() {
                 <p className="text-gray-500 dark:text-white/60 mt-2">{t("partnersSectionSubtitle")}</p>
               </div>
               <Link href="/partenaires" className="flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline whitespace-nowrap">
-                {t("partnersSeeAll")} <ArrowRight className="h-4 w-4" />
+                {t("partnersSeeAll")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 py-10">

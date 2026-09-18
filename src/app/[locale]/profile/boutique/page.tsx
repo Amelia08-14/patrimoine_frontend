@@ -148,7 +148,7 @@ export default function BoutiqueConfigPage() {
     const userStr = localStorage.getItem('user')
     if (!token || !userStr) { router.push('/auth/login'); return }
     const userData = JSON.parse(userStr)
-    if (userData.userType !== 'SOCIETE') { router.push('/profile'); return }
+    if (userData.userType !== 'SOCIETE') { router.push('/profile/info'); return }
     setUser(userData)
 
     // Vérifier abonnement boutique actif

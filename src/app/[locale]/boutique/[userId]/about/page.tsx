@@ -80,7 +80,7 @@ export default function BoutiqueAboutPage({ params }: { params: Promise<{ userId
       <div className="py-5 px-6" style={{ backgroundColor: hc }}>
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Link href={`/boutique/${rawParam}`} className="flex items-center gap-2 text-sm font-bold rounded-full px-4 py-1.5 bg-white/20 hover:bg-white/30 transition-colors" style={{ color: htc }}>
-            <ArrowLeft className="h-4 w-4" /> Retour à la boutique
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> Retour à la boutique
           </Link>
           <span className="font-black text-lg" style={{ color: htc }}>{config.companyName}</span>
         </div>

@@ -178,7 +178,7 @@ export default function MessagesPage() {
                 <>
                   <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-white/10 shrink-0">
                     <button onClick={() => setActiveConvId(null)} className="md:hidden text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70">
-                      <ArrowLeft className="h-5 w-5" />
+                      <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
                     </button>
                     <div className="h-9 w-9 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
                       {activeConv.partner?.imageUrl ? (

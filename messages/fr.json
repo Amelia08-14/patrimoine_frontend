@@ -1233,6 +1233,7 @@
     "f007": "Largeur",
     "f008": "Hauteur",
     "f009": "Surf. Couverte",
+    "adCapacityM3": "Capacité (m³)",
     "f010": "Ht. sous crochet",
     "f011": "Topographie",
     "f012": "Façades",
@@ -1352,6 +1353,8 @@
     "f126": "Ressources en eau",
     "f127": "Exposition",
     "f128": "Cadre et mode de vie",
+    "f180": "Usage",
+    "f181": "Type d'accès",
     "f129": "Usage unique (Communicante)",
     "f130": "(les étages de la villa communiquent de l'intérieur)",
     "f131": "Usage séparé (appartement)",
@@ -1892,6 +1895,20 @@
     "photoCatBathrooms": "Salles de bain & WC",
     "photoCatExterior": "Extérieur (jardin, piscine)",
     "photoCatCommon": "Espaces communs",
+    "photoCatUploaded": "Photos uploadées",
+    "photoCatEquipments": "Équipements",
+    "photoCatOffices": "Bureaux et Annexes",
+    "photoCatAccommodation": "Hébergement",
+    "photoCatOthers": "Autres",
+    "photoCatGeneralView": "Vue générale",
+    "photoCatEnvironment": "Environnement / Voisinage",
+    "depAddPhotos": "Ajouter des photos",
+    "depPhotosSelectedCount": "{count, plural, one {# photo sélectionnée} other {# photos sélectionnées}}",
+    "depAddVideo": "Ajouter une vidéo",
+    "depVideosSelectedCount": "{count, plural, one {# vidéo sélectionnée} other {# vidéos sélectionnées}}",
+    "depOrganizePhotos": "Organiser les photos",
+    "depPhotoCountSuffix": "{count, plural, one {# photo} other {# photos}}",
+    "depMainBadge": "PRINCIPALE",
     "depGasCity": "De ville",
     "depPriceFixed": "Fixe",
     "depPriceNegotiable": "Négociable",
@@ -2708,6 +2725,25 @@
         "label": "Dégivrage Auto"
       }
     },
+    "CF_TYPE_FROID": {
+      "POSITIF": {
+        "label": "Positif"
+      },
+      "NEGATIF": {
+        "label": "Négatif"
+      },
+      "ULTRA_FROID": {
+        "label": "Ultra Froid (Tunnel de congélation)"
+      }
+    },
+    "CF_MODE_DIFFUSION": {
+      "FROID_VENTILE": {
+        "label": "Froid Ventilé"
+      },
+      "FROID_STATIQUE": {
+        "label": "Froid Statique"
+      }
+    },
     "CF_MODE_GESTION": {
       "SANS_GESTION": {
         "label": "SANS GESTION (Murs seuls)",
@@ -2770,6 +2806,17 @@
       },
       "ZONE_ACTIVITE": {
         "label": "Zone d'Activité"
+      }
+    },
+    "LEGAL_DOCUMENTS_SALE": {
+      "ACTE_PROPRIETE": {
+        "label": "Acte de propriété"
+      },
+      "LIVRET_FONCIER": {
+        "label": "Livret foncier"
+      },
+      "CERTIFICAT_CONFORMITE": {
+        "label": "Certificat de conformité"
       }
     },
     "TERRAIN_DOCUMENTS": {
@@ -3600,8 +3647,8 @@
     "HS_TYPE_ETABLISSEMENT": {
       "HOTEL": "Hôtel",
       "COMPLEXE_TOURISTIQUE": "Complexe touristique",
+      "VILLAGE_VACANCES": "Village de vacances",
       "APPARTHOTEL": "Apparthôtel",
-      "VILLA_VACANCES": "Villa de vacances",
       "RESIDENCE_HOTELIERE": "Résidence hôtelière",
       "CAMPING_TOURISTIQUE": "Camping touristique",
       "AUTRE": "Autre structure"

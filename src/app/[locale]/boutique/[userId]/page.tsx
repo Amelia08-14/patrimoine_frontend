@@ -176,7 +176,7 @@ function StoryViewer({
         {/* Précédent */}
         {stories.length > 1 && (
           <button onClick={goPrev} aria-label="Story précédente" className="hidden sm:flex h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center text-white shrink-0">
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
           </button>
         )}
 
@@ -257,7 +257,7 @@ function StoryViewer({
         {/* Suivant */}
         {stories.length > 1 && (
           <button onClick={goNext} aria-label="Story suivante" className="hidden sm:flex h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center text-white shrink-0">
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-5 w-5 rtl:rotate-180" />
           </button>
         )}
       </div>
@@ -501,7 +501,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         <h1 className="text-2xl font-bold text-gray-900">{t('storeUnavailable')}</h1>
         <p className="text-gray-500 mt-2 text-sm">{t('storeUnavailableDesc')}</p>
         <Link href="/" className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">
-          {t('backHome')} <ArrowRight className="h-4 w-4" />
+          {t('backHome')} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
         </Link>
       </div>
     </div>
@@ -514,7 +514,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         <h1 className="text-2xl font-bold text-gray-900">{t('storeNotFound')}</h1>
         <p className="text-gray-500 mt-2">{t('storeNotFoundDesc')}</p>
         <Link href="/" className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#00BFA6] text-white rounded-xl font-bold">
-          {t('backHome')} <ArrowRight className="h-4 w-4" />
+          {t('backHome')} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
         </Link>
       </div>
     </div>
@@ -570,11 +570,11 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
             <div className="absolute inset-0 bg-black/55" />
             {bannerImages.length > 1 && (
               <>
-                <button onClick={() => { setBannerIndex(i => (i - 1 + bannerImages.length) % bannerImages.length); clearInterval(bannerTimerRef.current) }} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
-                  <ChevronLeft className="h-5 w-5" />
+                <button onClick={() => { setBannerIndex(i => (i - 1 + bannerImages.length) % bannerImages.length); clearInterval(bannerTimerRef.current) }} className="absolute start-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
+                  <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
                 </button>
-                <button onClick={() => { setBannerIndex(i => (i + 1) % bannerImages.length); clearInterval(bannerTimerRef.current) }} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
-                  <ChevronRight className="h-5 w-5" />
+                <button onClick={() => { setBannerIndex(i => (i + 1) % bannerImages.length); clearInterval(bannerTimerRef.current) }} className="absolute end-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
+                  <ChevronRight className="h-5 w-5 rtl:rotate-180" />
                 </button>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
                   {bannerImages.map((_, i) => (

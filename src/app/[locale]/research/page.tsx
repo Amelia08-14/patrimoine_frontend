@@ -656,8 +656,25 @@ export default function ResearchPage() {
   useEffect(() => {
     const ids = isResidentielLocation ? selectedCityIds : (selectedCityId ? [String(selectedCityId)] : []);
     if (ids.length === 0) { setTowns([]); return; }
+    // `ids` peut contenir plusieurs wilayas (Résidentiel Location) — chaque fetch tourne en
+    // parallèle et deux résolutions peuvent s'entrecroiser si l'utilisateur re-coche vite. Le
+    // flag `cancelled` ne garde que la résolution du DERNIER appel, et le dédoublonnage par `id`
+    // couvre le cas où une même commune reviendrait deux fois dans les résultats fusionnés
+    // (bug remonté par le client : communes dupliquées plusieurs fois en sélection multiple).
+    let cancelled = false;
     Promise.all(ids.map((id) => axios.get(`${apiUrl}/cities/${id}/towns`).then((res) => res.data).catch(() => [])))
-      .then((results) => setTowns(results.flat()));
+      .then((results) => {
+        if (cancelled) return;
+        const seen = new Set<string>();
+        const deduped = results.flat().filter((tw: any) => {
+          const key = String(tw.id);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setTowns(deduped);
+      });
+    return () => { cancelled = true };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isResidentielLocation, selectedCityId, selectedCityIds.join(',')]);
 

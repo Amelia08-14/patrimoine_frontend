@@ -773,7 +773,7 @@ export default function AnnounceDetailsPage() {
         <div className="bg-white dark:bg-white/5 p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
             <div className="flex justify-between items-center mb-3 px-1">
                 <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-white/70" />
+                    <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-white/70 rtl:rotate-180" />
                 </button>
                 <div className="flex gap-2">
                     <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
@@ -981,13 +981,13 @@ export default function AnnounceDetailsPage() {
                     {/* Navigation Arrows */}
                     <button
                         onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev > 0 ? prev - 1 : displayImages.length - 1)) }}
-                        className="absolute left-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"
+                        className="absolute start-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"
                     >
-                        <ArrowLeft className="h-6 w-6" />
+                        <ArrowLeft className="h-6 w-6 rtl:rotate-180" />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev < displayImages.length - 1 ? prev + 1 : 0)) }}
-                        className="absolute right-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all rotate-180"
+                        className="absolute end-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all rotate-180 rtl:rotate-0"
                     >
                         <ArrowLeft className="h-6 w-6" />
                     </button>
@@ -1018,10 +1018,13 @@ export default function AnnounceDetailsPage() {
             
             {/* Header Information */}
             <div className="bg-white dark:bg-white/5 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{propertyTypeLabel}</h1>
+              <div className="flex justify-between items-start mb-2 gap-4">
+                <div className="flex flex-col gap-2 min-w-0 flex-1">
+                  {announce.title && (
+                      <span className="text-sm font-bold text-[#00BFA6] uppercase tracking-wide">{propertyTypeLabel}</span>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3 min-w-0">
+                      <h1 className="text-3xl font-bold text-gray-900 dark:text-white break-words min-w-0">{announce.title || propertyTypeLabel}</h1>
                       {isHangarRental && hangar?.globalState && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
                               {L(hangar.globalState)}
@@ -1069,7 +1072,7 @@ export default function AnnounceDetailsPage() {
                     return null
                   })()}
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <div className="text-3xl font-bold text-[#00BFA6]">
                       {isSpecialRental
                           ? (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0
@@ -1182,6 +1185,18 @@ export default function AnnounceDetailsPage() {
                           <div className="text-xs text-gray-500 dark:text-white/50">{t('f008')}</div>
                         </div>
                       </div>
+                    )}
+                    {coldRoom?.dimensions?.capacity != null && (
+                      <>
+                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                          <Archive className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                          <div>
+                            <div className="font-bold text-base">{coldRoom.dimensions.capacity} m³</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{t('adCapacityM3')}</div>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                 ) : isHangarRental ? (
