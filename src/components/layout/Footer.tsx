@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocalizedContent } from "@/lib/typeLabels";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const telHref = (v: string) => `tel:${v.replace(/[^0-9+]/g, '')}`;
@@ -12,7 +13,8 @@ const mailHref = (v: string) => `mailto:${v}`;
 
 export function Footer() {
   const t = useTranslations("Footer");
-  const [usefulLinks, setUsefulLinks] = useState<{ id: number; title: string; url: string }[]>([]);
+  const lc = useLocalizedContent();
+  const [usefulLinks, setUsefulLinks] = useState<{ id: number; title: string; titleAr?: string | null; titleEn?: string | null; url: string }[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -21,6 +23,16 @@ export function Footer() {
   }, []);
 
   const hasContact = settings.CONTACT_PHONE || settings.CONTACT_EMAIL || settings.CONTACT_ADDRESS;
+
+  // Réseaux sociaux — pilotés depuis l'admin (Contenu du site > Contact & Support), même système
+  // SiteSetting clé/valeur générique que le reste du bloc contact ; une icône n'apparaît que si son
+  // lien a été renseigné.
+  const SOCIAL_LINKS = [
+    { key: "SOCIAL_FACEBOOK", icon: Facebook, label: "Facebook" },
+    { key: "SOCIAL_INSTAGRAM", icon: Instagram, label: "Instagram" },
+    { key: "SOCIAL_LINKEDIN", icon: Linkedin, label: "LinkedIn" },
+    { key: "SOCIAL_YOUTUBE", icon: Youtube, label: "YouTube" },
+  ].filter((s) => settings[s.key]);
 
   return (
     <footer className="bg-[#022229] text-white relative overflow-hidden dark:border-t dark:border-white/10">
@@ -81,7 +93,7 @@ export function Footer() {
               {usefulLinks.map((l) => (
                 <li key={l.id}>
                   <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-[15px] text-white/55 hover:text-white transition-colors">
-                    {l.title}
+                    {lc(l.title, l.titleAr, l.titleEn)}
                   </a>
                 </li>
               ))}
@@ -89,10 +101,26 @@ export function Footer() {
           )}
         </div>
 
-        <div className="mt-12 border-t border-white/10 pt-8">
+        <div className="mt-12 border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-center gap-6">
           <p className="text-sm text-white/40 text-center">
             {t("copyright", { year: new Date().getFullYear() })}
           </p>
+          {SOCIAL_LINKS.length > 0 && (
+            <div className="flex items-center gap-3">
+              {SOCIAL_LINKS.map((s) => (
+                <a
+                  key={s.key}
+                  href={settings[s.key]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.label}
+                  className="h-9 w-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-[#00BFA6]/20 hover:border-[#00BFA6]/40 transition-colors"
+                >
+                  <s.icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </footer>

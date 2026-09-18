@@ -8,11 +8,12 @@ import {
   Store, Star, Crown, Check, Loader2, Clock,
   AlertCircle, X, ShieldCheck, LayoutTemplate, ArrowRight,
 } from "lucide-react"
+import { useLocalizedContent } from "@/lib/typeLabels"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
 
-type OfferPack = { id: number; kind: 'POINTS' | 'BOUTIQUE'; key: string; title: string; description: string | null; price: number; points: number }
+type OfferPack = { id: number; kind: 'POINTS' | 'BOUTIQUE'; key: string; title: string; titleAr?: string | null; titleEn?: string | null; description: string | null; descriptionAr?: string | null; descriptionEn?: string | null; price: number; points: number }
 
 const DEFAULT_COLORS = ["#0EA5E9", "#059669", "#DB2777", "#7C3AED", "#EA580C"]
 
@@ -27,6 +28,7 @@ const BOUTIQUE_PACK_STYLE: Record<string, { icon: typeof Store; color: string; b
 // Modal pour choisir/renouveler la formule boutique
 function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]; onClose: () => void; onSuccess: () => void }) {
   const t = useTranslations("ProfilePoints")
+  const lc = useLocalizedContent()
 
   const FEATURES: Record<string, string[]> = {
     STANDARD: [t("boutiqueStandardFeature1"), t("boutiqueStandardFeature2"), t("boutiqueStandardFeature3"), t("boutiqueStandardFeature4")],
@@ -44,8 +46,8 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
   const BOUTIQUE_PACKS = live.length > 0
     ? live.map((p, i) => ({
         id: p.key,
-        label: p.title,
-        description: p.description,
+        label: lc(p.title, p.titleAr, p.titleEn),
+        description: lc(p.description, p.descriptionAr, p.descriptionEn),
         price: p.price,
         points: p.points,
         features: FEATURES[p.key] || [],
@@ -135,6 +137,7 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
 
 export default function VitrineTypePage() {
   const t = useTranslations("ProfilePoints")
+  const lc = useLocalizedContent()
   const locale = useLocale()
   const router = useRouter()
 
@@ -152,7 +155,7 @@ export default function VitrineTypePage() {
 
   const packLabel = (pack: string) => {
     const live = offerPacks.find((p) => p.kind === 'BOUTIQUE' && p.key === pack)
-    if (live) return live.title
+    if (live) return lc(live.title, live.titleAr, live.titleEn)
     const fallback: Record<string, string> = {
       STANDARD: t("boutiqueStandardLabel"),
       AVANCEE: t("boutiqueAvanceeLabel"),
@@ -180,11 +183,11 @@ export default function VitrineTypePage() {
   const inlineBoutiquePacks = liveBoutiquePacks.length > 0
     ? liveBoutiquePacks.map((p, i) => ({
         id: p.key,
-        label: p.title,
+        label: lc(p.title, p.titleAr, p.titleEn),
         price: p.price,
         points: p.points,
         features: FEATURES_INLINE[p.key] || [],
-        tagline: TAGLINES[p.key] || p.description || "",
+        tagline: TAGLINES[p.key] || lc(p.description, p.descriptionAr, p.descriptionEn) || "",
         ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
       }))
     : INLINE_FALLBACK

@@ -5,11 +5,13 @@ import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Search, Plus, HelpCircle, MessageCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLocalizedContent } from "@/lib/typeLabels"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export default function FAQPage() {
   const t = useTranslations("FAQ")
+  const lc = useLocalizedContent()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState("")
@@ -29,8 +31,8 @@ export default function FAQPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return items
-    return items.filter((f) => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q))
-  }, [items, query])
+    return items.filter((f) => lc(f.question, f.questionAr, f.questionEn).toLowerCase().includes(q) || lc(f.answer, f.answerAr, f.answerEn).toLowerCase().includes(q))
+  }, [items, query, lc])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent">
@@ -78,7 +80,7 @@ export default function FAQPage() {
                     aria-expanded={isOpen}
                   >
                     <span className={cn("font-bold text-[15px] transition-colors", isOpen ? "text-[#00BFA6]" : "text-gray-900 dark:text-white")}>
-                      {f.question}
+                      {lc(f.question, f.questionAr, f.questionEn)}
                     </span>
                     <span
                       className={cn(
@@ -95,7 +97,7 @@ export default function FAQPage() {
                   >
                     <div className="overflow-hidden">
                       <p className="px-5 sm:px-7 pb-6 text-gray-600 dark:text-white/60 whitespace-pre-line leading-relaxed text-sm">
-                        {f.answer}
+                        {lc(f.answer, f.answerAr, f.answerEn)}
                       </p>
                     </div>
                   </div>

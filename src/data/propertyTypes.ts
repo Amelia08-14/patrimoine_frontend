@@ -6,6 +6,7 @@ export const REAL_ESTATE_CATEGORIES = [
   { id: "HEBERGEMENT", label: "Hébergement & Séjour", iconName: "BedDouble" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Building2" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "Trees" },
+  { id: "EVENEMENTIEL", label: "Évènementiel", iconName: "PartyPopper" },
 ];
 
 export const PROPERTY_TYPES = [

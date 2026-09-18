@@ -7,13 +7,6 @@ import { subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-const CATEGORIES: { id: ActivityPole; label: string; icon: typeof Building }[] = [
-  { id: 'IMMOBILIER', label: 'Activité immobilière', icon: Building },
-  { id: 'HOTELLERIE', label: 'Activité hôtelière et hébergement', icon: Hotel },
-  { id: 'EVENEMENTIEL', label: 'Activité évènementiel', icon: PartyPopper },
-  { id: 'ENTREPOSAGE', label: "Activité d'entreposage et stockage", icon: Warehouse },
-]
-
 function getTranslatedCategories(t: ReturnType<typeof useTranslations>) {
   return [
     { id: 'IMMOBILIER', label: t('activityImmobilier'), icon: Building },
@@ -21,6 +14,15 @@ function getTranslatedCategories(t: ReturnType<typeof useTranslations>) {
     { id: 'EVENEMENTIEL', label: t('activityEvenementiel'), icon: PartyPopper },
     { id: 'ENTREPOSAGE', label: t('activityEntreposage'), icon: Warehouse },
   ] as const
+}
+
+// `subCategoriesForPole` (activityPoles.ts) porte un `label` français en dur, réutilisé comme id
+// de rapprochement contre `Partner.subCategory` en base — on ne traduit qu'à l'affichage.
+function getTranslatedSubCategories(t: ReturnType<typeof useTranslations>, pole: ActivityPole) {
+  return subCategoriesForPole(pole).map((sub) => ({
+    ...sub,
+    label: t.has(`subCategories.${sub.id}`) ? t(`subCategories.${sub.id}` as any) : sub.label,
+  }))
 }
 
 function PartnerCard({ partner }: { partner: any }) {
@@ -261,14 +263,14 @@ export default function PartenairesPage() {
   // Classement catégorie → sous-catégorie, dans l'ordre métier fixe (pas l'ordre d'insertion),
   // affiné par la sous-catégorie sélectionnée le cas échéant.
   const sections = useMemo(() => {
-    const cats = categoryFilter === "ALL" ? CATEGORIES : CATEGORIES.filter((c) => c.id === categoryFilter)
+    const cats = categoryFilter === "ALL" ? partnerCategories : partnerCategories.filter((c) => c.id === categoryFilter)
     const refiningBySub = categoryFilter !== "ALL" && subCategoryFilter !== "ALL"
     return cats
       .map((cat) => {
         const catPartners = partners.filter((p) => p.category === cat.id)
         const subDefs = refiningBySub
-          ? subCategoriesForPole(cat.id).filter((s) => s.id === subCategoryFilter)
-          : subCategoriesForPole(cat.id)
+          ? getTranslatedSubCategories(t, cat.id).filter((s) => s.id === subCategoryFilter)
+          : getTranslatedSubCategories(t, cat.id)
         const subGroups = subDefs
           .map((sub) => ({ sub, partners: catPartners.filter((p) => p.subCategory === sub.id) }))
           .filter((g) => g.partners.length > 0)
@@ -277,7 +279,7 @@ export default function PartenairesPage() {
         return { cat, subGroups, unclassified, total }
       })
       .filter((s) => s.total > 0)
-  }, [partners, categoryFilter, subCategoryFilter])
+  }, [t, partners, categoryFilter, subCategoryFilter, partnerCategories])
 
   const uncategorized = useMemo(() => partners.filter((p) => !p.category), [partners])
 
@@ -343,9 +345,9 @@ export default function PartenairesPage() {
                   onClick={() => setSubCategoryFilter("ALL")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${subCategoryFilter === "ALL" ? 'bg-[#003B4A] text-white' : 'bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-[#003B4A] hover:text-[#003B4A]'}`}
                 >
-                  Toutes sous-catégories
+                  {t('allSubCategories')}
                 </button>
-                {subCategoriesForPole(categoryFilter).map((sub) => (
+                {getTranslatedSubCategories(t, categoryFilter).map((sub) => (
                   <button
                     key={sub.id}
                     onClick={() => setSubCategoryFilter(sub.id)}

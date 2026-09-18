@@ -70,7 +70,7 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
             CATEGORY_OVERLAY_COLOR[categoryId as string] || "from-[#003B4A]/90"
         )}>
             {items.map((item, i) => (
-                <span key={i} className="flex items-center gap-2 text-white text-[11px] font-bold [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]">
+                <span key={i} className="flex items-center gap-2 text-white text-[11px] rtl:text-xs font-bold [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]">
                     {i > 0 && <span className="h-1 w-1 rounded-full bg-white/50" />}
                     {item}
                 </span>
@@ -117,13 +117,16 @@ type PropertyCardProps = {
   autoPlay?: boolean;
   /** Réorganisation plus éditoriale réservée aux carrousels de la page d'accueil. */
   variant?: "default" | "home";
+  /** "horizontal" = vignette à gauche + contenu à droite (vue "liste" de `/announces`). */
+  layout?: "vertical" | "horizontal";
   /** État initial du cœur, fourni par les pages qui le connaissent déjà (ex. « Mes favoris »). */
   initialFavorite?: boolean;
   /** Appelé après un toggle réussi afin que la page parente puisse synchroniser sa liste. */
   onFavoriteChange?: (isFavorite: boolean) => void;
 };
 
-export const PropertyCard = ({ announce, autoPlay = false, variant = "default", initialFavorite = false, onFavoriteChange }: PropertyCardProps) => {
+export const PropertyCard = ({ announce, autoPlay = false, variant = "default", layout = "vertical", initialFavorite = false, onFavoriteChange }: PropertyCardProps) => {
+  const isHorizontal = layout === "horizontal";
   const t = useTranslations("PropertyCard");
   const ptLabel = usePropertyTypeLabel();
   const place = useLocalizedPlaceName();
@@ -206,11 +209,17 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
 
   return (
     <Link href={`/announces/${announce.id}`} className="block h-full w-full">
-      <div className="bg-white dark:bg-[#03303c] rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gray-100 dark:border-white/10 h-full w-full flex flex-col overflow-hidden">
+      <div className={cn(
+        "bg-white dark:bg-[#03303c] rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gray-100 dark:border-white/10 h-full w-full overflow-hidden",
+        isHorizontal ? "flex flex-row" : "flex flex-col"
+      )}>
 
         {/* Image */}
         <div
-          className="relative h-[240px] min-h-[240px] overflow-hidden bg-gray-100"
+          className={cn(
+            "relative overflow-hidden bg-gray-100 shrink-0",
+            isHorizontal ? "w-44 sm:w-56 h-full min-h-[176px]" : "h-[240px] min-h-[240px]"
+          )}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => { setIsHovering(false); setHeroIndex(0) }}
         >
@@ -240,7 +249,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
           {isHovering && mediaList.length > 1 && (
             <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white gap-2 pointer-events-none">
               <span className="text-2xl font-black [text-shadow:0_1px_3px_rgb(0_0_0_/_0.4)]">+{mediaList.length - 1}</span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-gray-900 text-xs font-bold shadow-lg">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-gray-900 text-xs rtl:text-sm font-bold shadow-lg">
                 <Images className="h-3.5 w-3.5" /> {t("seeGallery")}
               </span>
             </div>
@@ -254,7 +263,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
 
           {/* Transaction — un seul badge, aux couleurs de la marque */}
           <span className={cn(
-              "absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide text-white",
+              "absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full text-[10px] rtl:text-xs font-bold uppercase tracking-wide text-white",
               isSale ? "bg-[#00BFA6]" : "bg-[#003B4A]"
             )}>
               {isSale ? t("sale") : t("rental")}
@@ -283,14 +292,14 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
         </div>
 
         {/* Contenu — sur l'accueil, la catégorie reste entière puis titre et prix partagent la ligne suivante. */}
-        <div className={cn("p-4 flex flex-col flex-1", isHomeVariant ? "min-h-36" : "gap-1.5")}>
+        <div className={cn("p-4 flex flex-col flex-1 min-w-0", isHomeVariant ? "min-h-36" : "gap-1.5")}>
             {isHomeVariant ? (
-                <span dir="auto" className="block w-full break-words text-left text-[#00BFA6] font-bold text-[11px] leading-4 uppercase tracking-wide">
+                <span dir="auto" className="block w-full break-words text-left text-[#00BFA6] font-bold text-[11px] rtl:text-xs leading-4 uppercase tracking-wide">
                     {categoryName}
                 </span>
             ) : (
                 <>
-                    <span className="text-[#00BFA6] font-bold text-[11px] uppercase tracking-wide truncate">
+                    <span className="text-[#00BFA6] font-bold text-[11px] rtl:text-xs uppercase tracking-wide truncate">
                         {categoryName}
                     </span>
                     <div className="text-right">
@@ -320,7 +329,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                 />
             )}
 
-            <div className={cn("flex min-w-0 items-center text-gray-400 dark:text-white/40 text-xs font-medium gap-1", isHomeVariant && "mt-1.5")}>
+            <div className={cn("flex min-w-0 items-center text-gray-400 dark:text-white/40 text-xs rtl:text-[13px] font-medium gap-1", isHomeVariant && "mt-1.5")}>
                 <MapPin className="h-3.5 w-3.5 text-gray-300 dark:text-white/30 shrink-0" />
                 <span dir="auto" className="truncate">{locationLabel}</span>
             </div>
@@ -333,9 +342,9 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                 {isCompany ? (
                     <>
                         <div className="h-7 w-7 rounded-full border border-gray-100 dark:border-white/10 shrink-0 overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-white/5">
-                            {announce.user?.imageUrl ? (
+                            {announce.user?.agencyLogoUrl || announce.user?.imageUrl ? (
                                 <img
-                                    src={getImageUrl(announce.user.imageUrl) || ''}
+                                    src={getImageUrl(announce.user.agencyLogoUrl || announce.user.imageUrl) || ''}
                                     alt={announce.user.companyName || t("professionalSeller")}
                                     className="h-full w-full object-contain"
                                 />
@@ -343,7 +352,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                                 <Building2 className="h-3.5 w-3.5 text-gray-300 dark:text-white/30" />
                             )}
                         </div>
-                        <span className="truncate text-xs font-semibold text-gray-500 dark:text-white/50">
+                        <span className="truncate text-xs rtl:text-[13px] font-semibold text-gray-500 dark:text-white/50">
                             {announce.user?.companyName || (isHomeVariant ? t("professionalSeller") : "")}
                         </span>
                     </>
@@ -352,7 +361,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-gray-50 dark:border-white/10 dark:bg-white/5">
                             <UserRound className="h-3.5 w-3.5 text-gray-400 dark:text-white/40" />
                         </div>
-                        <span className="truncate text-xs font-semibold text-gray-500 dark:text-white/50">{t("privateSeller")}</span>
+                        <span className="truncate text-xs rtl:text-[13px] font-semibold text-gray-500 dark:text-white/50">{t("privateSeller")}</span>
                     </>
                 ) : null}
             </div>

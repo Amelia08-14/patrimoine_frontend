@@ -5,30 +5,22 @@ import { useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import { AnnounceFilter } from "@/components/AnnounceFilter"
-import { Button } from "@/components/ui/button"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
-import { usePropertyTypeLabel, useLocalizedPlaceName } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
 import { getCategoryColor } from "@/data/categoryColors"
-import { LayoutGrid, LayoutDashboard, List, Building2, MapPin } from "lucide-react"
+import { LayoutGrid, LayoutDashboard, List, ChevronLeft, ChevronRight } from "lucide-react"
 
-const getImageUrl = (url: string) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  let cleanUrl = url.replace(/\\/g, '/')
-  if (cleanUrl.startsWith('/')) cleanUrl = cleanUrl.substring(1)
-  return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${cleanUrl}`
-}
+// Même limite sur les 3 modes d'affichage (demande client) — seul le nombre de colonnes change.
+const PAGE_SIZE = 32
 
 function AnnouncesContent() {
   const t = useTranslations("AnnouncesPage")
-  const ptLabel = usePropertyTypeLabel()
-  const place = useLocalizedPlaceName()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [announces, setAnnounces] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'grid' | 'large' | 'list'>('grid')
+  const [page, setPage] = useState(1)
 
   // Initialize filters from URL params
   const [filters, setFilters] = useState({
@@ -228,7 +220,13 @@ function AnnouncesContent() {
     return () => clearTimeout(handle)
   }, [filters]) // Filtrage en direct — se redéclenche à chaque changement de filtre (debounce 350ms)
 
+  // Retour à la 1ère page dès que le résultat change (filtre ou mode d'affichage), pour ne jamais
+  // rester bloqué sur une page devenue vide/hors-limites.
+  useEffect(() => { setPage(1) }, [filters, viewMode])
+
   const catColor = getCategoryColor(filters.realEstateCategory)
+  const totalPages = Math.max(1, Math.ceil(announces.length / PAGE_SIZE))
+  const pagedAnnounces = announces.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent pb-12">
@@ -245,59 +243,28 @@ function AnnouncesContent() {
         </div>
       </div>
 
-      {/* Transaction Type Tabs */}
-      <div className="bg-white dark:bg-white/5 border-b border-gray-100 dark:border-white/10 shadow-sm py-3 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            {[
-              { value: '', label: t("viewAll") },
-              { value: 'RENTAL', label: t("rent") },
-              { value: 'SALE', label: t("buy") },
-            ].map(opt => {
-              const active = (filters.transactionType || '') === opt.value
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    handleFilterChange('transactionType', opt.value)
-                    const params = new URLSearchParams(searchParams.toString())
-                    if (opt.value) params.set('transactionType', opt.value)
-                    else params.delete('transactionType')
-                    router.push(`/announces?${params.toString()}`)
-                  }}
-                  className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${active ? 'text-white shadow-sm' : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/20'}`}
-                  style={active ? { backgroundColor: catColor.hex } : undefined}
-                >
-                  {opt.label}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Bascule d'affichage — grille / grandes cartes / liste (même principe que la boutique) */}
-          <div className="flex bg-gray-100 dark:bg-white/10 rounded-lg p-0.5 gap-0.5">
-            <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewGrid')}>
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button onClick={() => setViewMode('large')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'large' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewLarge')}>
-              <LayoutDashboard className="h-4 w-4" />
-            </button>
-            <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewList')}>
-              <List className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row gap-8">
 
           {/* Listings Grid */}
           <div className="flex-grow">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
               <p className="text-gray-600 dark:text-white/60">
                 <span className="font-bold text-gray-900 dark:text-white">{announces.length}</span> {t("resultsFound")}
               </p>
+
+              {/* Bascule d'affichage — grille / grandes cartes / liste (même principe que la boutique) */}
+              <div className="flex bg-gray-100 dark:bg-white/10 rounded-lg p-0.5 gap-0.5">
+                <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewGrid')}>
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button onClick={() => setViewMode('large')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'large' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewLarge')}>
+                  <LayoutDashboard className="h-4 w-4" />
+                </button>
+                <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewList')}>
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -306,73 +273,52 @@ function AnnouncesContent() {
                 <div className="text-center py-12 text-gray-500 dark:text-white/50">{t("noResults")}</div>
             ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {announces.map((announce) => (
+                {pagedAnnounces.map((announce) => (
                     <PropertyCard key={announce.id} announce={announce} />
                 ))}
                 </div>
             ) : viewMode === 'large' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {announces.map((a) => {
-                    const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
-                    const city = place.city(a.property?.address?.town?.city) || place.town(a.property?.address?.town) || ''
-                    const tx = a.type || a.transactionType || a.transaction
-                    return (
-                      <a key={a.id} href={`/announces/${a.id}`} className="group bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all duration-300">
-                        <div className="h-56 bg-gray-100 dark:bg-white/10 overflow-hidden relative">
-                          {img ? <img src={getImageUrl(img.url || '')} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-100 dark:from-white/10 dark:to-white/5 flex items-center justify-center"><Building2 className="h-12 w-12 text-gray-300 dark:text-white/20" /></div>}
-                          <div className="absolute top-3 left-3">
-                            <span className="px-2.5 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: tx === 'SALE' ? '#ef4444' : catColor.hex }}>{tx === 'SALE' ? t('buy') : tx === 'RENTAL' ? t('rent') : ''}</span>
-                          </div>
-                        </div>
-                        <div className="p-5">
-                          <h3 className="font-bold text-gray-900 dark:text-white text-base group-hover:text-[#0094BD] transition-colors line-clamp-2">
-                            {a.title || ptLabel(a.property?.propertyType, a.property?.propertyType)}
-                          </h3>
-                          {city && <p className="flex items-center gap-1 text-gray-500 dark:text-white/50 text-sm mt-2"><MapPin className="h-3.5 w-3.5 shrink-0" />{city}</p>}
-                          <div className="mt-4 flex items-center justify-between">
-                            <span className="font-black text-xl" style={{ color: catColor.hex }}>{a.price ? `${Number(a.price).toLocaleString()} DA` : t('priceOnRequest')}</span>
-                            <span className="text-xs text-gray-400 dark:text-white/30">{a.reference}</span>
-                          </div>
-                        </div>
-                      </a>
-                    )
-                  })}
+                  {pagedAnnounces.map((announce) => (
+                    <PropertyCard key={announce.id} announce={announce} />
+                  ))}
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                  {announces.map((a) => {
-                    const img = a.property?.images?.find((i: any) => i.isMain) || a.property?.images?.[0]
-                    const city = place.city(a.property?.address?.town?.city) || place.town(a.property?.address?.town) || ''
-                    const tx = a.type || a.transactionType || a.transaction
-                    const pType = ptLabel(a.property?.propertyType, a.property?.propertyType)
-                    return (
-                      <a key={a.id} href={`/announces/${a.id}`} className="group flex bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden hover:shadow-lg transition-all">
-                        <div className="w-44 h-36 shrink-0 overflow-hidden bg-gray-100 dark:bg-white/10">
-                          {img ? <img src={getImageUrl(img.url || '')} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center"><Building2 className="h-8 w-8 text-gray-300 dark:text-white/20" /></div>}
-                        </div>
-                        <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
-                          <div>
-                            <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-bold text-gray-900 dark:text-white text-base group-hover:text-[#0094BD] transition-colors line-clamp-1">{a.title || pType}</h3>
-                              <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: tx === 'SALE' ? '#ef4444' : catColor.hex }}>{tx === 'SALE' ? t('buy') : tx === 'RENTAL' ? t('rent') : ''}</span>
-                            </div>
-                            {pType && a.title && <p className="text-sm text-gray-500 dark:text-white/50 mt-0.5">{pType}</p>}
-                            {city && <p className="flex items-center gap-1 text-gray-500 dark:text-white/50 text-sm mt-1"><MapPin className="h-3.5 w-3.5 shrink-0" />{city}</p>}
-                          </div>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="font-black text-lg" style={{ color: catColor.hex }}>{a.price ? `${Number(a.price).toLocaleString()} DA` : t('priceOnRequest')}</span>
-                            <span className="text-xs text-gray-400 dark:text-white/30 font-medium">{a.reference}</span>
-                          </div>
-                        </div>
-                      </a>
-                    )
-                  })}
+                  {pagedAnnounces.map((announce) => (
+                    <PropertyCard key={announce.id} announce={announce} layout="horizontal" />
+                  ))}
                 </div>
             )}
 
-            <div className="mt-12 flex justify-center">
-              <Button variant="outline" size="lg">{t("viewMore")}</Button>
-            </div>
+            {!loading && announces.length > PAGE_SIZE && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`h-9 min-w-9 px-2 rounded-lg text-sm font-bold transition-colors ${p === page ? 'text-white' : 'border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                    style={p === page ? { backgroundColor: catColor.hex } : undefined}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

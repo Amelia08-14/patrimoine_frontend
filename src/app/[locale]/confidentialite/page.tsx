@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
+import { useLocalizedContent } from "@/lib/typeLabels"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export default function ConfidentialitePage() {
   const t = useTranslations("Confidentialite")
+  const lc = useLocalizedContent()
   const [sections, setSections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -33,10 +35,10 @@ export default function ConfidentialitePage() {
           ) : (
             sections.map((s) => (
               <section key={s.id} className="mb-8 last:mb-0">
-                <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">{s.title}</h2>
+                <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">{lc(s.title, s.titleAr, s.titleEn)}</h2>
                 <div
                   className="legal-rich-content text-gray-600 dark:text-white/60 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: s.body }}
+                  dangerouslySetInnerHTML={{ __html: lc(s.body, s.bodyAr, s.bodyEn) }}
                 />
               </section>
             ))

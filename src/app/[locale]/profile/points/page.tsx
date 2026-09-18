@@ -9,11 +9,12 @@ import {
   ArrowDownCircle, AlertCircle, Sparkles, X,
   CalendarDays, Crown, Check, ShieldCheck
 } from "lucide-react"
+import { useLocalizedContent } from "@/lib/typeLabels"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
 
-type OfferPack = { id: number; kind: 'POINTS' | 'BOUTIQUE'; key: string; title: string; description: string | null; price: number; points: number }
+type OfferPack = { id: number; kind: 'POINTS' | 'BOUTIQUE'; key: string; title: string; titleAr?: string | null; titleEn?: string | null; description: string | null; descriptionAr?: string | null; descriptionEn?: string | null; price: number; points: number }
 
 // Habillage visuel (icône/couleur/bordure, mise en avant) des packs connus — le contenu
 // (titre/description/prix/points) vient de l'admin. Tout pack créé depuis l'admin sans style
@@ -29,6 +30,7 @@ const DEFAULT_COLORS = ["#0EA5E9", "#059669", "#DB2777", "#7C3AED", "#EA580C"]
 // Modal achat de points seuls
 function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]; onClose: () => void; onSuccess: () => void }) {
   const t = useTranslations("ProfilePoints")
+  const lc = useLocalizedContent()
   const [ordering, setOrdering] = useState<string | null>(null)
   const [error, setError] = useState("")
 
@@ -43,8 +45,8 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
   const POINT_PACKS = live.length > 0
     ? live.map((p, i) => ({
         id: p.key,
-        label: p.title,
-        description: p.description,
+        label: lc(p.title, p.titleAr, p.titleEn),
+        description: lc(p.description, p.descriptionAr, p.descriptionEn),
         points: p.points,
         price: p.price,
         ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
@@ -175,6 +177,7 @@ function FeatureModal({ announce, onClose, onSuccess }: { announce: any; onClose
 export default function EspacePublicitairePage() {
   const t = useTranslations("ProfilePoints")
   const ta = useTranslations("ProfileAnnounces")
+  const lc = useLocalizedContent()
   const locale = useLocale()
   const router = useRouter()
   const [balance, setBalance] = useState(0)
@@ -267,7 +270,7 @@ export default function EspacePublicitairePage() {
 
   const pointPackLabel = (pack: string) => {
     const live = offerPacks.find((p) => p.kind === 'POINTS' && p.key === pack)
-    if (live) return live.title
+    if (live) return lc(live.title, live.titleAr, live.titleEn)
     const fallback: Record<string, string> = {
       PACK_50: t("pointPackStarterLabel"),
       PACK_100: t("pointPackProLabel"),
@@ -300,7 +303,7 @@ export default function EspacePublicitairePage() {
   const inlinePointPacks = livePointPacks.length > 0
     ? livePointPacks.map((p, i) => ({
         id: p.key,
-        label: p.title,
+        label: lc(p.title, p.titleAr, p.titleEn),
         points: p.points,
         price: p.price,
         ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),

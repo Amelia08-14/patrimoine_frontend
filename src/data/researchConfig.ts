@@ -277,6 +277,39 @@ export const RESIDENTIEL_TYPE_IDS = [
   "NIVEAU_VILLA",
 ];
 
+// Extérieur / chauffage / climatisation / sécurité / connectivité — mêmes ids que
+// VILLA_EQUIPMENTS.exterior/security/connectivity + HEATING_TYPES/AC_TYPES de /deposit, pour que
+// les deux formulaires (dépôt d'annonce et recherche) parlent le même vocabulaire.
+export const RES_EXTERIOR_OPTIONS = [
+  { id: "garden", label: "Jardin" },
+  { id: "terrace", label: "Terrasse" },
+  { id: "balcony", label: "Balcon" },
+  { id: "pool", label: "Piscine" },
+  { id: "playground", label: "Espace extérieur" },
+  { id: "barbecue", label: "Barbecue" },
+  { id: "elevator", label: "Ascenseur" },
+];
+export const RES_HEATING_OPTIONS = [
+  { id: "CENTRAL", label: "Central" },
+  { id: "SOL", label: "Au Sol" },
+  { id: "GAZ", label: "À Gaz" },
+];
+export const RES_AC_OPTIONS = [
+  { id: "CENTRAL", label: "Centrale" },
+  { id: "SPLIT", label: "Split" },
+  { id: "SANS", label: "Sans" },
+];
+export const RES_SECURITY_OPTIONS = [
+  { id: "cameras", label: "Caméras" },
+  { id: "alarm", label: "Alarme" },
+  { id: "guardian", label: "Gardiennage 24/7" },
+];
+export const RES_CONNECTIVITY_OPTIONS = [
+  { id: "fiber", label: "Fibre" },
+  { id: "adsl", label: "ADSL" },
+  { id: "phone_line", label: "Ligne fixe" },
+];
+
 // --- Fiche "Recherche Immeuble d'appartements" (Résidentiel — recherche d'un immeuble entier) ---
 
 export const BUILDING_APARTMENT_STYLE_OPTIONS = [
@@ -602,6 +635,28 @@ export const CF_TYPE_FROID_OPTIONS = [
 export const CF_MODE_GESTION_OPTIONS = [
   { id: "SANS_GESTION", label: "Sans gestion (Murs seuls)" },
   { id: "AVEC_GESTION", label: "Avec gestion (Service complet)" },
+];
+
+// Type de structure (mono/multi-cellule) — même champ que /deposit (CF_STRUCTURE_TYPES).
+export const CF_STRUCTURE_TYPES = [
+  { id: "CELLULE_UNIQUE", label: "Cellule unique (Une seule chambre)" },
+  { id: "COMPLEXE_FRIGORIFIQUE", label: "Plusieurs cellules (Complexe frigorifique)" },
+];
+
+// Type d'accès transport — même champ que /deposit (INDUSTRIAL_ACCESS_TRANSPORT), partagé par
+// les fiches Hangar et Usine.
+export const INDUSTRIAL_ACCESS_TRANSPORT = [
+  { id: "SEMI_REMORQUE", label: "Semi-remorque (40 T)" },
+  { id: "CAMIONNETTE", label: "Camionnette (3.5 T)" },
+  { id: "PETIT_PORTEUR", label: "Petit porteur (10T)" },
+];
+
+// Documents pour la vente — mêmes ids que /deposit (LEGAL_DOCUMENTS_SALE), proposés uniquement
+// quand transaction === SALE sur les fiches Industriel (Hangar/Usine/Chambre Froide).
+export const LEGAL_DOCUMENTS_SALE = [
+  { id: "ACTE_PROPRIETE", label: "Acte de propriété" },
+  { id: "LIVRET_FONCIER", label: "Livret foncier" },
+  { id: "CERTIFICAT_CONFORMITE", label: "Certificat de conformité" },
 ];
 
 // Interlocuteur — seulement 2 choix pour les fiches Industriel (Location), contrairement au

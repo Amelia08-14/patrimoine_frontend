@@ -73,3 +73,19 @@ export function useCategoryLabel() {
     return fallback ?? REAL_ESTATE_CATEGORIES.find((c) => c.id === key)?.label ?? key;
   };
 }
+
+/**
+ * Contenu admin multilingue (FAQ, pages légales, liens utiles, slides, offres points/boutique) :
+ * la colonne française d'origine reste la colonne implicite (`title`/`body`/`question`/...), les
+ * colonnes `<champ>Ar`/`<champ>En` sont optionnelles et ajoutées à côté (cf. CLAUDE.md, chantier
+ * i18n contenu admin). Cette fonction pique la bonne variante selon la locale active, avec retombée
+ * sur le français si la traduction n'a pas encore été saisie par l'admin pour cette langue.
+ */
+export function useLocalizedContent() {
+  const locale = useLocale();
+  return (base?: string | null, ar?: string | null, en?: string | null): string => {
+    if (locale === "ar" && ar) return ar;
+    if (locale === "en" && en) return en;
+    return base || "";
+  };
+}

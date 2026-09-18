@@ -6,7 +6,7 @@ import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
   ArrowUp, ArrowDown, Check, Upload, Eye, EyeOff, Building, Hotel, PartyPopper, Warehouse, Pencil, ImageOff,
   Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe, Link2, ExternalLink, Users, Images,
-  X, Clock, ChevronDown,
+  X, Clock, ChevronDown, Facebook, Instagram, Linkedin, Youtube,
 } from "lucide-react"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
@@ -93,7 +93,11 @@ function LegalSectionsEditor({ pages, defaultPage, hint }: { pages: readonly { i
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<number | null>(null)
   const [newTitle, setNewTitle] = useState("")
+  const [newTitleAr, setNewTitleAr] = useState("")
+  const [newTitleEn, setNewTitleEn] = useState("")
   const [newBody, setNewBody] = useState("")
+  const [newBodyAr, setNewBodyAr] = useState("")
+  const [newBodyEn, setNewBodyEn] = useState("")
   const [newImage, setNewImage] = useState<File | null>(null)
   const [adding, setAdding] = useState(false)
 
@@ -143,11 +147,15 @@ function LegalSectionsEditor({ pages, defaultPage, hint }: { pages: readonly { i
     try {
       const fd = new FormData()
       fd.append('title', newTitle)
+      if (newTitleAr) fd.append('titleAr', newTitleAr)
+      if (newTitleEn) fd.append('titleEn', newTitleEn)
       fd.append('body', newBody)
+      if (newBodyAr) fd.append('bodyAr', newBodyAr)
+      if (newBodyEn) fd.append('bodyEn', newBodyEn)
       fd.append('order', String(sections.length))
       if (newImage) fd.append('image', newImage)
       await fetch(`${API_URL}/admin/content/legal/${page}`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
-      setNewTitle(""); setNewBody(""); setNewImage(null)
+      setNewTitle(""); setNewTitleAr(""); setNewTitleEn(""); setNewBody(""); setNewBodyAr(""); setNewBodyEn(""); setNewImage(null)
       await load()
     } finally { setAdding(false) }
   }
@@ -176,6 +184,7 @@ function LegalSectionsEditor({ pages, defaultPage, hint }: { pages: readonly { i
                 <input
                   defaultValue={s.title}
                   onBlur={(e) => e.target.value !== s.title && updateSection(s.id, { title: e.target.value })}
+                  placeholder="Titre (français)"
                   className="font-bold text-gray-900 text-sm flex-1 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
                 />
                 <div className="flex items-center gap-1 shrink-0">
@@ -184,6 +193,22 @@ function LegalSectionsEditor({ pages, defaultPage, hint }: { pages: readonly { i
                   <button onClick={() => deleteSection(s.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
                   {saving === s.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                <input
+                  defaultValue={s.titleAr || ""}
+                  onBlur={(e) => e.target.value !== (s.titleAr || "") && updateSection(s.id, { titleAr: e.target.value })}
+                  placeholder="Titre (arabe)"
+                  dir="rtl"
+                  className="text-sm text-gray-700 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                />
+                <input
+                  defaultValue={s.titleEn || ""}
+                  onBlur={(e) => e.target.value !== (s.titleEn || "") && updateSection(s.id, { titleEn: e.target.value })}
+                  placeholder="Titre (anglais)"
+                  className="text-sm text-gray-700 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                />
               </div>
 
               {/* Image d'illustration de la section (optionnelle) */}
@@ -210,6 +235,7 @@ function LegalSectionsEditor({ pages, defaultPage, hint }: { pages: readonly { i
                 </div>
               </div>
 
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Contenu — Français</p>
               <LegalRichEditor
                 initialHtml={s.body}
                 published={s.published}
@@ -217,13 +243,45 @@ function LegalSectionsEditor({ pages, defaultPage, hint }: { pages: readonly { i
                 onSave={(html) => updateSection(s.id, { body: html })}
                 onPublish={(html) => updateSection(s.id, { body: html, published: true })}
               />
+
+              <details className="mt-3">
+                <summary className="text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer select-none hover:text-[#00BFA6]">Contenu — العربية (arabe)</summary>
+                <div className="mt-2">
+                  <LegalRichEditor
+                    initialHtml={s.bodyAr || ""}
+                    published={s.published}
+                    saving={saving === s.id}
+                    onSave={(html) => updateSection(s.id, { bodyAr: html })}
+                    onPublish={(html) => updateSection(s.id, { bodyAr: html, published: true })}
+                  />
+                </div>
+              </details>
+
+              <details className="mt-3">
+                <summary className="text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer select-none hover:text-[#00BFA6]">Contenu — English</summary>
+                <div className="mt-2">
+                  <LegalRichEditor
+                    initialHtml={s.bodyEn || ""}
+                    published={s.published}
+                    saving={saving === s.id}
+                    onSave={(html) => updateSection(s.id, { bodyEn: html })}
+                    onPublish={(html) => updateSection(s.id, { bodyEn: html, published: true })}
+                  />
+                </div>
+              </details>
             </div>
           ))}
 
           <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter une section</p>
-            <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre de la section" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-            <textarea value={newBody} onChange={(e) => setNewBody(e.target.value)} placeholder="Contenu..." rows={3} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+            <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre de la section (français)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+            <textarea value={newBody} onChange={(e) => setNewBody(e.target.value)} placeholder="Contenu (français)..." rows={3} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input value={newTitleAr} onChange={(e) => setNewTitleAr(e.target.value)} placeholder="Titre (arabe)" dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+              <input value={newTitleEn} onChange={(e) => setNewTitleEn(e.target.value)} placeholder="Titre (anglais)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+            </div>
+            <textarea value={newBodyAr} onChange={(e) => setNewBodyAr(e.target.value)} placeholder="Contenu (arabe)..." rows={3} dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+            <textarea value={newBodyEn} onChange={(e) => setNewBodyEn(e.target.value)} placeholder="Contenu (anglais)..." rows={3} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
             <label className="flex items-center gap-2 w-full text-sm border border-gray-200 rounded-xl p-3 bg-white cursor-pointer">
               <Upload className="h-4 w-4 text-gray-400" /> {newImage ? newImage.name : "Image (optionnelle)"}
               <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
@@ -264,7 +322,11 @@ function FaqTab() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [newQ, setNewQ] = useState("")
+  const [newQAr, setNewQAr] = useState("")
+  const [newQEn, setNewQEn] = useState("")
   const [newA, setNewA] = useState("")
+  const [newAAr, setNewAAr] = useState("")
+  const [newAEn, setNewAEn] = useState("")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -299,8 +361,15 @@ function FaqTab() {
 
   const add = async () => {
     if (!newQ.trim() || !newA.trim()) return
-    await fetch(`${API_URL}/admin/content/faq`, { method: 'POST', headers: getHeaders() as any, body: JSON.stringify({ question: newQ, answer: newA, order: items.length }) })
-    setNewQ(""); setNewA("")
+    await fetch(`${API_URL}/admin/content/faq`, {
+      method: 'POST', headers: getHeaders() as any,
+      body: JSON.stringify({
+        question: newQ, questionAr: newQAr || undefined, questionEn: newQEn || undefined,
+        answer: newA, answerAr: newAAr || undefined, answerEn: newAEn || undefined,
+        order: items.length,
+      }),
+    })
+    setNewQ(""); setNewQAr(""); setNewQEn(""); setNewA(""); setNewAAr(""); setNewAEn("")
     await load()
   }
 
@@ -312,6 +381,7 @@ function FaqTab() {
         <div key={f.id} className="bg-white rounded-2xl border border-gray-100 p-5">
           <div className="flex items-start justify-between gap-3 mb-2">
             <input defaultValue={f.question} onBlur={(e) => e.target.value !== f.question && update(f.id, { question: e.target.value })}
+              placeholder="Question (français)"
               className="font-bold text-gray-900 text-sm flex-1 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1" />
             <div className="flex items-center gap-1 shrink-0">
               <button onClick={() => update(f.id, { published: !f.published })} className="p-1.5 rounded-lg hover:bg-gray-100" title={f.published ? 'Publié' : 'Masqué'}>
@@ -323,14 +393,37 @@ function FaqTab() {
             </div>
           </div>
           <textarea defaultValue={f.answer} onBlur={(e) => e.target.value !== f.answer && update(f.id, { answer: e.target.value })} rows={2}
+            placeholder="Réponse (français)"
             className="w-full text-sm text-gray-600 outline-none border border-gray-200 rounded-xl p-3 focus:border-[#00BFA6]" />
+
+          <details className="mt-2">
+            <summary className="text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer select-none hover:text-[#00BFA6]">Arabe / Anglais</summary>
+            <div className="mt-2 space-y-2">
+              <input defaultValue={f.questionAr || ""} onBlur={(e) => e.target.value !== (f.questionAr || "") && update(f.id, { questionAr: e.target.value })}
+                placeholder="Question (arabe)" dir="rtl"
+                className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]" />
+              <textarea defaultValue={f.answerAr || ""} onBlur={(e) => e.target.value !== (f.answerAr || "") && update(f.id, { answerAr: e.target.value })} rows={2}
+                placeholder="Réponse (arabe)" dir="rtl"
+                className="w-full text-sm text-gray-600 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]" />
+              <input defaultValue={f.questionEn || ""} onBlur={(e) => e.target.value !== (f.questionEn || "") && update(f.id, { questionEn: e.target.value })}
+                placeholder="Question (anglais)"
+                className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]" />
+              <textarea defaultValue={f.answerEn || ""} onBlur={(e) => e.target.value !== (f.answerEn || "") && update(f.id, { answerEn: e.target.value })} rows={2}
+                placeholder="Réponse (anglais)"
+                className="w-full text-sm text-gray-600 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]" />
+            </div>
+          </details>
         </div>
       ))}
 
       <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3">
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter une question</p>
-        <input value={newQ} onChange={(e) => setNewQ(e.target.value)} placeholder="Question" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-        <textarea value={newA} onChange={(e) => setNewA(e.target.value)} placeholder="Réponse" rows={2} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newQ} onChange={(e) => setNewQ(e.target.value)} placeholder="Question (français)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <textarea value={newA} onChange={(e) => setNewA(e.target.value)} placeholder="Réponse (français)" rows={2} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newQAr} onChange={(e) => setNewQAr(e.target.value)} placeholder="Question (arabe)" dir="rtl" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <textarea value={newAAr} onChange={(e) => setNewAAr(e.target.value)} placeholder="Réponse (arabe)" rows={2} dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newQEn} onChange={(e) => setNewQEn(e.target.value)} placeholder="Question (anglais)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <textarea value={newAEn} onChange={(e) => setNewAEn(e.target.value)} placeholder="Réponse (anglais)" rows={2} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
         <Button onClick={add} className="bg-[#00BFA6] hover:bg-[#00908A] text-white"><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
       </div>
     </div>
@@ -703,6 +796,8 @@ function LinksTab() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<number | null>(null)
   const [newTitle, setNewTitle] = useState("")
+  const [newTitleAr, setNewTitleAr] = useState("")
+  const [newTitleEn, setNewTitleEn] = useState("")
   const [newUrl, setNewUrl] = useState("")
   const [adding, setAdding] = useState(false)
 
@@ -752,9 +847,12 @@ function LinksTab() {
     try {
       await fetch(`${API_URL}/admin/content/useful-links`, {
         method: 'POST', headers: getHeaders() as any,
-        body: JSON.stringify({ title: newTitle.trim(), url: normalizeUrl(newUrl), order: links.length }),
+        body: JSON.stringify({
+          title: newTitle.trim(), titleAr: newTitleAr.trim() || undefined, titleEn: newTitleEn.trim() || undefined,
+          url: normalizeUrl(newUrl), order: links.length,
+        }),
       })
-      setNewTitle(""); setNewUrl("")
+      setNewTitle(""); setNewTitleAr(""); setNewTitleEn(""); setNewUrl("")
       await load()
     } finally { setAdding(false) }
   }
@@ -771,19 +869,36 @@ function LinksTab() {
         {links.map((l, i) => (
           <div key={l.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
             <Link2 className="h-4 w-4 text-gray-300 shrink-0" />
-            <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                defaultValue={l.title}
-                onBlur={(e) => e.target.value !== l.title && updateLink(l.id, { title: e.target.value })}
-                placeholder="Titre affiché"
-                className="text-sm font-bold text-gray-900 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
-              />
-              <input
-                defaultValue={l.url}
-                onBlur={(e) => e.target.value !== l.url && updateLink(l.id, { url: normalizeUrl(e.target.value) })}
-                placeholder="https://..."
-                className="text-sm text-gray-500 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1 truncate"
-              />
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  defaultValue={l.title}
+                  onBlur={(e) => e.target.value !== l.title && updateLink(l.id, { title: e.target.value })}
+                  placeholder="Titre affiché (français)"
+                  className="text-sm font-bold text-gray-900 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
+                />
+                <input
+                  defaultValue={l.url}
+                  onBlur={(e) => e.target.value !== l.url && updateLink(l.id, { url: normalizeUrl(e.target.value) })}
+                  placeholder="https://..."
+                  className="text-sm text-gray-500 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1 truncate"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  defaultValue={l.titleAr || ""}
+                  onBlur={(e) => e.target.value !== (l.titleAr || "") && updateLink(l.id, { titleAr: e.target.value })}
+                  placeholder="Titre (arabe)"
+                  dir="rtl"
+                  className="text-xs text-gray-600 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
+                />
+                <input
+                  defaultValue={l.titleEn || ""}
+                  onBlur={(e) => e.target.value !== (l.titleEn || "") && updateLink(l.id, { titleEn: e.target.value })}
+                  placeholder="Titre (anglais)"
+                  className="text-xs text-gray-600 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
+                />
+              </div>
             </div>
             <a href={l.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#00BFA6] shrink-0" title="Ouvrir le lien">
               <ExternalLink className="h-3.5 w-3.5" />
@@ -806,8 +921,12 @@ function LinksTab() {
 
       <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3">
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter un lien</p>
-        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre (ex. Blog, Aide, Carrières...)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre (français, ex. Blog, Aide, Carrières...)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
         <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="URL (ex. https://exemple.com)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input value={newTitleAr} onChange={(e) => setNewTitleAr(e.target.value)} placeholder="Titre (arabe)" dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+          <input value={newTitleEn} onChange={(e) => setNewTitleEn(e.target.value)} placeholder="Titre (anglais)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        </div>
         <Button onClick={addLink} disabled={adding} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
           {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
         </Button>
@@ -828,7 +947,12 @@ function SlidesTab() {
   const [saving, setSaving] = useState<number | null>(null)
   const [newCategory, setNewCategory] = useState("")
   const [newTitle, setNewTitle] = useState("")
+  const [newTitleAr, setNewTitleAr] = useState("")
+  const [newTitleEn, setNewTitleEn] = useState("")
   const [newSubtitle, setNewSubtitle] = useState("")
+  const [newSubtitleAr, setNewSubtitleAr] = useState("")
+  const [newSubtitleEn, setNewSubtitleEn] = useState("")
+  const [newLink, setNewLink] = useState("")
   const [newImage, setNewImage] = useState<File | null>(null)
   const [adding, setAdding] = useState(false)
 
@@ -877,10 +1001,15 @@ function SlidesTab() {
       fd.append('image', newImage)
       if (newCategory) fd.append('categoryId', newCategory)
       if (newTitle) fd.append('title', newTitle)
+      if (newTitleAr) fd.append('titleAr', newTitleAr)
+      if (newTitleEn) fd.append('titleEn', newTitleEn)
       if (newSubtitle) fd.append('subtitle', newSubtitle)
+      if (newSubtitleAr) fd.append('subtitleAr', newSubtitleAr)
+      if (newSubtitleEn) fd.append('subtitleEn', newSubtitleEn)
+      if (newLink) fd.append('link', newLink)
       fd.append('order', String(slides.length))
       await fetch(`${API_URL}/admin/content/hero-slides`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
-      setNewCategory(""); setNewTitle(""); setNewSubtitle(""); setNewImage(null)
+      setNewCategory(""); setNewTitle(""); setNewTitleAr(""); setNewTitleEn(""); setNewSubtitle(""); setNewSubtitleAr(""); setNewSubtitleEn(""); setNewLink(""); setNewImage(null)
       await load()
     } finally { setAdding(false) }
   }
@@ -917,15 +1046,50 @@ function SlidesTab() {
               <input
                 defaultValue={s.title || ""}
                 onBlur={(e) => e.target.value !== (s.title || "") && updateSlide(s.id, { title: e.target.value })}
-                placeholder={`Titre (par défaut : texte du domaine${categoryLabel(s.categoryId) ? ` « ${categoryLabel(s.categoryId)} »` : ''})`}
+                placeholder={`Titre FR (par défaut : texte du domaine${categoryLabel(s.categoryId) ? ` « ${categoryLabel(s.categoryId)} »` : ''})`}
                 className="w-full text-sm font-bold text-gray-900 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
               />
               <input
                 defaultValue={s.subtitle || ""}
                 onBlur={(e) => e.target.value !== (s.subtitle || "") && updateSlide(s.id, { subtitle: e.target.value })}
-                placeholder="Sous-titre (optionnel)"
+                placeholder="Sous-titre FR (optionnel)"
                 className="w-full text-sm text-gray-500 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
               />
+              <input
+                defaultValue={s.link || ""}
+                onBlur={(e) => e.target.value !== (s.link || "") && updateSlide(s.id, { link: e.target.value })}
+                placeholder="Lien de renvoi au clic (optionnel, ex. /announces ou https://...)"
+                className="w-full text-sm text-[#00BFA6] outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
+              />
+              <details className="mt-1">
+                <summary className="text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer select-none hover:text-[#00BFA6]">Arabe / Anglais</summary>
+                <div className="mt-2 space-y-1.5">
+                  <input
+                    defaultValue={s.titleAr || ""}
+                    onBlur={(e) => e.target.value !== (s.titleAr || "") && updateSlide(s.id, { titleAr: e.target.value })}
+                    placeholder="Titre (arabe)" dir="rtl"
+                    className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                  />
+                  <input
+                    defaultValue={s.subtitleAr || ""}
+                    onBlur={(e) => e.target.value !== (s.subtitleAr || "") && updateSlide(s.id, { subtitleAr: e.target.value })}
+                    placeholder="Sous-titre (arabe)" dir="rtl"
+                    className="w-full text-sm text-gray-500 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                  />
+                  <input
+                    defaultValue={s.titleEn || ""}
+                    onBlur={(e) => e.target.value !== (s.titleEn || "") && updateSlide(s.id, { titleEn: e.target.value })}
+                    placeholder="Titre (anglais)"
+                    className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                  />
+                  <input
+                    defaultValue={s.subtitleEn || ""}
+                    onBlur={(e) => e.target.value !== (s.subtitleEn || "") && updateSlide(s.id, { subtitleEn: e.target.value })}
+                    placeholder="Sous-titre (anglais)"
+                    className="w-full text-sm text-gray-500 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                  />
+                </div>
+              </details>
             </div>
             <div className="flex sm:flex-col items-center gap-1 shrink-0">
               <button onClick={() => move(i, -1)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
@@ -953,8 +1117,15 @@ function SlidesTab() {
           <option value="">Aucun domaine (générique)</option>
           {REAL_ESTATE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
-        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre (optionnel)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-        <input value={newSubtitle} onChange={(e) => setNewSubtitle(e.target.value)} placeholder="Sous-titre (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre FR (optionnel)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newSubtitle} onChange={(e) => setNewSubtitle(e.target.value)} placeholder="Sous-titre FR (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newLink} onChange={(e) => setNewLink(e.target.value)} placeholder="Lien de renvoi au clic (optionnel, ex. /announces ou https://...)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input value={newTitleAr} onChange={(e) => setNewTitleAr(e.target.value)} placeholder="Titre (arabe)" dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+          <input value={newTitleEn} onChange={(e) => setNewTitleEn(e.target.value)} placeholder="Titre (anglais)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+          <input value={newSubtitleAr} onChange={(e) => setNewSubtitleAr(e.target.value)} placeholder="Sous-titre (arabe)" dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+          <input value={newSubtitleEn} onChange={(e) => setNewSubtitleEn(e.target.value)} placeholder="Sous-titre (anglais)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        </div>
         <Button onClick={addSlide} disabled={adding || !newImage} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
           {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
         </Button>
@@ -1056,6 +1227,30 @@ function ContactTab() {
         <div>
           <label className="text-xs font-bold text-gray-500 mb-1 block">Texte "Service Support"</label>
           <textarea value={settings.SUPPORT_CONTENT || ''} onChange={(e) => set('SUPPORT_CONTENT', e.target.value)} rows={3} className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+        </div>
+      </div>
+
+      {/* Réseaux sociaux — affichés automatiquement dans le footer du site public, une icône
+          n'apparaît que si son lien est renseigné ici */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+        <h3 className="text-sm font-bold text-[#003B4A] flex items-center gap-2"><Globe className="h-4 w-4 text-[#00BFA6]" /> Réseaux sociaux</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Facebook className="h-3.5 w-3.5 text-gray-400" /> Facebook</label>
+            <input value={settings.SOCIAL_FACEBOOK || ''} onChange={(e) => set('SOCIAL_FACEBOOK', e.target.value)} placeholder="https://facebook.com/..." className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Instagram className="h-3.5 w-3.5 text-gray-400" /> Instagram</label>
+            <input value={settings.SOCIAL_INSTAGRAM || ''} onChange={(e) => set('SOCIAL_INSTAGRAM', e.target.value)} placeholder="https://instagram.com/..." className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Linkedin className="h-3.5 w-3.5 text-gray-400" /> LinkedIn</label>
+            <input value={settings.SOCIAL_LINKEDIN || ''} onChange={(e) => set('SOCIAL_LINKEDIN', e.target.value)} placeholder="https://linkedin.com/company/..." className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Youtube className="h-3.5 w-3.5 text-gray-400" /> YouTube</label>
+            <input value={settings.SOCIAL_YOUTUBE || ''} onChange={(e) => set('SOCIAL_YOUTUBE', e.target.value)} placeholder="https://youtube.com/@..." className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
         </div>
       </div>
 

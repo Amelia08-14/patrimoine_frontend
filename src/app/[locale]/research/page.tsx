@@ -12,7 +12,7 @@ import {
   Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
   Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2, Store, Zap,
   Warehouse, Snowflake, Wrench, Users, Thermometer,
-  Shield, Utensils, Wallet, CreditCard,
+  Shield, Utensils, Wallet, CreditCard, FileCheck, Truck,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -24,8 +24,10 @@ import {
   VISIBILITY_OPTIONS, LOCAL_STYLE_ETAT_OPTIONS, LOCAL_ENVIRONMENT_OPTIONS, LOCAL_USAGE_OPTIONS,
   ENVIRONMENT_OPTIONS,
   RESIDENTIEL_TYPE_IDS, VILLA_LEVEL_ENTRANCE_OPTIONS,
+  RES_EXTERIOR_OPTIONS, RES_HEATING_OPTIONS, RES_AC_OPTIONS, RES_SECURITY_OPTIONS, RES_CONNECTIVITY_OPTIONS,
   HANGAR_USAGE_OPTIONS, INDUSTRIAL_ZONE_OPTIONS, USINE_EQUIPMENT_OPTIONS, USINE_ACTIVITY_OPTIONS,
   CF_ACTIVITY_OPTIONS, CF_TYPE_FROID_OPTIONS, CF_MODE_GESTION_OPTIONS,
+  CF_STRUCTURE_TYPES, INDUSTRIAL_ACCESS_TRANSPORT, LEGAL_DOCUMENTS_SALE,
   INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS,
   HTL_PROFIL_GROUPE_OPTIONS, HTL_CLASSEMENT_OPTIONS, HTL_TYPE_ETABLISSEMENT_OPTIONS,
   HTL_FORMULE_OPTIONS, HTL_GAMME_CHAMBRE_OPTIONS, HTL_TYPE_COUCHAGE_OPTIONS,
@@ -268,7 +270,7 @@ export default function ResearchPage() {
     truckAccess: z.boolean().optional(),
     technicalSpecs: z.string().optional(),
 
-    // Industriel (Location) — fiches dédiées Hangar / Usine / Chambre Froide.
+    // Industriel (Location ET Achat depuis cette phase) — fiches dédiées Hangar / Usine / Chambre Froide.
     hgUsageType: z.array(z.string()).optional(),
     hgSurfaceTerrainMin: z.coerce.number().optional(),
     hgSurfaceTerrainMax: z.coerce.number().optional(),
@@ -278,6 +280,7 @@ export default function ResearchPage() {
     hgHauteurMax: z.coerce.number().optional(),
     hgZone: z.array(z.string()).optional(),
     hgEnergie: z.array(z.string()).optional(),
+    hgAccesTransport: z.array(z.string()).optional(),
 
     usNature: z.array(z.string()).optional(),
     usNatureOther: z.string().optional(),
@@ -288,6 +291,7 @@ export default function ResearchPage() {
     usSurfaceBatieMax: z.coerce.number().optional(),
     usZone: z.array(z.string()).optional(),
     usEnergie: z.array(z.string()).optional(),
+    usAccesTransport: z.array(z.string()).optional(),
 
     cfActivite: z.array(z.string()).optional(),
     cfActiviteOther: z.string().optional(),
@@ -295,6 +299,11 @@ export default function ResearchPage() {
     cfCapaciteMax: z.coerce.number().optional(),
     cfTypeFroidChoices: z.array(z.string()).optional(),
     cfModeGestionChoices: z.array(z.string()).optional(),
+    cfStructureType: z.enum(['CELLULE_UNIQUE', 'COMPLEXE_FRIGORIFIQUE']).optional(),
+
+    // Documents pour la vente — uniquement proposés quand transaction === SALE, communs aux 3
+    // fiches Industriel (une seule est active à la fois via industrielSearchScope).
+    indLegalDocuments: z.array(z.string()).optional(),
 
     nbOffices: z.coerce.number().optional(),
     streetWindow: z.boolean().optional(),
@@ -402,6 +411,15 @@ export default function ResearchPage() {
     typologyMax: z.string().optional(),
     floorMin: z.string().optional(),
     floorMax: z.string().optional(),
+
+    // Critères espace extérieur / chauffage / climatisation / sécurité / connectivité — mêmes
+    // champs que la fiche Résidentiel de /deposit (VILLA_EQUIPMENTS.exterior/security/
+    // connectivity + HEATING_TYPES/AC_TYPES), absents de /research jusqu'à cette phase.
+    resExterior: z.array(z.string()).optional(),
+    resHeating: z.string().optional(),
+    resAc: z.string().optional(),
+    resSecurity: z.array(z.string()).optional(),
+    resConnectivity: z.array(z.string()).optional(),
 
     // Résidentiel — choix entre fiche "Recherche Groupée" (ci-dessus) et fiche dédiée à la
     // recherche d'un immeuble d'appartements entier (ci-dessous).
@@ -525,16 +543,22 @@ export default function ResearchPage() {
       lcStyleEtat: [],
       lcEnvironnement: [],
       lcUsage: [],
+      resExterior: [],
+      resSecurity: [],
+      resConnectivity: [],
       hgUsageType: [],
       hgZone: [],
       hgEnergie: [],
+      hgAccesTransport: [],
       usNature: [],
       usEquipement: [],
       usZone: [],
       usEnergie: [],
+      usAccesTransport: [],
       cfActivite: [],
       cfTypeFroidChoices: [],
       cfModeGestionChoices: [],
+      indLegalDocuments: [],
     },
   });
 
@@ -604,22 +628,24 @@ export default function ResearchPage() {
 
   const isBureauxCommerces = branch === 'BUREAUX_COMMERCES';
   const isIndustriel = branch === 'INDUSTRIEL';
-  // Les 3 fiches dédiées (Hangar/Usine/Chambre Froide) n'existent pour l'instant qu'en Location —
-  // en Achat, l'ancien formulaire générique (avec Budget/Interlocuteur en étapes à part) reste
-  // utilisé, donc le parcours court ne s'applique qu'à la Location.
-  const isIndustrielLocation = isIndustriel && watch('transaction') === TransactionType.RENTAL;
+  // Les 3 fiches dédiées (Hangar/Usine/Chambre Froide) couvrent maintenant Location ET Achat —
+  // elles n'étaient dédiées qu'à la Location avant cette phase (l'Achat retombait sur l'ancien
+  // formulaire générique avec Budget/Interlocuteur en étapes à part, resté ci-dessous en filet de
+  // sécurité tant que `transaction` n'a pas encore été choisi).
+  const isIndustrielFiche = isIndustriel && (watch('transaction') === TransactionType.RENTAL || watch('transaction') === TransactionType.SALE);
+  const isIndustrielAchat = isIndustrielFiche && watch('transaction') === TransactionType.SALE;
   const isHotelier = branch === 'HOTELIER';
   const isTerrain = branch === 'TERRAIN_FONCIER';
 
-  // Résidentiel (Location/Achat), Bureaux et Commerces, Industriel Location, Hébergement et
-  // Séjour et Terrains et Foncier : fiche unique dédiée (critères + localisation + message) et
-  // contact direct. Industriel Achat et les autres branches gardent le parcours complet
-  // (Budget/Interlocuteur en étapes à part).
+  // Résidentiel (Location/Achat), Bureaux et Commerces, Industriel (Location/Achat), Hébergement
+  // et Séjour et Terrains et Foncier : fiche unique dédiée (critères + localisation + message) et
+  // contact direct. Les autres branches gardent le parcours complet (Budget/Interlocuteur en
+  // étapes à part).
   const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
     ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isBureauxCommerces
     ? ['TRANSACTION', 'BRANCH', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
-    : isIndustrielLocation
+    : isIndustrielFiche
     ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isIndustriel
     ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT']
@@ -755,6 +781,15 @@ export default function ResearchPage() {
             };
             break;
           }
+          // Extérieur / chauffage / climatisation / sécurité / connectivité — communs aux fiches
+          // Location et Achat (mêmes champs que /deposit).
+          const resEquipments = {
+            exterior: data.resExterior || [],
+            heating: data.resHeating,
+            ac: data.resAc,
+            security: data.resSecurity || [],
+            connectivity: data.resConnectivity || [],
+          };
           if (data.transaction === TransactionType.RENTAL) {
             amenities.residentiel.location = {
               propertyTypes: data.resPropertyTypes || [],
@@ -768,6 +803,7 @@ export default function ResearchPage() {
               budgetUnit: data.budgetUnit,
               cityIds: data.cityIds || [],
               environment: data.environment,
+              equipments: resEquipments,
             };
           }
           if (data.transaction === TransactionType.SALE) {
@@ -786,12 +822,17 @@ export default function ResearchPage() {
               cityIds: data.cityIds || [],
               environment: data.environment,
               realisationStage: data.realisationStage,
+              equipments: resEquipments,
             };
           }
           break;
         case 'INDUSTRIEL':
-          if (data.transaction === TransactionType.RENTAL) {
+          if (data.transaction === TransactionType.RENTAL || data.transaction === TransactionType.SALE) {
             amenities.industriel = { searchScope: data.industrielSearchScope };
+            // Documents attendus pour la vente — communs aux 3 fiches, seulement en Achat.
+            if (data.transaction === TransactionType.SALE) {
+              amenities.industriel.legalDocuments = data.indLegalDocuments || [];
+            }
             if (data.industrielSearchScope === 'USINE') {
               amenities.industriel.usine = {
                 nature: data.usNature || [],
@@ -803,6 +844,7 @@ export default function ResearchPage() {
                 surfaceBatieMax: data.usSurfaceBatieMax,
                 zone: data.usZone || [],
                 energie: data.usEnergie || [],
+                accesTransport: data.usAccesTransport || [],
                 cityIds: data.cityIds || [],
               };
             } else if (data.industrielSearchScope === 'CHAMBRE_FROIDE') {
@@ -813,6 +855,7 @@ export default function ResearchPage() {
                 capaciteMax: data.cfCapaciteMax,
                 typeFroid: data.cfTypeFroidChoices || [],
                 modeGestion: data.cfModeGestionChoices || [],
+                structureType: data.cfStructureType,
                 cityIds: data.cityIds || [],
               };
             } else {
@@ -826,6 +869,7 @@ export default function ResearchPage() {
                 hauteurMax: data.hgHauteurMax,
                 zone: data.hgZone || [],
                 energie: data.hgEnergie || [],
+                accesTransport: data.hgAccesTransport || [],
                 cityIds: data.cityIds || [],
               };
             }
@@ -1064,6 +1108,7 @@ export default function ResearchPage() {
         {renderPropertyTypeSection()}
         {renderTypologyFloorSurfaceBudgetSection()}
         {renderEnvironmentSection()}
+        {renderResidentielEquipmentsSection()}
 
         {/* Seul ajout propre à l'achat par rapport à la fiche Location : l'état de réalisation,
             sur une seule ligne, sans texte de description. */}
@@ -1391,6 +1436,57 @@ export default function ResearchPage() {
     </Section>
   );
 
+  // Espace extérieur / chauffage / climatisation / sécurité / connectivité — mêmes critères que
+  // la fiche Résidentiel de /deposit, partagés par Achat ET Location.
+  const renderResidentielEquipmentsSection = () => (
+    <Section title={t('resEquipmentsTitle')} icon={Shield}>
+      <div className="space-y-5">
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">{t('resExteriorLabel')}</label>
+          <div className="flex flex-wrap gap-3">
+            {RES_EXTERIOR_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('resExterior') || []).includes(opt.id)} label={optLabel('RES_EXTERIOR_OPTIONS', opt)} onChange={() => toggleArrayValue('resExterior', opt.id)} />
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resHeatingLabel')}</label>
+            <div className="flex flex-wrap gap-3">
+              {RES_HEATING_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('resHeating') === opt.id} label={optLabel('RES_HEATING_OPTIONS', opt)} onChange={() => setValue('resHeating', opt.id as any)} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resAcLabel')}</label>
+            <div className="flex flex-wrap gap-3">
+              {RES_AC_OPTIONS.map((opt) => (
+                <PillOption key={opt.id} checked={watch('resAc') === opt.id} label={optLabel('RES_AC_OPTIONS', opt)} onChange={() => setValue('resAc', opt.id as any)} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">{t('resSecurityLabel')}</label>
+          <div className="flex flex-wrap gap-3">
+            {RES_SECURITY_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('resSecurity') || []).includes(opt.id)} label={optLabel('RES_SECURITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resSecurity', opt.id)} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">{t('resConnectivityLabel')}</label>
+          <div className="flex flex-wrap gap-3">
+            {RES_CONNECTIVITY_OPTIONS.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('resConnectivity') || []).includes(opt.id)} label={optLabel('RES_CONNECTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resConnectivity', opt.id)} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+
   const renderCommentSection = () => (
     <Section title={t('resLocCommentTitle')} icon={Sparkles}>
       <textarea {...register('comment')} rows={3} className={inputCls} placeholder={t('resLocCommentPlaceholder')}></textarea>
@@ -1511,6 +1607,7 @@ export default function ResearchPage() {
         {renderTypologyFloorSurfaceBudgetSection()}
         {renderLocalisationSection({ hideDate: true })}
         {renderEnvironmentSection()}
+        {renderResidentielEquipmentsSection()}
         {renderSharedInterlocutorSection()}
         {renderCommentSection()}
       </>
@@ -1657,7 +1754,7 @@ export default function ResearchPage() {
       {renderBoxedBudgetField(t('budgetMin'), 'minBudget')}
       {renderBoxedBudgetField(t('budgetMax'), 'maxBudget', { withUnit: true })}
       <div className="min-w-0">
-        <label className="block text-sm font-bold text-gray-900 mb-2">{t('indLocDateTitle')}</label>
+        <label className="block text-sm font-bold text-gray-900 mb-2">{watch('transaction') === TransactionType.SALE ? t('indAcqDateTitle') : t('indLocDateTitle')}</label>
         <input
           type="date" {...register('installationDate')}
           className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
@@ -1665,6 +1762,21 @@ export default function ResearchPage() {
       </div>
     </div>
   );
+
+  // Documents attendus pour la vente — proposés uniquement quand transaction === SALE, partagés
+  // par les 3 fiches Industriel (une seule active à la fois).
+  const renderIndustrielLegalDocumentsSection = () => {
+    if (watch('transaction') !== TransactionType.SALE) return null;
+    return (
+      <Section title={t('indLegalDocumentsTitle')} icon={FileCheck}>
+        <div className="flex flex-wrap gap-3">
+          {LEGAL_DOCUMENTS_SALE.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('indLegalDocuments') || []).includes(opt.id)} label={optLabel('LEGAL_DOCUMENTS_SALE', opt)} onChange={() => toggleArrayValue('indLegalDocuments', opt.id)} />
+          ))}
+        </div>
+      </Section>
+    );
+  };
 
   const renderHangarLocationCriteria = () => (
     <>
@@ -1699,6 +1811,15 @@ export default function ResearchPage() {
         <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="hgEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="OFFICE_ENERGY_OPTIONS" />
       </Section>
 
+      <Section title={t('indAccessTransportTitle')} icon={Truck}>
+        <div className="flex flex-wrap gap-3">
+          {INDUSTRIAL_ACCESS_TRANSPORT.map((opt) => (
+            <PillOption key={opt.id} checked={(watch('hgAccesTransport') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ACCESS_TRANSPORT', opt)} onChange={() => toggleArrayValue('hgAccesTransport', opt.id)} />
+          ))}
+        </div>
+      </Section>
+
+      {renderIndustrielLegalDocumentsSection()}
       {renderLocalisationSection({ hideDate: true })}
       {renderIndustrielLocationInterlocutorSection()}
       {renderCommentSection()}
@@ -1755,6 +1876,15 @@ export default function ResearchPage() {
           <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="usEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="OFFICE_ENERGY_OPTIONS" />
         </Section>
 
+        <Section title={t('indAccessTransportTitle')} icon={Truck}>
+          <div className="flex flex-wrap gap-3">
+            {INDUSTRIAL_ACCESS_TRANSPORT.map((opt) => (
+              <PillOption key={opt.id} checked={(watch('usAccesTransport') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ACCESS_TRANSPORT', opt)} onChange={() => toggleArrayValue('usAccesTransport', opt.id)} />
+            ))}
+          </div>
+        </Section>
+
+        {renderIndustrielLegalDocumentsSection()}
         {renderLocalisationSection({ hideDate: true })}
         {renderIndustrielLocationInterlocutorSection()}
         {renderCommentSection()}
@@ -1807,6 +1937,15 @@ export default function ResearchPage() {
           </div>
         </Section>
 
+        <Section title={t('cfStructureTitle')} icon={Snowflake}>
+          <div className="flex flex-wrap gap-3">
+            {CF_STRUCTURE_TYPES.map((opt) => (
+              <PillOption key={opt.id} checked={watch('cfStructureType') === opt.id} label={optLabel('CF_STRUCTURE_TYPES', opt)} onChange={() => setValue('cfStructureType', opt.id as any)} />
+            ))}
+          </div>
+        </Section>
+
+        {renderIndustrielLegalDocumentsSection()}
         {renderLocalisationSection({ hideDate: true })}
         {renderIndustrielLocationInterlocutorSection()}
         {renderCommentSection()}
@@ -2256,9 +2395,10 @@ export default function ResearchPage() {
         return renderResidentielLocationCriteria();
 
       case 'INDUSTRIEL':
-        // Fiches dédiées (Hangar/Usine/Chambre Froide) uniquement en Location pour le moment —
-        // l'Achat garde l'ancien formulaire générique en attendant une spécification dédiée.
-        if (watch('transaction') === TransactionType.RENTAL) {
+        // Fiches dédiées (Hangar/Usine/Chambre Froide) — couvrent Location ET Achat depuis cette
+        // phase (l'ancien formulaire générique ci-dessous ne reste qu'en filet de sécurité tant
+        // que `transaction` n'a pas encore été choisi).
+        if (watch('transaction') === TransactionType.RENTAL || watch('transaction') === TransactionType.SALE) {
           switch (watch('industrielSearchScope')) {
             case 'USINE': return renderUsineLocationCriteria();
             case 'CHAMBRE_FROIDE': return renderChambreFroideLocationCriteria();

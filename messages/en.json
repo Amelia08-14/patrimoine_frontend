@@ -5,7 +5,8 @@
     "HOTELIER": "Hospitality & Stays",
     "HEBERGEMENT": "Homestay accommodation",
     "BUREAUX_COMMERCES": "Offices & Retail",
-    "TERRAIN_FONCIER": "Land & Plots"
+    "TERRAIN_FONCIER": "Land & Plots",
+    "EVENEMENTIEL": "Events"
   },
   "Navbar": {
     "toggleTheme": "Switch theme (light / dark)",
@@ -357,7 +358,32 @@
     "activityEntreposage": "Storage and warehousing activity",
     "otherGroup": "Other",
     "otherPartnersTitle": "Other partners",
-    "partnersCount": "{count, plural, one {# partner} other {# partners}}"
+    "partnersCount": "{count, plural, one {# partner} other {# partners}}",
+    "allSubCategories": "All sub-categories",
+    "subCategories": {
+      "AGENCE_IMMOBILIERE": "Real estate agency",
+      "PROMOTEUR_IMMOBILIER": "Property developer",
+      "ADMINISTRATEUR_BIENS": "Property manager",
+      "AUTRES_PROFESSIONNELS": "Other professionals",
+      "HOTELLERIE_HEBERGEMENT": "Hospitality & Accommodation",
+      "HOTEL": "Hotel",
+      "COMPLEXE_TOURISTIQUE": "Tourist resort",
+      "VILLAGE_VACANCES": "Holiday village",
+      "APPART_HOTEL": "Aparthotel",
+      "RESIDENCE_HOTELIERE": "Hotel residence",
+      "MOTEL": "Motel",
+      "RELAIS_ROUTIER": "Roadside inn",
+      "CAMPING_TOURISTIQUE": "Tourist campsite",
+      "AUTRES_STRUCTURES": "Other hotel structures",
+      "SALLE_DES_FETES": "Function hall",
+      "SALLES_DINATOIRES": "Dining halls",
+      "SALLE_FORMATION": "Training room",
+      "SALLE_CONFERENCE": "Conference room",
+      "AUTRES_EVENEMENTIEL": "Other event venues",
+      "ENTREPOSAGE_FRIGORIFIQUE": "Refrigerated warehouse",
+      "ENTREPOSAGE_NON_FRIGORIFIQUE": "Non-refrigerated warehouse",
+      "AUTRES_ENTREPOSAGE_STOCKAGE": "Other storage space"
+    }
   },
   "Boutique": {
     "loadingStore": "Loading the store...",
@@ -673,7 +699,17 @@
     "curMilliards": "Milliards",
     "curMDA": "M DA",
     "curMDAM2": "M/m²",
-    "curMdDA": "Bn DA"
+    "curMdDA": "Bn DA",
+    "indAccessTransportTitle": "Transport access type",
+    "indAcqDateTitle": "Planned acquisition date",
+    "indLegalDocumentsTitle": "Documents expected for the sale",
+    "cfStructureTitle": "Structure type",
+    "resEquipmentsTitle": "Amenities & Comfort",
+    "resExteriorLabel": "Outdoor space",
+    "resHeatingLabel": "Heating",
+    "resAcLabel": "Air conditioning",
+    "resSecurityLabel": "Security",
+    "resConnectivityLabel": "Connectivity"
   },
   "ProfileHome": {
     "pendingBanner": "Account pending validation.",
@@ -2423,6 +2459,49 @@
       "SAHARIENNE": "Saharan",
       "THERMALE": "Thermal",
       "AUTRE": "Other situation"
+    },
+    "INDUSTRIAL_ACCESS_TRANSPORT": {
+      "SEMI_REMORQUE": "Articulated lorry (40 t)",
+      "CAMIONNETTE": "Van (3.5 t)",
+      "PETIT_PORTEUR": "Light truck (10 t)"
+    },
+    "CF_STRUCTURE_TYPES": {
+      "CELLULE_UNIQUE": "Single cell (one chamber only)",
+      "COMPLEXE_FRIGORIFIQUE": "Multiple cells (refrigeration complex)"
+    },
+    "LEGAL_DOCUMENTS_SALE": {
+      "ACTE_PROPRIETE": "Title deed",
+      "LIVRET_FONCIER": "Land register booklet",
+      "CERTIFICAT_CONFORMITE": "Certificate of conformity"
+    },
+    "RES_EXTERIOR_OPTIONS": {
+      "garden": "Garden",
+      "terrace": "Terrace",
+      "balcony": "Balcony",
+      "pool": "Pool",
+      "playground": "Outdoor space",
+      "barbecue": "Barbecue",
+      "elevator": "Elevator"
+    },
+    "RES_HEATING_OPTIONS": {
+      "CENTRAL": "Central",
+      "SOL": "Underfloor",
+      "GAZ": "Gas"
+    },
+    "RES_AC_OPTIONS": {
+      "CENTRAL": "Central",
+      "SPLIT": "Split",
+      "SANS": "None"
+    },
+    "RES_SECURITY_OPTIONS": {
+      "cameras": "Cameras",
+      "alarm": "Alarm",
+      "guardian": "24/7 security guard"
+    },
+    "RES_CONNECTIVITY_OPTIONS": {
+      "fiber": "Fiber",
+      "adsl": "ADSL",
+      "phone_line": "Landline"
     }
   },
   "DepositOptions": {

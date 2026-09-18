@@ -5,7 +5,8 @@
     "HOTELIER": "Hébergement & Séjour",
     "HEBERGEMENT": "Hébergement chez l'habitant",
     "BUREAUX_COMMERCES": "Bureaux et Commerces",
-    "TERRAIN_FONCIER": "Terrains et Foncier"
+    "TERRAIN_FONCIER": "Terrains et Foncier",
+    "EVENEMENTIEL": "Évènementiel"
   },
   "Navbar": {
     "toggleTheme": "Changer de thème (clair / sombre)",
@@ -357,7 +358,32 @@
     "activityEntreposage": "Activité d'entreposage et stockage",
     "otherGroup": "Autres",
     "otherPartnersTitle": "Autres partenaires",
-    "partnersCount": "{count, plural, one {# partenaire} other {# partenaires}}"
+    "partnersCount": "{count, plural, one {# partenaire} other {# partenaires}}",
+    "allSubCategories": "Toutes sous-catégories",
+    "subCategories": {
+      "AGENCE_IMMOBILIERE": "Agence Immobilière",
+      "PROMOTEUR_IMMOBILIER": "Promoteur Immobilier",
+      "ADMINISTRATEUR_BIENS": "Administrateur de biens",
+      "AUTRES_PROFESSIONNELS": "Autres Professionnels",
+      "HOTELLERIE_HEBERGEMENT": "Hôtellerie & Hébergement",
+      "HOTEL": "Hôtel",
+      "COMPLEXE_TOURISTIQUE": "Complexe Touristique",
+      "VILLAGE_VACANCES": "Village de vacances",
+      "APPART_HOTEL": "Appart Hôtel",
+      "RESIDENCE_HOTELIERE": "Résidence Hôtelière",
+      "MOTEL": "Motel",
+      "RELAIS_ROUTIER": "Relais routier",
+      "CAMPING_TOURISTIQUE": "Camping Touristique",
+      "AUTRES_STRUCTURES": "Autres Structures hôtelières",
+      "SALLE_DES_FETES": "Salle des fêtes",
+      "SALLES_DINATOIRES": "Salles Dînatoires",
+      "SALLE_FORMATION": "Salle de formation",
+      "SALLE_CONFERENCE": "Salle de conférence",
+      "AUTRES_EVENEMENTIEL": "Autres espaces événementiels",
+      "ENTREPOSAGE_FRIGORIFIQUE": "Entrepôt Frigorifique",
+      "ENTREPOSAGE_NON_FRIGORIFIQUE": "Entrepôt non Frigorifique",
+      "AUTRES_ENTREPOSAGE_STOCKAGE": "Autre espace de stockage"
+    }
   },
   "Boutique": {
     "loadingStore": "Chargement de la boutique...",
@@ -673,7 +699,17 @@
     "curMilliards": "Milliards",
     "curMDA": "M DA",
     "curMDAM2": "M/m²",
-    "curMdDA": "Md DA"
+    "curMdDA": "Md DA",
+    "indAccessTransportTitle": "Type d'accès transport",
+    "indAcqDateTitle": "Date d'acquisition envisagée",
+    "indLegalDocumentsTitle": "Documents attendus pour la vente",
+    "cfStructureTitle": "Type de structure",
+    "resEquipmentsTitle": "Équipements & Confort",
+    "resExteriorLabel": "Espace extérieur",
+    "resHeatingLabel": "Chauffage",
+    "resAcLabel": "Climatisation",
+    "resSecurityLabel": "Sécurité",
+    "resConnectivityLabel": "Connectivité"
   },
   "ProfileHome": {
     "pendingBanner": "Compte en attente de validation.",
@@ -2423,6 +2459,49 @@
       "SAHARIENNE": "Saharienne",
       "THERMALE": "Thermale",
       "AUTRE": "Autre situation"
+    },
+    "INDUSTRIAL_ACCESS_TRANSPORT": {
+      "SEMI_REMORQUE": "Semi-remorque (40 T)",
+      "CAMIONNETTE": "Camionnette (3.5 T)",
+      "PETIT_PORTEUR": "Petit porteur (10T)"
+    },
+    "CF_STRUCTURE_TYPES": {
+      "CELLULE_UNIQUE": "Cellule unique (Une seule chambre)",
+      "COMPLEXE_FRIGORIFIQUE": "Plusieurs cellules (Complexe frigorifique)"
+    },
+    "LEGAL_DOCUMENTS_SALE": {
+      "ACTE_PROPRIETE": "Acte de propriété",
+      "LIVRET_FONCIER": "Livret foncier",
+      "CERTIFICAT_CONFORMITE": "Certificat de conformité"
+    },
+    "RES_EXTERIOR_OPTIONS": {
+      "garden": "Jardin",
+      "terrace": "Terrasse",
+      "balcony": "Balcon",
+      "pool": "Piscine",
+      "playground": "Espace extérieur",
+      "barbecue": "Barbecue",
+      "elevator": "Ascenseur"
+    },
+    "RES_HEATING_OPTIONS": {
+      "CENTRAL": "Central",
+      "SOL": "Au Sol",
+      "GAZ": "À Gaz"
+    },
+    "RES_AC_OPTIONS": {
+      "CENTRAL": "Centrale",
+      "SPLIT": "Split",
+      "SANS": "Sans"
+    },
+    "RES_SECURITY_OPTIONS": {
+      "cameras": "Caméras",
+      "alarm": "Alarme",
+      "guardian": "Gardiennage 24/7"
+    },
+    "RES_CONNECTIVITY_OPTIONS": {
+      "fiber": "Fibre",
+      "adsl": "ADSL",
+      "phone_line": "Ligne fixe"
     }
   },
   "DepositOptions": {

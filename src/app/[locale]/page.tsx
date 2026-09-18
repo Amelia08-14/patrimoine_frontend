@@ -9,7 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation"
 import axios from "axios"
 import { motion, useReducedMotion, type Variants } from "framer-motion"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
-import { useLocalizedGeoName } from "@/lib/typeLabels"
+import { useLocalizedGeoName, useLocalizedContent } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
@@ -140,7 +140,7 @@ const CarouselSection = ({ title, categoryId, items }: { title: string, category
               </button>
             </div>
           </div>
-          <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-bold hover:underline sm:text-sm" style={{ color: catColor.hex }}>
+          <Link href={`/announces?realEstateCategory=${categoryId}`} className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs rtl:text-sm font-bold hover:underline sm:text-sm" style={{ color: catColor.hex }}>
             {t("viewAllListings")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           </Link>
         </div>
@@ -281,7 +281,8 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [announces, setAnnounces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; subtitle: string | null }[]>([]);
+  const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; link?: string | null }[]>([]);
+  const lc = useLocalizedContent();
   const [partners, setPartners] = useState<{ id: number; name: string; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
   const handleCategoryClick = (categoryId: string) => {
@@ -291,7 +292,7 @@ export default function HomePage() {
   // Slides gérés depuis l'admin (Contenu du site > Slides d'accueil). À défaut, on retombe sur
   // un visuel par domaine généré depuis REAL_ESTATE_CATEGORIES, pour que la page ne soit jamais vide.
   const uniqueCategories = REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
-  const fallbackSlides = uniqueCategories.map((c) => ({ id: -1, categoryId: c.id, imageUrl: getCategoryHeroImageById(c.id), title: null, subtitle: null }))
+  const fallbackSlides = uniqueCategories.map((c) => ({ id: -1, categoryId: c.id, imageUrl: getCategoryHeroImageById(c.id), title: null, titleAr: null, titleEn: null, subtitle: null, subtitleAr: null, subtitleEn: null, link: null }))
   const activeSlides = heroSlides.length > 0 ? heroSlides : fallbackSlides
   const activeSlide = activeSlides[currentSlide % activeSlides.length]
   const activeSlideCategory = activeSlide ? REAL_ESTATE_CATEGORIES.find((c) => c.id === activeSlide.categoryId) : undefined
@@ -405,7 +406,7 @@ export default function HomePage() {
               <img
                 key={slide.id === -1 ? `fallback-${slide.categoryId}` : slide.id}
                 src={slide.id === -1 ? slide.imageUrl : `${apiUrl}${slide.imageUrl}`}
-                alt={slide.title || (slide.categoryId ? tc(slide.categoryId) : "")}
+                alt={lc(slide.title, slide.titleAr, slide.titleEn) || (slide.categoryId ? tc(slide.categoryId) : "")}
                 className={cn("absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out", index === currentSlide ? "opacity-100" : "opacity-0")}
               />
             ))}
@@ -429,7 +430,7 @@ export default function HomePage() {
           {activeSlideCategory && (
             <button
               onClick={() => handleCategoryClick(activeSlideCategory.id)}
-              className="absolute top-4 right-4 sm:top-6 sm:right-6 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1.5 pr-3.5 py-1.5 text-xs font-bold text-[#003B4A] hover:bg-white transition-colors z-20"
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1.5 pr-3.5 py-1.5 text-xs rtl:text-sm font-bold text-[#003B4A] hover:bg-white transition-colors z-20"
             >
               {(() => {
                 const Icon = getIcon(activeSlideCategory.iconName)
@@ -447,13 +448,13 @@ export default function HomePage() {
               animate="visible"
               variants={heroStagger}
             >
-              <motion.div variants={heroItem} className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
+              <motion.div variants={heroItem} className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] rtl:text-xs font-bold uppercase tracking-[0.22em] mb-5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
                 {t("heroEyebrow")}
               </motion.div>
-              {activeSlide?.title ? (
+              {lc(activeSlide?.title, activeSlide?.titleAr, activeSlide?.titleEn) ? (
                 <motion.h1 variants={heroItem} className="font-brand text-[1.9rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
-                  {activeSlide.title}
+                  {lc(activeSlide?.title, activeSlide?.titleAr, activeSlide?.titleEn)}
                 </motion.h1>
               ) : (
                 <motion.h1 variants={heroItem} className="font-brand text-[1.9rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
@@ -462,15 +463,23 @@ export default function HomePage() {
                 </motion.h1>
               )}
               <motion.p variants={heroItem} className="mt-4 sm:mt-5 text-white/70 text-sm sm:text-lg leading-relaxed max-w-lg">
-                {activeSlide?.subtitle || t("heroSubtitle")}
+                {lc(activeSlide?.subtitle, activeSlide?.subtitleAr, activeSlide?.subtitleEn) || t("heroSubtitle")}
               </motion.p>
 
               <motion.div variants={heroItem} className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/announces">
-                  <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
-                    {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
-                  </Button>
-                </Link>
+                {activeSlide?.link && /^https?:\/\//i.test(activeSlide.link) ? (
+                  <a href={activeSlide.link} target="_blank" rel="noopener noreferrer">
+                    <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
+                      {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
+                    </Button>
+                  </a>
+                ) : (
+                  <Link href={(activeSlide?.link as any) || "/announces"}>
+                    <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
+                      {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/faq">
                   <Button variant="outline" className="rounded-full px-7 py-6 text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:-translate-y-0.5 transition-all">
                     {t("howItWorks")}
@@ -522,7 +531,7 @@ export default function HomePage() {
                   </span>
                   <span className="min-w-0">
                     <span className="block text-sm font-bold text-gray-800 dark:text-white/90 truncate">{tc(catId)}</span>
-                    <span className="block text-[11px] text-gray-400 dark:text-white/40 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
+                    <span className="block text-[11px] rtl:text-xs text-gray-400 dark:text-white/40 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
                   </span>
                 </Link>
               )
@@ -563,6 +572,9 @@ export default function HomePage() {
 
       {/* WHY CHOOSE US — présenté comme un acte certifié, pas une grille de cartes générique */}
       <section className="py-16 sm:py-20 bg-[#003B4A] text-white relative overflow-hidden">
+        {/* Photo en fond, très atténuée derrière le dégradé navy — le panneau garde sa lisibilité */}
+        <img src="/société.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.14]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#003B4A] via-[#003B4A]/95 to-[#003B4A]" />
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#00BFA6]/10 blur-3xl" />
         <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#00BFA6]/[0.06] blur-3xl" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -615,9 +627,14 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative bg-white dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-[#00BFA6]/10 hover:-translate-y-1 transition-all duration-300">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-[#00BFA6]" />
-              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
+            <div className="relative bg-white dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-[#00BFA6]/10 hover:-translate-y-1 transition-all duration-300">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-[#00BFA6] z-10" />
+              <div className="relative h-36 overflow-hidden">
+                <img src="/société.jpg" alt="" className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#03303c] to-transparent" />
+              </div>
+              <div className="p-8 sm:p-10 pt-0">
+              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6 -mt-6 relative">
                 <Building2 className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <h3 className="text-xl font-bold text-[#003B4A] dark:text-white mb-3">{t("ownerTitle")}</h3>
@@ -627,6 +644,7 @@ export default function HomePage() {
                   {t("entrustMyProperty")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                 </Button>
               </Link>
+              </div>
             </div>
             <div className="relative bg-[#003B4A] dark:border dark:border-white/10 rounded-3xl p-8 sm:p-10 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-[#003B4A]/30 hover:-translate-y-1 transition-all duration-300">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#5EEAD4]" />
@@ -658,7 +676,7 @@ export default function HomePage() {
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Coins className="h-6 w-6 text-[#00BFA6]" />
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsParticulierTitle")}</span>
+              <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsParticulierTitle")}</span>
               <p className="text-gray-500 dark:text-white/60 leading-relaxed mt-3 mb-7">{t("pointsParticulierDesc")}</p>
 
               {/* Mini-visuel : annonce standard vs annonce boostée par les points */}
@@ -686,7 +704,7 @@ export default function HomePage() {
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Store className="h-6 w-6 text-[#00BFA6]" />
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsProTitle")}</span>
+              <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsProTitle")}</span>
               <p className="text-gray-500 dark:text-white/60 leading-relaxed mt-3 mb-7">{t("pointsProDesc")}</p>
 
               {/* Mini-maquette de la boutique : barre de navigateur + logo + bannière + réseaux */}
@@ -768,7 +786,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-8 items-center">
           {/* Colonne texte */}
           <div className="order-2 md:order-1 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] font-bold uppercase tracking-[0.22em] mb-5">
+            <div className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] rtl:text-xs font-bold uppercase tracking-[0.22em] mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
               {t("heroEyebrow")}
             </div>
@@ -783,21 +801,21 @@ export default function HomePage() {
                 <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><ShieldCheck className="h-4.5 w-4.5 text-[#00BFA6]" /></span>
                 <div className="text-left">
                   <p className="text-sm font-bold text-white">{t("whyVerifiedTitle")}</p>
-                  <p className="text-xs text-white/50">{t("whyVerifiedDesc")}</p>
+                  <p className="text-xs rtl:text-sm text-white/50">{t("whyVerifiedDesc")}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Globe2 className="h-4.5 w-4.5 text-[#00BFA6]" /></span>
                 <div className="text-left">
                   <p className="text-sm font-bold text-white">{t("whyCoverageTitle")}</p>
-                  <p className="text-xs text-white/50">{t("whyCoverageDesc")}</p>
+                  <p className="text-xs rtl:text-sm text-white/50">{t("whyCoverageDesc")}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="h-9 w-9 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Users className="h-4.5 w-4.5 text-[#00BFA6]" /></span>
                 <div className="text-left">
                   <p className="text-sm font-bold text-white">{t("whyProfilesTitle")}</p>
-                  <p className="text-xs text-white/50">{t("whyProfilesDesc")}</p>
+                  <p className="text-xs rtl:text-sm text-white/50">{t("whyProfilesDesc")}</p>
                 </div>
               </div>
             </div>
@@ -831,7 +849,7 @@ export default function HomePage() {
 
             <div className="hidden lg:flex items-center gap-2.5 absolute top-8 -left-4 bg-white rounded-2xl shadow-xl shadow-black/20 px-4 py-3 z-20">
               <span className="h-8 w-8 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><ShieldCheck className="h-4 w-4 text-[#00BFA6]" /></span>
-              <p className="text-xs font-bold text-[#003B4A] whitespace-nowrap">{t("whyVerifiedTitle")}</p>
+              <p className="text-xs rtl:text-sm font-bold text-[#003B4A] whitespace-nowrap">{t("whyVerifiedTitle")}</p>
             </div>
 
             <div className="hidden lg:flex flex-col gap-2 absolute bottom-16 -right-6 bg-white rounded-2xl shadow-xl shadow-black/20 px-4 py-3.5 z-20 min-w-[168px]">
@@ -839,21 +857,21 @@ export default function HomePage() {
                 <span className="h-8 w-8 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Building2 className="h-4 w-4 text-[#00BFA6]" /></span>
                 <div>
                   <p className="text-sm font-extrabold text-[#003B4A] leading-none">{announces.length}</p>
-                  <p className="text-[10px] text-gray-400">{t("mobileAppStatListings")}</p>
+                  <p className="text-[10px] rtl:text-xs text-gray-400">{t("mobileAppStatListings")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
                 <span className="h-8 w-8 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><Globe2 className="h-4 w-4 text-[#00BFA6]" /></span>
                 <div>
                   <p className="text-sm font-extrabold text-[#003B4A] leading-none">58</p>
-                  <p className="text-[10px] text-gray-400">{t("mobileAppStatWilayas")}</p>
+                  <p className="text-[10px] rtl:text-xs text-gray-400">{t("mobileAppStatWilayas")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
                 <span className="h-8 w-8 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><LayoutGrid className="h-4 w-4 text-[#00BFA6]" /></span>
                 <div>
                   <p className="text-sm font-extrabold text-[#003B4A] leading-none">{REAL_ESTATE_CATEGORIES.length}</p>
-                  <p className="text-[10px] text-gray-400">{t("mobileAppStatCategories")}</p>
+                  <p className="text-[10px] rtl:text-xs text-gray-400">{t("mobileAppStatCategories")}</p>
                 </div>
               </div>
             </div>

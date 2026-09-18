@@ -5,7 +5,8 @@
     "HOTELIER": "سياحة وإقامة",
     "HEBERGEMENT": "إقامة",
     "BUREAUX_COMMERCES": "مكاتب ومحلات تجارية",
-    "TERRAIN_FONCIER": "أراضٍ وعقارات"
+    "TERRAIN_FONCIER": "أراضٍ وعقارات",
+    "EVENEMENTIEL": "فعاليات"
   },
   "Navbar": {
     "toggleTheme": "تبديل المظهر (فاتح / داكن)",
@@ -357,7 +358,32 @@
     "activityEntreposage": "نشاط التخزين والمستودعات",
     "otherGroup": "أخرى",
     "otherPartnersTitle": "شركاء آخرون",
-    "partnersCount": "{count, plural, one {# شريك} other {# شركاء}}"
+    "partnersCount": "{count, plural, one {# شريك} other {# شركاء}}",
+    "allSubCategories": "كل الفئات الفرعية",
+    "subCategories": {
+      "AGENCE_IMMOBILIERE": "وكالة عقارية",
+      "PROMOTEUR_IMMOBILIER": "مرقّي عقاري",
+      "ADMINISTRATEUR_BIENS": "مسيّر أملاك",
+      "AUTRES_PROFESSIONNELS": "مهنيون آخرون",
+      "HOTELLERIE_HEBERGEMENT": "الفندقة والإقامة",
+      "HOTEL": "فندق",
+      "COMPLEXE_TOURISTIQUE": "مركّب سياحي",
+      "VILLAGE_VACANCES": "قرية عطل",
+      "APPART_HOTEL": "شقق فندقية",
+      "RESIDENCE_HOTELIERE": "إقامة فندقية",
+      "MOTEL": "موتيل",
+      "RELAIS_ROUTIER": "مرحل طريق",
+      "CAMPING_TOURISTIQUE": "مخيم سياحي",
+      "AUTRES_STRUCTURES": "منشآت فندقية أخرى",
+      "SALLE_DES_FETES": "قاعة حفلات",
+      "SALLES_DINATOIRES": "قاعات عشاء",
+      "SALLE_FORMATION": "قاعة تكوين",
+      "SALLE_CONFERENCE": "قاعة مؤتمرات",
+      "AUTRES_EVENEMENTIEL": "فضاءات مناسبات أخرى",
+      "ENTREPOSAGE_FRIGORIFIQUE": "مستودع تبريد",
+      "ENTREPOSAGE_NON_FRIGORIFIQUE": "مستودع غير مبرّد",
+      "AUTRES_ENTREPOSAGE_STOCKAGE": "فضاء تخزين آخر"
+    }
   },
   "Boutique": {
     "loadingStore": "جارٍ تحميل المتجر...",
@@ -673,7 +699,17 @@
     "curMilliards": "مليارات",
     "curMDA": "مليون دج",
     "curMDAM2": "مليون/م²",
-    "curMdDA": "مليار دج"
+    "curMdDA": "مليار دج",
+    "indAccessTransportTitle": "نوع الوصول للنقل",
+    "indAcqDateTitle": "تاريخ الاستحواذ المرتقب",
+    "indLegalDocumentsTitle": "الوثائق المطلوبة للبيع",
+    "cfStructureTitle": "نوع البنية",
+    "resEquipmentsTitle": "المرافق والراحة",
+    "resExteriorLabel": "الفضاء الخارجي",
+    "resHeatingLabel": "التدفئة",
+    "resAcLabel": "التكييف",
+    "resSecurityLabel": "الأمن",
+    "resConnectivityLabel": "الاتصال"
   },
   "ProfileHome": {
     "pendingBanner": "الحساب في انتظار التحقق.",
@@ -2423,6 +2459,49 @@
       "SAHARIENNE": "صحراوية",
       "THERMALE": "حموية",
       "AUTRE": "وضعية أخرى"
+    },
+    "INDUSTRIAL_ACCESS_TRANSPORT": {
+      "SEMI_REMORQUE": "شاحنة مقطورة (40 طن)",
+      "CAMIONNETTE": "شاحنة صغيرة (3.5 طن)",
+      "PETIT_PORTEUR": "شاحنة متوسطة (10 أطنان)"
+    },
+    "CF_STRUCTURE_TYPES": {
+      "CELLULE_UNIQUE": "خلية واحدة (غرفة تبريد وحيدة)",
+      "COMPLEXE_FRIGORIFIQUE": "عدة خلايا (مجمّع تبريد)"
+    },
+    "LEGAL_DOCUMENTS_SALE": {
+      "ACTE_PROPRIETE": "عقد الملكية",
+      "LIVRET_FONCIER": "الدفتر العقاري",
+      "CERTIFICAT_CONFORMITE": "شهادة المطابقة"
+    },
+    "RES_EXTERIOR_OPTIONS": {
+      "garden": "حديقة",
+      "terrace": "شرفة (تراس)",
+      "balcony": "بلكون",
+      "pool": "مسبح",
+      "playground": "فضاء خارجي",
+      "barbecue": "شواء",
+      "elevator": "مصعد"
+    },
+    "RES_HEATING_OPTIONS": {
+      "CENTRAL": "مركزي",
+      "SOL": "أرضي (تحت البلاط)",
+      "GAZ": "بالغاز"
+    },
+    "RES_AC_OPTIONS": {
+      "CENTRAL": "مركزي",
+      "SPLIT": "سبليت",
+      "SANS": "بدون"
+    },
+    "RES_SECURITY_OPTIONS": {
+      "cameras": "كاميرات مراقبة",
+      "alarm": "جهاز إنذار",
+      "guardian": "حراسة على مدار الساعة"
+    },
+    "RES_CONNECTIVITY_OPTIONS": {
+      "fiber": "ألياف بصرية",
+      "adsl": "ADSL",
+      "phone_line": "خط هاتف ثابت"
     }
   },
   "DepositOptions": {

@@ -13,7 +13,11 @@ type OfferPack = {
   kind: 'POINTS' | 'BOUTIQUE'
   key: string
   title: string
+  titleAr: string | null
+  titleEn: string | null
   description: string | null
+  descriptionAr: string | null
+  descriptionEn: string | null
   price: number
   points: number
   order: number
@@ -61,12 +65,12 @@ export default function AdminPointsPage() {
   const [error, setError] = useState("")
   const [packs, setPacks] = useState<OfferPack[]>([])
   const [editingPackId, setEditingPackId] = useState<number | null>(null)
-  const [editForm, setEditForm] = useState<{ title: string; description: string; price: string; points: string }>({ title: "", description: "", price: "", points: "" })
+  const [editForm, setEditForm] = useState<{ title: string; titleAr: string; titleEn: string; description: string; descriptionAr: string; descriptionEn: string; price: string; points: string }>({ title: "", titleAr: "", titleEn: "", description: "", descriptionAr: "", descriptionEn: "", price: "", points: "" })
   const [savingPack, setSavingPack] = useState(false)
   const [deletingPackId, setDeletingPackId] = useState<number | null>(null)
   const [creatingPack, setCreatingPack] = useState(false)
   const [creatingKind, setCreatingKind] = useState<'POINTS' | 'BOUTIQUE' | null>(null)
-  const [createForm, setCreateForm] = useState<{ key: string; title: string; description: string; price: string; points: string }>({ key: "", title: "", description: "", price: "", points: "" })
+  const [createForm, setCreateForm] = useState<{ key: string; title: string; titleAr: string; titleEn: string; description: string; descriptionAr: string; descriptionEn: string; price: string; points: string }>({ key: "", title: "", titleAr: "", titleEn: "", description: "", descriptionAr: "", descriptionEn: "", price: "", points: "" })
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('admin_token')}` })
@@ -87,7 +91,11 @@ export default function AdminPointsPage() {
 
   const startEditPack = (pack: OfferPack) => {
     setEditingPackId(pack.id)
-    setEditForm({ title: pack.title, description: pack.description || "", price: String(pack.price), points: String(pack.points) })
+    setEditForm({
+      title: pack.title, titleAr: pack.titleAr || "", titleEn: pack.titleEn || "",
+      description: pack.description || "", descriptionAr: pack.descriptionAr || "", descriptionEn: pack.descriptionEn || "",
+      price: String(pack.price), points: String(pack.points),
+    })
   }
 
   const savePack = async (pack: OfferPack) => {
@@ -102,7 +110,11 @@ export default function AdminPointsPage() {
     try {
       await axios.put(`${API_URL}/admin/offer-packs/${pack.id}`, {
         title: editForm.title.trim(),
+        titleAr: editForm.titleAr.trim() || null,
+        titleEn: editForm.titleEn.trim() || null,
         description: editForm.description.trim() || null,
+        descriptionAr: editForm.descriptionAr.trim() || null,
+        descriptionEn: editForm.descriptionEn.trim() || null,
         price,
         points,
       }, { headers: getHeaders() })
@@ -132,7 +144,7 @@ export default function AdminPointsPage() {
 
   const startCreatePack = (kind: 'POINTS' | 'BOUTIQUE') => {
     setCreatingKind(kind)
-    setCreateForm({ key: "", title: "", description: "", price: "", points: "" })
+    setCreateForm({ key: "", title: "", titleAr: "", titleEn: "", description: "", descriptionAr: "", descriptionEn: "", price: "", points: "" })
   }
 
   const createPack = async () => {
@@ -143,7 +155,11 @@ export default function AdminPointsPage() {
         kind: creatingKind,
         key: createForm.key || createForm.title,
         title: createForm.title,
+        titleAr: createForm.titleAr || null,
+        titleEn: createForm.titleEn || null,
         description: createForm.description || null,
+        descriptionAr: createForm.descriptionAr || null,
+        descriptionEn: createForm.descriptionEn || null,
         price: Number(createForm.price),
         points: Number(createForm.points),
       }, { headers: getHeaders() })
@@ -414,16 +430,45 @@ export default function AdminPointsPage() {
                       <input
                         value={editForm.title}
                         onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-                        placeholder="Titre"
+                        placeholder="Titre (français)"
                         className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
                       />
                       <textarea
                         value={editForm.description}
                         onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
-                        placeholder="Description (optionnelle)"
+                        placeholder="Description (français, optionnelle)"
                         rows={2}
                         className="w-full text-xs text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
                       />
+                      <details>
+                        <summary className="text-[10px] font-bold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-[#00BFA6]">Arabe / Anglais</summary>
+                        <div className="mt-1.5 space-y-1.5">
+                          <input
+                            value={editForm.titleAr}
+                            onChange={(e) => setEditForm((f) => ({ ...f, titleAr: e.target.value }))}
+                            placeholder="Titre (arabe)" dir="rtl"
+                            className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                          />
+                          <textarea
+                            value={editForm.descriptionAr}
+                            onChange={(e) => setEditForm((f) => ({ ...f, descriptionAr: e.target.value }))}
+                            placeholder="Description (arabe)" rows={2} dir="rtl"
+                            className="w-full text-xs text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                          />
+                          <input
+                            value={editForm.titleEn}
+                            onChange={(e) => setEditForm((f) => ({ ...f, titleEn: e.target.value }))}
+                            placeholder="Titre (anglais)"
+                            className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                          />
+                          <textarea
+                            value={editForm.descriptionEn}
+                            onChange={(e) => setEditForm((f) => ({ ...f, descriptionEn: e.target.value }))}
+                            placeholder="Description (anglais)" rows={2}
+                            className="w-full text-xs text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
+                          />
+                        </div>
+                      </details>
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <label className="text-[10px] font-bold text-gray-400 uppercase">Prix (DA)</label>
@@ -494,7 +539,7 @@ export default function AdminPointsPage() {
                 <input
                   value={createForm.title}
                   onChange={(e) => setCreateForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Titre (ex. Starter)"
+                  placeholder="Titre (français, ex. Starter)"
                   className="w-full text-sm font-bold outline-none border border-gray-200 rounded-lg p-2"
                 />
                 <input
@@ -506,10 +551,39 @@ export default function AdminPointsPage() {
                 <textarea
                   value={createForm.description}
                   onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="Description (optionnelle)"
+                  placeholder="Description (français, optionnelle)"
                   rows={2}
                   className="w-full text-xs outline-none border border-gray-200 rounded-lg p-2"
                 />
+                <details>
+                  <summary className="text-[10px] font-bold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-[#00BFA6]">Arabe / Anglais</summary>
+                  <div className="mt-1.5 space-y-1.5">
+                    <input
+                      value={createForm.titleAr}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, titleAr: e.target.value }))}
+                      placeholder="Titre (arabe)" dir="rtl"
+                      className="w-full text-sm font-bold outline-none border border-gray-200 rounded-lg p-2"
+                    />
+                    <textarea
+                      value={createForm.descriptionAr}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, descriptionAr: e.target.value }))}
+                      placeholder="Description (arabe)" rows={2} dir="rtl"
+                      className="w-full text-xs outline-none border border-gray-200 rounded-lg p-2"
+                    />
+                    <input
+                      value={createForm.titleEn}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, titleEn: e.target.value }))}
+                      placeholder="Titre (anglais)"
+                      className="w-full text-sm font-bold outline-none border border-gray-200 rounded-lg p-2"
+                    />
+                    <textarea
+                      value={createForm.descriptionEn}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, descriptionEn: e.target.value }))}
+                      placeholder="Description (anglais)" rows={2}
+                      className="w-full text-xs outline-none border border-gray-200 rounded-lg p-2"
+                    />
+                  </div>
+                </details>
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Prix (DA)</label>
