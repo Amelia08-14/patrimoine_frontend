@@ -266,7 +266,14 @@
     "overlayCovered": "مغطّاة {v} م²",
     "overlayTopoPLAT": "مستوٍ",
     "overlayTopoEN_PENTE": "منحدر",
-    "overlayTopoACCIDENTE": "وعر"
+    "overlayTopoACCIDENTE": "وعر",
+    "overlayTypologySimilaire": "تصميم متشابه",
+    "overlayTypologyDifferente": "تصاميم مختلفة",
+    "overlayTotalApartments": "{n} شقة",
+    "overlayCapacity": "{v} م³",
+    "overlayUsageStockage": "تخزين",
+    "overlayUsageProduction": "إنتاج",
+    "overlayUsageBoth": "تخزين وإنتاج"
   },
   "Contact": {
     "title": "اتصل بنا",

@@ -266,7 +266,14 @@
     "overlayCovered": "Covered {v} m²",
     "overlayTopoPLAT": "Flat",
     "overlayTopoEN_PENTE": "Sloping",
-    "overlayTopoACCIDENTE": "Rugged"
+    "overlayTopoACCIDENTE": "Rugged",
+    "overlayTypologySimilaire": "Similar layout",
+    "overlayTypologyDifferente": "Different layouts",
+    "overlayTotalApartments": "{n} apartments",
+    "overlayCapacity": "{v} m³",
+    "overlayUsageStockage": "Storage",
+    "overlayUsageProduction": "Production",
+    "overlayUsageBoth": "Storage & Production"
   },
   "Contact": {
     "title": "Contact Us",

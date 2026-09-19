@@ -36,10 +36,15 @@ const CATEGORY_OVERLAY_COLOR: Record<string, string> = {
     HEBERGEMENT: getCategoryColor("HEBERGEMENT").overlayFrom,
 };
 
+const IMMEUBLE_TYPES = ["IMMEUBLE_RESIDENTIEL", "IMMEUBLE_BUREAU"];
+
 // Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
 // Hébergement & Séjour non traité pour l'instant (aucun bandeau affiché).
 function PhotoOverlaySpecs({ announce }: { announce: any }) {
     const t = useTranslations("PropertyCard");
+    // Groupes déjà traduits côté /deposit, réutilisés tels quels pour rester cohérent entre
+    // saisie et lecture (mêmes ids, mêmes libellés) sans dupliquer de traductions.
+    const tDep = useTranslations("DepositOptions");
     const property = announce.property || {};
     const pType = (property._displayPropertyType || property.propertyType || "").toUpperCase();
     const typeObj = PROPERTY_TYPES.find((t) => t.id === pType);
@@ -50,12 +55,40 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
 
     let items: string[] = [];
     if (categoryId === "RESIDENTIEL" || categoryId === "BUREAUX_COMMERCES") {
-        if (property.typology) items.push(property.typology);
-        if (property.area) items.push(`${property.area} m²`);
-        if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloor", { n: property.nbFloors }));
+        if (IMMEUBLE_TYPES.includes(pType)) {
+            const bt = amenities?.buildingTypology;
+            if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloor", { n: property.nbFloors }));
+            if (bt?.mode) items.push(bt.mode === "SIMILAIRES" ? t("overlayTypologySimilaire") : t("overlayTypologyDifferente"));
+            if (bt?.totalApartments) items.push(t("overlayTotalApartments", { n: bt.totalApartments }));
+        } else {
+            if (property.typology) items.push(property.typology);
+            if (property.area) items.push(`${property.area} m²`);
+            if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloor", { n: property.nbFloors }));
+        }
     } else if (categoryId === "INDUSTRIEL") {
-        if (property.landArea) items.push(t("overlayLand", { v: property.landArea }));
-        if (property.builtArea) items.push(t("overlayCovered", { v: property.builtArea }));
+        if (pType === "CHAMBRE_FROIDE") {
+            const cr = amenities?.coldRoom;
+            const capacity = cr?.dimensions?.capacity;
+            if (capacity) items.push(t("overlayCapacity", { v: capacity }));
+            if (cr?.structureType) items.push(tDep(`CF_STRUCTURE_TYPES.${cr.structureType}.label`));
+            const typeFroid: string[] = cr?.typeFroid || [];
+            if (typeFroid.length) items.push(typeFroid.map((id) => tDep(`CF_TYPE_FROID.${id}.label`)).join(' / '));
+        } else if (pType === "USINE") {
+            const uf = amenities?.industrialFactory;
+            const sector = uf?.sector?.[0];
+            if (sector) items.push(tDep(`INDUSTRIAL_SECTORS.${sector}.label`));
+            if (uf?.rentalType) items.push(tDep(`INDUSTRIAL_RENTAL_TYPES.${uf.rentalType}.label`));
+        } else if (pType === "HANGAR") {
+            const hg = amenities?.hangar;
+            if (hg?.surfaces?.covered) items.push(t("overlayCovered", { v: hg.surfaces.covered }));
+            const usage: string[] = hg?.usage || [];
+            if (usage.includes("STOCKAGE_LOGISTIQUE") && usage.includes("PRODUCTION_INDUSTRIEL")) items.push(t("overlayUsageBoth"));
+            else if (usage.includes("STOCKAGE_LOGISTIQUE")) items.push(t("overlayUsageStockage"));
+            else if (usage.includes("PRODUCTION_INDUSTRIEL")) items.push(t("overlayUsageProduction"));
+        } else {
+            if (property.landArea) items.push(t("overlayLand", { v: property.landArea }));
+            if (property.builtArea) items.push(t("overlayCovered", { v: property.builtArea }));
+        }
     } else if (categoryId === "TERRAIN_FONCIER") {
         if (property.landArea || property.area) items.push(t("overlayLand", { v: property.landArea || property.area }));
         const topo = amenities?.terrain?.topographie;

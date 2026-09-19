@@ -3131,11 +3131,10 @@ export default function AnnounceDetailsPage() {
                       <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col">
                           <div className="flex items-start gap-2 min-h-[40px] mb-3">
                               <Handshake className="h-5 w-5 text-[#00BFA6] mt-0.5" />
-                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f166')}</h3>
+                              <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f164')}</h3>
                           </div>
                           <div className="space-y-5 flex-1">
                               <div className="space-y-2">
-                                  <div className="text-gray-500 dark:text-white/50 text-sm">{t('f164')}</div>
                                   <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
                                       <span className="text-gray-500 dark:text-white/50 text-sm">{t('f165')}</span>
                                       <span className="font-bold text-gray-900 dark:text-white text-sm">{acceptsBankCreditLabel}</span>
