@@ -56,14 +56,17 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     let items: string[] = [];
     // Hangar et terrains : informations longues / en deux blocs — affichées sur deux lignes propres
     // (alignées à gauche, sans puce) plutôt que de laisser l'usage passer à la ligne avec une puce orpheline.
-    const stacked = pType === "HANGAR" || categoryId === "TERRAIN_FONCIER";
+    const stacked = pType === "HANGAR" || categoryId === "TERRAIN_FONCIER" || IMMEUBLE_TYPES.includes(pType);
     if (categoryId === "RESIDENTIEL" || categoryId === "BUREAUX_COMMERCES") {
         if (IMMEUBLE_TYPES.includes(pType)) {
             const bt = amenities?.buildingTypology;
+            // Ligne 1 : typologie seule. Ligne 2 : « N étages • N appartements ».
             if (bt?.mode) items.push(bt.mode === "SIMILAIRES" ? t("overlayTypologySimilaire") : t("overlayTypologyDifferente"));
+            const line2: string[] = [];
             // Immeuble : nbFloors est un nombre d'étages ("8 étages"), pas un numéro d'étage
-            if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloorCount", { n: Number(property.nbFloors) }));
-            if (bt?.totalApartments) items.push(t("overlayTotalApartments", { n: bt.totalApartments }));
+            if (property.nbFloors !== null && property.nbFloors !== undefined) line2.push(t("overlayFloorCount", { n: Number(property.nbFloors) }));
+            if (bt?.totalApartments) line2.push(t("overlayTotalApartments", { n: bt.totalApartments }));
+            if (line2.length) items.push(line2.join(" • "));
         } else if (pType === "BLOC_ADMINISTRATIF") {
             // Bloc administratif : les étages et la surface bâtie vivent dans amenities.bloc (fiche dédiée),
             // pas dans property.nbFloors/area — sans ça la carte n'affichait rien.

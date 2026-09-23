@@ -281,7 +281,7 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [announces, setAnnounces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; buttonLabel?: string | null; buttonLabelAr?: string | null; buttonLabelEn?: string | null; link?: string | null }[]>([]);
+  const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; buttonLabel?: string | null; buttonLabelAr?: string | null; buttonLabelEn?: string | null; showButton1?: boolean; button2Label?: string | null; button2LabelAr?: string | null; button2LabelEn?: string | null; button2Link?: string | null; showButton2?: boolean; link?: string | null }[]>([]);
   const lc = useLocalizedContent();
   const [partners, setPartners] = useState<{ id: number; name: string; nameAr?: string | null; nameEn?: string | null; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
@@ -292,10 +292,17 @@ export default function HomePage() {
   // Slides gérés depuis l'admin (Contenu du site > Slides d'accueil). À défaut, on retombe sur
   // un visuel par domaine généré depuis REAL_ESTATE_CATEGORIES, pour que la page ne soit jamais vide.
   const uniqueCategories = PUBLIC_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
-  const fallbackSlides = uniqueCategories.map((c) => ({ id: -1, categoryId: c.id, imageUrl: getCategoryHeroImageById(c.id), title: null, titleAr: null, titleEn: null, subtitle: null, subtitleAr: null, subtitleEn: null, buttonLabel: null, buttonLabelAr: null, buttonLabelEn: null, link: null }))
+  const fallbackSlides = uniqueCategories.map((c) => ({ id: -1, categoryId: c.id, imageUrl: getCategoryHeroImageById(c.id), title: null, titleAr: null, titleEn: null, subtitle: null, subtitleAr: null, subtitleEn: null, buttonLabel: null, buttonLabelAr: null, buttonLabelEn: null, showButton1: true, button2Label: null, button2LabelAr: null, button2LabelEn: null, button2Link: null, showButton2: true, link: null }))
   const activeSlides = heroSlides.length > 0 ? heroSlides : fallbackSlides
   const activeSlide = activeSlides[currentSlide % activeSlides.length]
   const heroButtonLabel = lc(activeSlide?.buttonLabel, activeSlide?.buttonLabelAr, activeSlide?.buttonLabelEn) || t("viewListings")
+  const heroButton2Label = lc(activeSlide?.button2Label, activeSlide?.button2LabelAr, activeSlide?.button2LabelEn) || t("howItWorks")
+  const showHeroButton1 = activeSlide?.showButton1 !== false
+  const showHeroButton2 = activeSlide?.showButton2 !== false
+  const renderHeroLink = (href: string, node: React.ReactNode) =>
+    /^https?:\/\//i.test(href)
+      ? <a href={href} target="_blank" rel="noopener noreferrer">{node}</a>
+      : <Link href={href as any}>{node}</Link>
   const activeSlideCategory = activeSlide ? REAL_ESTATE_CATEGORIES.find((c) => c.id === activeSlide.categoryId) : undefined
 
   useEffect(() => {
@@ -486,26 +493,23 @@ export default function HomePage() {
                 {lc(activeSlide?.subtitle, activeSlide?.subtitleAr, activeSlide?.subtitleEn) || t("heroSubtitle")}
               </motion.p>
 
-              <motion.div variants={heroItem} className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
-                {activeSlide?.link && /^https?:\/\//i.test(activeSlide.link) ? (
-                  <a href={activeSlide.link} target="_blank" rel="noopener noreferrer">
+              {/* Deux boutons pilotés par le slide (texte FR/AR/EN + lien chacun), affichables séparément :
+                  un seul, les deux, ou aucun. Valeurs par défaut : « Voir les annonces » → /announces et
+                  « Comment ça marche » → /faq. */}
+              {(showHeroButton1 || showHeroButton2) && (
+                <motion.div variants={heroItem} className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
+                  {showHeroButton1 && renderHeroLink(activeSlide?.link || "/announces",
                     <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
                       {heroButtonLabel} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                     </Button>
-                  </a>
-                ) : (
-                  <Link href={(activeSlide?.link as any) || "/announces"}>
-                    <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
-                      {heroButtonLabel} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
+                  )}
+                  {showHeroButton2 && renderHeroLink(activeSlide?.button2Link || "/faq",
+                    <Button variant="outline" className="rounded-full px-7 py-6 text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:-translate-y-0.5 transition-all">
+                      {heroButton2Label}
                     </Button>
-                  </Link>
-                )}
-                <Link href="/faq">
-                  <Button variant="outline" className="rounded-full px-7 py-6 text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:-translate-y-0.5 transition-all">
-                    {t("howItWorks")}
-                  </Button>
-                </Link>
-              </motion.div>
+                  )}
+                </motion.div>
+              )}
 
               {/* Signaux de confiance réels — pas d'avatars ni de compteurs fictifs ; masqués sur
                   mobile pour laisser respirer la carte de recherche juste en dessous. */}
@@ -592,7 +596,7 @@ export default function HomePage() {
 
       {/* WHY CHOOSE US — présenté comme un acte certifié, pas une grille de cartes générique */}
       <section className="py-16 sm:py-20 bg-[#003B4A] text-white relative overflow-hidden">
-        {/* Photo en fond (outils numériques — "des outils performants"), visible au centre et fondue
+        {/* Photo en fond en rapport avec l'activité (immeuble résidentiel), visible au centre et fondue
             dans le navy en haut et en bas ; le panneau de garanties reste lisible grâce à son propre voile. */}
         <img src="/why-bg.jpg" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-45" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#003B4A] via-[#003B4A]/55 to-[#003B4A]" />

@@ -956,35 +956,85 @@ function LinksTab() {
 // domaine suffisent, titre/sous-titre sont optionnels et, si vides, la page utilise le texte
 // générique du domaine.
 
-// Champs texte d'un slide, regroupés par langue : titre, sous-titre et libellé du bouton d'accueil
-// dans les trois langues, plus le lien du bouton (et de la photo). Partagé par la carte d'édition et
-// le formulaire d'ajout, pour que les deux exposent exactement les mêmes champs.
+// Champs d'un slide : titre + sous-titre par langue, et DEUX boutons d'action indépendants (chacun avec
+// son texte en FR/AR/EN, son lien et un interrupteur « afficher »). Partagé par la carte d'édition et le
+// formulaire d'ajout, pour que les deux exposent exactement les mêmes champs. Les booléens voyagent en
+// "true"/"false" (FormData).
 type SlideDraft = {
   categoryId: string
   title: string; titleAr: string; titleEn: string
   subtitle: string; subtitleAr: string; subtitleEn: string
-  buttonLabel: string; buttonLabelAr: string; buttonLabelEn: string
-  link: string
+  showButton1: string; buttonLabel: string; buttonLabelAr: string; buttonLabelEn: string; link: string
+  showButton2: string; button2Label: string; button2LabelAr: string; button2LabelEn: string; button2Link: string
 }
 
 const EMPTY_SLIDE_DRAFT: SlideDraft = {
   categoryId: "",
   title: "", titleAr: "", titleEn: "",
   subtitle: "", subtitleAr: "", subtitleEn: "",
-  buttonLabel: "", buttonLabelAr: "", buttonLabelEn: "",
-  link: "",
+  showButton1: "true", buttonLabel: "", buttonLabelAr: "", buttonLabelEn: "", link: "",
+  showButton2: "true", button2Label: "", button2LabelAr: "", button2LabelEn: "", button2Link: "",
 }
 
 const SLIDE_DRAFT_KEYS = Object.keys(EMPTY_SLIDE_DRAFT) as (keyof SlideDraft)[]
 
 const slideToDraft = (s: any): SlideDraft => {
   const d: any = {}
-  SLIDE_DRAFT_KEYS.forEach((k) => { d[k] = s?.[k] || "" })
+  SLIDE_DRAFT_KEYS.forEach((k) => {
+    d[k] = k === "showButton1" || k === "showButton2" ? (s?.[k] === false ? "false" : "true") : (s?.[k] || "")
+  })
   return d as SlideDraft
 }
 
+const SLIDE_INPUT_CLS = "w-full text-sm outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900 focus:border-[#00BFA6]"
+
+// Un bouton d'action du slide : interrupteur « afficher », lien, texte dans les 3 langues.
+function SlideButtonFields({
+  title, showKey, linkKey, labelKey, defaultLabel, defaultLink, draft, set,
+}: {
+  title: string
+  showKey: "showButton1" | "showButton2"
+  linkKey: "link" | "button2Link"
+  labelKey: "buttonLabel" | "button2Label"
+  defaultLabel: string
+  defaultLink: string
+  draft: SlideDraft
+  set: (k: keyof SlideDraft, v: string) => void
+}) {
+  const shown = draft[showKey] !== "false"
+  const langs: { code: string; label: string; suffix: "" | "Ar" | "En"; dir?: "rtl" }[] = [
+    { code: "FR", label: "Français", suffix: "" },
+    { code: "AR", label: "العربية", suffix: "Ar", dir: "rtl" },
+    { code: "EN", label: "English", suffix: "En" },
+  ]
+  return (
+    <div className={cn("rounded-xl border p-3 space-y-2.5", shown ? "border-gray-200 bg-white" : "border-gray-100 bg-gray-50/60")}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">{title}</p>
+        <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-gray-600">
+          <input type="checkbox" checked={shown} onChange={(e) => set(showKey, e.target.checked ? "true" : "false")} className="h-4 w-4 accent-[#00BFA6]" />
+          Afficher ce bouton
+        </label>
+      </div>
+      <div className={cn("space-y-2.5", !shown && "opacity-50")}>
+        <div>
+          <label className="block text-[11px] font-bold text-gray-400 mb-1">Lien</label>
+          <input value={draft[linkKey]} onChange={(e) => set(linkKey, e.target.value)} disabled={!shown} placeholder={`Par défaut : ${defaultLink} — ou /announces?realEstateCategory=RESIDENTIEL, https://...`} className={cn(SLIDE_INPUT_CLS, "text-[#00BFA6]")} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {langs.map((l) => (
+            <div key={l.code}>
+              <label className="block text-[11px] font-bold text-gray-400 mb-1">Texte ({l.label})</label>
+              <input dir={l.dir} value={draft[`${labelKey}${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`${labelKey}${l.suffix}` as keyof SlideDraft, e.target.value)} disabled={!shown} placeholder={l.code === "FR" ? defaultLabel : "Vide = texte par défaut"} className={SLIDE_INPUT_CLS} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SlideTextFields({ draft, set, titleHint }: { draft: SlideDraft; set: (k: keyof SlideDraft, v: string) => void; titleHint?: string }) {
-  const inputCls = "w-full text-sm outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900 focus:border-[#00BFA6]"
   const langs: { code: string; label: string; suffix: "" | "Ar" | "En"; dir?: "rtl" }[] = [
     { code: "FR", label: "Français", suffix: "" },
     { code: "AR", label: "العربية (arabe)", suffix: "Ar", dir: "rtl" },
@@ -992,21 +1042,18 @@ function SlideTextFields({ draft, set, titleHint }: { draft: SlideDraft; set: (k
   ]
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Lien du bouton et de la photo (optionnel)</label>
-        <input value={draft.link} onChange={(e) => set("link", e.target.value)} placeholder="ex. /announces?realEstateCategory=RESIDENTIEL ou https://..." className={cn(inputCls, "text-[#00BFA6]")} />
-        <p className="text-[11px] text-gray-400 mt-1">Vide : le bouton mène à la liste des annonces.</p>
-      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {langs.map((l) => (
           <div key={l.code} className="space-y-1.5 rounded-xl border border-gray-100 bg-gray-50/60 p-2.5">
             <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{l.label}</p>
-            <input dir={l.dir} value={draft[`title${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`title${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder={l.code === "FR" && titleHint ? `Titre (${titleHint})` : "Titre"} className={cn(inputCls, "font-bold")} />
-            <input dir={l.dir} value={draft[`subtitle${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`subtitle${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder="Sous-titre" className={inputCls} />
-            <input dir={l.dir} value={draft[`buttonLabel${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`buttonLabel${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder="Texte du bouton (défaut : « Voir les annonces »)" className={inputCls} />
+            <input dir={l.dir} value={draft[`title${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`title${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder={l.code === "FR" && titleHint ? `Titre (${titleHint})` : "Titre"} className={cn(SLIDE_INPUT_CLS, "font-bold")} />
+            <input dir={l.dir} value={draft[`subtitle${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`subtitle${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder="Sous-titre" className={SLIDE_INPUT_CLS} />
           </div>
         ))}
       </div>
+      <SlideButtonFields title="Bouton 1 (principal, vert)" showKey="showButton1" linkKey="link" labelKey="buttonLabel" defaultLabel="Voir les annonces" defaultLink="/announces" draft={draft} set={set} />
+      <SlideButtonFields title="Bouton 2 (secondaire, transparent)" showKey="showButton2" linkKey="button2Link" labelKey="button2Label" defaultLabel="Comment ça marche" defaultLink="/faq" draft={draft} set={set} />
+      <p className="text-[11px] text-gray-400">Le lien du bouton 1 sert aussi de lien au clic sur la photo du slide. Vous pouvez afficher un seul bouton, les deux, ou aucun.</p>
     </div>
   )
 }
@@ -1098,23 +1145,31 @@ function SlidesTab() {
 
   useEffect(() => { load() }, [load])
 
-  const updateSlide = async (id: number, data: Record<string, string | number | boolean | undefined>, image?: File | null): Promise<boolean> => {
+  const updateSlide = async (id: number, data: Record<string, string | number | boolean | undefined>, image?: File | null): Promise<any | null> => {
     setSaving(id)
     try {
       const fd = new FormData()
       Object.entries(data).forEach(([k, v]) => { if (v !== undefined) fd.append(k, String(v)) })
       if (image) fd.append('image', image)
       const res = await fetch(`${API_URL}/admin/content/hero-slides/${id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
-      if (res.ok) await load()
-      return res.ok
+      if (!res.ok) return null
+      const saved = await res.json()
+      await load()
+      return saved
     } finally { setSaving(null) }
   }
 
   const saveSlide = async (id: number, draft: SlideDraft, image: File | null) => {
     setSavedId(null)
-    const ok = await updateSlide(id, { ...draft }, image)
-    if (ok) setSavedId(id)
-    else alert("L'enregistrement a échoué. Réessayez.")
+    const saved = await updateSlide(id, { ...draft }, image)
+    if (!saved) { alert("L'enregistrement a échoué. Réessayez."); return }
+    // Garde-fou : si le serveur ne renvoie pas les champs des boutons, c'est que l'API tourne encore
+    // sur l'ancien code / l'ancienne base (migration non appliquée) — les textes ne seraient PAS gardés.
+    if (!("button2Label" in saved) || !("showButton2" in saved)) {
+      alert("Attention : le serveur n'a pas pris en compte les textes/liens des boutons. Appliquez la migration de la base (prisma migrate deploy) et redémarrez l'API, puis réessayez.")
+      return
+    }
+    setSavedId(id)
   }
 
   const deleteSlide = async (id: number) => {
