@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation"
 import axios from "axios"
 import { Heart, Loader2, Search } from "lucide-react"
 import { PropertyCard } from "@/components/PropertyCard"
-import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
+import { PROPERTY_TYPES, PUBLIC_CATEGORIES } from "@/data/propertyTypes"
 import { getCategoryColor } from "@/data/categoryColors"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -51,7 +51,7 @@ export default function FavoritesPage() {
       const cat = getCategoryIdForAnnounce(f.announce)
       if (cat) ids.add(cat)
     })
-    return REAL_ESTATE_CATEGORIES.filter((c, i, arr) => ids.has(c.id) && arr.findIndex((x) => x.id === c.id) === i)
+    return PUBLIC_CATEGORIES.filter((c, i, arr) => ids.has(c.id) && arr.findIndex((x) => x.id === c.id) === i)
   }, [favorites])
 
   const filtered = useMemo(() => {

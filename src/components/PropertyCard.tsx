@@ -54,18 +54,32 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     try { amenities = property.amenities ? JSON.parse(property.amenities) : {}; } catch { amenities = {}; }
 
     let items: string[] = [];
+    // Hangar et terrains : informations longues / en deux blocs — affichées sur deux lignes propres
+    // (alignées à gauche, sans puce) plutôt que de laisser l'usage passer à la ligne avec une puce orpheline.
+    const stacked = pType === "HANGAR" || categoryId === "TERRAIN_FONCIER";
     if (categoryId === "RESIDENTIEL" || categoryId === "BUREAUX_COMMERCES") {
         if (IMMEUBLE_TYPES.includes(pType)) {
             const bt = amenities?.buildingTypology;
-            if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloor", { n: property.nbFloors }));
             if (bt?.mode) items.push(bt.mode === "SIMILAIRES" ? t("overlayTypologySimilaire") : t("overlayTypologyDifferente"));
+            // Immeuble : nbFloors est un nombre d'étages ("8 étages"), pas un numéro d'étage
+            if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloorCount", { n: Number(property.nbFloors) }));
             if (bt?.totalApartments) items.push(t("overlayTotalApartments", { n: bt.totalApartments }));
+        } else if (pType === "BLOC_ADMINISTRATIF") {
+            // Bloc administratif : les étages et la surface bâtie vivent dans amenities.bloc (fiche dédiée),
+            // pas dans property.nbFloors/area — sans ça la carte n'affichait rien.
+            const bloc = amenities?.bloc;
+            const batie = bloc?.surfaces?.batie ?? property.area;
+            if (batie) items.push(`${batie} m²`);
+            const etages = bloc?.structure?.etages;
+            if (etages !== null && etages !== undefined) items.push(t("overlayFloorCount", { n: Number(etages) }));
         } else {
             if (property.typology) items.push(property.typology);
             if (property.area) items.push(`${property.area} m²`);
             if (property.nbFloors !== null && property.nbFloors !== undefined) {
                 // Niveau de villa : "Rez-de-chaussée" / "Étage supérieur" plutôt que "Étage 0/1"
                 if (pType === "NIVEAU_VILLA" || pType === "NIVEAU_VILLA_COMMERCIAL") items.push(Number(property.nbFloors) === 0 ? t("overlayLevelGround") : t("overlayLevelUpper"));
+                // Villa : nbFloors est un nombre d'étages ("1 étage", "2 étages") ; appartement etc. : numéro d'étage
+                else if (pType === "VILLA" || pType === "VILLA_COMMERCIALE") items.push(t("overlayFloorCount", { n: Number(property.nbFloors) }));
                 else items.push(t("overlayFloor", { n: property.nbFloors }));
             }
         }
@@ -73,15 +87,22 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
         if (pType === "CHAMBRE_FROIDE") {
             const cr = amenities?.coldRoom;
             const capacity = cr?.dimensions?.capacity;
+            // Sur la carte : "Cellule unique" / "Plusieurs cellules" et "Positif / Négatif / Ultra Froid",
+            // sans la précision entre parenthèses (gardée sur la fiche détail).
+            const stripParens = (label: string) => label.replace(/\s*\([^)]*\)/g, '').trim();
+            if (cr?.structureType) items.push(stripParens(tDep(`CF_STRUCTURE_TYPES.${cr.structureType}.label`)));
+            // Ordre : type de structure, capacité, puis type de froid
             if (capacity) items.push(t("overlayCapacity", { v: capacity }));
-            if (cr?.structureType) items.push(tDep(`CF_STRUCTURE_TYPES.${cr.structureType}.label`));
             const typeFroid: string[] = cr?.typeFroid || [];
-            if (typeFroid.length) items.push(typeFroid.map((id) => tDep(`CF_TYPE_FROID.${id}.label`)).join(' / '));
+            if (typeFroid.length) items.push(typeFroid.map((id) => stripParens(tDep(`CF_TYPE_FROID.${id}.label`))).join(' / '));
         } else if (pType === "USINE") {
             const uf = amenities?.industrialFactory;
             const sector = uf?.sector?.[0];
             if (sector) items.push(tDep(`INDUSTRIAL_SECTORS.${sector}.label`));
-            if (uf?.rentalType) items.push(tDep(`INDUSTRIAL_RENTAL_TYPES.${uf.rentalType}.label`));
+            // Carte : "Sans équipement" (murs nus) / "Avec équipement" (équipée), sans parenthèses.
+            if (uf?.rentalType === "MURS_NUS") items.push(t("overlayFactoryBare"));
+            else if (uf?.rentalType === "EQUIPEE") items.push(t("overlayFactoryEquipped"));
+            else if (uf?.rentalType) items.push(tDep(`INDUSTRIAL_RENTAL_TYPES.${uf.rentalType}.label`).replace(/\s*\([^)]*\)/g, '').trim());
         } else if (pType === "HANGAR") {
             const hg = amenities?.hangar;
             if (hg?.surfaces?.covered) items.push(t("overlayCovered", { v: hg.surfaces.covered }));
@@ -94,21 +115,27 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
             if (property.builtArea) items.push(t("overlayCovered", { v: property.builtArea }));
         }
     } else if (categoryId === "TERRAIN_FONCIER") {
-        if (property.landArea || property.area) items.push(t("overlayLand", { v: property.landArea || property.area }));
+        // Ligne 1 : topographie. Ligne 2 : surface (sans le mot "Terrain") • nombre de façades.
         const topo = amenities?.terrain?.topographie;
         if (topo) items.push(t.has(`overlayTopo${topo}`) ? t(`overlayTopo${topo}`) : (TERRAIN_TOPOGRAPHIE_LABELS[topo] || topo));
+        const line2: string[] = [];
+        const landArea = property.landArea || property.area;
+        if (landArea) line2.push(`${landArea} m²`);
+        if (property.facadesCount) line2.push(t("overlayFacades", { n: Number(property.facadesCount) }));
+        if (line2.length) items.push(line2.join(" • "));
     }
 
     if (items.length === 0) return null;
 
     return (
         <div className={cn(
-            "absolute bottom-0 inset-x-0 px-3.5 pt-9 pb-2.5 flex items-end gap-2 flex-wrap bg-gradient-to-t to-transparent",
+            "absolute bottom-0 inset-x-0 px-3.5 pt-9 pb-2.5 flex bg-gradient-to-t to-transparent",
+            stacked ? "flex-col items-start gap-0.5" : "items-end gap-2 flex-wrap",
             CATEGORY_OVERLAY_COLOR[categoryId as string] || "from-[#003B4A]/90"
         )}>
             {items.map((item, i) => (
                 <span key={i} className="flex items-center gap-2 text-white text-[11px] rtl:text-xs font-bold [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]">
-                    {i > 0 && <span className="h-1 w-1 rounded-full bg-white/50" />}
+                    {i > 0 && !stacked && <span className="h-1 w-1 rounded-full bg-white/50" />}
                     {item}
                 </span>
             ))}
@@ -378,7 +405,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
             )}>
                 {isCompany ? (
                     <>
-                        <div className="h-7 w-7 rounded-full border border-gray-100 dark:border-white/10 shrink-0 overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-white/5">
+                        <div className={cn("rounded-full border border-gray-100 dark:border-white/10 shrink-0 overflow-hidden flex items-center justify-center bg-white dark:bg-white/5", isHomeVariant ? "h-9 w-9" : "h-7 w-7")}>
                             {announce.user?.agencyLogoUrl || announce.user?.imageUrl ? (
                                 <img
                                     src={getImageUrl(announce.user.agencyLogoUrl || announce.user.imageUrl) || ''}
@@ -389,9 +416,11 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                                 <Building2 className="h-3.5 w-3.5 text-gray-300 dark:text-white/30" />
                             )}
                         </div>
-                        <span className="truncate text-xs rtl:text-[13px] font-semibold text-gray-500 dark:text-white/50">
-                            {announce.user?.companyName || (isHomeVariant ? t("professionalSeller") : "")}
-                        </span>
+                        {/* Nom d'agence trop long : défile comme le titre plutôt que d'être coupé. */}
+                        <ScrollingTitle
+                            text={announce.user?.companyName || (isHomeVariant ? t("professionalSeller") : "")}
+                            className="flex-1 text-xs rtl:text-[13px] font-semibold text-gray-500 dark:text-white/50"
+                        />
                     </>
                 ) : isHomeVariant ? (
                     <>

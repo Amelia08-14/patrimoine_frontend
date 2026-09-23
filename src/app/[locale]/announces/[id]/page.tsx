@@ -772,11 +772,16 @@ export default function AnnounceDetailsPage() {
         {/* Images Grid - Compact, à la Airbnb : titre/prix restent au-dessus du pli, le filtre par
             pièce ne prend de la place que dans la modale plein écran (voir plus bas). */}
         <div className="bg-white dark:bg-white/5 p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
-            <div className="flex justify-between items-center mb-3 px-1">
-                <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <div className="flex items-center gap-3 mb-3 px-1">
+                <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors shrink-0">
                     <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-white/70 rtl:rotate-180" />
                 </button>
-                <div className="flex gap-2">
+                {/* Titre de l'annonce, juste après la flèche de retour (titre saisi par le déposant,
+                    à défaut le type de bien), tronqué proprement sur une ligne. */}
+                <h1 dir="auto" className="flex-1 min-w-0 truncate text-lg sm:text-xl font-bold text-gray-900 dark:text-white" title={announce.title || propertyTypeLabel}>
+                    {announce.title || propertyTypeLabel}
+                </h1>
+                <div className="flex gap-2 shrink-0">
                     <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
                         <Heart className="h-4 w-4" />
                     </Button>
@@ -1021,11 +1026,8 @@ export default function AnnounceDetailsPage() {
             <div className="bg-white dark:bg-white/5 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10">
               <div className="flex justify-between items-start mb-2 gap-4">
                 <div className="flex flex-col gap-2 min-w-0 flex-1">
-                  {announce.title && (
-                      <span className="text-sm font-bold text-[#00BFA6] uppercase tracking-wide">{propertyTypeLabel}</span>
-                  )}
+                  <span className="text-sm font-bold text-[#00BFA6] uppercase tracking-wide">{propertyTypeLabel}</span>
                   <div className="flex flex-wrap items-center gap-3 min-w-0">
-                      <h1 className="text-3xl font-bold text-gray-900 dark:text-white break-words min-w-0">{announce.title || propertyTypeLabel}</h1>
                       {isHangarRental && hangar?.globalState && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
                               {L(hangar.globalState)}
@@ -1656,13 +1658,18 @@ export default function AnnounceDetailsPage() {
 
               {/* Boutons contact — masqué si on regarde sa propre annonce */}
               <div className="p-5 space-y-3">
-                {currentUserId !== announce.user?.id && (
-                  <Button
-                    onClick={() => setIsContactModalOpen(true)}
-                    className="w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold"
-                  >
-                    <Mail className="h-4 w-4" /> {t("sendMessage")}
-                  </Button>
+                {/* Toujours visible ; sur sa propre annonce il reste affiché mais désactivé (on ne s'écrit
+                    pas à soi-même) — avant, il disparaissait entièrement, ce qui ressemblait à un bug. */}
+                <Button
+                  onClick={() => setIsContactModalOpen(true)}
+                  disabled={currentUserId !== null && currentUserId === announce.user?.id}
+                  title={currentUserId !== null && currentUserId === announce.user?.id ? t("ownAnnounceHint") : undefined}
+                  className="w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold disabled:opacity-50 disabled:shadow-none"
+                >
+                  <Mail className="h-4 w-4" /> {t("sendMessage")}
+                </Button>
+                {currentUserId !== null && currentUserId === announce.user?.id && (
+                  <p className="text-center text-xs text-gray-400 dark:text-white/40 -mt-1">{t("ownAnnounceHint")}</p>
                 )}
                 {announce.user?.email && (
                   <a

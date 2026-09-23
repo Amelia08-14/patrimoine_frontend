@@ -8,7 +8,7 @@ import { useTranslations, useLocale } from "next-intl"
 import { Link, useRouter } from "@/i18n/navigation"
 import axios from "axios"
 import { motion, useReducedMotion, type Variants } from "framer-motion"
-import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
+import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES, PUBLIC_CATEGORIES } from "@/data/propertyTypes"
 import { useLocalizedGeoName, useLocalizedContent } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
 import { WILAYAS } from "@/data/wilayas"
@@ -243,7 +243,7 @@ function HeroSearchBar() {
         <Building2 className="h-4 w-4 text-gray-400 shrink-0" />
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate">
           <option value="">{t("searchCategoryPlaceholder")}</option>
-          {REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).map((c) => (
+          {PUBLIC_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).map((c) => (
             <option key={c.id} value={c.id}>{tc(c.id)}</option>
           ))}
         </select>
@@ -281,7 +281,7 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [announces, setAnnounces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; link?: string | null }[]>([]);
+  const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; buttonLabel?: string | null; buttonLabelAr?: string | null; buttonLabelEn?: string | null; link?: string | null }[]>([]);
   const lc = useLocalizedContent();
   const [partners, setPartners] = useState<{ id: number; name: string; nameAr?: string | null; nameEn?: string | null; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
@@ -291,10 +291,11 @@ export default function HomePage() {
 
   // Slides gérés depuis l'admin (Contenu du site > Slides d'accueil). À défaut, on retombe sur
   // un visuel par domaine généré depuis REAL_ESTATE_CATEGORIES, pour que la page ne soit jamais vide.
-  const uniqueCategories = REAL_ESTATE_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
-  const fallbackSlides = uniqueCategories.map((c) => ({ id: -1, categoryId: c.id, imageUrl: getCategoryHeroImageById(c.id), title: null, titleAr: null, titleEn: null, subtitle: null, subtitleAr: null, subtitleEn: null, link: null }))
+  const uniqueCategories = PUBLIC_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
+  const fallbackSlides = uniqueCategories.map((c) => ({ id: -1, categoryId: c.id, imageUrl: getCategoryHeroImageById(c.id), title: null, titleAr: null, titleEn: null, subtitle: null, subtitleAr: null, subtitleEn: null, buttonLabel: null, buttonLabelAr: null, buttonLabelEn: null, link: null }))
   const activeSlides = heroSlides.length > 0 ? heroSlides : fallbackSlides
   const activeSlide = activeSlides[currentSlide % activeSlides.length]
+  const heroButtonLabel = lc(activeSlide?.buttonLabel, activeSlide?.buttonLabelAr, activeSlide?.buttonLabelEn) || t("viewListings")
   const activeSlideCategory = activeSlide ? REAL_ESTATE_CATEGORIES.find((c) => c.id === activeSlide.categoryId) : undefined
 
   useEffect(() => {
@@ -489,13 +490,13 @@ export default function HomePage() {
                 {activeSlide?.link && /^https?:\/\//i.test(activeSlide.link) ? (
                   <a href={activeSlide.link} target="_blank" rel="noopener noreferrer">
                     <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
-                      {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
+                      {heroButtonLabel} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                     </Button>
                   </a>
                 ) : (
                   <Link href={(activeSlide?.link as any) || "/announces"}>
                     <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
-                      {t("viewListings")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
+                      {heroButtonLabel} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                     </Button>
                   </Link>
                 )}
@@ -591,9 +592,10 @@ export default function HomePage() {
 
       {/* WHY CHOOSE US — présenté comme un acte certifié, pas une grille de cartes générique */}
       <section className="py-16 sm:py-20 bg-[#003B4A] text-white relative overflow-hidden">
-        {/* Photo en fond, très atténuée derrière le dégradé navy — le panneau garde sa lisibilité */}
-        <img src="/société.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.14]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#003B4A] via-[#003B4A]/95 to-[#003B4A]" />
+        {/* Photo en fond (outils numériques — "des outils performants"), visible au centre et fondue
+            dans le navy en haut et en bas ; le panneau de garanties reste lisible grâce à son propre voile. */}
+        <img src="/why-bg.jpg" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-45" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#003B4A] via-[#003B4A]/55 to-[#003B4A]" />
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#00BFA6]/10 blur-3xl" />
         <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#00BFA6]/[0.06] blur-3xl" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -603,7 +605,7 @@ export default function HomePage() {
           </div>
 
           {/* Panneau "certificat" — perforations en pointillés entre chaque garantie, comme un acte officiel */}
-          <div className="relative rounded-[28px] border border-dashed border-white/20 bg-white/[0.03] px-2 py-2 sm:px-4">
+          <div className="relative rounded-[28px] border border-dashed border-white/25 bg-[#003B4A]/60 backdrop-blur-sm px-2 py-2 sm:px-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { icon: ShieldCheck, title: t("whyVerifiedTitle"), desc: t("whyVerifiedDesc") },
@@ -665,18 +667,25 @@ export default function HomePage() {
               </Link>
               </div>
             </div>
-            <div className="relative bg-[#003B4A] dark:border dark:border-white/10 rounded-3xl p-8 sm:p-10 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-[#003B4A]/30 hover:-translate-y-1 transition-all duration-300">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-[#5EEAD4]" />
-              <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
-                <HandHeart className="h-6 w-6 text-[#5EEAD4]" />
+            <div className="relative bg-[#003B4A] dark:border dark:border-white/10 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-[#003B4A]/30 hover:-translate-y-1 transition-all duration-300">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-[#5EEAD4] z-10" />
+              {/* Même principe que la carte "déposer" : bandeau photo qui fond dans la couleur de la carte */}
+              <div className="relative h-36 overflow-hidden">
+                <img src="/seeker-bg.jpg" alt="" loading="lazy" className="h-full w-full object-cover object-[50%_30%]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#003B4A] to-transparent" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">{t("seekerTitle")}</h3>
-              <p className="text-white/60 leading-relaxed mb-7">{t("seekerDesc")}</p>
-              <Link href="/research">
-                <Button className="bg-white text-[#003B4A] hover:bg-white/90 font-bold py-5 px-7 rounded-full">
-                  {t("entrustMySearch")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
-                </Button>
-              </Link>
+              <div className="p-8 sm:p-10 pt-0">
+                <div className="h-12 w-12 rounded-2xl bg-[#0b4a5a] flex items-center justify-center mb-6 -mt-6 relative">
+                  <HandHeart className="h-6 w-6 text-[#5EEAD4]" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">{t("seekerTitle")}</h3>
+                <p className="text-white/60 leading-relaxed mb-7">{t("seekerDesc")}</p>
+                <Link href="/research">
+                  <Button className="bg-white text-[#003B4A] hover:bg-white/90 font-bold py-5 px-7 rounded-full">
+                    {t("entrustMySearch")} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -695,21 +704,50 @@ export default function HomePage() {
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
                 <Coins className="h-6 w-6 text-[#00BFA6]" />
               </div>
-              <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsParticulierTitle")}</span>
-              <p className="text-gray-500 dark:text-white/60 leading-relaxed mt-3 mb-7">{t("pointsParticulierDesc")}</p>
+              <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsAllTitle")}</span>
+              <p className="text-gray-500 dark:text-white/60 leading-relaxed mt-3 mb-7">{t("pointsAllDesc")}</p>
 
-              {/* Mini-visuel : annonce standard vs annonce boostée par les points */}
-              <div className="mt-auto flex items-end gap-4 pt-4">
-                <div className="flex-1 rounded-xl border border-gray-100 bg-gray-50 p-3">
-                  <div className="h-2 w-10 rounded-full bg-gray-200 mb-2" />
-                  <div className="h-1.5 w-16 rounded-full bg-gray-200" />
+              {/* Schéma explicatif : 3 étapes (acheter → booster → visibilité), puis avant/après d'une annonce */}
+              <div className="mt-auto space-y-5 pt-4">
+                <div className="flex items-start justify-between gap-2">
+                  {[
+                    { icon: Coins, label: t("pointsStep1") },
+                    { icon: Sparkles, label: t("pointsStep2") },
+                    { icon: Star, label: t("pointsStep3") },
+                  ].map((step, i) => (
+                    <div key={step.label} className="flex flex-1 items-start gap-2">
+                      <div className="flex flex-1 flex-col items-center text-center gap-2">
+                        <span className="relative h-11 w-11 rounded-full bg-[#00BFA6]/10 border border-dashed border-[#00BFA6]/40 flex items-center justify-center">
+                          <step.icon className="h-5 w-5 text-[#00BFA6]" />
+                          <span className="absolute -top-1 -left-1 h-4 w-4 rounded-full bg-[#003B4A] text-white text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
+                        </span>
+                        <span className="text-[11px] rtl:text-xs font-semibold leading-tight text-[#003B4A] dark:text-white/80">{step.label}</span>
+                      </div>
+                      {i < 2 && <ArrowRight className="h-4 w-4 mt-3.5 shrink-0 text-gray-300 dark:text-white/30 rtl:rotate-180" />}
+                    </div>
+                  ))}
                 </div>
-                <div className="flex-1 rounded-xl border border-[#00BFA6]/30 bg-[#00BFA6]/[0.06] p-3 relative">
-                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[#00BFA6] flex items-center justify-center">
-                    <Star className="h-2.5 w-2.5 text-white fill-white" />
-                  </span>
-                  <div className="h-2 w-10 rounded-full bg-[#00BFA6]/50 mb-2" />
-                  <div className="h-1.5 w-16 rounded-full bg-[#00BFA6]/30" />
+
+                <div className="flex items-end gap-4">
+                  <div className="flex-1">
+                    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-3">
+                      <div className="h-10 rounded-md bg-gray-200 dark:bg-white/10 mb-2" />
+                      <div className="h-2 w-12 rounded-full bg-gray-200 dark:bg-white/10 mb-1.5" />
+                      <div className="h-1.5 w-20 rounded-full bg-gray-200 dark:bg-white/10" />
+                    </div>
+                    <p className="mt-1.5 text-center text-[10px] rtl:text-xs text-gray-400 dark:text-white/40">{t("pointsVisualStandard")}</p>
+                  </div>
+                  <div className="flex-1">
+                    <div className="relative rounded-xl border border-[#00BFA6]/40 bg-[#00BFA6]/[0.06] p-3 shadow-md shadow-[#00BFA6]/10">
+                      <span className="absolute -top-2 ltr:-right-2 rtl:-left-2 inline-flex items-center gap-1 rounded-full bg-[#00BFA6] px-2 py-0.5 text-[9px] font-bold text-white">
+                        <Star className="h-2.5 w-2.5 fill-white" /> {t("pointsFeaturedBadge")}
+                      </span>
+                      <div className="h-10 rounded-md bg-[#00BFA6]/25 mb-2" />
+                      <div className="h-2 w-12 rounded-full bg-[#00BFA6]/50 mb-1.5" />
+                      <div className="h-1.5 w-20 rounded-full bg-[#00BFA6]/30" />
+                    </div>
+                    <p className="mt-1.5 text-center text-[10px] rtl:text-xs font-semibold text-[#00BFA6]">{t("pointsVisualFeatured")}</p>
+                  </div>
                 </div>
               </div>
 
@@ -889,7 +927,7 @@ export default function HomePage() {
               <div className="flex items-center gap-2.5">
                 <span className="h-8 w-8 shrink-0 rounded-lg bg-[#00BFA6]/10 flex items-center justify-center"><LayoutGrid className="h-4 w-4 text-[#00BFA6]" /></span>
                 <div>
-                  <p className="text-sm font-extrabold text-[#003B4A] leading-none">{REAL_ESTATE_CATEGORIES.length}</p>
+                  <p className="text-sm font-extrabold text-[#003B4A] leading-none">{PUBLIC_CATEGORIES.length}</p>
                   <p className="text-[10px] rtl:text-xs text-gray-400">{t("mobileAppStatCategories")}</p>
                 </div>
               </div>

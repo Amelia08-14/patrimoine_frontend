@@ -10,7 +10,7 @@ import {
   Store, LayoutGrid, List, LayoutDashboard, ChevronLeft, ChevronRight,
   Star, Crown, MapPin, Bell, Send, Heart, Share2, Eye, Link2
 } from "lucide-react"
-import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
+import { PROPERTY_TYPES, PUBLIC_CATEGORIES } from "@/data/propertyTypes"
 import { usePropertyTypeLabel } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
 import { WILAYAS } from "@/data/wilayas"
@@ -297,6 +297,21 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   const [followerCount, setFollowerCount] = useState(0)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
+
+  // Messagerie interne — "Envoyer un message" ouvre une fenêtre qui poste un vrai Message vers le
+  // propriétaire de la boutique (avant : lien vers /messages?to=, une route qui n'existe pas → 404).
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+  const [msgOpen, setMsgOpen] = useState(false)
+  const [msgText, setMsgText] = useState("")
+  const [msgSending, setMsgSending] = useState(false)
+  const [msgSent, setMsgSent] = useState(false)
+  const [msgError, setMsgError] = useState("")
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) setCurrentUserId(JSON.parse(userStr)?.id ?? null)
+    } catch {}
+  }, [])
   const bannerTimerRef = useRef<any>(null)
 
   const headerColor = config.headerColor || config.primaryColor || "#00BFA6"
@@ -413,6 +428,27 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
     }).catch(() => {})
   }
 
+  const sendBoutiqueMessage = async () => {
+    if (!msgText.trim() || !ownerId) return
+    setMsgSending(true)
+    setMsgError("")
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) throw new Error('NO_TOKEN')
+      const res = await fetch(`${API_URL}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ receiverId: Number(ownerId), content: msgText.trim() }),
+      })
+      if (!res.ok) throw new Error()
+      setMsgSent(true)
+    } catch {
+      setMsgError(tm('messageErrorGeneric'))
+    } finally {
+      setMsgSending(false)
+    }
+  }
+
   const toggleFollow = async () => {
     if (!ownerId) return
     const token = localStorage.getItem('token')
@@ -441,7 +477,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
       const typeObj = PROPERTY_TYPES.find(t => t.id === pType)
       if ((typeObj as any)?.categoryId) catIds.add((typeObj as any).categoryId)
     })
-    return REAL_ESTATE_CATEGORIES.filter(c => catIds.has(c.id))
+    return PUBLIC_CATEGORIES.filter(c => catIds.has(c.id))
   }, [announces])
 
   // Toutes les wilayas et communes d'Algérie — pas seulement celles où ce pro a déjà une
@@ -481,6 +517,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
   }, [announces, txType, categoryFilter, wilayas, commune])
 
   const t = useTranslations('Boutique')
+  const tm = useTranslations('AnnounceDetail')
   const ptLabel = usePropertyTypeLabel()
 
   if (loading) return (
@@ -794,13 +831,14 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
 
           {/* Boutons action visiteur */}
           <div className="mt-5 flex items-center gap-2.5 flex-wrap justify-center">
-            <a
-              href={`/messages?to=${resolvedUserId || rawParam}`}
+            <button
+              type="button"
+              onClick={() => setMsgOpen(true)}
               className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all"
               style={{ color: headerTextColor }}
             >
-              <Send className="h-3.5 w-3.5" /> Envoyer un message
-            </a>
+              <Send className="h-3.5 w-3.5" /> {tm('sendMessage')}
+            </button>
             <button
               className={`flex items-center gap-2 border px-4 py-2 rounded-full font-bold text-sm transition-all disabled:opacity-60 ${isFollowing ? 'bg-white/40 border-white/60' : 'bg-white/20 border-white/40 hover:bg-white/30'}`}
               style={{ color: headerTextColor }}
@@ -1079,6 +1117,58 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
           </div>
         </div>
       </footer>
+
+      {/* Fenêtre "Envoyer un message" — vrai envoi vers /messages (nécessite d'être connecté) */}
+      {msgOpen && (
+        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden text-gray-900">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="font-bold text-xl flex items-center gap-2">
+                <Mail className="h-5 w-5 text-[#00BFA6]" /> {tm('contactAdvertiser')}
+              </h3>
+              <button onClick={() => { setMsgOpen(false); setMsgSent(false); setMsgError("") }} className="p-2 hover:bg-white rounded-full text-gray-400 hover:text-gray-600 shadow-sm">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              {!currentUserId ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-600 mb-5">{tm('messageLoginPrompt')}</p>
+                  <Link href="/auth/login" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl font-bold">{tm('messageLoginCta')}</Link>
+                </div>
+              ) : msgSent ? (
+                <div className="text-center py-6">
+                  <h4 className="font-bold text-lg">{tm('messageSentTitle')}</h4>
+                  <p className="text-gray-500 text-sm mt-2">{tm('messageSentText')}</p>
+                  <div className="flex items-center justify-center gap-3 mt-5">
+                    <button onClick={() => { setMsgOpen(false); setMsgSent(false); setMsgText("") }} className="px-5 py-2.5 border-2 border-gray-200 rounded-xl font-bold text-sm text-gray-700">{tm('close')}</button>
+                    <Link href="/profile/messages" className="px-5 py-2.5 bg-[#00BFA6] text-white rounded-xl font-bold text-sm">{tm('viewMyMessages')}</Link>
+                  </div>
+                </div>
+              ) : (
+                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                  <textarea
+                    rows={4}
+                    placeholder={tm('messagePlaceholder')}
+                    value={msgText}
+                    onChange={(e) => setMsgText(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#00BFA6] outline-none bg-white placeholder-gray-400 font-medium resize-none"
+                  />
+                  {msgError && <p className="text-red-500 text-xs">{msgError}</p>}
+                  <button
+                    type="button"
+                    disabled={!msgText.trim() || msgSending}
+                    onClick={sendBoutiqueMessage}
+                    className="w-full py-4 text-lg bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 font-bold disabled:opacity-50"
+                  >
+                    {msgSending ? tm('sending') : tm('send')}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

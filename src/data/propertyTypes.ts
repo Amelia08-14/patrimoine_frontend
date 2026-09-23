@@ -9,6 +9,13 @@ export const REAL_ESTATE_CATEGORIES = [
   { id: "EVENEMENTIEL", label: "Évènementiel", iconName: "PartyPopper" },
 ];
 
+// Catégories retirées des filtres et de la navigation publique (accueil, /announces, boutiques,
+// favoris, slides) à la demande du client : « Hébergement chez l'habitant » (HEBERGEMENT) et
+// « Évènementiel ». REAL_ESTATE_CATEGORIES reste complet : il sert aussi à retrouver le libellé
+// d'annonces existantes (KPIs admin, cartes, recherches confiées) et aux fiches de dépôt.
+export const HIDDEN_PUBLIC_CATEGORY_IDS = ["HEBERGEMENT", "EVENEMENTIEL"];
+export const PUBLIC_CATEGORIES = REAL_ESTATE_CATEGORIES.filter((c) => !HIDDEN_PUBLIC_CATEGORY_IDS.includes(c.id));
+
 export const PROPERTY_TYPES = [
   // Résidentiel
   { id: "APPARTEMENT", label: "Appartement", categoryId: "RESIDENTIEL", iconName: "Building" },

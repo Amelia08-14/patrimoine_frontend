@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
-import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
+import { REAL_ESTATE_CATEGORIES, PUBLIC_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
 import { usePropertyTypeLabel, useCategoryLabel, useLocalizedGeoName } from "@/lib/typeLabels"
 
 // Icon mapping helper
@@ -191,7 +191,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                   <LayoutGrid className="h-5 w-5" />
                   <span className="font-medium text-center">{t("all")}</span>
                 </div>
-                {REAL_ESTATE_CATEGORIES.map((cat) => {
+                {PUBLIC_CATEGORIES.map((cat) => {
                   const Icon = getIcon(cat.iconName)
                   const active = filters.realEstateCategory === cat.id
                   return (

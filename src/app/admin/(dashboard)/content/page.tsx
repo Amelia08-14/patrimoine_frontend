@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   FileText, HelpCircle, Handshake, Phone, Plus, Trash2, Save, Loader2,
@@ -10,7 +10,8 @@ import {
 } from "lucide-react"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
-import { REAL_ESTATE_CATEGORIES } from "@/data/propertyTypes"
+import { REAL_ESTATE_CATEGORIES, PUBLIC_CATEGORIES } from "@/data/propertyTypes"
+import { cn } from "@/lib/utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const getHeaders = (json = true) => {
@@ -955,20 +956,137 @@ function LinksTab() {
 // domaine suffisent, titre/sous-titre sont optionnels et, si vides, la page utilise le texte
 // générique du domaine.
 
+// Champs texte d'un slide, regroupés par langue : titre, sous-titre et libellé du bouton d'accueil
+// dans les trois langues, plus le lien du bouton (et de la photo). Partagé par la carte d'édition et
+// le formulaire d'ajout, pour que les deux exposent exactement les mêmes champs.
+type SlideDraft = {
+  categoryId: string
+  title: string; titleAr: string; titleEn: string
+  subtitle: string; subtitleAr: string; subtitleEn: string
+  buttonLabel: string; buttonLabelAr: string; buttonLabelEn: string
+  link: string
+}
+
+const EMPTY_SLIDE_DRAFT: SlideDraft = {
+  categoryId: "",
+  title: "", titleAr: "", titleEn: "",
+  subtitle: "", subtitleAr: "", subtitleEn: "",
+  buttonLabel: "", buttonLabelAr: "", buttonLabelEn: "",
+  link: "",
+}
+
+const SLIDE_DRAFT_KEYS = Object.keys(EMPTY_SLIDE_DRAFT) as (keyof SlideDraft)[]
+
+const slideToDraft = (s: any): SlideDraft => {
+  const d: any = {}
+  SLIDE_DRAFT_KEYS.forEach((k) => { d[k] = s?.[k] || "" })
+  return d as SlideDraft
+}
+
+function SlideTextFields({ draft, set, titleHint }: { draft: SlideDraft; set: (k: keyof SlideDraft, v: string) => void; titleHint?: string }) {
+  const inputCls = "w-full text-sm outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900 focus:border-[#00BFA6]"
+  const langs: { code: string; label: string; suffix: "" | "Ar" | "En"; dir?: "rtl" }[] = [
+    { code: "FR", label: "Français", suffix: "" },
+    { code: "AR", label: "العربية (arabe)", suffix: "Ar", dir: "rtl" },
+    { code: "EN", label: "English (anglais)", suffix: "En" },
+  ]
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Lien du bouton et de la photo (optionnel)</label>
+        <input value={draft.link} onChange={(e) => set("link", e.target.value)} placeholder="ex. /announces?realEstateCategory=RESIDENTIEL ou https://..." className={cn(inputCls, "text-[#00BFA6]")} />
+        <p className="text-[11px] text-gray-400 mt-1">Vide : le bouton mène à la liste des annonces.</p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {langs.map((l) => (
+          <div key={l.code} className="space-y-1.5 rounded-xl border border-gray-100 bg-gray-50/60 p-2.5">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{l.label}</p>
+            <input dir={l.dir} value={draft[`title${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`title${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder={l.code === "FR" && titleHint ? `Titre (${titleHint})` : "Titre"} className={cn(inputCls, "font-bold")} />
+            <input dir={l.dir} value={draft[`subtitle${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`subtitle${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder="Sous-titre" className={inputCls} />
+            <input dir={l.dir} value={draft[`buttonLabel${l.suffix}` as keyof SlideDraft]} onChange={(e) => set(`buttonLabel${l.suffix}` as keyof SlideDraft, e.target.value)} placeholder="Texte du bouton (défaut : « Voir les annonces »)" className={inputCls} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Carte d'un slide existant : les modifications sont gardées dans un brouillon local et ne partent
+// qu'au clic sur « Valider les modifications » (plus d'enregistrement caché au blur).
+// Publier/masquer, déplacer et supprimer restent des actions immédiates.
+function SlideCard({
+  slide, index, total, saving, justSaved, onSave, onMove, onTogglePublished, onDelete,
+}: {
+  slide: any; index: number; total: number; saving: boolean; justSaved: boolean
+  onSave: (draft: SlideDraft, image: File | null) => void
+  onMove: (dir: -1 | 1) => void
+  onTogglePublished: () => void
+  onDelete: () => void
+}) {
+  const [draft, setDraft] = useState<SlideDraft>(() => slideToDraft(slide))
+  const [image, setImage] = useState<File | null>(null)
+  const initial = slideToDraft(slide)
+  const dirty = image !== null || SLIDE_DRAFT_KEYS.some((k) => draft[k] !== initial[k])
+  const set = (k: keyof SlideDraft, v: string) => setDraft((d) => ({ ...d, [k]: v }))
+  const previewUrl = useMemo(() => (image ? URL.createObjectURL(image) : null), [image])
+  const categoryLabel = REAL_ESTATE_CATEGORIES.find((c) => c.id === draft.categoryId)?.label
+
+  return (
+    <div className={cn("bg-white rounded-2xl border p-4 flex flex-col sm:flex-row gap-4", dirty ? "border-[#00BFA6]/50" : "border-gray-100")}>
+      <div className="relative shrink-0">
+        <img src={previewUrl || `${API_URL}${slide.imageUrl}`} alt="" className="w-full sm:w-40 h-28 object-cover rounded-xl border border-gray-100" />
+        <label className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 rounded-xl transition-colors cursor-pointer group" title="Changer l'image">
+          <Upload className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => { setImage(e.target.files?.[0] || null); e.target.value = '' }} />
+        </label>
+        {image && <p className="text-[10px] text-[#00BFA6] font-bold mt-1 truncate max-w-40">Nouvelle image : {image.name}</p>}
+      </div>
+      <div className="flex-1 min-w-0 space-y-3">
+        <select
+          value={draft.categoryId}
+          onChange={(e) => set("categoryId", e.target.value)}
+          className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1.5 bg-white outline-none"
+        >
+          <option value="">Aucun domaine (générique)</option>
+          {PUBLIC_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
+        <SlideTextFields draft={draft} set={set} titleHint={categoryLabel ? `défaut : « ${categoryLabel} »` : "optionnel"} />
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            onClick={() => onSave(draft, image)}
+            disabled={!dirty || saving}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#00BFA6] text-white rounded-lg text-xs font-bold hover:bg-[#00908A] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Valider les modifications
+          </button>
+          {dirty && (
+            <button onClick={() => { setDraft(slideToDraft(slide)); setImage(null) }} disabled={saving} className="text-xs font-bold text-gray-400 hover:text-gray-600">Annuler</button>
+          )}
+          {dirty && <span className="text-[11px] text-amber-600 font-bold">Modifications non enregistrées</span>}
+          {!dirty && justSaved && <span className="text-[11px] text-green-600 font-bold">✓ Modifications enregistrées</span>}
+        </div>
+      </div>
+      <div className="flex sm:flex-col items-center gap-1 shrink-0">
+        <button onClick={() => onMove(-1)} disabled={index === 0} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+        <button onClick={() => onMove(1)} disabled={index === total - 1} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+        <button onClick={onTogglePublished} className="p-1.5 rounded-lg hover:bg-gray-100" title={slide.published ? 'Publié' : 'Masqué'}>
+          {slide.published ? <Eye className="h-3.5 w-3.5 text-green-600" /> : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
+        </button>
+        <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
+      </div>
+    </div>
+  )
+}
+
 function SlidesTab() {
   const [slides, setSlides] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<number | null>(null)
-  const [newCategory, setNewCategory] = useState("")
-  const [newTitle, setNewTitle] = useState("")
-  const [newTitleAr, setNewTitleAr] = useState("")
-  const [newTitleEn, setNewTitleEn] = useState("")
-  const [newSubtitle, setNewSubtitle] = useState("")
-  const [newSubtitleAr, setNewSubtitleAr] = useState("")
-  const [newSubtitleEn, setNewSubtitleEn] = useState("")
-  const [newLink, setNewLink] = useState("")
+  const [savedId, setSavedId] = useState<number | null>(null)
+  const [newDraft, setNewDraft] = useState<SlideDraft>(EMPTY_SLIDE_DRAFT)
   const [newImage, setNewImage] = useState<File | null>(null)
   const [adding, setAdding] = useState(false)
+  const setNew = (k: keyof SlideDraft, v: string) => setNewDraft((d) => ({ ...d, [k]: v }))
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -980,7 +1098,7 @@ function SlidesTab() {
 
   useEffect(() => { load() }, [load])
 
-  const updateSlide = async (id: number, data: Record<string, string | boolean | undefined>, image?: File | null) => {
+  const updateSlide = async (id: number, data: Record<string, string | number | boolean | undefined>, image?: File | null): Promise<boolean> => {
     setSaving(id)
     try {
       const fd = new FormData()
@@ -988,7 +1106,15 @@ function SlidesTab() {
       if (image) fd.append('image', image)
       const res = await fetch(`${API_URL}/admin/content/hero-slides/${id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
       if (res.ok) await load()
+      return res.ok
     } finally { setSaving(null) }
+  }
+
+  const saveSlide = async (id: number, draft: SlideDraft, image: File | null) => {
+    setSavedId(null)
+    const ok = await updateSlide(id, { ...draft }, image)
+    if (ok) setSavedId(id)
+    else alert("L'enregistrement a échoué. Réessayez.")
   }
 
   const deleteSlide = async (id: number) => {
@@ -1013,108 +1139,36 @@ function SlidesTab() {
     try {
       const fd = new FormData()
       fd.append('image', newImage)
-      if (newCategory) fd.append('categoryId', newCategory)
-      if (newTitle) fd.append('title', newTitle)
-      if (newTitleAr) fd.append('titleAr', newTitleAr)
-      if (newTitleEn) fd.append('titleEn', newTitleEn)
-      if (newSubtitle) fd.append('subtitle', newSubtitle)
-      if (newSubtitleAr) fd.append('subtitleAr', newSubtitleAr)
-      if (newSubtitleEn) fd.append('subtitleEn', newSubtitleEn)
-      if (newLink) fd.append('link', newLink)
+      SLIDE_DRAFT_KEYS.forEach((k) => { if (newDraft[k]) fd.append(k, newDraft[k]) })
       fd.append('order', String(slides.length))
       await fetch(`${API_URL}/admin/content/hero-slides`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
-      setNewCategory(""); setNewTitle(""); setNewTitleAr(""); setNewTitleEn(""); setNewSubtitle(""); setNewSubtitleAr(""); setNewSubtitleEn(""); setNewLink(""); setNewImage(null)
+      setNewDraft(EMPTY_SLIDE_DRAFT); setNewImage(null)
       await load()
     } finally { setAdding(false) }
   }
 
-  const categoryLabel = (id: string | null) => REAL_ESTATE_CATEGORIES.find((c) => c.id === id)?.label || null
-
-  if (loading) return <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
+  if (loading && slides.length === 0) return <div className="text-center py-10 text-gray-400"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4 max-w-4xl">
       <p className="text-xs text-gray-400">
-        Ces images défilent dans le grand visuel du haut de la page d'accueil. Rattacher un slide à un domaine réutilise l'icône et le libellé déjà définis pour ce domaine ; le titre/sous-titre restent optionnels.
+        Ces images défilent dans le grand visuel du haut de la page d'accueil. Pour chaque slide, renseignez titre, sous-titre et texte du bouton en français, arabe et anglais : le site affiche automatiquement la langue du visiteur (français si une traduction manque). Cliquez sur « Valider les modifications » pour enregistrer.
       </p>
 
       <div className="space-y-3">
         {slides.map((s, i) => (
-          <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col sm:flex-row gap-4">
-            <div className="relative shrink-0">
-              <img src={`${API_URL}${s.imageUrl}`} alt="" className="w-full sm:w-40 h-28 object-cover rounded-xl border border-gray-100" />
-              <label className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 rounded-xl transition-colors cursor-pointer group">
-                <Upload className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) updateSlide(s.id, {}, f); e.target.value = '' }} />
-              </label>
-            </div>
-            <div className="flex-1 min-w-0 space-y-2">
-              <select
-                defaultValue={s.categoryId || ""}
-                onChange={(e) => updateSlide(s.id, { categoryId: e.target.value })}
-                className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1.5 bg-white outline-none"
-              >
-                <option value="">Aucun domaine (générique)</option>
-                {REAL_ESTATE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-              </select>
-              <input
-                defaultValue={s.title || ""}
-                onBlur={(e) => e.target.value !== (s.title || "") && updateSlide(s.id, { title: e.target.value })}
-                placeholder={`Titre FR (par défaut : texte du domaine${categoryLabel(s.categoryId) ? ` « ${categoryLabel(s.categoryId)} »` : ''})`}
-                className="w-full text-sm font-bold text-gray-900 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
-              />
-              <input
-                defaultValue={s.subtitle || ""}
-                onBlur={(e) => e.target.value !== (s.subtitle || "") && updateSlide(s.id, { subtitle: e.target.value })}
-                placeholder="Sous-titre FR (optionnel)"
-                className="w-full text-sm text-gray-500 outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
-              />
-              <input
-                defaultValue={s.link || ""}
-                onBlur={(e) => e.target.value !== (s.link || "") && updateSlide(s.id, { link: e.target.value })}
-                placeholder="Lien de renvoi au clic (optionnel, ex. /announces ou https://...)"
-                className="w-full text-sm text-[#00BFA6] outline-none border-b border-transparent focus:border-[#00BFA6] pb-1"
-              />
-              <details className="mt-1">
-                <summary className="text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer select-none hover:text-[#00BFA6]">Arabe / Anglais</summary>
-                <div className="mt-2 space-y-1.5">
-                  <input
-                    defaultValue={s.titleAr || ""}
-                    onBlur={(e) => e.target.value !== (s.titleAr || "") && updateSlide(s.id, { titleAr: e.target.value })}
-                    placeholder="Titre (arabe)" dir="rtl"
-                    className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
-                  />
-                  <input
-                    defaultValue={s.subtitleAr || ""}
-                    onBlur={(e) => e.target.value !== (s.subtitleAr || "") && updateSlide(s.id, { subtitleAr: e.target.value })}
-                    placeholder="Sous-titre (arabe)" dir="rtl"
-                    className="w-full text-sm text-gray-500 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
-                  />
-                  <input
-                    defaultValue={s.titleEn || ""}
-                    onBlur={(e) => e.target.value !== (s.titleEn || "") && updateSlide(s.id, { titleEn: e.target.value })}
-                    placeholder="Titre (anglais)"
-                    className="w-full text-sm font-bold text-gray-900 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
-                  />
-                  <input
-                    defaultValue={s.subtitleEn || ""}
-                    onBlur={(e) => e.target.value !== (s.subtitleEn || "") && updateSlide(s.id, { subtitleEn: e.target.value })}
-                    placeholder="Sous-titre (anglais)"
-                    className="w-full text-sm text-gray-500 outline-none border border-gray-200 rounded-lg p-2 focus:border-[#00BFA6]"
-                  />
-                </div>
-              </details>
-            </div>
-            <div className="flex sm:flex-col items-center gap-1 shrink-0">
-              <button onClick={() => move(i, -1)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
-              <button onClick={() => move(i, 1)} disabled={i === slides.length - 1} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
-              <button onClick={() => updateSlide(s.id, { published: !s.published })} className="p-1.5 rounded-lg hover:bg-gray-100" title={s.published ? 'Publié' : 'Masqué'}>
-                {s.published ? <Eye className="h-3.5 w-3.5 text-green-600" /> : <EyeOff className="h-3.5 w-3.5 text-gray-400" />}
-              </button>
-              <button onClick={() => deleteSlide(s.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
-              {saving === s.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
-            </div>
-          </div>
+          <SlideCard
+            key={`${s.id}-${s.updatedAt}`}
+            slide={s}
+            index={i}
+            total={slides.length}
+            saving={saving === s.id}
+            justSaved={savedId === s.id}
+            onSave={(draft, image) => saveSlide(s.id, draft, image)}
+            onMove={(dir) => move(i, dir)}
+            onTogglePublished={() => updateSlide(s.id, { published: !s.published })}
+            onDelete={() => deleteSlide(s.id)}
+          />
         ))}
         {slides.length === 0 && (
           <p className="text-center text-gray-400 text-sm py-6">Aucun slide pour le moment — la page d'accueil affiche les visuels par défaut de chaque domaine.</p>
@@ -1127,19 +1181,11 @@ function SlidesTab() {
           <Upload className="h-4 w-4 text-gray-400" /> {newImage ? newImage.name : "Image (requise)"}
           <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
         </label>
-        <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="w-full text-sm font-medium border border-gray-200 rounded-xl p-3 bg-white outline-none">
+        <select value={newDraft.categoryId} onChange={(e) => setNew("categoryId", e.target.value)} className="w-full text-sm font-medium border border-gray-200 rounded-xl p-3 bg-white outline-none">
           <option value="">Aucun domaine (générique)</option>
-          {REAL_ESTATE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          {PUBLIC_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
-        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titre FR (optionnel)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-        <input value={newSubtitle} onChange={(e) => setNewSubtitle(e.target.value)} placeholder="Sous-titre FR (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-        <input value={newLink} onChange={(e) => setNewLink(e.target.value)} placeholder="Lien de renvoi au clic (optionnel, ex. /announces ou https://...)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <input value={newTitleAr} onChange={(e) => setNewTitleAr(e.target.value)} placeholder="Titre (arabe)" dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-          <input value={newTitleEn} onChange={(e) => setNewTitleEn(e.target.value)} placeholder="Titre (anglais)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-          <input value={newSubtitleAr} onChange={(e) => setNewSubtitleAr(e.target.value)} placeholder="Sous-titre (arabe)" dir="rtl" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-          <input value={newSubtitleEn} onChange={(e) => setNewSubtitleEn(e.target.value)} placeholder="Sous-titre (anglais)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
-        </div>
+        <SlideTextFields draft={newDraft} set={setNew} titleHint="optionnel" />
         <Button onClick={addSlide} disabled={adding || !newImage} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
           {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />} Ajouter
         </Button>
