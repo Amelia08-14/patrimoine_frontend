@@ -283,7 +283,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; link?: string | null }[]>([]);
   const lc = useLocalizedContent();
-  const [partners, setPartners] = useState<{ id: number; name: string; logoUrl: string | null; websiteUrl: string | null }[]>([]);
+  const [partners, setPartners] = useState<{ id: number; name: string; nameAr?: string | null; nameEn?: string | null; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
   const handleCategoryClick = (categoryId: string) => {
     router.push(`/announces?realEstateCategory=${categoryId}`)
@@ -418,6 +418,25 @@ export default function HomePage() {
             <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#003B4A]/70 to-transparent" />
           </div>
 
+          {/* Lien de renvoi du slide sur la photo elle-même (pas seulement sur le bouton CTA) :
+              calque cliquable sous le texte (z-[5] < z-10) ; le conteneur de texte est en
+              pointer-events-none et seul son contenu réel reprend les clics. */}
+          {activeSlide?.link && (/^https?:\/\//i.test(activeSlide.link) ? (
+            <a
+              href={activeSlide.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={lc(activeSlide.title, activeSlide.titleAr, activeSlide.titleEn) || t("viewListings")}
+              className="absolute inset-0 z-[5] cursor-pointer"
+            />
+          ) : (
+            <Link
+              href={activeSlide.link as any}
+              aria-label={lc(activeSlide.title, activeSlide.titleAr, activeSlide.titleEn) || t("viewListings")}
+              className="absolute inset-0 z-[5] cursor-pointer"
+            />
+          ))}
+
           {/* left-3/right-3 en dur ne s'inverse jamais tout seul en RTL (contrairement à un ordre
               flex) — position ET chevron sont donc échangés ensemble ici pour l'arabe, "précédent"
               restant du côté d'où vient la lecture. */}
@@ -441,9 +460,9 @@ export default function HomePage() {
 
           {/* Contenu texte — posé sur le fondu, aligné à gauche ; ne fixe plus sa propre hauteur,
               c'est lui qui détermine celle de la section (au moins min-h-*, plus si besoin). */}
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-0">
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-0 pointer-events-none">
             <motion.div
-              className="max-w-xl"
+              className="max-w-xl pointer-events-auto"
               initial={heroReducedMotion ? "visible" : "hidden"}
               animate="visible"
               variants={heroStagger}
@@ -765,11 +784,11 @@ export default function HomePage() {
                     {p.logoUrl ? (
                       <img
                         src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${p.logoUrl}`}
-                        alt={p.name}
+                        alt={lc(p.name, p.nameAr, p.nameEn)}
                         className="h-20 sm:h-24 max-w-full object-contain opacity-90 hover:opacity-100 hover:scale-105 transition-all"
                       />
                     ) : (
-                      <span className="text-gray-400 dark:text-white/40 font-bold text-sm text-center">{p.name}</span>
+                      <span className="text-gray-400 dark:text-white/40 font-bold text-sm text-center">{lc(p.name, p.nameAr, p.nameEn)}</span>
                     )}
                   </div>
                 ))}

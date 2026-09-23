@@ -63,7 +63,11 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
         } else {
             if (property.typology) items.push(property.typology);
             if (property.area) items.push(`${property.area} m²`);
-            if (property.nbFloors !== null && property.nbFloors !== undefined) items.push(t("overlayFloor", { n: property.nbFloors }));
+            if (property.nbFloors !== null && property.nbFloors !== undefined) {
+                // Niveau de villa : "Rez-de-chaussée" / "Étage supérieur" plutôt que "Étage 0/1"
+                if (pType === "NIVEAU_VILLA" || pType === "NIVEAU_VILLA_COMMERCIAL") items.push(Number(property.nbFloors) === 0 ? t("overlayLevelGround") : t("overlayLevelUpper"));
+                else items.push(t("overlayFloor", { n: property.nbFloors }));
+            }
         }
     } else if (categoryId === "INDUSTRIEL") {
         if (pType === "CHAMBRE_FROIDE") {

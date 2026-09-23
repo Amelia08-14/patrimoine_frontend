@@ -295,15 +295,16 @@ export default function EspacePublicitairePage() {
   // Grille des formules de points disponibles, affichée en ligne sur la page (même logique que
   // la grille des formules boutique sur "Ma boutique") — pas seulement dans la modale d'achat.
   const INLINE_POINT_FALLBACK = [
-    { id: "PACK_50", label: t("pointPackStarterLabel"), points: 50, price: 1500, ...POINT_PACK_STYLE.PACK_50 },
-    { id: "PACK_100", label: t("pointPackProLabel"), points: 100, price: 2500, ...POINT_PACK_STYLE.PACK_100 },
-    { id: "PACK_200", label: t("pointPackPremiumLabel"), points: 200, price: 3500, ...POINT_PACK_STYLE.PACK_200 },
+    { id: "PACK_50", label: t("pointPackStarterLabel"), description: "", points: 50, price: 1500, ...POINT_PACK_STYLE.PACK_50 },
+    { id: "PACK_100", label: t("pointPackProLabel"), description: "", points: 100, price: 2500, ...POINT_PACK_STYLE.PACK_100 },
+    { id: "PACK_200", label: t("pointPackPremiumLabel"), description: "", points: 200, price: 3500, ...POINT_PACK_STYLE.PACK_200 },
   ]
   const livePointPacks = offerPacks.filter((p) => p.kind === 'POINTS')
   const inlinePointPacks = livePointPacks.length > 0
     ? livePointPacks.map((p, i) => ({
         id: p.key,
         label: lc(p.title, p.titleAr, p.titleEn),
+        description: lc(p.description, p.descriptionAr, p.descriptionEn),
         points: p.points,
         price: p.price,
         ...(POINT_PACK_STYLE[p.key] || { icon: Coins, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
@@ -417,6 +418,7 @@ export default function EspacePublicitairePage() {
                     </div>
                     <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
                     <div className="text-xl font-black text-gray-900 dark:text-white mb-3">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500 dark:text-white/50">{t("oneTimePayment")}</span></div>
+                    {pack.description && <p className="text-xs text-gray-500 dark:text-white/50 mb-3 whitespace-pre-line">{pack.description}</p>}
                     <ul className="space-y-1.5 mb-4 flex-1">
                       {pointPackFeatures(pack.points).map(f => (
                         <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-white/60">

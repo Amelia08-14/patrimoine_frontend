@@ -685,6 +685,7 @@ export default function AnnounceDetailsPage() {
   const isTerrainTouristiqueProperty = normalizedPropertyType === "TERRAIN_TOURISTIQUE"
   const isIndustrialRental = isFactoryRental || isColdRoomRental || isHangarRental
   const isSpecialRental = isIndustrialRental || isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty
+  const isVillaLevel = normalizedPropertyType === "NIVEAU_VILLA" || normalizedPropertyType === "NIVEAU_VILLA_COMMERCIAL"
   const isShowroomProperty = normalizedPropertyType === "SHOWROOM"
   const isLocalCommercialProperty = normalizedPropertyType === "LOCAL_COMMERCIAL"
   const isBlocAdministratifProperty = normalizedPropertyType === "BLOC_ADMINISTRATIF"
@@ -1384,10 +1385,21 @@ export default function AnnounceDetailsPage() {
                     <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
                         <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">
-                                {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
+                            {isVillaLevel ? (
+                                <>
+                                    {/* Niveau de villa : le déposant choisit "Rez-de-chaussée" ou "Étage supérieur"
+                                        (deposit : floorCount 0/1) — affiché tel quel, pas en "RDC"/"1er". */}
+                                    <div className="font-bold text-xl">{Number(property.nbFloors) === 0 ? t('adLevelGround') : t('adLevelUpper')}</div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('adLevelLabel')}</div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="font-bold text-xl">
+                                        {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
+                                    </div>
+                                    <div className="text-sm text-gray-500 dark:text-white/50">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}

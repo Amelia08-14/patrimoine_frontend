@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef } from "react"
 import { useTranslations } from "next-intl"
 import { Handshake, Building, Hotel, PartyPopper, Warehouse, ImageOff, ExternalLink, ChevronLeft, ChevronRight, Send, Loader2, CheckCircle2, Upload, ArrowRight } from "lucide-react"
 import { subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
+import { useLocalizedContent } from "@/lib/typeLabels"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -27,16 +28,18 @@ function getTranslatedSubCategories(t: ReturnType<typeof useTranslations>, pole:
 
 function PartnerCard({ partner }: { partner: any }) {
   const t = useTranslations('Partners')
+  const lc = useLocalizedContent()
+  const displayName = lc(partner.name, partner.nameAr, partner.nameEn)
   const card = (
     <div className="group bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5 flex flex-col items-center gap-3 h-full hover:shadow-lg hover:border-[#00BFA6]/30 hover:-translate-y-0.5 transition-all">
       <div className="h-16 w-16 rounded-xl bg-gray-50 dark:bg-transparent flex items-center justify-center overflow-hidden shrink-0">
         {partner.logoUrl ? (
-          <img src={`${API_URL}${partner.logoUrl}`} alt={partner.name} className="h-full w-full object-contain p-1.5" />
+          <img src={`${API_URL}${partner.logoUrl}`} alt={displayName} className="h-full w-full object-contain p-1.5" />
         ) : (
           <ImageOff className="h-5 w-5 text-gray-300 dark:text-white/30" />
         )}
       </div>
-      <p className="font-bold text-gray-900 dark:text-white text-sm text-center leading-tight">{partner.name}</p>
+      <p className="font-bold text-gray-900 dark:text-white text-sm text-center leading-tight">{displayName}</p>
       {partner.websiteUrl && (
         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00BFA6] opacity-0 group-hover:opacity-100 transition-opacity">
           {t('visitWebsite')} <ExternalLink className="h-3 w-3" />

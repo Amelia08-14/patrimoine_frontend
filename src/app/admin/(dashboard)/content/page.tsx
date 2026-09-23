@@ -555,6 +555,8 @@ function PartnersTab() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState("")
+  const [newNameAr, setNewNameAr] = useState("")
+  const [newNameEn, setNewNameEn] = useState("")
   const [newUrl, setNewUrl] = useState("")
   const [newCategory, setNewCategory] = useState<string>("")
   const [newSubCategory, setNewSubCategory] = useState<string>("")
@@ -564,6 +566,8 @@ function PartnersTab() {
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>("ALL")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editName, setEditName] = useState("")
+  const [editNameAr, setEditNameAr] = useState("")
+  const [editNameEn, setEditNameEn] = useState("")
   const [editUrl, setEditUrl] = useState("")
   const [editLogo, setEditLogo] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
@@ -604,6 +608,8 @@ function PartnersTab() {
   const startEdit = (p: any) => {
     setEditingId(p.id)
     setEditName(p.name)
+    setEditNameAr(p.nameAr || "")
+    setEditNameEn(p.nameEn || "")
     setEditUrl(p.websiteUrl || "")
     setEditLogo(null)
   }
@@ -614,6 +620,8 @@ function PartnersTab() {
     try {
       const fd = new FormData()
       fd.append('name', editName.trim())
+      fd.append('nameAr', editNameAr.trim())
+      fd.append('nameEn', editNameEn.trim())
       fd.append('websiteUrl', editUrl.trim())
       if (editLogo) fd.append('logo', editLogo)
       await fetch(`${API_URL}/admin/content/partners/${p.id}`, { method: 'PUT', headers: getHeaders(false) as any, body: fd })
@@ -634,13 +642,15 @@ function PartnersTab() {
     try {
       const fd = new FormData()
       fd.append('name', newName)
+      if (newNameAr.trim()) fd.append('nameAr', newNameAr.trim())
+      if (newNameEn.trim()) fd.append('nameEn', newNameEn.trim())
       if (newUrl) fd.append('websiteUrl', newUrl)
       if (newCategory) fd.append('category', newCategory)
       if (newSubCategory) fd.append('subCategory', newSubCategory)
       fd.append('order', String(items.length))
       if (newLogo) fd.append('logo', newLogo)
       await fetch(`${API_URL}/admin/content/partners`, { method: 'POST', headers: getHeaders(false) as any, body: fd })
-      setNewName(""); setNewUrl(""); setNewCategory(""); setNewSubCategory(""); setNewLogo(null)
+      setNewName(""); setNewNameAr(""); setNewNameEn(""); setNewUrl(""); setNewCategory(""); setNewSubCategory(""); setNewLogo(null)
       await load()
     } finally { setAdding(false) }
   }
@@ -710,7 +720,9 @@ function PartnersTab() {
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => setEditLogo(e.target.files?.[0] || null)} />
                     </label>
                   </div>
-                  <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nom du partenaire" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900" />
+                  <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nom du partenaire (français)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900" />
+                  <input value={editNameAr} onChange={(e) => setEditNameAr(e.target.value)} dir="rtl" placeholder="الاسم بالعربية" className="w-full text-sm outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900" />
+                  <input value={editNameEn} onChange={(e) => setEditNameEn(e.target.value)} placeholder="Name in English" className="w-full text-sm outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900" />
                   <input value={editUrl} onChange={(e) => setEditUrl(e.target.value)} placeholder="Site web (optionnel)" className="w-full text-xs outline-none border border-gray-200 rounded-lg p-2 bg-white text-gray-900" />
                   <ChipRow
                     options={PARTNER_CATEGORIES.map(c => ({ id: c.id, label: POLE_SHORT_LABELS[c.id], icon: c.icon }))}
@@ -754,7 +766,9 @@ function PartnersTab() {
 
       <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 space-y-3 max-w-lg">
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ajouter un partenaire</p>
-        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du partenaire" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du partenaire (français)" className="w-full text-sm font-bold outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newNameAr} onChange={(e) => setNewNameAr(e.target.value)} dir="rtl" placeholder="الاسم بالعربية (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
+        <input value={newNameEn} onChange={(e) => setNewNameEn(e.target.value)} placeholder="Name in English (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
         <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="Site web (optionnel)" className="w-full text-sm outline-none border border-gray-200 rounded-xl p-3 bg-white" />
 
         <div className="space-y-2">

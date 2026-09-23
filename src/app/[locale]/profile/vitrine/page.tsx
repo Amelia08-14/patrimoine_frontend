@@ -187,7 +187,7 @@ export default function VitrineTypePage() {
         price: p.price,
         points: p.points,
         features: FEATURES_INLINE[p.key] || [],
-        tagline: TAGLINES[p.key] || lc(p.description, p.descriptionAr, p.descriptionEn) || "",
+        tagline: lc(p.description, p.descriptionAr, p.descriptionEn) || TAGLINES[p.key] || "",
         ...(BOUTIQUE_PACK_STYLE[p.key] || { icon: Store, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length], border: "border-gray-200 dark:border-white/10" }),
       }))
     : INLINE_FALLBACK
