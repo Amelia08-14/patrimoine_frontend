@@ -21,6 +21,9 @@ export function Navbar() {
   const [userInitials, setUserInitials] = useState("");
   const [user, setUser] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Logo d'agence introuvable (fichier absent du serveur, URL cassée…) : repli sur les initiales via
+  // l'état React, sans toucher au DOM à la main (l'ancien onError vidait le parent puis plantait).
+  const [logoFailed, setLogoFailed] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -349,7 +352,7 @@ export function Navbar() {
                   {unreadNotifications > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 z-10 h-3.5 w-3.5 rounded-full bg-red-500 border-2 border-white dark:border-[#022229]" aria-label={`${unreadNotifications} notifications non lues`} />
                   )}
-                  {user?.userType === 'SOCIETE' && user?.agencyLogoUrl ? (
+                  {user?.userType === 'SOCIETE' && user?.agencyLogoUrl && !logoFailed ? (
                       <div
                         className="h-10 w-10 rounded-full cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all overflow-hidden border border-gray-200 bg-white flex items-center justify-center"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -358,12 +361,7 @@ export function Navbar() {
                               src={user.agencyLogoUrl.startsWith('http') ? user.agencyLogoUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${user.agencyLogoUrl.replace(/^\/+/, '')}`} 
                               alt="Logo agence" 
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                  // Fallback to initials if image fails to load
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.parentElement!.innerHTML = userInitials;
-                                  e.currentTarget.parentElement!.className = "h-10 w-10 bg-[#003B4A] rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all";
-                              }}
+                              onError={() => setLogoFailed(true)}
                           />
                       </div>
                   ) : (
