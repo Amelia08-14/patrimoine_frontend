@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"
+import { FlagFR, FlagDZ, FlagGB } from "@/components/Flags";
 import { User, Lock, Save, Loader2, Building2, Upload, Check, MapPin } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -196,9 +197,12 @@ export default function ProfileInfoPage() {
                             <Building2 className="w-5 h-5 text-gray-400 dark:text-white/40" /> {t("companyInfoTitle")}
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        {/* Raison sociale : les trois langues sur une même ligne, chacune repérée par son drapeau */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("companyName")}</label>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70 flex items-center gap-2">
+                                    <FlagFR className="h-4 w-6 shrink-0 rounded-[3px]" /> {t("companyName")}
+                                </label>
                                 <Input
                                     name="companyName"
                                     value={formData.companyName}
@@ -206,6 +210,33 @@ export default function ProfileInfoPage() {
                                     className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70 flex items-center gap-2">
+                                    <FlagDZ className="h-4 w-6 shrink-0 rounded-[3px]" /> {t("companyNameAr")}
+                                </label>
+                                <Input
+                                    name="companyNameAr"
+                                    dir="rtl"
+                                    value={formData.companyNameAr}
+                                    onChange={handleChange}
+                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70 flex items-center gap-2">
+                                    <FlagGB className="h-4 w-6 shrink-0 rounded-[3px]" /> {t("companyNameEn")}
+                                </label>
+                                <Input
+                                    name="companyNameEn"
+                                    value={formData.companyNameEn}
+                                    onChange={handleChange}
+                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-400 dark:text-white/40 mb-6">{t("companyNameI18nHint")}</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("position")}</label>
                                 <Input
@@ -216,29 +247,6 @@ export default function ProfileInfoPage() {
                                 />
                             </div>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("companyNameAr")}</label>
-                                <Input
-                                    name="companyNameAr"
-                                    dir="rtl"
-                                    value={formData.companyNameAr}
-                                    onChange={handleChange}
-                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("companyNameEn")}</label>
-                                <Input
-                                    name="companyNameEn"
-                                    value={formData.companyNameEn}
-                                    onChange={handleChange}
-                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
-                                />
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-400 dark:text-white/40 mb-6">{t("companyNameI18nHint")}</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">

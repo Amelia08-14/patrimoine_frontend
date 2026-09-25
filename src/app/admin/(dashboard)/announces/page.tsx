@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff, FileDown, FileSpreadsheet } from "lucide-react"
+import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff, FileDown, FileSpreadsheet, Languages } from "lucide-react"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import { PeriodFilterBar } from "@/components/admin/PeriodFilterBar"
 import { DATE_PRESETS, todayStr, periodLabel } from "@/lib/datePresets"
@@ -261,6 +261,31 @@ function AdminAnnouncesContent() {
     } finally { setExporting(null) }
   }
 
+  const [translating, setTranslating] = useState(false)
+  // Traduit (fr/ar/en) les titres des annonces existantes qui n'ont pas encore de traduction.
+  const translateMissingTitles = async () => {
+    setTranslating(true)
+    try {
+      const token = localStorage.getItem('admin_token')
+      const res = await fetch(`${API_URL}/admin/announces/translate-titles?limit=100`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const r = await res.json()
+      if (!r.keyConfigured) {
+        alert("Traduction impossible : la clé ANTHROPIC_API_KEY n'est pas configurée sur le serveur (fichier .env de l'API). Ajoutez-la puis redémarrez l'API.")
+      } else {
+        alert(`${r.translated} titre(s) traduit(s), ${r.failed} échec(s). Il en reste ${r.remaining}${r.remaining > 0 ? " — relancez pour continuer." : "."}`)
+        fetchAnnounces()
+      }
+    } catch (e: any) {
+      alert("La traduction a échoué : " + (e?.message || "erreur inconnue"))
+    } finally {
+      setTranslating(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -279,6 +304,9 @@ function AdminAnnouncesContent() {
           </Button>
           <Button variant="outline" size="sm" onClick={exportPDF} disabled={exporting !== null} title="Exporter en PDF">
             <FileDown className="h-4 w-4 mr-1.5" /> {exporting === 'pdf' ? 'Export...' : 'PDF'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={translateMissingTitles} disabled={translating} title="Traduire les titres (fr / ar / en) des annonces qui n'ont pas encore de traduction">
+            <Languages className="h-4 w-4 mr-1.5" /> {translating ? 'Traduction...' : 'Traduire les titres'}
           </Button>
           <Button variant="outline" size="sm" onClick={fetchAnnounces} title="Actualiser">
               <RefreshCw className="h-4 w-4" />

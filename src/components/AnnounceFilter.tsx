@@ -465,7 +465,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
               {/* Surface : minimum / maximum (saisie libre, pas de valeurs proposées) */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("surfaceMinLabel")}</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("surfaceMinLabel")}</label>
                   <input
                     type="number"
                     min="0"
@@ -479,7 +479,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("surfaceMaxLabel")}</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("surfaceMaxLabel")}</label>
                   <input
                     type="number"
                     min="0"
@@ -497,7 +497,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
               {/* Budget : minimum / maximum */}
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-white/10">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("budgetMinLabel")}</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("budgetMinLabel")}</label>
                   <input
                     type="number"
                     min="0"
@@ -511,7 +511,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("budgetMaxLabel")}</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("budgetMaxLabel")}</label>
                   <input
                     type="number"
                     min="0"

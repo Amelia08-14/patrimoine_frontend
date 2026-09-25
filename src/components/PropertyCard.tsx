@@ -179,6 +179,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
   const companyDisplayName = lc(announce.user?.companyName, announce.user?.companyNameAr, announce.user?.companyNameEn);
   const isHomeVariant = variant === "home";
+  const isArabicUi = useLocale() === "ar";
 
   const commune = place.town(announce.property?.address?.town);
   const wilaya = place.city(announce.property?.address?.town?.city);
@@ -342,7 +343,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
         {/* Contenu — sur l'accueil, la catégorie reste entière puis titre et prix partagent la ligne suivante. */}
         <div className={cn("p-4 flex flex-col flex-1 min-w-0", isHomeVariant ? "min-h-36" : "gap-1.5")}>
             {isHomeVariant ? (
-                <span dir="auto" className="block w-full break-words text-left text-[#00BFA6] font-bold text-[11px] rtl:text-xs leading-4 uppercase tracking-wide">
+                <span dir="auto" className="block w-full break-words text-start text-[#00BFA6] font-bold text-[11px] rtl:text-xs leading-4 uppercase tracking-wide">
                     {categoryName}
                 </span>
             ) : (
@@ -360,7 +361,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
             )}
 
             {isHomeVariant ? (
-                <div dir="ltr" className="mt-2 flex min-w-0 items-center justify-between gap-3">
+                <div dir={isArabicUi ? "rtl" : "ltr"} className="mt-2 flex min-w-0 items-center justify-between gap-3">
                     <ScrollingTitle
                         text={fullTitle}
                         className="text-[15px] font-semibold leading-5 text-gray-900 dark:text-white"
