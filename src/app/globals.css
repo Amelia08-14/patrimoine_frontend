@@ -200,3 +200,18 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee-title { animation: none; }
 }
+
+/* Bandeaux « Points » et « Boutique » de l'accueil : éléments qui flottent / scintillent doucement. */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0) rotate(var(--float-rot, 0deg)); }
+  50%      { transform: translateY(-10px) rotate(calc(var(--float-rot, 0deg) + 4deg)); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50%      { opacity: 1; transform: scale(1.15); }
+}
+.animate-float   { animation: float-y 5.5s ease-in-out infinite; }
+.animate-twinkle { animation: twinkle 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-float, .animate-twinkle { animation: none; }
+}

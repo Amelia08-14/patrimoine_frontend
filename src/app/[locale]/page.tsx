@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, MapPin, ChevronLeft, ChevronRight, Search, Building2, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid, ChevronDown, Check } from "lucide-react"
+import { ArrowRight, MapPin, ChevronLeft, ChevronRight, Search, Building2, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid, ChevronDown, Check, TrendingUp, ShoppingBag } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
@@ -58,6 +58,24 @@ const getCategoryHeroImageById = (categoryId: string) => {
     case "HEBERGEMENT": return "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=2400&q=80"
     default: return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=2400&q=80"
   }
+}
+
+// Pièce dorée du bandeau « Points » de l'accueil (SVG : dégradé or, liseré, étoile centrale).
+function PointsCoin({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} style={style} aria-hidden="true">
+      <defs>
+        <linearGradient id="coinGold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#FFF3B0" />
+          <stop offset="0.55" stopColor="#FFC933" />
+          <stop offset="1" stopColor="#E08A00" />
+        </linearGradient>
+      </defs>
+      <circle cx="32" cy="32" r="30" fill="url(#coinGold)" stroke="#B45309" strokeWidth="2" />
+      <circle cx="32" cy="32" r="22" fill="none" stroke="#FFF3B0" strokeWidth="2" strokeDasharray="3 3" />
+      <path d="M32 18l4.2 8.6 9.5 1.4-6.9 6.7 1.6 9.4L32 39.5l-8.4 4.6 1.6-9.4-6.9-6.7 9.5-1.4z" fill="#B45309" opacity="0.85" />
+    </svg>
+  )
 }
 
 // Section Carousel avec flèches de navigation et auto-scroll
@@ -927,16 +945,23 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Points — visualisation d'une annonce qui gagne en visibilité */}
             <div className="group rounded-3xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              {/* Bandeau photo qui fond dans la carte (zoom lent au survol) */}
-              <div className="relative h-40 overflow-hidden">
-                <img src="/points-bg.jpg" alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#022229] via-white/10 dark:via-[#022229]/10 to-transparent" />
+              {/* Bandeau POINTS : dégradé chaud (or → orange → framboise), pièces qui flottent, étincelles */}
+              <div className="relative h-40 overflow-hidden" style={{ backgroundImage: "linear-gradient(135deg,#FFC93C 0%,#FF8A1F 48%,#F43F5E 100%)" }}>
+                <div className="absolute -top-12 -start-10 h-44 w-44 rounded-full bg-white/30 blur-2xl" />
+                <div className="absolute -bottom-14 end-4 h-48 w-48 rounded-full bg-[#F43F5E]/40 blur-2xl" />
+                <TrendingUp className="absolute bottom-3 end-5 h-24 w-24 text-white/25 rtl:-scale-x-100" strokeWidth={2.5} />
+                <PointsCoin className="absolute start-[10%] top-[24%] h-16 w-16 animate-float drop-shadow-lg" style={{ ["--float-rot" as any]: "-8deg" }} />
+                <PointsCoin className="absolute start-[38%] top-[8%] h-10 w-10 animate-float drop-shadow-md" style={{ animationDelay: "-1.6s", ["--float-rot" as any]: "10deg" }} />
+                <PointsCoin className="absolute start-[30%] bottom-[10%] h-12 w-12 animate-float drop-shadow-md" style={{ animationDelay: "-3.1s", ["--float-rot" as any]: "-4deg" }} />
+                <Star className="absolute start-[58%] top-[18%] h-5 w-5 fill-white text-white animate-twinkle" />
+                <Star className="absolute start-[70%] bottom-[22%] h-3.5 w-3.5 fill-white text-white animate-twinkle" style={{ animationDelay: "-1.2s" }} />
+                <Sparkles className="absolute start-[52%] bottom-[12%] h-6 w-6 text-white animate-twinkle" style={{ animationDelay: "-0.6s" }} />
               </div>
               <div className="p-8 sm:p-10 pt-0 flex flex-col flex-1">
-              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6 -mt-6 relative backdrop-blur-sm">
-                <Coins className="h-6 w-6 text-[#00BFA6]" />
+              <div className="h-12 w-12 rounded-2xl bg-[#F59E0B]/10 flex items-center justify-center mb-6 -mt-6 relative backdrop-blur-sm">
+                <Coins className="h-6 w-6 text-[#C2570C]" />
               </div>
-              <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsAllTitle")}</span>
+              <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#C2570C]">{t("pointsAllTitle")}</span>
               <p className="text-gray-500 dark:text-white/60 leading-relaxed mt-3 mb-7">{t("pointsAllDesc")}</p>
 
               {/* Schéma explicatif : 3 étapes (acheter → booster → visibilité), puis avant/après d'une annonce */}
@@ -949,8 +974,8 @@ export default function HomePage() {
                   ].map((step, i) => (
                     <div key={step.label} className="flex flex-1 items-start gap-2">
                       <div className="flex flex-1 flex-col items-center text-center gap-2">
-                        <span className="relative h-11 w-11 rounded-full bg-[#00BFA6]/10 border border-dashed border-[#00BFA6]/40 flex items-center justify-center">
-                          <step.icon className="h-5 w-5 text-[#00BFA6]" />
+                        <span className="relative h-11 w-11 rounded-full bg-[#F59E0B]/10 border border-dashed border-[#F59E0B]/40 flex items-center justify-center">
+                          <step.icon className="h-5 w-5 text-[#C2570C]" />
                           <span className="absolute -top-1 -left-1 h-4 w-4 rounded-full bg-[#003B4A] text-white text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
                         </span>
                         <span className="text-[11px] rtl:text-xs font-semibold leading-tight text-[#003B4A] dark:text-white/80">{step.label}</span>
@@ -970,20 +995,20 @@ export default function HomePage() {
                     <p className="mt-1.5 text-center text-[10px] rtl:text-xs text-gray-400 dark:text-white/40">{t("pointsVisualStandard")}</p>
                   </div>
                   <div className="flex-1">
-                    <div className="relative rounded-xl border border-[#00BFA6]/40 bg-[#00BFA6]/[0.06] p-3 shadow-md shadow-[#00BFA6]/10">
-                      <span className="absolute -top-2 ltr:-right-2 rtl:-left-2 inline-flex items-center gap-1 rounded-full bg-[#00BFA6] px-2 py-0.5 text-[9px] font-bold text-white">
+                    <div className="relative rounded-xl border border-[#F59E0B]/40 bg-[#F59E0B]/[0.06] p-3 shadow-md shadow-[#F59E0B]/10">
+                      <span className="absolute -top-2 ltr:-right-2 rtl:-left-2 inline-flex items-center gap-1 rounded-full bg-[#F59E0B] px-2 py-0.5 text-[9px] font-bold text-white">
                         <Star className="h-2.5 w-2.5 fill-white" /> {t("pointsFeaturedBadge")}
                       </span>
-                      <div className="h-10 rounded-md bg-[#00BFA6]/25 mb-2" />
-                      <div className="h-2 w-12 rounded-full bg-[#00BFA6]/50 mb-1.5" />
-                      <div className="h-1.5 w-20 rounded-full bg-[#00BFA6]/30" />
+                      <div className="h-10 rounded-md bg-[#F59E0B]/25 mb-2" />
+                      <div className="h-2 w-12 rounded-full bg-[#F59E0B]/50 mb-1.5" />
+                      <div className="h-1.5 w-20 rounded-full bg-[#F59E0B]/30" />
                     </div>
-                    <p className="mt-1.5 text-center text-[10px] rtl:text-xs font-semibold text-[#00BFA6]">{t("pointsVisualFeatured")}</p>
+                    <p className="mt-1.5 text-center text-[10px] rtl:text-xs font-semibold text-[#C2570C]">{t("pointsVisualFeatured")}</p>
                   </div>
                 </div>
               </div>
 
-              <Link href="/profile/points" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#00BFA6] transition-colors">
+              <Link href="/profile/points" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#C2570C] transition-colors">
                 {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
             </div>
@@ -991,10 +1016,20 @@ export default function HomePage() {
 
             {/* Boutique — aperçu schématique de la vraie vitrine personnalisable (logo, bannière, réseaux) */}
             <div className="group rounded-3xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              {/* Bandeau photo qui fond dans la carte (zoom lent au survol) */}
-              <div className="relative h-40 overflow-hidden">
-                <img src="/boutique-bg.jpg" alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#022229] via-white/10 dark:via-[#022229]/10 to-transparent" />
+              {/* Bandeau BOUTIQUE : dégradé froid (turquoise → bleu → violet), auvent rayé, vitrine et étiquettes */}
+              <div className="relative h-40 overflow-hidden" style={{ backgroundImage: "linear-gradient(135deg,#00D4B4 0%,#0094BD 46%,#5B4DE6 100%)" }}>
+                <div className="absolute -bottom-16 -start-8 h-48 w-48 rounded-full bg-[#5B4DE6]/50 blur-2xl" />
+                <div className="absolute -top-10 end-6 h-40 w-40 rounded-full bg-white/25 blur-2xl" />
+                <svg viewBox="0 0 400 40" preserveAspectRatio="none" className="absolute inset-x-0 top-0 h-9 w-full drop-shadow-md" aria-hidden="true">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <path key={i} d={`M${i * 40} 0h40v14a20 20 0 0 1 -40 0z`} fill={i % 2 === 0 ? "#FFFFFF" : "#FFE27A"} />
+                  ))}
+                </svg>
+                <Store className="absolute bottom-3 start-1/2 h-20 w-20 -translate-x-1/2 rtl:translate-x-1/2 text-white drop-shadow-lg" strokeWidth={1.6} />
+                <ShoppingBag className="absolute start-[12%] top-[46%] h-9 w-9 text-white/85 animate-float" style={{ ["--float-rot" as any]: "-10deg" }} />
+                <span className="absolute end-[12%] top-[40%] animate-float rounded-full bg-white px-3 py-1 text-xs font-extrabold text-[#5B4DE6] shadow-lg" style={{ animationDelay: "-2s", ["--float-rot" as any]: "8deg" }}>-20%</span>
+                <span className="absolute start-[26%] bottom-[16%] animate-float rounded-full bg-[#FFE27A] px-2.5 py-0.5 text-[10px] font-extrabold text-[#5B4DE6] shadow-md" style={{ animationDelay: "-3.4s" }}>NEW</span>
+                <Star className="absolute end-[26%] bottom-[18%] h-4 w-4 fill-white text-white animate-twinkle" />
               </div>
               <div className="p-8 sm:p-10 pt-0 flex flex-col flex-1">
               <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6 -mt-6 relative backdrop-blur-sm">
