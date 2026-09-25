@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import { AnnounceFilter } from "@/components/AnnounceFilter"
+import { AdBanner } from "@/components/AdBanner"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
 import { getCategoryColor } from "@/data/categoryColors"
@@ -191,12 +192,20 @@ function AnnouncesContent() {
              })
           }
 
+          if (filters.minPrice) {
+            data = data.filter((a: any) => a.price >= Number(filters.minPrice))
+          }
+
           if (filters.maxPrice) {
             data = data.filter((a: any) => a.price <= Number(filters.maxPrice))
           }
 
           if (filters.minArea) {
             data = data.filter((a: any) => (a.property?.area || 0) >= Number(filters.minArea))
+          }
+
+          if (filters.maxArea) {
+            data = data.filter((a: any) => (a.property?.area || 0) <= Number(filters.maxArea))
           }
 
           if (filters.sortBy === 'PRICE_ASC') {
@@ -230,10 +239,17 @@ function AnnouncesContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent pb-12">
-      {/* Header Search */}
-      <div className="bg-gray-900 dark:bg-[#011419] py-8 px-4 sm:px-6 lg:px-8 shadow-md">
+      {/* Espace publicitaire défilant (ancienne bande sombre du filtre) */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-6">
         <div className="max-w-[1600px] mx-auto">
-          <h1 className="text-3xl font-bold text-white mb-8 text-center">{t("heroTitle")}</h1>
+          <h1 className="sr-only">{t("heroTitle")}</h1>
+          <AdBanner />
+        </div>
+      </div>
+
+      {/* Filtre — sous l'espace publicitaire */}
+      <div className="relative z-20 px-4 sm:px-6 lg:px-8 pt-5">
+        <div className="max-w-[1600px] mx-auto">
           <AnnounceFilter
               filters={filters}
               onFilterChange={handleFilterChange}

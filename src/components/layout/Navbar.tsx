@@ -8,6 +8,7 @@ import { User, LogOut, Plus, ChevronDown, List, Coins, Megaphone, Search, PieCha
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import { ScrollingTitle } from '@/components/ScrollingTitle';
 
 const LOCALE_LABELS: Record<string, string> = { fr: 'Français', en: 'English', ar: 'العربية' };
 
@@ -68,7 +69,8 @@ export function Navbar() {
 
   const getNavbarTitle = (u: any) => {
     if (!u) return ""
-    if (u.userType === "SOCIETE") return u.companyName || u.email || ""
+    // Nom d'entreprise dans la langue du visiteur (repli sur le nom français)
+    if (u.userType === "SOCIETE") return (locale === "ar" && u.companyNameAr) || (locale === "en" && u.companyNameEn) || u.companyName || u.email || ""
     return `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email || ""
   }
 
@@ -342,7 +344,9 @@ export function Navbar() {
              {isLoggedIn ? (
                <div className="flex items-center gap-4 relative" ref={menuRef}>
                   <div className={cn("hidden lg:flex flex-col cursor-pointer", isRTL ? "text-left" : "text-right")} onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                     <span className="text-sm font-bold text-gray-800">{getNavbarTitle(user)}</span>
+                     {/* Nom d'entreprise long : largeur bornée pour ne pas pousser les éléments voisins, et il défile
+                         horizontalement (même animation que les titres d'annonces) au lieu de passer à la ligne. */}
+                     <ScrollingTitle text={getNavbarTitle(user)} className="max-w-[200px] xl:max-w-[260px] text-sm font-bold text-gray-800 dark:text-white" />
                      <div className={cn("flex items-center text-[#00908A]", isRTL ? "justify-start" : "justify-end")}>
                        {getUserTypeIcon(user?.userType)}
                        <span className="text-xs font-medium">{getNavbarSubtitle(user)}</span>

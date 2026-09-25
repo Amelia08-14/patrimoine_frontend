@@ -225,6 +225,8 @@
     "allCommunes": "كل البلديات",
     "budgetMax": "الميزانية القصوى",
     "budgetMaxLabel": "الميزانية القصوى (دج)",
+    "budgetMinLabel": "الميزانية الدنيا (دج)",
+    "surfaceMaxLabel": "المساحة القصوى (م²)",
     "budgetPlaceholder": "مثال: 50000",
     "max": "الحد الأقصى",
     "surfaceMin": "المساحة الدنيا",
@@ -237,6 +239,14 @@
   },
   "AnnouncesPage": {
     "heroTitle": "اعثر على منزلك المستقبلي",
+    "adLabel": "إعلان",
+    "adCta": "اكتشف",
+    "adDepositTitle": "بِع أو أجّر أسرع",
+    "adDepositText": "أضف إعلانك في دقائق وعزّز ظهوره بالنقاط.",
+    "adDepositCta": "أضف إعلانًا",
+    "adBoutiqueTitle": "متجرك بألوانك",
+    "adBoutiqueText": "للمحترفين: شعار وبانر وحزمة نقاط شهرية لإعلاناتك.",
+    "adBoutiqueCta": "اكتشف باقات المتجر",
     "viewAll": "عرض الكل",
     "rent": "إيجار",
     "buy": "شراء",
@@ -925,6 +935,9 @@
     "communePlaceholder": "اختر بلدية",
     "companyInfoTitle": "معلومات الشركة",
     "companyName": "الاسم الاجتماعي",
+    "companyNameAr": "اسم الشركة (بالعربية)",
+    "companyNameEn": "اسم الشركة (بالإنجليزية)",
+    "companyNameI18nHint": "يُعرض حسب لغة الزائر؛ يُستخدم الاسم الفرنسي عند ترك الترجمة فارغة.",
     "position": "منصب الممثل",
     "rcLabel": "السجل التجاري",
     "agreementLabel": "الاعتماد",
@@ -2108,6 +2121,11 @@
     "pointsVisualStandard": "إعلان عادي",
     "pointsVisualFeatured": "إعلان مميّز",
     "pointsFeaturedBadge": "مميّز",
+    "liveResultsCount": "{count, plural, =0 {لا توجد إعلانات مطابقة} one {إعلان واحد مطابق لبحثك} two {إعلانان مطابقان لبحثك} few {# إعلانات مطابقة لبحثك} other {# إعلانًا مطابقًا لبحثك}}",
+    "liveResultsReset": "مسح الفلاتر",
+    "liveResultsSeeAll": "عرض كل النتائج",
+    "noFilteredListings": "لا توجد إعلانات تطابق هذه المعايير.",
+    "searchFilterPlaceholder": "بحث…",
     "pointsProCta": "اكتشف باقات المتجر",
     "partnersSectionTitle": "يثقون بنا",
     "partnersSectionSubtitle": "وكالات ومروّجون ومحترفون شركاء Patrimoine Immobilier.",
@@ -2531,10 +2549,12 @@
   },
   "DepositOptions": {
     "PROPERTY_STATES": {
-      "NEUF": "جديد (لم يُسكن من قبل)",
+      "NEUF": "جديد",
       "RENOVE": "مُجدّد",
       "BON_ETAT": "بحالة جيدة",
-      "A_DEMOLIR": "قابل للهدم"
+      "A_DEMOLIR": "قابل للهدم",
+      "SUR_PLAN": "بيع على المخطط",
+      "EN_COURS_REALISATION": "قيد الإنجاز"
     },
     "BUILDING_TYPOLOGY_MODES": {
       "SIMILAIRES": "عمارة بشقق ذات مخططات متشابهة",
@@ -2691,7 +2711,7 @@
     },
     "INDUSTRIAL_GLOBAL_STATES": {
       "NEUF": {
-        "label": "جديد (لم يُستعمل)"
+        "label": "جديد"
       },
       "BON_ETAT_MARCHE": {
         "label": "حالة جيدة"
@@ -2887,7 +2907,7 @@
         "label": "منحدر"
       },
       "ACCIDENTE": {
-        "label": "وعر (شديد الانحدار)"
+        "label": "وعر"
       }
     },
     "TERRAIN_STATUT_ZONE": {
@@ -3908,7 +3928,9 @@
     "non_classees": "أخرى",
     "MURS_NUS": "جدران فارغة (خالية)",
     "EQUIPEE": "مجهّزة (جاهزة للاستغلال)",
-    "NEUF": "جديد (لم يُستعمل)",
+    "NEUF": "جديد",
+    "SUR_PLAN": "بيع على المخطط",
+    "EN_COURS_REALISATION": "قيد الإنجاز",
     "BON_ETAT_MARCHE": "حالة جيدة",
     "ANCIEN": "قديم (يحتاج إلى تجديد)",
     "PLAIN_PIED": "بمستوى واحد (طابق أرضي)",
@@ -3983,7 +4005,7 @@
     "MONTE_CHARGE": "مصعد بضائع",
     "PLAT": "مستوٍ",
     "EN_PENTE": "منحدر",
-    "ACCIDENTE": "وعر (شديد الانحدار)",
+    "ACCIDENTE": "وعر",
     "LOTISSEMENT_CLASSIQUE": "تجزئة عقارية عادية",
     "COOPERATIVE_IMMOBILIERE": "تعاونية عقارية",
     "RESIDENCE_FERMEE": "إقامة مغلقة",

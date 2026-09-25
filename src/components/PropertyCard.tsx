@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import axios from "axios";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Camera, Eye, Heart, MapPin, Building2, Play, Images, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePropertyTypeLabel, useLocalizedPlaceName } from "@/lib/typeLabels";
+import { usePropertyTypeLabel, useLocalizedPlaceName, useLocalizedContent } from "@/lib/typeLabels";
 import { PROPERTY_TYPES } from "@/data/propertyTypes";
 import { getCategoryColor } from "@/data/categoryColors";
+import { ScrollingTitle } from "@/components/ScrollingTitle";
 
 // Helper for Image URLs
 const getImageUrl = (url: string) => {
@@ -42,6 +43,17 @@ const IMMEUBLE_TYPES = ["IMMEUBLE_RESIDENTIEL", "IMMEUBLE_BUREAU"];
 // Hébergement & Séjour non traité pour l'instant (aucun bandeau affiché).
 function PhotoOverlaySpecs({ announce }: { announce: any }) {
     const t = useTranslations("PropertyCard");
+    // Arabe : unité « م² » et typologie « F4 » -> « 4 غرف » (au lieu de « m² » / « F4 » en français)
+    const isAr = useLocale() === "ar";
+    const sqm = isAr ? "م²" : "m²";
+    const typologyLabel = (raw: string) => {
+        const m = /^F\s*(\d+)$/i.exec(String(raw).trim());
+        if (!isAr || !m) return raw;
+        const n = Number(m[1]);
+        if (n === 1) return "غرفة واحدة";
+        if (n === 2) return "غرفتان";
+        return n <= 10 ? `${n} غرف` : `${n} غرفة`;
+    };
     // Groupes déjà traduits côté /deposit, réutilisés tels quels pour rester cohérent entre
     // saisie et lecture (mêmes ids, mêmes libellés) sans dupliquer de traductions.
     const tDep = useTranslations("DepositOptions");
@@ -54,9 +66,9 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     try { amenities = property.amenities ? JSON.parse(property.amenities) : {}; } catch { amenities = {}; }
 
     let items: string[] = [];
-    // Hangar et terrains : informations longues / en deux blocs — affichées sur deux lignes propres
+    // Hangar et immeubles : informations longues / en deux blocs — affichées sur deux lignes propres
     // (alignées à gauche, sans puce) plutôt que de laisser l'usage passer à la ligne avec une puce orpheline.
-    const stacked = pType === "HANGAR" || categoryId === "TERRAIN_FONCIER" || IMMEUBLE_TYPES.includes(pType);
+    const stacked = pType === "HANGAR" || IMMEUBLE_TYPES.includes(pType);
     if (categoryId === "RESIDENTIEL" || categoryId === "BUREAUX_COMMERCES") {
         if (IMMEUBLE_TYPES.includes(pType)) {
             const bt = amenities?.buildingTypology;
@@ -72,12 +84,12 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
             // pas dans property.nbFloors/area — sans ça la carte n'affichait rien.
             const bloc = amenities?.bloc;
             const batie = bloc?.surfaces?.batie ?? property.area;
-            if (batie) items.push(`${batie} m²`);
+            if (batie) items.push(`${batie} ${sqm}`);
             const etages = bloc?.structure?.etages;
             if (etages !== null && etages !== undefined) items.push(t("overlayFloorCount", { n: Number(etages) }));
         } else {
-            if (property.typology) items.push(property.typology);
-            if (property.area) items.push(`${property.area} m²`);
+            if (property.typology) items.push(typologyLabel(property.typology));
+            if (property.area) items.push(`${property.area} ${sqm}`);
             if (property.nbFloors !== null && property.nbFloors !== undefined) {
                 // Niveau de villa : "Rez-de-chaussée" / "Étage supérieur" plutôt que "Étage 0/1"
                 if (pType === "NIVEAU_VILLA" || pType === "NIVEAU_VILLA_COMMERCIAL") items.push(Number(property.nbFloors) === 0 ? t("overlayLevelGround") : t("overlayLevelUpper"));
@@ -118,14 +130,12 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
             if (property.builtArea) items.push(t("overlayCovered", { v: property.builtArea }));
         }
     } else if (categoryId === "TERRAIN_FONCIER") {
-        // Ligne 1 : topographie. Ligne 2 : surface (sans le mot "Terrain") • nombre de façades.
+        // Une seule ligne : topographie • surface (sans le mot "Terrain") • nombre de façades.
         const topo = amenities?.terrain?.topographie;
         if (topo) items.push(t.has(`overlayTopo${topo}`) ? t(`overlayTopo${topo}`) : (TERRAIN_TOPOGRAPHIE_LABELS[topo] || topo));
-        const line2: string[] = [];
         const landArea = property.landArea || property.area;
-        if (landArea) line2.push(`${landArea} m²`);
-        if (property.facadesCount) line2.push(t("overlayFacades", { n: Number(property.facadesCount) }));
-        if (line2.length) items.push(line2.join(" • "));
+        if (landArea) items.push(`${landArea} ${sqm}`);
+        if (property.facadesCount) items.push(t("overlayFacades", { n: Number(property.facadesCount) }));
     }
 
     if (items.length === 0) return null;
@@ -146,38 +156,6 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
     )
 }
 
-// Titre de carte trop long pour tenir sur une ligne : défile tout seul jusqu'au bout puis revient,
-// plutôt que de couper avec "..." derrière une icône (i) qu'il fallait survoler pour lire la
-// suite — surtout gênant au tactile, où le survol n'existe pas. Ne s'anime que si ça déborde
-// vraiment (mesuré à l'affichage), sinon le titre reste simplement affiché tel quel.
-function ScrollingTitle({ text, className, dir = "auto" }: { text: string; className?: string; dir?: "auto" | "ltr" | "rtl" }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  const [overflowPx, setOverflowPx] = useState(0);
-
-  useEffect(() => {
-    const measure = () => {
-      if (!containerRef.current || !textRef.current) return;
-      const diff = textRef.current.scrollWidth - containerRef.current.clientWidth;
-      setOverflowPx(diff > 2 ? diff : 0);
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [text]);
-
-  return (
-    <div ref={containerRef} dir={dir} className={cn("min-w-0 overflow-hidden", className)}>
-      <span
-        ref={textRef}
-        className={cn("inline-block whitespace-nowrap", overflowPx > 0 && "animate-marquee-title")}
-        style={overflowPx > 0 ? ({ "--scroll-distance": `${overflowPx}px` } as React.CSSProperties) : undefined}
-      >
-        {text}
-      </span>
-    </div>
-  );
-}
 
 type PropertyCardProps = {
   announce: any;
@@ -197,7 +175,9 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
   const t = useTranslations("PropertyCard");
   const ptLabel = usePropertyTypeLabel();
   const place = useLocalizedPlaceName();
+  const lc = useLocalizedContent();
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
+  const companyDisplayName = lc(announce.user?.companyName, announce.user?.companyNameAr, announce.user?.companyNameEn);
   const isHomeVariant = variant === "home";
 
   const commune = place.town(announce.property?.address?.town);
@@ -210,7 +190,8 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
   const categoryName = typeObj ? ptLabel(typeObj.id, typeObj.label) : (pType || t("defaultCategory"));
   const isSale = announce.type === "SALE";
 
-  const fullTitle = announce.title || t("titleFallback", { category: categoryName, location: locationLabel });
+  // Titre corrigé/traduit automatiquement à la création (fr = repli) : affiché dans la langue du visiteur
+  const fullTitle = lc(announce.title, announce.titleAr, announce.titleEn) || t("titleFallback", { category: categoryName, location: locationLabel });
   const formattedPrice = new Intl.NumberFormat('fr-DZ').format(announce.price);
 
   const images = announce.property?.images || [];
@@ -412,7 +393,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                             {announce.user?.agencyLogoUrl || announce.user?.imageUrl ? (
                                 <img
                                     src={getImageUrl(announce.user.agencyLogoUrl || announce.user.imageUrl) || ''}
-                                    alt={announce.user.companyName || t("professionalSeller")}
+                                    alt={companyDisplayName || t("professionalSeller")}
                                     className="h-full w-full object-contain"
                                 />
                             ) : (
@@ -421,7 +402,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                         </div>
                         {/* Nom d'agence trop long : défile comme le titre plutôt que d'être coupé. */}
                         <ScrollingTitle
-                            text={announce.user?.companyName || (isHomeVariant ? t("professionalSeller") : "")}
+                            text={companyDisplayName || (isHomeVariant ? t("professionalSeller") : "")}
                             className="flex-1 text-xs rtl:text-[13px] font-semibold text-gray-500 dark:text-white/50"
                         />
                     </>

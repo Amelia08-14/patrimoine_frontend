@@ -32,6 +32,8 @@ export default function ProfileInfoPage() {
     confirmPassword: "",
     // Champs Société
     companyName: "",
+    companyNameAr: "",
+    companyNameEn: "",
     commercialRegister: "",
     agreementNumber: "",
     position: "",
@@ -58,6 +60,8 @@ export default function ProfileInfoPage() {
         email: userData.email || "",
         phone: userData.phone || "",
         companyName: userData.companyName || "",
+        companyNameAr: userData.companyNameAr || "",
+        companyNameEn: userData.companyNameEn || "",
         commercialRegister: userData.commercialRegister || "",
         agreementNumber: userData.agreementNumber || "",
         position: userData.position || "",
@@ -121,6 +125,10 @@ export default function ProfileInfoPage() {
         Object.entries(formData).forEach(([key, value]) => {
             if (value) submitData.append(key, value);
         });
+
+        // Noms d'entreprise AR/EN : toujours envoyés (même vides) pour pouvoir les effacer
+        submitData.set('companyNameAr', formData.companyNameAr || '');
+        submitData.set('companyNameEn', formData.companyNameEn || '');
 
         // Wilaya/commune : townId réel (City.id/Town.id), utilisé ensuite pour les filtres.
         if (selectedCommune) submitData.append('townId', selectedCommune);
@@ -208,6 +216,29 @@ export default function ProfileInfoPage() {
                                 />
                             </div>
                         </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("companyNameAr")}</label>
+                                <Input
+                                    name="companyNameAr"
+                                    dir="rtl"
+                                    value={formData.companyNameAr}
+                                    onChange={handleChange}
+                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("companyNameEn")}</label>
+                                <Input
+                                    name="companyNameEn"
+                                    value={formData.companyNameEn}
+                                    onChange={handleChange}
+                                    className="bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px]"
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-400 dark:text-white/40 mb-6">{t("companyNameI18nHint")}</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="space-y-2">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { Fragment, useState, useEffect, useMemo } from "react"
 import { useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
@@ -8,12 +8,13 @@ import {
   ArrowLeft, MapPin, BedDouble, Square, Heart, Share2,
   Phone, Mail, User, Check, Building2, Car, Wind, Sun,
   Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, X, Layers, Users, FileText, Handshake,
-  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search, Play
+  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search, Play, Images
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
-import { usePropertyTypeLabel, useLocalizedPlaceName } from "@/lib/typeLabels"
+import { usePropertyTypeLabel, useLocalizedPlaceName, useLocalizedContent } from "@/lib/typeLabels"
 import { Link, useRouter } from "@/i18n/navigation"
+import { cn } from "@/lib/utils"
 
   // Helper for Image URLs
   const getImageUrl = (url: string) => {
@@ -113,7 +114,7 @@ const LABELS: any = {
     // Industrial labels
     MURS_NUS: "Murs nus (Vide)",
     EQUIPEE: "Équipée (Clé en main)",
-    NEUF: "Neuf (Jamais servi)",
+    NEUF: "Neuf",
     BON_ETAT_MARCHE: "Bon état",
     ANCIEN: "Ancien (À réviser)",
     PLAIN_PIED: "Plain-pied (RDC)",
@@ -202,7 +203,7 @@ const LABELS: any = {
     // Terrain
     PLAT: "Plat",
     EN_PENTE: "En pente",
-    ACCIDENTE: "Accidenté (escarpé)",
+    ACCIDENTE: "Accidenté",
     LOTISSEMENT_CLASSIQUE: "Lotissement classique",
     COOPERATIVE_IMMOBILIERE: "Coopérative immobilière",
     RESIDENCE_FERMEE: "Résidence fermée",
@@ -268,6 +269,7 @@ const LABELS: any = {
 
 export default function AnnounceDetailsPage() {
   const t = useTranslations("AnnounceDetail")
+  const lcName = useLocalizedContent()
   const ptLabel = usePropertyTypeLabel()
   const place = useLocalizedPlaceName()
   const tL = useTranslations("AnnounceDetailLabels")
@@ -297,6 +299,14 @@ export default function AnnounceDetailsPage() {
   const [messageSending, setMessageSending] = useState(false)
   const [messageSent, setMessageSent] = useState(false)
   const [messageError, setMessageError] = useState("")
+  // Sur sa propre annonce, un clic sur « Envoyer un message » affiche une bulle d'explication qui se
+  // ferme toute seule (au lieu d'un texte permanent sous le bouton).
+  const [ownHintOpen, setOwnHintOpen] = useState(false)
+  useEffect(() => {
+    if (!ownHintOpen) return
+    const id = setTimeout(() => setOwnHintOpen(false), 3500)
+    return () => clearTimeout(id)
+  }, [ownHintOpen])
 
   useEffect(() => {
     try {
@@ -778,8 +788,8 @@ export default function AnnounceDetailsPage() {
                 </button>
                 {/* Titre de l'annonce, juste après la flèche de retour (titre saisi par le déposant,
                     à défaut le type de bien), tronqué proprement sur une ligne. */}
-                <h1 dir="auto" className="flex-1 min-w-0 truncate text-lg sm:text-xl font-bold text-gray-900 dark:text-white" title={announce.title || propertyTypeLabel}>
-                    {announce.title || propertyTypeLabel}
+                <h1 dir="auto" className="flex-1 min-w-0 truncate text-lg sm:text-xl font-bold text-gray-900 dark:text-white" title={lcName(announce.title, announce.titleAr, announce.titleEn) || propertyTypeLabel}>
+                    {lcName(announce.title, announce.titleAr, announce.titleEn) || propertyTypeLabel}
                 </h1>
                 <div className="flex gap-2 shrink-0">
                     <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
@@ -918,9 +928,9 @@ export default function AnnounceDetailsPage() {
                                     <Button 
                                         variant="secondary" 
                                         size="sm" 
-                                        className="bg-white/90 text-gray-900 dark:text-white font-bold hover:bg-white gap-2 shadow-lg pointer-events-none"
+                                        className="bg-white/90 text-gray-900 font-bold hover:bg-white gap-2 shadow-lg pointer-events-none"
                                     >
-                                        <Square className="h-4 w-4" />
+                                        <Images className="h-4 w-4" />
                                         {t("seeGallery")}
                                     </Button>
                                 </div>
@@ -1026,8 +1036,9 @@ export default function AnnounceDetailsPage() {
             <div className="bg-white dark:bg-white/5 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10">
               <div className="flex justify-between items-start mb-2 gap-4">
                 <div className="flex flex-col gap-2 min-w-0 flex-1">
-                  <span className="text-sm font-bold text-[#00BFA6] uppercase tracking-wide">{propertyTypeLabel}</span>
                   <div className="flex flex-wrap items-center gap-3 min-w-0">
+                      {/* Type de bien puis étiquettes d'état sur la même ligne */}
+                      <span className="text-sm font-bold text-[#00BFA6] uppercase tracking-wide">{propertyTypeLabel}</span>
                       {isHangarRental && hangar?.globalState && (
                           <span className="px-3 py-1 bg-[#00BFA6]/10 text-[#00BFA6] text-xs font-bold rounded-full border border-[#00BFA6]/20">
                               {L(hangar.globalState)}
@@ -1149,58 +1160,27 @@ export default function AnnounceDetailsPage() {
                     )}
                   </div>
                 ) : isColdRoomRental ? (
-                  <div className="w-full flex items-center justify-between gap-3">
-                    {coldRoom?.structureType && (
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                        <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{L(coldRoom.structureType)}</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f005')}</div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
-                    {coldRoom?.dimensions?.length != null && (
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{coldRoom.dimensions.length} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f006')}</div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
-                    {coldRoom?.dimensions?.width != null && (
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                        <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{coldRoom.dimensions.width} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f007')}</div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
-                    {coldRoom?.dimensions?.height != null && (
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                        <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{coldRoom.dimensions.height} ml</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f008')}</div>
-                        </div>
-                      </div>
-                    )}
-                    {coldRoom?.dimensions?.capacity != null && (
-                      <>
-                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                  <div className="w-full flex flex-wrap items-center justify-between gap-x-3 gap-y-4">
+                    {/* Ordre : structure, capacité, longueur, largeur, hauteur. Un champ non renseigné disparaît
+                        avec son séparateur (pas de trou) ; les séparateurs n'apparaissent qu'ENTRE deux blocs. */}
+                    {[
+                      { show: !!coldRoom?.structureType, Icon: Layers, value: (L(coldRoom?.structureType) || '').replace(/\s*\([^)]*\)/g, '').trim(), label: t('f005') },
+                      { show: coldRoom?.dimensions?.capacity != null, Icon: Archive, value: `${coldRoom?.dimensions?.capacity} m³`, label: t('adCapacityM3') },
+                      { show: coldRoom?.dimensions?.length != null, Icon: Square, value: `${coldRoom?.dimensions?.length} ml`, label: t('f006') },
+                      { show: coldRoom?.dimensions?.width != null, Icon: Square, value: `${coldRoom?.dimensions?.width} ml`, label: t('f007') },
+                      { show: coldRoom?.dimensions?.height != null, Icon: Layers, value: `${coldRoom?.dimensions?.height} ml`, label: t('f008') },
+                    ].filter((it) => it.show).map((it, i) => (
+                      <Fragment key={it.label}>
+                        {i > 0 && <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
                         <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                          <Archive className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                          <it.Icon className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
-                            <div className="font-bold text-base">{coldRoom.dimensions.capacity} m³</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">{t('adCapacityM3')}</div>
+                            <div className="font-bold text-base">{it.value}</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{it.label}</div>
                           </div>
                         </div>
-                      </>
-                    )}
+                      </Fragment>
+                    ))}
                   </div>
                 ) : isHangarRental ? (
                   <div className="w-full flex items-center justify-between gap-3">
@@ -1255,78 +1235,29 @@ export default function AnnounceDetailsPage() {
                     )}
                   </div>
                 ) : (isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty) ? (
-                  <div className="w-full flex items-center justify-between gap-3 flex-wrap">
-                    {/* Surface terrain */}
-                    {property.landArea != null && (
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                        <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                        <div>
-                          <div className="font-bold text-base">{property.landArea} m²</div>
-                          <div className="text-xs text-gray-500 dark:text-white/50">{t('f002')}</div>
-                        </div>
-                      </div>
-                    )}
-                    {/* Longueur */}
-                    {terrain?.facadeLength != null && (
-                      <>
-                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                  <div className="w-full flex flex-wrap items-center gap-x-4 gap-y-4">
+                    {/* Ordre : topographie, façades, viabilisation, puis surface / longueur / largeur. Un champ
+                        non renseigné disparaît avec son séparateur ; le tout tient sur une ligne quand la largeur
+                        le permet (flex-wrap en secours pour ne jamais déborder). */}
+                    {[
+                      { show: !!terrain?.topographie, Icon: Layers, value: terrain?.topographie ? L(terrain.topographie) : '', label: t('f011') },
+                      { show: property.facadesCount != null, Icon: Square, value: `${property.facadesCount} face${Number(property.facadesCount) > 1 ? "s" : ""}`, label: t('f012') },
+                      { show: true, Icon: Key, value: terrain?.viabilise ? "Viabilisé" : "Non viabilisé", label: t('f013') },
+                      { show: property.landArea != null, Icon: Ruler, value: `${property.landArea} m²`, label: t('f002') },
+                      { show: terrain?.facadeLength != null, Icon: Ruler, value: `${terrain?.facadeLength} ml`, label: t('f006') },
+                      { show: terrain?.depth != null, Icon: Ruler, value: `${terrain?.depth} m`, label: t('f007') },
+                    ].filter((it) => it.show).map((it, i) => (
+                      <Fragment key={it.label}>
+                        {i > 0 && <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
                         <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                          <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                          <it.Icon className="h-5 w-5 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
-                            <div className="font-bold text-base">{terrain.facadeLength} ml</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f006')}</div>
+                            <div className="font-bold text-base leading-tight">{it.value}</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{it.label}</div>
                           </div>
                         </div>
-                      </>
-                    )}
-                    {/* Largeur */}
-                    {terrain?.depth != null && (
-                      <>
-                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
-                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                          <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                          <div>
-                            <div className="font-bold text-base">{terrain.depth} m</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f007')}</div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {/* Topographie */}
-                    {terrain?.topographie && (
-                      <>
-                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
-                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                          <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                          <div>
-                            <div className="font-bold text-base">{L(terrain.topographie)}</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f011')}</div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {/* Façades */}
-                    {property.facadesCount != null && (
-                      <>
-                        <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
-                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                          <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                          <div>
-                            <div className="font-bold text-base">{property.facadesCount} face{Number(property.facadesCount) > 1 ? "s" : ""}</div>
-                            <div className="text-xs text-gray-500 dark:text-white/50">{t('f012')}</div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {/* Viabilisé */}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
-                      <Key className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
-                      <div>
-                        <div className="font-bold text-base">{terrain?.viabilise ? "Viabilisé" : "Non viabilisé"}</div>
-                        <div className="text-xs text-gray-500 dark:text-white/50">{t('f013')}</div>
-                      </div>
-                    </div>
+                      </Fragment>
+                    ))}
                   </div>
                 ) : isSaleBuildingDemolition ? (
                     <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
@@ -1632,7 +1563,7 @@ export default function AnnounceDetailsPage() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-white font-black text-base leading-tight truncate">{announce.user?.companyName}</div>
+                    <div className="text-white font-black text-base leading-tight truncate">{lcName(announce.user?.companyName, announce.user?.companyNameAr, announce.user?.companyNameEn)}</div>
                     <div className="text-white/70 text-xs mt-0.5 truncate">{announce.user?.activity || t("realEstateProfessional")}</div>
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <span className="h-1.5 w-1.5 bg-green-400 rounded-full"></span>
@@ -1660,17 +1591,31 @@ export default function AnnounceDetailsPage() {
               <div className="p-5 space-y-3">
                 {/* Toujours visible ; sur sa propre annonce il reste affiché mais désactivé (on ne s'écrit
                     pas à soi-même) — avant, il disparaissait entièrement, ce qui ressemblait à un bug. */}
-                <Button
-                  onClick={() => setIsContactModalOpen(true)}
-                  disabled={currentUserId !== null && currentUserId === announce.user?.id}
-                  title={currentUserId !== null && currentUserId === announce.user?.id ? t("ownAnnounceHint") : undefined}
-                  className="w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold disabled:opacity-50 disabled:shadow-none"
-                >
-                  <Mail className="h-4 w-4" /> {t("sendMessage")}
-                </Button>
-                {currentUserId !== null && currentUserId === announce.user?.id && (
-                  <p className="text-center text-xs text-gray-400 dark:text-white/40 -mt-1">{t("ownAnnounceHint")}</p>
-                )}
+                <div className="relative">
+                  <Button
+                    onClick={() => {
+                      if (currentUserId !== null && currentUserId === announce.user?.id) setOwnHintOpen(true)
+                      else setIsContactModalOpen(true)
+                    }}
+                    aria-disabled={currentUserId !== null && currentUserId === announce.user?.id}
+                    className={cn(
+                      "w-full py-5 text-base bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl shadow-lg shadow-[#00BFA6]/20 flex items-center justify-center gap-2 font-bold",
+                      currentUserId !== null && currentUserId === announce.user?.id && "opacity-50 shadow-none cursor-not-allowed hover:bg-[#00BFA6]"
+                    )}
+                  >
+                    <Mail className="h-4 w-4" /> {t("sendMessage")}
+                  </Button>
+                  {ownHintOpen && (
+                    <div
+                      role="status"
+                      onClick={() => setOwnHintOpen(false)}
+                      className="absolute left-1/2 top-full z-30 mt-2 w-[min(18rem,90%)] -translate-x-1/2 cursor-pointer rounded-xl bg-gray-900 px-4 py-3 text-center text-xs font-medium leading-snug text-white shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:bg-white dark:text-gray-900"
+                    >
+                      <span className="absolute -top-1 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 bg-gray-900 dark:bg-white" />
+                      {t("ownAnnounceHint")}
+                    </div>
+                  )}
+                </div>
                 {announce.user?.email && (
                   <a
                     href={`mailto:${announce.user.email}`}
@@ -1699,7 +1644,7 @@ export default function AnnounceDetailsPage() {
               <div className="border-t border-gray-50 dark:border-white/5 px-5 py-3">
                 <button
                   onClick={() => setIsReportModalOpen(true)}
-                  className="w-full text-xs text-gray-400 dark:text-white/40 hover:text-red-500 flex items-center justify-center gap-1.5 transition-colors py-1"
+                  className="w-full text-xs font-semibold text-red-500 hover:text-red-600 flex items-center justify-center gap-1.5 transition-colors py-1"
                 >
                   <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                   {t("reportProblem")}
@@ -1935,7 +1880,7 @@ export default function AnnounceDetailsPage() {
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                  <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed break-words [overflow-wrap:anywhere]">{announce.shortDescription}</p>
                 </div>
               )}
             </>
@@ -2171,7 +2116,7 @@ export default function AnnounceDetailsPage() {
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                  <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed break-words [overflow-wrap:anywhere]">{announce.shortDescription}</p>
                 </div>
               )}
             </>
@@ -2291,7 +2236,7 @@ export default function AnnounceDetailsPage() {
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                  <p className="text-gray-600 dark:text-white/60 leading-relaxed">{announce.shortDescription}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed break-words [overflow-wrap:anywhere]">{announce.shortDescription}</p>
                 </div>
               )}
             </>
@@ -2306,10 +2251,10 @@ export default function AnnounceDetailsPage() {
                   <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           {announce.shortDescription && (
-                              <div>
+                              <div className="min-w-0">
                                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                       <Layers className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                                  <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
+                                  <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base break-words [overflow-wrap:anywhere]">
                                       {announce.shortDescription}
                                   </p>
                               </div>
@@ -2744,10 +2689,10 @@ export default function AnnounceDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
                       {announce.shortDescription && (
-                          <div>
+                          <div className="min-w-0">
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Layers className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                              <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
+                              <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base break-words [overflow-wrap:anywhere]">
                                   {announce.shortDescription}
                               </p>
                           </div>
@@ -3138,9 +3083,11 @@ export default function AnnounceDetailsPage() {
                               <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f164')}</h3>
                           </div>
                           <div className="space-y-4 flex-1">
-                              <div className="flex flex-col gap-1.5 py-1.5 border-b border-gray-50 dark:border-white/5">
-                                  <span className="text-gray-500 dark:text-white/50 text-sm">{t('f165')}</span>
-                                  <span className="font-bold text-gray-900 dark:text-white text-sm">{acceptsBankCreditLabel}</span>
+                              <div>
+                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f165')}</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      <span className={acceptsBankCreditValue === "YES" ? tagPrimaryClass : tagNeutralClass}>{acceptsBankCreditLabel}</span>
+                                  </div>
                               </div>
                           </div>
                       </div>
@@ -3153,14 +3100,14 @@ export default function AnnounceDetailsPage() {
                               <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f164')}</h3>
                           </div>
                           <div className="space-y-5 flex-1">
-                              <div className="space-y-2">
-                                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-white/5">
-                                      <span className="text-gray-500 dark:text-white/50 text-sm">{t('f165')}</span>
-                                      <span className="font-bold text-gray-900 dark:text-white text-sm">{acceptsBankCreditLabel}</span>
+                              <div>
+                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f165')}</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      <span className={acceptsBankCreditValue === "YES" ? tagPrimaryClass : tagNeutralClass}>{acceptsBankCreditLabel}</span>
                                   </div>
                               </div>
-                              <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-white/10">
-                                  <div className="text-gray-500 dark:text-white/50 text-sm">{t('f163')}</div>
+                              <div className="pt-3 border-t border-gray-100 dark:border-white/10">
+                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f163')}</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {legalDocuments.length > 0 ? (
                                           legalDocuments.map((d: string, i: number) => (
@@ -3247,10 +3194,10 @@ export default function AnnounceDetailsPage() {
               <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mt-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {announce.shortDescription && (
-                          <div>
+                          <div className="min-w-0">
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Layers className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                              <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base">
+                              <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base break-words [overflow-wrap:anywhere]">
                                   {announce.shortDescription}
                               </p>
                           </div>

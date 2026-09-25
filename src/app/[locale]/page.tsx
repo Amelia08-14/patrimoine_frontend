@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, MapPin, ChevronLeft, ChevronRight, Search, Building2, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid } from "lucide-react"
+import { ArrowRight, MapPin, ChevronLeft, ChevronRight, Search, Building2, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid, ChevronDown, Check } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
@@ -195,17 +195,197 @@ const RotatingCategoryWord = ({ categories, tc }: { categories: { id: string, ic
   )
 }
 
+// Liste déroulante « Type de bien » du hero : mêmes pastilles icône + couleur que les tuiles
+// « Explorer par type de bien » (en petit), à la place du <select> natif qui ne sait afficher
+// que du texte. Fermeture au clic extérieur et à Échap ; le popover s'aligne sur le début de la ligne
+// (gauche en LTR, droite en arabe).
+function CategorySelect({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  const tc = useTranslations("Categories")
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const options = PUBLIC_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
+  const selected = options.find((c) => c.id === value)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
+    document.addEventListener("mousedown", onDown)
+    document.addEventListener("keydown", onKey)
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey) }
+  }, [open])
+
+  const chip = (hex: string, Icon: ReturnType<typeof getIcon>, size = "h-7 w-7") => (
+    <span className={cn("shrink-0 rounded-lg flex items-center justify-center", size)} style={{ backgroundColor: `${hex}1A` }}>
+      <Icon className="h-3.5 w-3.5" style={{ color: hex }} />
+    </span>
+  )
+
+  return (
+    <div ref={ref} className="relative w-full min-w-0">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 py-1.5 text-sm font-semibold text-gray-800 dark:text-white text-start"
+      >
+        {selected ? chip(getCategoryColor(selected.id).hex, getIcon(selected.iconName), "h-7 w-7") : <Building2 className="h-4 w-4 text-gray-400 shrink-0" />}
+        <span className={cn("flex-1 truncate", !selected && "text-gray-800 dark:text-white")}>{selected ? tc(selected.id) : placeholder}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-gray-400 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div role="listbox" className="absolute start-0 top-full z-30 mt-3 w-64 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] p-1.5 shadow-xl shadow-black/10">
+          <button
+            type="button"
+            role="option"
+            aria-selected={!value}
+            onClick={() => { onChange(""); setOpen(false) }}
+            className={cn("w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", !value && "bg-gray-50 dark:bg-white/5")}
+          >
+            <span className="h-7 w-7 shrink-0 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3.5 w-3.5 text-gray-500 dark:text-white/60" /></span>
+            <span className="flex-1 truncate text-[13px] font-semibold text-gray-700 dark:text-white/80">{placeholder}</span>
+            {!value && <Check className="h-3.5 w-3.5 text-gray-400" />}
+          </button>
+          {options.map((c) => {
+            const color = getCategoryColor(c.id)
+            const active = c.id === value
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => { onChange(c.id); setOpen(false) }}
+                className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                style={active ? { backgroundColor: `${color.hex}12` } : undefined}
+              >
+                {chip(color.hex, getIcon(c.iconName))}
+                <span className="flex-1 truncate text-[13px] font-semibold text-gray-800 dark:text-white/90" style={active ? { color: color.hex } : undefined}>{tc(c.id)}</span>
+                {active && <Check className="h-3.5 w-3.5" style={{ color: color.hex }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Liste déroulante générique du hero (wilaya, commune) : même style que « Type de bien », avec une
+// pastille (ex. le numéro de la wilaya) devant chaque libellé et une recherche en haut de liste
+// (58 wilayas / des centaines de communes : défiler ne suffit pas). Remplace le <select> natif.
+type ListOption = { value: string; label: string; badge?: string }
+function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, disabled }: {
+  value: string; onChange: (v: string) => void; options: ListOption[]; placeholder: string; searchPlaceholder: string; disabled?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = options.find((o) => o.value === value)
+  const q = query.trim().toLowerCase()
+  const shown = q ? options.filter((o) => o.label.toLowerCase().includes(q) || (o.badge ? o.badge.startsWith(q) : false)) : options
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
+    document.addEventListener("mousedown", onDown)
+    document.addEventListener("keydown", onKey)
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey) }
+  }, [open])
+  useEffect(() => { if (!open) setQuery("") }, [open])
+  useEffect(() => { if (disabled) setOpen(false) }, [disabled])
+
+  const badge = (text: string, active = false) => (
+    <span className={cn("shrink-0 min-w-[1.9rem] h-6 px-1.5 rounded-md flex items-center justify-center text-[11px] font-bold tabular-nums", active ? "bg-[#00BFA6] text-white" : "bg-[#00BFA6]/10 text-[#00BFA6]")}>{text}</span>
+  )
+
+  return (
+    <div ref={ref} className="relative w-full min-w-0">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className={cn("w-full flex items-center gap-2 py-1.5 text-sm font-semibold text-start", disabled ? "text-gray-400 cursor-not-allowed" : "text-gray-800 dark:text-white")}
+      >
+        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+        {selected?.badge && badge(selected.badge)}
+        <span className="flex-1 truncate">{selected ? selected.label : placeholder}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-gray-400 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute start-0 top-full z-30 mt-3 w-72 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] shadow-xl shadow-black/10">
+          <div className="p-2 border-b border-gray-100 dark:border-white/10">
+            <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-white/5 px-3">
+              <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full bg-transparent py-2 text-[13px] font-medium text-gray-800 dark:text-white outline-none placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+          <div role="listbox" className="max-h-64 overflow-y-auto p-1.5">
+            {!q && (
+              <button
+                type="button"
+                role="option"
+                aria-selected={!value}
+                onClick={() => { onChange(""); setOpen(false) }}
+                className={cn("w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", !value && "bg-gray-50 dark:bg-white/5")}
+              >
+                <span className="shrink-0 min-w-[1.9rem] h-6 rounded-md bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3 w-3 text-gray-500 dark:text-white/60" /></span>
+                <span className="flex-1 truncate text-[13px] font-semibold text-gray-700 dark:text-white/80">{placeholder}</span>
+                {!value && <Check className="h-3.5 w-3.5 text-gray-400" />}
+              </button>
+            )}
+            {shown.map((o) => {
+              const active = o.value === value
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => { onChange(o.value); setOpen(false) }}
+                  className={cn("w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", active && "bg-[#00BFA6]/10")}
+                >
+                  {o.badge && badge(o.badge, active)}
+                  <span className={cn("flex-1 truncate text-[13px] font-semibold", active ? "text-[#00BFA6]" : "text-gray-800 dark:text-white/90")}>{o.label}</span>
+                  {active && <Check className="h-3.5 w-3.5 text-[#00BFA6]" />}
+                </button>
+              )
+            })}
+            {shown.length === 0 && <p className="px-3 py-4 text-center text-xs text-gray-400">—</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Barre de recherche du hero — réellement câblée vers /announces (mêmes paramètres que la page
 // de recherche : transactionType, realEstateCategory, wilaya, minPrice/maxPrice, nbPieces).
-function HeroSearchBar() {
+type SearchFilters = { transactionType: "" | "SALE" | "RENTAL"; category: string; wilaya: string; commune: string }
+const EMPTY_SEARCH_FILTERS: SearchFilters = { transactionType: "", category: "", wilaya: "", commune: "" }
+
+// L'état des filtres vit dans HomePage : chaque clic met à jour immédiatement les annonces affichées
+// sous la barre (filtrage en direct) ; le bouton « Rechercher » ne fait plus qu'ouvrir la page complète.
+function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange: (patch: Partial<SearchFilters>) => void }) {
   const router = useRouter();
   const t = useTranslations("HomePage");
-  const tc = useTranslations("Categories");
   const geoName = useLocalizedGeoName();
-  const [transactionType, setTransactionType] = useState<"" | "SALE" | "RENTAL">("")
-  const [category, setCategory] = useState("")
-  const [wilaya, setWilaya] = useState("")
-  const [commune, setCommune] = useState("")
+  const { transactionType, category, wilaya, commune } = filters
+  const setTransactionType = (v: "" | "SALE" | "RENTAL") => onChange({ transactionType: v })
+  const setCategory = (v: string) => onChange({ category: v })
+  const setCommune = (v: string) => onChange({ commune: v })
 
   // Mêmes données et mêmes valeurs (wilaya.code / commune.id) que le filtre de la page
   // /announces (AnnounceFilter), pour que la recherche depuis l'accueil retombe exactement
@@ -231,7 +411,7 @@ function HeroSearchBar() {
             onClick={() => setTransactionType(transactionType === o.id ? "" : (o.id as "SALE" | "RENTAL"))}
             className={cn(
               "px-4 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
-              transactionType === o.id ? "bg-[#003B4A] text-white shadow-sm" : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"
+              transactionType === o.id ? (o.id === "SALE" ? "bg-[#00BFA6] text-white shadow-sm" : "bg-[#003B4A] text-white shadow-sm") : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"
             )}
           >
             {o.label}
@@ -240,29 +420,28 @@ function HeroSearchBar() {
       </div>
 
       <div className="flex-1 flex items-center gap-2 px-3 border-y lg:border-y-0 lg:border-x border-gray-100 dark:border-white/10 min-w-0">
-        <Building2 className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate">
-          <option value="">{t("searchCategoryPlaceholder")}</option>
-          {PUBLIC_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i).map((c) => (
-            <option key={c.id} value={c.id}>{tc(c.id)}</option>
-          ))}
-        </select>
+        <CategorySelect value={category} onChange={setCategory} placeholder={t("searchCategoryPlaceholder")} />
       </div>
 
       <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-white/10 min-w-0">
-        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={wilaya} onChange={(e) => { setWilaya(e.target.value); setCommune("") }} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate">
-          <option value="">{t("searchWilayaPlaceholder")}</option>
-          {WILAYAS.map((w) => <option key={w.code} value={w.code}>{geoName(w)}</option>)}
-        </select>
+        <ListSelect
+          value={wilaya}
+          onChange={(v) => onChange({ wilaya: v, commune: "" })}
+          options={WILAYAS.map((w) => ({ value: w.code, label: geoName(w), badge: w.code }))}
+          placeholder={t("searchWilayaPlaceholder")}
+          searchPlaceholder={t("searchFilterPlaceholder")}
+        />
       </div>
 
       <div className="flex-1 flex items-center gap-2 px-3 min-w-0">
-        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
-        <select value={commune} onChange={(e) => setCommune(e.target.value)} disabled={!wilaya} className="w-full bg-transparent text-sm font-semibold text-gray-800 dark:text-white outline-none py-2.5 truncate disabled:text-gray-400">
-          <option value="">{t("searchCommunePlaceholder")}</option>
-          {filteredCommunes.map((c) => <option key={c.id} value={c.id}>{geoName(c)}</option>)}
-        </select>
+        <ListSelect
+          value={commune}
+          onChange={setCommune}
+          options={filteredCommunes.map((c) => ({ value: String(c.id), label: geoName(c) }))}
+          placeholder={t("searchCommunePlaceholder")}
+          searchPlaceholder={t("searchFilterPlaceholder")}
+          disabled={!wilaya}
+        />
       </div>
 
       <Button onClick={submit} className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-2xl px-6 py-6 lg:py-0 text-sm font-extrabold shrink-0">
@@ -283,6 +462,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; buttonLabel?: string | null; buttonLabelAr?: string | null; buttonLabelEn?: string | null; showButton1?: boolean; button2Label?: string | null; button2LabelAr?: string | null; button2LabelEn?: string | null; button2Link?: string | null; showButton2?: boolean; link?: string | null }[]>([]);
   const lc = useLocalizedContent();
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>(EMPTY_SEARCH_FILTERS);
   const [partners, setPartners] = useState<{ id: number; name: string; nameAr?: string | null; nameEn?: string | null; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
   const handleCategoryClick = (categoryId: string) => {
@@ -333,10 +513,27 @@ export default function HomePage() {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + activeSlides.length) % Math.max(activeSlides.length, 1));
 
   const now = new Date();
-  const filteredAnnounces = announces.filter(a =>
+  const featuredAnnounces = announces.filter(a =>
     a.featuredFrom && a.featuredUntil &&
     new Date(a.featuredFrom) <= now && new Date(a.featuredUntil) >= now
   );
+
+  // Filtrage en direct depuis la barre de recherche : mêmes règles que /announces (type de
+  // transaction, wilaya par préfixe du code postal, commune par id) pour que les résultats de
+  // l'accueil soient exactement ceux de la page complète. La catégorie est appliquée au regroupement.
+  const hasLiveFilter = Object.values(searchFilters).some(Boolean);
+  const matchesSearchFilters = (a: any) => {
+    if (searchFilters.transactionType && a.type !== searchFilters.transactionType) return false;
+    if (searchFilters.wilaya) {
+      const cityCode = a.property?.address?.town?.city?.code;
+      if (!cityCode || !cityCode.toString().startsWith(searchFilters.wilaya)) return false;
+    }
+    if (searchFilters.commune && a.property?.address?.town?.id?.toString() !== searchFilters.commune) return false;
+    return true;
+  };
+  // Sans filtre : les annonces mises en avant (comportement d'origine). Avec un filtre : toutes les
+  // annonces en ligne qui correspondent, sinon un filtre sur peu d'annonces vedettes ne montrerait rien.
+  const filteredAnnounces = (hasLiveFilter ? announces : featuredAnnounces).filter(matchesSearchFilters);
 
   const CROSS_TYPE_MAP: Record<string, string> = {
     'APPARTEMENT_COMMERCIAL': 'APPARTEMENT',
@@ -349,7 +546,7 @@ export default function HomePage() {
     'IMMEUBLE_RESIDENTIEL': 'IMMEUBLE_BUREAU',
   };
 
-  const groupedAnnounces = filteredAnnounces.reduce((acc, announce) => {
+  const groupedAll = filteredAnnounces.reduce((acc, announce) => {
     let pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType?.toUpperCase());
     if (!pType) pType = PROPERTY_TYPES.find(t => t.label === announce.property?.propertyType);
 
@@ -379,6 +576,19 @@ export default function HomePage() {
     return acc;
   }, {} as Record<string, { label: string, items: any[] }>);
 
+  const groupedAnnounces: Record<string, { label: string; items: any[] }> = searchFilters.category
+    ? (groupedAll[searchFilters.category] ? { [searchFilters.category]: groupedAll[searchFilters.category] } : {})
+    : groupedAll;
+  const liveResultsCount = Object.values(groupedAnnounces).reduce((n, g) => n + g.items.length, 0);
+  const liveResultsHref = (() => {
+    const params = new URLSearchParams();
+    if (searchFilters.transactionType) params.set('transactionType', searchFilters.transactionType);
+    if (searchFilters.category) params.set('realEstateCategory', searchFilters.category);
+    if (searchFilters.wilaya) params.set('wilaya', searchFilters.wilaya);
+    if (searchFilters.commune) params.set('commune', searchFilters.commune);
+    return `/announces?${params.toString()}`;
+  })();
+
   // Ordre d'affichage des catégories
   const orderedCategoryIds = [
     "RESIDENTIEL",
@@ -390,7 +600,7 @@ export default function HomePage() {
 
   // Comptes réels par domaine (toutes les annonces en ligne, pas seulement celles en vedette)
   // pour la rangée "Explorer par type de bien".
-  const countsByCategory = announces.reduce((acc: Record<string, number>, announce: any) => {
+  const countsByCategory = announces.filter(matchesSearchFilters).reduce((acc: Record<string, number>, announce: any) => {
     let pType = PROPERTY_TYPES.find(t => t.id === announce.property?.propertyType?.toUpperCase());
     if (!pType) pType = PROPERTY_TYPES.find(t => t.label === announce.property?.propertyType);
     if (pType) acc[pType.categoryId] = (acc[pType.categoryId] || 0) + 1;
@@ -528,7 +738,7 @@ export default function HomePage() {
 
         {/* Barre de recherche — chevauche le bas du hero */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 relative -mt-8 z-10">
-          <HeroSearchBar />
+          <HeroSearchBar filters={searchFilters} onChange={(patch) => setSearchFilters((f) => ({ ...f, ...patch }))} />
         </div>
       </div>
 
@@ -547,8 +757,9 @@ export default function HomePage() {
                   key={catId}
                   href={`/announces?realEstateCategory=${catId}`}
                   className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
+                  style={searchFilters.category === catId ? { borderColor: catColor.hex } : undefined}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = catColor.hex }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = searchFilters.category === catId ? catColor.hex : '' }}
                 >
                   <span className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: `${catColor.hex}1A` }}>
                     <Icon className="h-4.5 w-4.5" style={{ color: catColor.hex }} />
@@ -569,10 +780,21 @@ export default function HomePage() {
         <div className="py-12 text-center text-gray-500 dark:text-white/50">{t("loadingListings")}</div>
       ) : (
         <>
+          {hasLiveFilter && (
+            <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-10 pb-2 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-bold text-[#003B4A] dark:text-white">{t("liveResultsCount", { count: liveResultsCount })}</p>
+              <div className="flex items-center gap-4">
+                <button type="button" onClick={() => setSearchFilters(EMPTY_SEARCH_FILTERS)} className="text-sm font-semibold text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white">{t("liveResultsReset")}</button>
+                <Link href={liveResultsHref as any} className="inline-flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline">
+                  {t("liveResultsSeeAll")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                </Link>
+              </div>
+            </div>
+          )}
           {Object.keys(groupedAnnounces).length === 0 ? (
             <div className="py-16 text-center">
               <div className="text-5xl mb-4">🏙️</div>
-              <p className="text-gray-500 dark:text-white/60 font-medium">{t("noFeaturedListings")}</p>
+              <p className="text-gray-500 dark:text-white/60 font-medium">{hasLiveFilter ? t("noFilteredListings") : t("noFeaturedListings")}</p>
               <p className="text-gray-400 dark:text-white/40 text-sm mt-1">{t("browseByCategory")}</p>
             </div>
           ) : (
@@ -704,8 +926,14 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Points — visualisation d'une annonce qui gagne en visibilité */}
-            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
+            <div className="group rounded-3xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              {/* Bandeau photo qui fond dans la carte (zoom lent au survol) */}
+              <div className="relative h-40 overflow-hidden">
+                <img src="/points-bg.jpg" alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#022229] via-white/10 dark:via-[#022229]/10 to-transparent" />
+              </div>
+              <div className="p-8 sm:p-10 pt-0 flex flex-col flex-1">
+              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6 -mt-6 relative backdrop-blur-sm">
                 <Coins className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsAllTitle")}</span>
@@ -759,10 +987,17 @@ export default function HomePage() {
                 {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
             </div>
+            </div>
 
             {/* Boutique — aperçu schématique de la vraie vitrine personnalisable (logo, bannière, réseaux) */}
-            <div className="rounded-3xl border border-gray-100 dark:border-white/10 p-8 sm:p-10 flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6">
+            <div className="group rounded-3xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              {/* Bandeau photo qui fond dans la carte (zoom lent au survol) */}
+              <div className="relative h-40 overflow-hidden">
+                <img src="/boutique-bg.jpg" alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#022229] via-white/10 dark:via-[#022229]/10 to-transparent" />
+              </div>
+              <div className="p-8 sm:p-10 pt-0 flex flex-col flex-1">
+              <div className="h-12 w-12 rounded-2xl bg-[#00BFA6]/10 flex items-center justify-center mb-6 -mt-6 relative backdrop-blur-sm">
                 <Store className="h-6 w-6 text-[#00BFA6]" />
               </div>
               <span className="text-[11px] rtl:text-xs font-bold uppercase tracking-wide text-[#00BFA6]">{t("pointsProTitle")}</span>
@@ -799,6 +1034,7 @@ export default function HomePage() {
               <Link href="/profile/boutique" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#00BFA6] transition-colors">
                 {t("pointsProCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
+            </div>
             </div>
           </div>
         </div>

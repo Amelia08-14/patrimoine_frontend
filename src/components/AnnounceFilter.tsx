@@ -7,11 +7,13 @@ import {
   ChevronDown, Search, MapPin, Building2, Home, Hotel, Tent, Factory, BedDouble,
   Check, LayoutGrid, ArrowUpDown, SlidersHorizontal, RotateCcw,
   Briefcase, Users, Store, LayoutTemplate, Layers, Copy, Maximize,
-  Palmtree, Warehouse, Container, LandPlot, ConciergeBell, PartyPopper, Presentation
+  Palmtree, Warehouse, Container, LandPlot, ConciergeBell, PartyPopper, Presentation, Trees, Snowflake, Archive, Utensils
 } from "lucide-react"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { REAL_ESTATE_CATEGORIES, PUBLIC_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
+import { DEPOSIT_PROPERTY_TYPES } from "@/data/depositPropertyTypes"
+import { getCategoryColor } from "@/data/categoryColors"
 import { usePropertyTypeLabel, useCategoryLabel, useLocalizedGeoName } from "@/lib/typeLabels"
 
 // Icon mapping helper
@@ -20,6 +22,7 @@ const getIcon = (name: string) => {
     BedDouble, Building2, Hotel, Tent, Factory, Home,
     Briefcase, Users, Store, LayoutTemplate, Layers, Copy, Maximize,
     Palmtree, Warehouse, Container, LandPlot, ConciergeBell, PartyPopper, Presentation,
+    Trees, Snowflake, Archive, Utensils,
     Building: Building2 // Fallback or alias
   }
   return icons[name] || Home
@@ -82,9 +85,16 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
   }
 
   // Derived data
+  // Uniquement les types que l'on peut choisir à la création d'une annonce dans cette catégorie
+  // (voir data/depositPropertyTypes.ts) ; l'icône vient du catalogue général, à défaut celle de la catégorie.
   const filteredPropertyTypes = filters.realEstateCategory
-    ? PROPERTY_TYPES.filter(t => t.categoryId === filters.realEstateCategory)
+    ? DEPOSIT_PROPERTY_TYPES.filter(t => t.categoryId === filters.realEstateCategory)
     : []
+  const iconForType = (typeId: string, categoryId: string) => {
+    const known = PROPERTY_TYPES.find(pt => pt.id === typeId)
+    const cat = REAL_ESTATE_CATEGORIES.find(c => c.id === categoryId)
+    return getIcon(known?.iconName || cat?.iconName || "Home")
+  }
 
   const filteredCommunes = filters.wilaya
     ? COMMUNES.filter(c => c.wilayaCode === filters.wilaya)
@@ -102,26 +112,33 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
   const selectedWilayaName = filters.wilaya ? geoName(WILAYAS.find(w => w.code === filters.wilaya)) : ""
   const selectedCommuneName = filters.commune ? geoName(filteredCommunes.find(c => c.id === filters.commune)) : ""
   const selectedCategoryLabel = filters.realEstateCategory ? catLabel(filters.realEstateCategory, REAL_ESTATE_CATEGORIES.find(c => c.id === filters.realEstateCategory)?.label) : t("all")
-  const selectedPropertyTypeLabel = filters.propertyType ? ptLabel(filters.propertyType, PROPERTY_TYPES.find(pt => pt.id === filters.propertyType)?.label) : t("all")
+  const selectedPropertyTypeLabel = filters.propertyType ? ptLabel(filters.propertyType, DEPOSIT_PROPERTY_TYPES.find(pt => pt.id === filters.propertyType)?.label ?? PROPERTY_TYPES.find(pt => pt.id === filters.propertyType)?.label) : t("all")
+  const selectedCat = REAL_ESTATE_CATEGORIES.find(c => c.id === filters.realEstateCategory)
+  const selectedCatColor = filters.realEstateCategory ? getCategoryColor(filters.realEstateCategory).hex : null
+  const SelectedCatIcon = selectedCat ? getIcon(selectedCat.iconName) : Building2
+  const chip = (hex: string, Icon: any, size = "h-7 w-7") => (
+    <span className={`shrink-0 rounded-lg flex items-center justify-center ${size}`} style={{ backgroundColor: `${hex}1A` }}>
+      <Icon className="h-3.5 w-3.5" style={{ color: hex }} />
+    </span>
+  )
 
+  // Comme sur l'accueil : deux boutons seulement ; recliquer sur le bouton actif revient à « tout ».
   const TRANSACTION_OPTIONS = [
-    { id: "", label: t("all") },
-    { id: "SALE", label: t("transactionSale") },
-    { id: "RENTAL", label: t("transactionRental") },
-    { id: "HOLIDAY_RENTAL", label: t("transactionHoliday") },
+    { id: "SALE", label: t("transactionSale"), active: "bg-[#00BFA6] text-white shadow-sm" },
+    { id: "RENTAL", label: t("transactionRental"), active: "bg-[#003B4A] text-white shadow-sm" },
   ]
 
   // Critères secondaires (repliés sous "Plus de critères") — comptés pour afficher un badge.
   const secondaryActiveCount = [
-    filters.sortBy && filters.sortBy !== "LAST_MODIFIED_DATE_DESC",
-    !!filters.maxPrice,
     !!filters.minArea,
+    !!filters.maxArea,
+    !!filters.minPrice,
+    !!filters.maxPrice,
   ].filter(Boolean).length
 
   const hasAnyFilter = !!(
     filters.transactionType || filters.realEstateCategory || filters.propertyType ||
-    filters.wilaya || filters.commune || filters.maxPrice || filters.minArea ||
-    (filters.sortBy && filters.sortBy !== "LAST_MODIFIED_DATE_DESC")
+    filters.wilaya || filters.commune || filters.minPrice || filters.maxPrice || filters.minArea || filters.maxArea
   )
 
   const resetAll = () => {
@@ -130,15 +147,17 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
     onFilterChange("propertyType", "")
     onFilterChange("wilaya", "")
     onFilterChange("commune", "")
+    onFilterChange("minPrice", "")
     onFilterChange("maxPrice", "")
     onFilterChange("minArea", "")
+    onFilterChange("maxArea", "")
     onFilterChange("sortBy", "LAST_MODIFIED_DATE_DESC")
     setOpenDropdown(null)
   }
 
   // Cellule "sélecteur" homogène : icône + libellé sur une ligne, pas de cadre visible au repos —
   // seul un léger fond apparaît au survol / à l'ouverture, comme sur la barre de recherche d'accueil.
-  const cellBase = "w-full h-full flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors text-left"
+  const cellBase = "w-full h-full flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors text-start"
 
   return (
     <div className="w-full" ref={dropdownRef}>
@@ -148,10 +167,10 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
         <div className="flex bg-gray-50 dark:bg-white/5 rounded-full p-1 shrink-0 overflow-x-auto">
           {TRANSACTION_OPTIONS.map((o) => (
             <button
-              key={o.id || "all"}
+              key={o.id}
               type="button"
-              onClick={() => onFilterChange("transactionType", o.id)}
-              className={`px-3.5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${filters.transactionType === o.id ? "bg-[#003B4A] text-white shadow-sm" : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"}`}
+              onClick={() => onFilterChange("transactionType", filters.transactionType === o.id ? "" : o.id)}
+              className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${filters.transactionType === o.id ? o.active : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"}`}
             >
               {o.label}
             </button>
@@ -169,7 +188,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
               className={cellBase + " hover:bg-gray-50 dark:hover:bg-white/5"}
               style={openDropdown === "realEstateCategory" ? { boxShadow: `inset 0 0 0 2px ${accent}` } : undefined}
             >
-              <Building2 className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
+              {selectedCatColor ? chip(selectedCatColor, SelectedCatIcon) : <Building2 className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />}
               <span className="min-w-0 flex-1">
                 <span className="block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("realEstateCategory")}</span>
                 <span className="block font-bold text-sm text-gray-800 dark:text-white truncate">{selectedCategoryLabel}</span>
@@ -178,36 +197,40 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
             </button>
 
             {openDropdown === "realEstateCategory" && (
-              <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-2 grid grid-cols-2 gap-2">
-                <div
+              <div className="absolute top-full start-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-1.5">
+                <button
+                  type="button"
                   onClick={() => {
                     onFilterChange("realEstateCategory", "")
                     onFilterChange("propertyType", "") // Reset sub-filter
                     setOpenDropdown(null)
                   }}
-                  className="p-2 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer flex flex-col items-center justify-center gap-2 border border-gray-100 dark:border-white/10 text-gray-600 dark:text-white/70"
-                  style={!filters.realEstateCategory ? { borderColor: accent, backgroundColor: `${accent}14`, color: accent } : undefined}
+                  className={`w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${!filters.realEstateCategory ? "bg-gray-50 dark:bg-white/5" : ""}`}
                 >
-                  <LayoutGrid className="h-5 w-5" />
-                  <span className="font-medium text-center">{t("all")}</span>
-                </div>
+                  <span className="h-7 w-7 shrink-0 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3.5 w-3.5 text-gray-500 dark:text-white/60" /></span>
+                  <span className="flex-1 truncate text-[13px] font-semibold text-gray-700 dark:text-white/80">{t("all")}</span>
+                  {!filters.realEstateCategory && <Check className="h-3.5 w-3.5 text-gray-400" />}
+                </button>
                 {PUBLIC_CATEGORIES.map((cat) => {
                   const Icon = getIcon(cat.iconName)
+                  const color = getCategoryColor(cat.id).hex
                   const active = filters.realEstateCategory === cat.id
                   return (
-                    <div
+                    <button
                       key={cat.id}
+                      type="button"
                       onClick={() => {
                         onFilterChange("realEstateCategory", cat.id)
                         onFilterChange("propertyType", "") // Reset sub-filter
                         setOpenDropdown(null)
                       }}
-                      className="p-2 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer flex flex-col items-center justify-center gap-2 border border-gray-100 dark:border-white/10 text-gray-600 dark:text-white/70"
-                      style={active ? { borderColor: accent, backgroundColor: `${accent}14`, color: accent } : undefined}
+                      className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                      style={active ? { backgroundColor: `${color}12` } : undefined}
                     >
-                      <Icon className="h-5 w-5" />
-                      <span className="font-medium text-center text-xs leading-tight">{catLabel(cat.id, cat.label)}</span>
-                    </div>
+                      {chip(color, Icon)}
+                      <span className="flex-1 truncate text-[13px] font-semibold text-gray-800 dark:text-white/90" style={active ? { color } : undefined}>{catLabel(cat.id, cat.label)}</span>
+                      {active && <Check className="h-3.5 w-3.5" style={{ color }} />}
+                    </button>
                   )
                 })}
               </div>
@@ -233,40 +256,44 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
             </button>
 
             {openDropdown === "propertyType" && (
-              <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-3">
+              <div className="absolute top-full start-0 mt-2 w-72 bg-white dark:bg-[#03303c] rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-1.5">
                 {!filters.realEstateCategory ? (
-                  <div className="text-center py-4 text-gray-500 dark:text-white/50 text-sm">
+                  <div className="text-center py-4 px-3 text-gray-500 dark:text-white/50 text-sm">
                     {t("chooseCategoryFirst")}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                    <div
+                  <div className="max-h-72 overflow-y-auto">
+                    <button
+                      type="button"
                       onClick={() => {
                         onFilterChange("propertyType", "")
                         setOpenDropdown(null)
                       }}
-                      className="p-2 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer flex flex-col items-center justify-center gap-1 border border-gray-100 dark:border-white/10 text-gray-600 dark:text-white/70"
-                      style={!filters.propertyType ? { borderColor: accent, backgroundColor: `${accent}14`, color: accent } : undefined}
+                      className={`w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${!filters.propertyType ? "bg-gray-50 dark:bg-white/5" : ""}`}
                     >
-                      <LayoutGrid className="h-4 w-4" />
-                      <span className="font-medium">{t("all")}</span>
-                    </div>
+                      <span className="h-7 w-7 shrink-0 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3.5 w-3.5 text-gray-500 dark:text-white/60" /></span>
+                      <span className="flex-1 truncate text-[13px] font-semibold text-gray-700 dark:text-white/80">{t("all")}</span>
+                      {!filters.propertyType && <Check className="h-3.5 w-3.5 text-gray-400" />}
+                    </button>
                     {filteredPropertyTypes.map((type) => {
-                      const Icon = getIcon(type.iconName || "Home")
+                      const Icon = iconForType(type.id, type.categoryId)
+                      const color = getCategoryColor(type.categoryId).hex
                       const active = filters.propertyType === type.id
                       return (
-                        <div
+                        <button
                           key={type.id}
+                          type="button"
                           onClick={() => {
                             onFilterChange("propertyType", type.id)
                             setOpenDropdown(null)
                           }}
-                          className="p-2 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer flex flex-col items-center justify-center gap-1 border border-gray-100 dark:border-white/10 text-gray-600 dark:text-white/70"
-                          style={active ? { borderColor: accent, backgroundColor: `${accent}14`, color: accent } : undefined}
+                          className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                          style={active ? { backgroundColor: `${color}12` } : undefined}
                         >
-                          <Icon className="h-5 w-5" />
-                          <span className="font-medium text-center text-xs leading-tight">{ptLabel(type.id, type.label)}</span>
-                        </div>
+                          {chip(color, Icon)}
+                          <span className="flex-1 truncate text-[13px] font-semibold text-gray-800 dark:text-white/90" style={active ? { color } : undefined}>{ptLabel(type.id, type.label)}</span>
+                          {active && <Check className="h-3.5 w-3.5" style={{ color }} />}
+                        </button>
                       )
                     })}
                   </div>
@@ -294,7 +321,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
             </button>
 
             {openDropdown === "wilaya" && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
+              <div className="absolute top-full start-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
                 <div className="p-2 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#03303c]">
                   <input
                     type="text"
@@ -361,7 +388,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
             </button>
 
             {openDropdown === "commune" && (
-              <div className="absolute top-full right-0 lg:right-auto lg:left-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
+              <div className="absolute top-full end-0 lg:end-auto lg:start-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
                 {!filters.wilaya ? (
                   <div className="p-4 text-center text-gray-500 dark:text-white/50 text-sm">{t("chooseWilayaFirst")}</div>
                 ) : (
@@ -413,7 +440,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
           </div>
         </div>
 
-        {/* Plus de critères — Tri, Budget, Surface, repliés pour garder la barre principale épurée */}
+        {/* Plus de critères — Surface et Budget (min / max), repliés pour garder la barre principale épurée */}
         <div className="relative shrink-0">
           <button
             type="button"
@@ -434,83 +461,68 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
           </button>
 
           {openDropdown === "more" && (
-            <div className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 p-4 space-y-4">
-              {/* Tri */}
-              <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block flex items-center gap-1.5">
-                  <ArrowUpDown className="h-3.5 w-3.5" /> {t("sortBy")}
-                </label>
-                <div className="flex flex-col gap-1">
-                  {[
-                    { value: "LAST_MODIFIED_DATE_DESC", label: t("sortRecent") },
-                    { value: "PRICE_ASC", label: t("sortPriceAsc") },
-                    { value: "PRICE_DESC", label: t("sortPriceDesc") },
-                  ].map((option) => {
-                    const active = filters.sortBy === option.value
-                    return (
-                      <div
-                        key={option.value}
-                        onClick={() => onFilterChange("sortBy", option.value)}
-                        className="px-3 py-2 rounded-lg text-sm cursor-pointer flex items-center justify-between text-gray-700 dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white/5"
-                        style={active ? { color: accent, fontWeight: 700, backgroundColor: `${accent}14` } : undefined}
-                      >
-                        {option.label}
-                        {active && <Check className="h-4 w-4" />}
-                      </div>
-                    )
-                  })}
+            <div className="absolute top-full end-0 mt-2 w-80 max-w-[90vw] bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 p-4 space-y-4">
+              {/* Surface : minimum / maximum (saisie libre, pas de valeurs proposées) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("surfaceMinLabel")}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={filters.minArea}
+                    onChange={(e) => onFilterChange("minArea", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
+                    placeholder="Ex: 50"
+                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
+                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("surfaceMaxLabel")}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={filters.maxArea}
+                    onChange={(e) => onFilterChange("maxArea", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
+                    placeholder="Ex: 300"
+                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
+                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
+                  />
                 </div>
               </div>
 
-              {/* Budget */}
-              <div className="pt-3 border-t border-gray-100 dark:border-white/10">
-                <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("budgetMaxLabel")}</label>
-                <input
-                  type="number"
-                  value={filters.maxPrice}
-                  onChange={(e) => onFilterChange("maxPrice", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
-                  placeholder={t("budgetPlaceholder")}
-                  onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
-                  onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
-                />
-                <div className="grid grid-cols-3 gap-1.5 mt-2">
-                  {[10000, 20000, 30000, 40000, 50000, 100000].map(price => (
-                    <button
-                      key={price}
-                      type="button"
-                      onClick={() => onFilterChange("maxPrice", price.toString())}
-                      className="px-2 py-1 bg-gray-50 dark:bg-white/5 rounded text-xs hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-white/60"
-                    >
-                      {price.toLocaleString()}
-                    </button>
-                  ))}
+              {/* Budget : minimum / maximum */}
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-white/10">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("budgetMinLabel")}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={filters.minPrice}
+                    onChange={(e) => onFilterChange("minPrice", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
+                    placeholder="Ex: 10000"
+                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
+                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
+                  />
                 </div>
-              </div>
-
-              {/* Surface */}
-              <div className="pt-3 border-t border-gray-100 dark:border-white/10">
-                <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("surfaceMinLabel")}</label>
-                <input
-                  type="number"
-                  value={filters.minArea}
-                  onChange={(e) => onFilterChange("minArea", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
-                  placeholder={t("surfacePlaceholder")}
-                  onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
-                  onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
-                />
-                <div className="grid grid-cols-3 gap-1.5 mt-2">
-                  {[50, 80, 100, 120, 150, 200].map(area => (
-                    <button
-                      key={area}
-                      type="button"
-                      onClick={() => onFilterChange("minArea", area.toString())}
-                      className="px-2 py-1 bg-gray-50 dark:bg-white/5 rounded text-xs hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-white/60"
-                    >
-                      {area} m²
-                    </button>
-                  ))}
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block">{t("budgetMaxLabel")}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={filters.maxPrice}
+                    onChange={(e) => onFilterChange("maxPrice", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
+                    placeholder="Ex: 50000"
+                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
+                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
+                  />
                 </div>
               </div>
 
@@ -534,7 +546,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
             style={{ backgroundColor: accent }}
             onClick={onSearch}
           >
-            <Search className="h-4 w-4 mr-2" />
+            <Search className="h-4 w-4 me-2" />
             {t("search")}
           </Button>
         </div>

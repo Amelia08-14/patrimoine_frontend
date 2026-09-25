@@ -225,6 +225,8 @@
     "allCommunes": "All municipalities",
     "budgetMax": "Max Budget",
     "budgetMaxLabel": "Maximum Budget (DA)",
+    "budgetMinLabel": "Minimum budget (DA)",
+    "surfaceMaxLabel": "Maximum area (m²)",
     "budgetPlaceholder": "E.g.: 50000",
     "max": "Max",
     "surfaceMin": "Min Area",
@@ -237,6 +239,14 @@
   },
   "AnnouncesPage": {
     "heroTitle": "Find your future home",
+    "adLabel": "Advertisement",
+    "adCta": "Discover",
+    "adDepositTitle": "Sell or rent faster",
+    "adDepositText": "Post your listing in minutes and boost it with points.",
+    "adDepositCta": "Post a listing",
+    "adBoutiqueTitle": "Your boutique, your colours",
+    "adBoutiqueText": "Professionals: logo, banner and a monthly points pack for your listings.",
+    "adBoutiqueCta": "See Boutique plans",
     "viewAll": "View all",
     "rent": "Rent",
     "buy": "Buy",
@@ -925,6 +935,9 @@
     "communePlaceholder": "Select a commune",
     "companyInfoTitle": "Company Information",
     "companyName": "Company Name",
+    "companyNameAr": "Company name (Arabic)",
+    "companyNameEn": "Company name (English)",
+    "companyNameI18nHint": "Shown according to the visitor's language; the French name is used when a translation is empty.",
     "position": "Representative's position",
     "rcLabel": "Trade Register",
     "agreementLabel": "Agreement",
@@ -2108,6 +2121,11 @@
     "pointsVisualStandard": "Standard listing",
     "pointsVisualFeatured": "Featured",
     "pointsFeaturedBadge": "Featured",
+    "liveResultsCount": "{count, plural, =0 {No listings match} one {# listing matches your search} other {# listings match your search}}",
+    "liveResultsReset": "Clear filters",
+    "liveResultsSeeAll": "See all results",
+    "noFilteredListings": "No listings match these criteria.",
+    "searchFilterPlaceholder": "Search…",
     "pointsProCta": "See Boutique plans",
     "partnersSectionTitle": "They trust us",
     "partnersSectionSubtitle": "Agencies, developers and professional partners of Patrimoine Immobilier.",
@@ -2531,10 +2549,12 @@
   },
   "DepositOptions": {
     "PROPERTY_STATES": {
-      "NEUF": "New (Never lived in)",
+      "NEUF": "New",
       "RENOVE": "Renovated",
       "BON_ETAT": "Good condition",
-      "A_DEMOLIR": "To demolish"
+      "A_DEMOLIR": "To demolish",
+      "SUR_PLAN": "Off-plan sale",
+      "EN_COURS_REALISATION": "Under construction"
     },
     "BUILDING_TYPOLOGY_MODES": {
       "SIMILAIRES": "Building with apartments of similar layouts",
@@ -2691,7 +2711,7 @@
     },
     "INDUSTRIAL_GLOBAL_STATES": {
       "NEUF": {
-        "label": "New (Never used)"
+        "label": "New"
       },
       "BON_ETAT_MARCHE": {
         "label": "Good condition"
@@ -2887,7 +2907,7 @@
         "label": "Sloping"
       },
       "ACCIDENTE": {
-        "label": "Rugged (steep)"
+        "label": "Rugged"
       }
     },
     "TERRAIN_STATUT_ZONE": {
@@ -3908,7 +3928,9 @@
     "non_classees": "Other",
     "MURS_NUS": "Bare shell (empty)",
     "EQUIPEE": "Equipped (turnkey)",
-    "NEUF": "New (never used)",
+    "NEUF": "New",
+    "SUR_PLAN": "Off-plan sale",
+    "EN_COURS_REALISATION": "Under construction",
     "BON_ETAT_MARCHE": "Good condition",
     "ANCIEN": "Old (needs refurbishment)",
     "PLAIN_PIED": "Single level (ground floor)",
@@ -3983,7 +4005,7 @@
     "MONTE_CHARGE": "Goods lift",
     "PLAT": "Flat",
     "EN_PENTE": "Sloping",
-    "ACCIDENTE": "Rugged (steep)",
+    "ACCIDENTE": "Rugged",
     "LOTISSEMENT_CLASSIQUE": "Standard subdivision",
     "COOPERATIVE_IMMOBILIERE": "Real-estate cooperative",
     "RESIDENCE_FERMEE": "Gated residence",

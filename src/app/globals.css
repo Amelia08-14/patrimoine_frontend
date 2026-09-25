@@ -40,6 +40,45 @@ html {
   font-size: 15px;
 }
 
+/* Arabe : grande typographie partout. Les glyphes arabes du repli système paraissent bien plus petits
+   que le latin de Montserrat à corps égal — on relève donc la taille racine (tout le texte et les
+   espacements en rem suivent) et on remonte séparément les tailles en px codées en dur
+   (`text-[10px]`…), que la taille racine ne touche pas. Règles hors @layer : elles l'emportent sur
+   les utilitaires Tailwind, y compris les variantes `rtl:text-xs`. */
+html[lang="ar"] {
+  font-size: 17px;
+}
+html[lang="ar"] [class*="text-[8px]"],
+html[lang="ar"] [class*="text-[9px]"],
+html[lang="ar"] [class*="text-[10px]"],
+html[lang="ar"] [class*="text-[11px]"] {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+html[lang="ar"] [class*="text-[12px]"],
+html[lang="ar"] [class*="text-[13px]"] {
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+/* Arabe : police Almarai (chargée dans [locale]/layout.tsx, variable --font-almarai) pour TOUT le site,
+   Montserrat en repli pour ce qu'Almarai n'aurait pas. On redéfinit --font-sans plutôt que chaque
+   élément : body, boutons, champs et titres `.font-brand` en héritent. Almarai n'existe qu'en 300/400/
+   700/800 : le navigateur mappe tout seul 500→400, 600→700, 900→800. Le plus petit corps (text-xs)
+   est aussi remonté. */
+html[lang="ar"] {
+  --font-sans: var(--font-almarai), "Montserrat";
+  --text-xs: 0.85rem;
+  --text-xs--line-height: 1.5;
+}
+/* Titres `.font-brand` (serif Georgia en français) : en arabe, Almarai en gras comme la barre du haut. */
+html[lang="ar"] .font-brand {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 700;
+}
+html[lang="ar"] .font-light {
+  font-weight: 400;
+}
 body {
   background: var(--background);
   color: var(--foreground);

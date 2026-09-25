@@ -225,6 +225,8 @@
     "allCommunes": "Toutes les communes",
     "budgetMax": "Budget Max",
     "budgetMaxLabel": "Budget Maximum (DA)",
+    "budgetMinLabel": "Budget minimum (DA)",
+    "surfaceMaxLabel": "Surface maximum (m²)",
     "budgetPlaceholder": "Ex: 50000",
     "max": "Max",
     "surfaceMin": "Surface Min",
@@ -237,6 +239,14 @@
   },
   "AnnouncesPage": {
     "heroTitle": "Trouvez votre futur chez-vous",
+    "adLabel": "Publicité",
+    "adCta": "Découvrir",
+    "adDepositTitle": "Vendez ou louez plus vite",
+    "adDepositText": "Déposez votre annonce en quelques minutes et mettez-la en avant avec des points.",
+    "adDepositCta": "Déposer une annonce",
+    "adBoutiqueTitle": "Votre boutique, à vos couleurs",
+    "adBoutiqueText": "Professionnels : logo, bannière et un pack de points chaque mois pour vos annonces.",
+    "adBoutiqueCta": "Voir les formules boutique",
     "viewAll": "Tout voir",
     "rent": "Louer",
     "buy": "Acheter",
@@ -925,6 +935,9 @@
     "communePlaceholder": "Sélectionner une commune",
     "companyInfoTitle": "Informations Société",
     "companyName": "Raison Sociale",
+    "companyNameAr": "Raison sociale (arabe)",
+    "companyNameEn": "Raison sociale (anglais)",
+    "companyNameI18nHint": "Affiché selon la langue du visiteur ; le français est utilisé si une traduction est vide.",
     "position": "Poste du représentant",
     "rcLabel": "Registre Commerce",
     "agreementLabel": "Agrément",
@@ -2110,6 +2123,11 @@
     "pointsVisualStandard": "Annonce standard",
     "pointsVisualFeatured": "Mise en avant",
     "pointsFeaturedBadge": "À la une",
+    "liveResultsCount": "{count, plural, =0 {Aucune annonce ne correspond} one {# annonce correspond à votre recherche} other {# annonces correspondent à votre recherche}}",
+    "liveResultsReset": "Effacer les filtres",
+    "liveResultsSeeAll": "Voir tous les résultats",
+    "noFilteredListings": "Aucune annonce ne correspond à ces critères.",
+    "searchFilterPlaceholder": "Rechercher…",
     "pointsProCta": "Voir les formules boutique",
     "partnersSectionTitle": "Ils nous font confiance",
     "partnersSectionSubtitle": "Agences, promoteurs et professionnels partenaires de Patrimoine Immobilier.",
@@ -2531,10 +2549,12 @@
   },
   "DepositOptions": {
     "PROPERTY_STATES": {
-      "NEUF": "Neuf (Jamais habité)",
+      "NEUF": "Neuf",
       "RENOVE": "Rénové",
       "BON_ETAT": "Bon état",
-      "A_DEMOLIR": "À démolir"
+      "A_DEMOLIR": "À démolir",
+      "SUR_PLAN": "Vente sur plan",
+      "EN_COURS_REALISATION": "En cours de réalisation"
     },
     "BUILDING_TYPOLOGY_MODES": {
       "SIMILAIRES": "Immeuble avec Appartements de typologies similaires",
@@ -2691,7 +2711,7 @@
     },
     "INDUSTRIAL_GLOBAL_STATES": {
       "NEUF": {
-        "label": "Neuf (Jamais servi)"
+        "label": "Neuf"
       },
       "BON_ETAT_MARCHE": {
         "label": "Bon état"
@@ -2887,7 +2907,7 @@
         "label": "En pente"
       },
       "ACCIDENTE": {
-        "label": "Accidenté (escarpé)"
+        "label": "Accidenté"
       }
     },
     "TERRAIN_STATUT_ZONE": {
@@ -3908,7 +3928,9 @@
     "non_classees": "Autres",
     "MURS_NUS": "Murs nus (Vide)",
     "EQUIPEE": "Équipée (Clé en main)",
-    "NEUF": "Neuf (Jamais servi)",
+    "NEUF": "Neuf",
+    "SUR_PLAN": "Vente sur plan",
+    "EN_COURS_REALISATION": "En cours de réalisation",
     "BON_ETAT_MARCHE": "Bon état",
     "ANCIEN": "Ancien (À réviser)",
     "PLAIN_PIED": "Plain-pied (RDC)",
@@ -3983,7 +4005,7 @@
     "MONTE_CHARGE": "Monte-charge",
     "PLAT": "Plat",
     "EN_PENTE": "En pente",
-    "ACCIDENTE": "Accidenté (escarpé)",
+    "ACCIDENTE": "Accidenté",
     "LOTISSEMENT_CLASSIQUE": "Lotissement classique",
     "COOPERATIVE_IMMOBILIERE": "Coopérative immobilière",
     "RESIDENCE_FERMEE": "Résidence fermée",

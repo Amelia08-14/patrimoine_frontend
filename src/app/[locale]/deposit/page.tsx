@@ -222,10 +222,13 @@ const BATHROOM_TYPES = [
 ]
 
 const PROPERTY_STATES = [
-    { id: "NEUF", label: "Neuf (Jamais habité)" },
+    { id: "NEUF", label: "Neuf" },
     { id: "RENOVE", label: "Rénové" },
     { id: "BON_ETAT", label: "Bon état" },
-    { id: "A_DEMOLIR", label: "À démolir" }
+    { id: "A_DEMOLIR", label: "À démolir" },
+    // États propres à la vente (promoteurs) — affichés uniquement quand la transaction est une vente
+    { id: "SUR_PLAN", label: "Vente sur plan" },
+    { id: "EN_COURS_REALISATION", label: "En cours de réalisation" }
 ]
 
 const INDUSTRIAL_SECTORS = [
@@ -249,7 +252,7 @@ const INDUSTRIAL_RENTAL_TYPES = [
 ]
 
 const INDUSTRIAL_GLOBAL_STATES = [
-    { id: "NEUF", label: "Neuf (Jamais servi)" },
+    { id: "NEUF", label: "Neuf" },
     { id: "BON_ETAT_MARCHE", label: "Bon état" },
     { id: "ANCIEN", label: "Ancien (À réviser)" },
 ]
@@ -381,7 +384,7 @@ const CF_DUREE_ENGAGEMENT = [
 const TERRAIN_TOPOGRAPHIE = [
     { id: "PLAT", label: "Plat" },
     { id: "EN_PENTE", label: "En pente" },
-    { id: "ACCIDENTE", label: "Accidenté (escarpé)" },
+    { id: "ACCIDENTE", label: "Accidenté" },
 ]
 const TERRAIN_STATUT_ZONE = [
     { id: "LOTISSEMENT_CLASSIQUE", label: "Lotissement classique" },
@@ -2135,6 +2138,8 @@ function DepositPageComponent() {
   const isSaleBuilding = (propertyType === "IMMEUBLE_RESIDENTIEL" || propertyType === "IMMEUBLE_BUREAU") && transactionType === "SALE"
   const isBuildingDemolition = propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE" && currentState === "A_DEMOLIR"
   const allowDemolirOption = propertyType === "VILLA" || (propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE")
+  // « Vente sur plan » / « En cours de réalisation » : états réservés aux ventes
+  const stateAllowed = (id: string) => transactionType === "SALE" || !["SUR_PLAN", "EN_COURS_REALISATION"].includes(id)
   const isVillaDemolition =
     propertyType === "VILLA" &&
     (currentState === "A_DEMOLIR" || String(currentState || "").toUpperCase().includes("DEMOLIR"))
@@ -5791,7 +5796,7 @@ function DepositPageComponent() {
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f156')}</label>
                                         <select {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
                                             <option value="">{t('f042')}</option>
-                                            {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
+                                            {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR" && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                         </select>
                                     </div>
                                     <div>
@@ -6113,7 +6118,7 @@ function DepositPageComponent() {
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')} <span className="text-red-500">*</span></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">{t('f042')}</option>
-                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
+                                                            {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                         </select>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
@@ -6358,7 +6363,7 @@ function DepositPageComponent() {
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')} <span className="text-red-500">*</span></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">{t('f042')}</option>
-                                                            {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
+                                                            {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                         </select>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
@@ -6531,7 +6536,7 @@ function DepositPageComponent() {
                                                     <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')}</label>
                                                     <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                         <option value="">{t('f042')}</option>
-                                                        {PROPERTY_STATES.filter(s => allowDemolirOption || s.id !== "A_DEMOLIR").map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
+                                                        {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                                     </select>
                                                     {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                 </div>
