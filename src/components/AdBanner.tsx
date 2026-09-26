@@ -1,15 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useLocalizedContent } from "@/lib/typeLabels"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-
-type Ad = { key: string; image: string; title: string; subtitle: string; cta: string; href: string }
+import { useAds } from "@/lib/useAds"
 
 /**
  * Espace publicitaire défilant du haut de `/announces` (à la place de l'ancien bandeau sombre du filtre).
@@ -21,37 +17,10 @@ type Ad = { key: string; image: string; title: string; subtitle: string; cta: st
  */
 export function AdBanner() {
   const t = useTranslations("AnnouncesPage")
-  const lc = useLocalizedContent()
   const isRtl = useLocale() === "ar"
-  const [slides, setSlides] = useState<any[]>([])
+  const ads = useAds()
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
-
-  useEffect(() => {
-    fetch(`${API_URL}/content/hero-slides`)
-      .then((r) => r.json())
-      .then((d) => setSlides(Array.isArray(d) ? d : []))
-      .catch(() => {})
-  }, [])
-
-  const ads: Ad[] = useMemo(() => {
-    const fromAdmin = slides
-      .filter((s) => s?.imageUrl)
-      .map((s) => ({
-        key: `slide-${s.id}`,
-        image: `${API_URL}${s.imageUrl}`,
-        title: lc(s.title, s.titleAr, s.titleEn),
-        subtitle: lc(s.subtitle, s.subtitleAr, s.subtitleEn),
-        cta: lc(s.buttonLabel, s.buttonLabelAr, s.buttonLabelEn) || t("adCta"),
-        href: s.link || "/announces",
-      }))
-    if (fromAdmin.length > 0) return fromAdmin
-    return [
-      { key: "deposit", image: "/points-bg.jpg", title: t("adDepositTitle"), subtitle: t("adDepositText"), cta: t("adDepositCta"), href: "/deposit" },
-      { key: "boutique", image: "/boutique-bg.jpg", title: t("adBoutiqueTitle"), subtitle: t("adBoutiqueText"), cta: t("adBoutiqueCta"), href: "/profile/boutique" },
-    ]
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slides, lc])
 
   useEffect(() => {
     if (paused || ads.length <= 1) return

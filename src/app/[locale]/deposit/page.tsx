@@ -38,6 +38,7 @@ import { COMMUNES } from "@/data/communes"
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { HEBERGEMENT_SEJOUR_TYPES, isHebergementSejourType } from "@/data/hebergementSejourTypes"
 
 // Icon mapping
 const IconMap: Record<string, React.ElementType> = {
@@ -143,6 +144,19 @@ const IconMap: Record<string, React.ElementType> = {
 
 // Catégories de dépôt. HOTELIER concerne les structures professionnelles,
 // HEBERGEMENT le parcours « chez l'habitant » destiné aux particuliers.
+// Icônes (clés d'IconMap) des structures d'accueil « Hébergement & Séjour » en location.
+const HS_ICON_NAMES: Record<string, string> = {
+  HOTEL: "Hotel",
+  COMPLEXE_TOURISTIQUE: "TerrainHotel",
+  VILLAGE_VACANCES: "Sun",
+  APPART_HOTEL: "Building2",
+  RESIDENCE_HOTELIERE: "BedDouble",
+  MOTEL: "Store",
+  RELAIS_ROUTIER: "ParkingCircle",
+  CAMPING_TOURISTIQUE: "Tent",
+  AUTRES_STRUCTURES: "Home",
+}
+
 const BASE_REAL_ESTATE_CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
@@ -2140,6 +2154,7 @@ function DepositPageComponent() {
   const allowDemolirOption = propertyType === "VILLA" || (propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE")
   // « Vente sur plan » / « En cours de réalisation » : états réservés aux ventes
   const stateAllowed = (id: string) => transactionType === "SALE" || !["SUR_PLAN", "EN_COURS_REALISATION"].includes(id)
+  const isHsConstruction = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL" && isHebergementSejourType(propertyType)
   const isVillaDemolition =
     propertyType === "VILLA" &&
     (currentState === "A_DEMOLIR" || String(currentState || "").toUpperCase().includes("DEMOLIR"))
@@ -2456,6 +2471,16 @@ function DepositPageComponent() {
   const getFilteredPropertyTypes = () => {
     let types = [...BASE_PROPERTY_TYPES]
     types = types.filter(t => t.categoryId === realEstateType)
+    // Hébergement & Séjour en LOCATION (professionnels et particuliers) : les structures d'accueil de
+    // l'inscription (hôtel, complexe, village de vacances…). Chaque fiche est « en cours de construction ».
+    if ((realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL") {
+      return HEBERGEMENT_SEJOUR_TYPES.map(hs => ({
+        id: hs.id,
+        label: hs.label,
+        categoryId: realEstateType,
+        iconName: HS_ICON_NAMES[hs.id] || "Home",
+      })) as typeof types
+    }
     if (userType === "PARTICULIER") {
       types = types.filter(t => t.id !== "CO_STOCKAGE")
       types = types.filter(t => !["CENTRE_AFFAIRES", "COWORKING", "BUREAU_FLEXIBLE"].includes(t.id))
@@ -2699,6 +2724,10 @@ function DepositPageComponent() {
       } as any,
       { keepDefaultValues: true }
     )
+    // Structures d'accueil « Hébergement & Séjour » en location : fiche en cours de construction —
+    // on reste sur le choix du bien, le panneau d'information s'affiche sous la grille.
+    const rt = getValues("realEstateType")
+    if ((rt === "HOTELIER" || rt === "HEBERGEMENT") && getValues("transactionType") === "RENTAL" && isHebergementSejourType(propertyId)) return
     // Après le choix du bien, aller à la fiche descriptive
     setCurrentStep(4)
   }
@@ -3967,6 +3996,13 @@ function DepositPageComponent() {
                                     )
                                 })}
                             </div>
+                            {isHsConstruction && (
+                            <div className="mt-8 mx-auto max-w-xl rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 px-6 py-6 text-center">
+                                <div className="text-3xl mb-2" aria-hidden="true">🚧</div>
+                                <p className="font-extrabold text-amber-800">{t('hsUnderConstructionTitle')}</p>
+                                <p className="mt-1 text-sm text-amber-700">{t('hsUnderConstructionText')}</p>
+                            </div>
+                            )}
                         </div>
                     )}
 

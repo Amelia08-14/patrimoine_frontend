@@ -41,7 +41,8 @@ const IMMEUBLE_TYPES = ["IMMEUBLE_RESIDENTIEL", "IMMEUBLE_BUREAU"];
 
 // Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
 // Hébergement & Séjour non traité pour l'instant (aucun bandeau affiché).
-function PhotoOverlaySpecs({ announce }: { announce: any }) {
+// Critères clés (2-3 puces) — partagés entre le bandeau de la photo et la vue « liste ».
+function useSpecItems(announce: any) {
     const t = useTranslations("PropertyCard");
     // Arabe : unité « م² » et typologie « F4 » -> « 4 غرف » (au lieu de « m² » / « F4 » en français)
     const isAr = useLocale() === "ar";
@@ -138,6 +139,11 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
         if (property.facadesCount) items.push(t("overlayFacades", { n: Number(property.facadesCount) }));
     }
 
+    return { items, stacked, categoryId };
+}
+
+function PhotoOverlaySpecs({ announce }: { announce: any }) {
+    const { items, stacked, categoryId } = useSpecItems(announce);
     if (items.length === 0) return null;
 
     return (
@@ -172,12 +178,14 @@ type PropertyCardProps = {
 
 export const PropertyCard = ({ announce, autoPlay = false, variant = "default", layout = "vertical", initialFavorite = false, onFavoriteChange }: PropertyCardProps) => {
   const isHorizontal = layout === "horizontal";
+  const listSpecs = useSpecItems(announce);
   const t = useTranslations("PropertyCard");
   const ptLabel = usePropertyTypeLabel();
   const place = useLocalizedPlaceName();
   const lc = useLocalizedContent();
   const isCompany = announce.user?.companyName || announce.user?.userType === 'SOCIETE';
   const companyDisplayName = lc(announce.user?.companyName, announce.user?.companyNameAr, announce.user?.companyNameEn);
+  const listDescription = lc(announce.shortDescription, announce.shortDescriptionAr, announce.shortDescriptionEn);
   const isHomeVariant = variant === "home";
   const isArabicUi = useLocale() === "ar";
 
@@ -267,7 +275,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
         <div
           className={cn(
             "relative overflow-hidden bg-gray-100 shrink-0",
-            isHorizontal ? "w-44 sm:w-56 h-full min-h-[176px]" : "h-[240px] min-h-[240px]"
+            isHorizontal ? "w-52 sm:w-72 lg:w-[22rem] h-full min-h-[230px] sm:min-h-[250px]" : "h-[240px] min-h-[240px]"
           )}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => { setIsHovering(false); setHeroIndex(0) }}
@@ -312,7 +320,8 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
 
           {/* Transaction — un seul badge, aux couleurs de la marque */}
           <span className={cn(
-              "absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full text-[10px] rtl:text-xs font-bold uppercase tracking-wide text-white",
+              "absolute top-3.5 left-3.5 rounded-full font-bold uppercase tracking-wide text-white",
+              isHorizontal ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[10px] rtl:text-xs",
               isSale ? "bg-[#00BFA6]" : "bg-[#003B4A]"
             )}>
               {isSale ? t("sale") : t("rental")}
@@ -337,10 +346,71 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
               </button>
           </div>
 
-          <PhotoOverlaySpecs announce={announce} />
+          {!isHorizontal && <PhotoOverlaySpecs announce={announce} />}
         </div>
 
         {/* Contenu — sur l'accueil, la catégorie reste entière puis titre et prix partagent la ligne suivante. */}
+        {isHorizontal ? (
+        /* Vue « liste » : contenu généreux (titre et prix plus grands, critères en puces, description), sans vide */
+        <div className="p-5 sm:p-6 flex flex-col flex-1 min-w-0 gap-3">
+            <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                    <span dir="auto" className="block text-start text-[#00BFA6] font-bold text-xs rtl:text-sm uppercase tracking-wide">{categoryName}</span>
+                    <ScrollingTitle
+                        text={fullTitle}
+                        className="mt-1 text-xl font-bold leading-snug text-gray-900 dark:text-white"
+                    />
+                    <div className="mt-1.5 flex min-w-0 items-center gap-1.5 text-sm text-gray-500 dark:text-white/50 font-medium">
+                        <MapPin className="h-4 w-4 text-[#00BFA6] shrink-0" />
+                        <span dir="auto" className="truncate">{locationLabel}</span>
+                    </div>
+                </div>
+                <div className="shrink-0 text-end">
+                    <span dir="ltr" className="block whitespace-nowrap text-2xl font-extrabold tabular-nums leading-none text-[#003B4A] dark:text-[#5EEAD4]">
+                        {formattedPrice}
+                        <span className="ms-1 text-xs font-semibold text-gray-400 dark:text-white/40">DA</span>
+                    </span>
+                    <span className={cn("mt-2 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white", isSale ? "bg-[#00BFA6]" : "bg-[#003B4A]")}>
+                        {isSale ? t("sale") : t("rental")}
+                    </span>
+                </div>
+            </div>
+
+            {listSpecs.items.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                    {listSpecs.items.map((item, i) => (
+                        <span key={i} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-3 py-1 text-xs rtl:text-[13px] font-semibold text-gray-700 dark:text-white/80">{item}</span>
+                    ))}
+                </div>
+            )}
+
+            {listDescription && (
+                <p dir="auto" className="text-sm rtl:text-[15px] leading-relaxed text-gray-500 dark:text-white/50 line-clamp-2 break-words">{listDescription}</p>
+            )}
+
+            <div className="mt-auto flex items-center gap-2.5 border-t border-gray-100 pt-3 dark:border-white/10">
+                {isCompany ? (
+                    <>
+                        <div className="h-9 w-9 rounded-full border border-gray-100 dark:border-white/10 shrink-0 overflow-hidden flex items-center justify-center bg-white dark:bg-white/5">
+                            {announce.user?.agencyLogoUrl || announce.user?.imageUrl ? (
+                                <img src={getImageUrl(announce.user.agencyLogoUrl || announce.user.imageUrl) || ''} alt={companyDisplayName || t("professionalSeller")} className="h-full w-full object-contain" />
+                            ) : (
+                                <Building2 className="h-4 w-4 text-gray-300 dark:text-white/30" />
+                            )}
+                        </div>
+                        <ScrollingTitle text={companyDisplayName || t("professionalSeller")} className="flex-1 text-sm font-semibold text-gray-600 dark:text-white/60" />
+                    </>
+                ) : (
+                    <>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-gray-50 dark:border-white/10 dark:bg-white/5">
+                            <UserRound className="h-4 w-4 text-gray-400 dark:text-white/40" />
+                        </div>
+                        <span className="truncate text-sm font-semibold text-gray-600 dark:text-white/60">{t("privateSeller")}</span>
+                    </>
+                )}
+            </div>
+        </div>
+        ) : (
         <div className={cn("p-4 flex flex-col flex-1 min-w-0", isHomeVariant ? "min-h-36" : "gap-1.5")}>
             {isHomeVariant ? (
                 <span dir="auto" className="block w-full break-words text-start text-[#00BFA6] font-bold text-[11px] rtl:text-xs leading-4 uppercase tracking-wide">
@@ -417,6 +487,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                 ) : null}
             </div>
         </div>
+        )}
       </div>
     </Link>
   )

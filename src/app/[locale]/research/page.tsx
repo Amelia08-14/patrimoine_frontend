@@ -12,7 +12,7 @@ import {
   Home, Key, Factory, Briefcase, Trees, Hotel, Check, ArrowLeft,
   Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2, Store, Zap,
   Warehouse, Snowflake, Wrench, Users, Thermometer,
-  Shield, Utensils, Wallet, CreditCard, FileCheck, Truck,
+  Shield, Utensils, Wallet, CreditCard, FileCheck, Truck, Tent, Palmtree, BedDouble,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -40,9 +40,15 @@ import {
   TER_RES_ZONE_OPTIONS, TER_TOU_VOCATION_OPTIONS,
 } from '@/data/researchConfig';
 import { getCategoryColor } from '@/data/categoryColors';
+import { HEBERGEMENT_SEJOUR_TYPES } from '@/data/hebergementSejourTypes';
 import { useLocalizedPlaceName } from '@/lib/typeLabels';
 
 const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
+// Icônes des structures d'accueil « Hébergement & Séjour » (location)
+const HS_ICONS: Record<string, any> = {
+  HOTEL: Hotel, COMPLEXE_TOURISTIQUE: Palmtree, VILLAGE_VACANCES: Tent, APPART_HOTEL: Building2,
+  RESIDENCE_HOTELIERE: BedDouble, MOTEL: Store, RELAIS_ROUTIER: Truck, CAMPING_TOURISTIQUE: Tent, AUTRES_STRUCTURES: Home,
+};
 
 enum TransactionType {
   RENTAL = 'RENTAL',
@@ -231,6 +237,8 @@ export default function ResearchPage() {
   // rendre directement — Categories a déjà la traduction de chaque branche (mêmes ids), déjà
   // utilisée ailleurs sur le site (accueil, /announces...).
   const tc = useTranslations('Categories');
+  const tpt = useTranslations('PropertyTypes');
+  const [hsType, setHsType] = useState<string>('');
   // Les tableaux d'options de researchConfig.ts (SITUATION_OPTIONS, CURRENCY_OPTIONS...) portent un
   // `label` français en dur — ResearchOptions les traduit, converti branche par branche (Résidentiel
   // en premier) ; `.has()` retombe sur le label français tant qu'une branche n'est pas encore migrée,
@@ -471,11 +479,11 @@ export default function ResearchPage() {
 
   // Ordre : Transaction (Location/Achat) d'abord, puis catégorie d'annonce (Branche) — l'inverse
   // de l'ordre initial.
-  const STEP_KEYS = ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'TER_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
+  const STEP_KEYS = ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'TER_SEARCH_SCOPE', 'HS_TYPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT'] as const;
   type StepKey = typeof STEP_KEYS[number];
   // Étapes à choix unique et immédiat (une grande pastille) : on avance dès le clic, sans passer
   // par le bouton "Continuer" — contrairement au dépôt d'annonces.
-  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'TER_SEARCH_SCOPE'];
+  const AUTO_ADVANCE_STEPS: StepKey[] = ['BRANCH', 'TRANSACTION', 'RES_SEARCH_SCOPE', 'BUR_SEARCH_SCOPE', 'IND_SEARCH_SCOPE', 'TER_SEARCH_SCOPE', 'HS_TYPE'];
 
   const STEP_LABELS: Record<StepKey, string> = {
     BRANCH: t('stepBranch'),
@@ -484,6 +492,7 @@ export default function ResearchPage() {
     BUR_SEARCH_SCOPE: t('stepSearchScope'),
     IND_SEARCH_SCOPE: t('stepSearchScope'),
     TER_SEARCH_SCOPE: t('stepSearchScope'),
+    HS_TYPE: t('stepHsType'),
     CRITERIA: t('stepCriteria'),
     BUDGET: t('stepBudget'),
     INTERLOCUTOR: t('stepInterlocutor'),
@@ -649,11 +658,13 @@ export default function ResearchPage() {
     ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isIndustriel
     ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT']
+    : isHotelier && watch('transaction') === TransactionType.RENTAL
+    ? ['TRANSACTION', 'BRANCH', 'HS_TYPE']
     : isHotelier
     ? ['TRANSACTION', 'BRANCH', 'CRITERIA', 'CONTACT']
     : isTerrain
     ? ['TRANSACTION', 'BRANCH', 'TER_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
-    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE' && s !== 'TER_SEARCH_SCOPE');
+    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE' && s !== 'TER_SEARCH_SCOPE' && s !== 'HS_TYPE');
   const currentStep = steps[currentStepIndex];
 
   // Si le parcours se raccourcit (ex: on vient de choisir Résidentiel + Location) alors qu'on
@@ -2577,6 +2588,33 @@ export default function ResearchPage() {
               <CircleOption active={watch('transaction') === TransactionType.RENTAL} icon={Home} label={t('transactionRental')} size="lg" onClick={() => { setValue('transaction', TransactionType.RENTAL); nextStep(); }} />
               <CircleOption active={watch('transaction') === TransactionType.SALE} icon={Key} label={t('transactionSale')} size="lg" onClick={() => { setValue('transaction', TransactionType.SALE); nextStep(); }} />
             </div>
+          </div>
+        );
+
+      case 'HS_TYPE':
+        // Hébergement & Séjour en LOCATION : structures d'accueil ; chaque fiche est « en cours de construction ».
+        return (
+          <div className="w-full max-w-5xl mx-auto animate-fade-in py-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-y-8 gap-x-4 justify-items-center">
+              {HEBERGEMENT_SEJOUR_TYPES.map((ty) => (
+                <CircleOption
+                  key={ty.id}
+                  active={hsType === ty.id}
+                  icon={HS_ICONS[ty.id] || Hotel}
+                  label={tpt.has(ty.id) ? tpt(ty.id) : ty.label}
+                  size="sm"
+                  color={getCategoryColor('HOTELIER')}
+                  onClick={() => setHsType(ty.id)}
+                />
+              ))}
+            </div>
+            {hsType && (
+              <div className="mt-10 mx-auto max-w-xl rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 px-6 py-6 text-center">
+                                <div className="text-3xl mb-2" aria-hidden="true">🚧</div>
+                                <p className="font-extrabold text-amber-800">{t('hsUnderConstructionTitle')}</p>
+                                <p className="mt-1 text-sm text-amber-700">{t('hsUnderConstructionText')}</p>
+                            </div>
+            )}
           </div>
         );
 

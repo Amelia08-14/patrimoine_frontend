@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import { AnnounceFilter } from "@/components/AnnounceFilter"
 import { AdBanner } from "@/components/AdBanner"
+import { AdSidebar, AdStrip } from "@/components/AdSidebar"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import { PropertyCard } from "@/components/PropertyCard"
 import { getCategoryColor } from "@/data/categoryColors"
@@ -259,11 +260,15 @@ function AnnouncesContent() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row gap-8">
+      {/* Résultats + colonnes publicitaires latérales : la colonne de fin apparaît dès xl (≥1280px), celle de début
+          dès 2xl (≥1536px) ; en dessous, la publicité passe en bandeau compact au-dessus des résultats. */}
+      <div className="mx-auto flex max-w-[2000px] items-start gap-6 px-4 py-8 sm:px-6 lg:px-8">
+        <AdSidebar side="start" className="hidden 2xl:block" />
+        <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col md:flex-row gap-8">
 
           {/* Listings Grid */}
-          <div className="flex-grow">
+          <div className="min-w-0 flex-grow">
+            <AdStrip className="mb-6 xl:hidden" />
             <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
               <p className="text-gray-600 dark:text-white/60">
                 <span className="font-bold text-gray-900 dark:text-white">{announces.length}</span> {t("resultsFound")}
@@ -290,13 +295,13 @@ function AnnouncesContent() {
             ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {pagedAnnounces.map((announce) => (
-                    <PropertyCard key={announce.id} announce={announce} />
+                    <PropertyCard key={announce.id} announce={announce} variant="home" />
                 ))}
                 </div>
             ) : viewMode === 'large' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                   {pagedAnnounces.map((announce) => (
-                    <PropertyCard key={announce.id} announce={announce} />
+                    <PropertyCard key={announce.id} announce={announce} variant="home" />
                   ))}
                 </div>
             ) : (
@@ -337,6 +342,7 @@ function AnnouncesContent() {
             )}
           </div>
         </div>
+        <AdSidebar side="end" className="hidden xl:block" />
       </div>
     </div>
   )

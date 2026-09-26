@@ -276,7 +276,7 @@ function AdminAnnouncesContent() {
       if (!r.keyConfigured) {
         alert("Traduction impossible : la clé ANTHROPIC_API_KEY n'est pas configurée sur le serveur (fichier .env de l'API). Ajoutez-la puis redémarrez l'API.")
       } else {
-        alert(`${r.translated} titre(s) traduit(s), ${r.failed} échec(s). Il en reste ${r.remaining}${r.remaining > 0 ? " — relancez pour continuer." : "."}`)
+        alert(`${r.translated} annonce(s) traduite(s), ${r.failed} échec(s). Il en reste ${r.remaining}${r.remaining > 0 ? " — relancez pour continuer." : "."}`)
         fetchAnnounces()
       }
     } catch (e: any) {
@@ -305,8 +305,8 @@ function AdminAnnouncesContent() {
           <Button variant="outline" size="sm" onClick={exportPDF} disabled={exporting !== null} title="Exporter en PDF">
             <FileDown className="h-4 w-4 mr-1.5" /> {exporting === 'pdf' ? 'Export...' : 'PDF'}
           </Button>
-          <Button variant="outline" size="sm" onClick={translateMissingTitles} disabled={translating} title="Traduire les titres (fr / ar / en) des annonces qui n'ont pas encore de traduction">
-            <Languages className="h-4 w-4 mr-1.5" /> {translating ? 'Traduction...' : 'Traduire les titres'}
+          <Button variant="outline" size="sm" onClick={translateMissingTitles} disabled={translating} title="Traduire (fr / ar / en) les titres et descriptions des annonces qui n'ont pas encore de traduction">
+            <Languages className="h-4 w-4 mr-1.5" /> {translating ? 'Traduction...' : 'Traduire titres et descriptions'}
           </Button>
           <Button variant="outline" size="sm" onClick={fetchAnnounces} title="Actualiser">
               <RefreshCw className="h-4 w-4" />
