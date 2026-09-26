@@ -262,9 +262,9 @@ function AnnouncesContent() {
 
       {/* Résultats + colonnes publicitaires latérales : la colonne de fin apparaît dès xl (≥1280px), celle de début
           dès 2xl (≥1536px) ; en dessous, la publicité passe en bandeau compact au-dessus des résultats. */}
-      <div className="mx-auto flex max-w-[2000px] items-start gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-[1600px] items-start gap-6 px-4 py-8 sm:px-6 lg:px-8">
         <AdSidebar side="start" className="hidden 2xl:block" />
-        <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col md:flex-row gap-8">
+        <div className="flex w-full min-w-0 flex-1 flex-col md:flex-row gap-8">
 
           {/* Listings Grid */}
           <div className="min-w-0 flex-grow">

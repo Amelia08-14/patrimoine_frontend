@@ -382,12 +382,13 @@ export function Navbar() {
                   {isMenuOpen && (
                     <div className={cn("absolute top-14 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in fade-in zoom-in-95 duration-200 z-[100]", isRTL ? "left-0" : "right-0")}>
                         <div className="px-4 py-3 border-b border-gray-100">
-                            <p className="text-sm font-bold text-gray-900">{getNavbarTitle(user)}</p>
+                            {/* Nom d'entreprise sur une seule ligne, qui défile s'il est long (jamais de retour à la ligne) */}
+                            <ScrollingTitle text={getNavbarTitle(user)} className="w-full text-sm font-bold text-gray-900" />
                             <div className={cn("flex items-center text-xs text-[#00908A] mt-1", isRTL ? "justify-start" : "justify-end")}>
                               {getUserTypeIcon(user?.userType)}
                               <span>{getNavbarSubtitle(user)}</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
+                            <p className="text-xs text-gray-500 mt-1 truncate" title={user?.email}>{user?.email}</p>
                         </div>
                         
                         <div className="max-h-[70vh] overflow-y-auto">

@@ -50,7 +50,7 @@ export function AdBanner() {
             <div className="relative h-44 sm:h-52 lg:h-60 w-full">
               <img src={ad.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-[#003B4A] via-[#003B4A]/75 to-transparent" />
-              <div className="relative z-10 flex h-full max-w-xl flex-col justify-center gap-2 px-6 sm:px-10">
+              <div className="relative z-10 flex h-full max-w-xl flex-col justify-center gap-2 px-6 sm:ps-20 sm:pe-10">
                 {ad.title && <h2 className="font-brand text-xl sm:text-3xl leading-tight text-white">{ad.title}</h2>}
                 {ad.subtitle && <p className="text-sm sm:text-base text-white/75 line-clamp-2">{ad.subtitle}</p>}
                 <span className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-[#00BFA6] px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-black/10">
