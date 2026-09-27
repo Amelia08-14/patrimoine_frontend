@@ -16,3 +16,11 @@ export const HEBERGEMENT_SEJOUR_TYPES: { id: string; label: string }[] = [
 
 export const isHebergementSejourType = (id?: string | null) =>
   !!id && HEBERGEMENT_SEJOUR_TYPES.some((t) => t.id === id)
+
+// Structures déjà pourvues d'une vraie fiche (voir hotelConfig.ts pour "HOTEL", ajoutée le 27/09/2026 à
+// la demande du client) — les autres continuent d'afficher le panneau « en cours de construction »,
+// à retirer de cette liste au fur et à mesure qu'elles seront travaillées à leur tour.
+export const HEBERGEMENT_SEJOUR_IMPLEMENTED_TYPES = ["HOTEL"]
+
+export const isHebergementSejourConstructionType = (id?: string | null) =>
+  isHebergementSejourType(id) && !HEBERGEMENT_SEJOUR_IMPLEMENTED_TYPES.includes(id as string)

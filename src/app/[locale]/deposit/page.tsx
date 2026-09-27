@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { 
   Check, Upload, Building2, Warehouse, Home, Key, Building, Store, Hotel, 
-  Briefcase, BedDouble, PartyPopper, Factory, Tent, X, Flower2, Sun, 
+  Briefcase, BedDouble, PartyPopper, Factory, Tent, X, Flower2, Sun, Plus, Trash2, Minus, Globe2,
   Waves, Wind, Archive, ParkingCircle, DoorOpen, Trees, Landmark, 
   Users, Hotel as HotelIcon, Star,
   LayoutGrid, Layers, Warehouse as WarehouseIcon, ThermometerSnowflake,
@@ -38,7 +38,11 @@ import { COMMUNES } from "@/data/communes"
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
-import { HEBERGEMENT_SEJOUR_TYPES, isHebergementSejourType } from "@/data/hebergementSejourTypes"
+import { HEBERGEMENT_SEJOUR_TYPES, isHebergementSejourType, isHebergementSejourConstructionType } from "@/data/hebergementSejourTypes"
+import {
+  HTL_CLASSEMENT, HTL_CIBLE_CLIENTELE, HTL_AMBIANCE, HTL_ROOM_TYPES, HTL_BATHROOM_TYPES,
+  HTL_BED_TYPES, HTL_LINGE, HTL_HYGIENE, emptyHotelRoom, type HotelRoomConfig,
+} from "@/data/hotelConfig"
 
 // Icon mapping
 const IconMap: Record<string, React.ElementType> = {
@@ -155,6 +159,23 @@ const HS_ICON_NAMES: Record<string, string> = {
   RELAIS_ROUTIER: "ParkingCircle",
   CAMPING_TOURISTIQUE: "Tent",
   AUTRES_STRUCTURES: "Home",
+}
+
+// Fiche Hôtel — icône par profil de clientèle (HTL_CIBLE_CLIENTELE) et légende du niveau de gamme
+// affichée sous le sélecteur d'étoiles (repère indicatif, propre à ce fiche, volontairement non traduit
+// comme les autres micro-copies ponctuelles du dépôt, ex. "Ex: 4").
+const HTL_CIBLE_ICONS: Record<string, React.ElementType> = {
+  FAMILIAL: Heart,
+  PROFESSIONNEL: Briefcase,
+  GROUPES: Users,
+  TOUS: Globe2,
+}
+const HTL_STAR_TIER: Record<number, string> = {
+  1: "Économique",
+  2: "Confort",
+  3: "Standard supérieur",
+  4: "Haut de gamme",
+  5: "Luxe",
 }
 
 const BASE_REAL_ESTATE_CATEGORIES = [
@@ -1392,6 +1413,15 @@ const formSchema = z.object({
   hsNombreEtoiles: z.string().optional(),
   hsTypeEtablissement: z.string().optional(),
   hsTypeEtablissementAutre: z.string().optional(),
+
+  // Hôtel — fiche dédiée « Hébergement & Séjour » (mail client du 27/09/2026). Les chambres/suites
+  // (répétables) vivent en dehors de react-hook-form, dans l'état local `hotelRooms` (même logique que
+  // `contacts`) — non validées ici, voir `handleDescriptiveSubmit`.
+  htlClassement: z.string().optional(),
+  htlCibleClientele: z.string().optional(),
+  htlAmbiance: z.array(z.string()).optional(),
+  htlLingeMaison: z.array(z.string()).optional(),
+  htlHygiene: z.array(z.string()).optional(),
   hsTypeBien: z.string().optional(),
   hsStructureType: z.string().optional(),
   hsStructureTypeInsolite: z.string().optional(),
@@ -1673,6 +1703,35 @@ const steps = [
   { id: 7, name: "Photos du bien" },
 ]
 
+// Compteur +/- pour les petits entiers de la fiche Hôtel (nombre de chambres, capacité d'accueil,
+// quantité de lits) — remplace la saisie au clavier brute d'un nombre, plus proche d'un configurateur
+// d'établissement hôtelier que d'un formulaire administratif.
+const HotelCounterField = ({ value, onChange, min = 0, size = "md" }: { value: string; onChange: (v: string) => void; min?: number; size?: "sm" | "md" }) => {
+  const n = Number(value) || 0
+  const set = (next: number) => onChange(String(Math.max(min, next)))
+  const btnSize = size === "sm" ? "h-7 w-7" : "h-9 w-9"
+  return (
+    <div className={cn("inline-flex items-center rounded-xl border-2 border-gray-200 bg-white overflow-hidden", size === "sm" ? "h-7" : "h-9")}>
+      <button
+        type="button"
+        onClick={() => set(n - 1)}
+        disabled={n <= min}
+        className={cn("flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-[#00908A] disabled:opacity-30 disabled:hover:bg-transparent transition-colors shrink-0", btnSize)}
+      >
+        <Minus className={size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} />
+      </button>
+      <span className={cn("min-w-[2rem] text-center font-bold text-gray-900 tabular-nums", size === "sm" ? "text-xs" : "text-sm")}>{n}</span>
+      <button
+        type="button"
+        onClick={() => set(n + 1)}
+        className={cn("flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-[#00908A] transition-colors shrink-0", btnSize)}
+      >
+        <Plus className={size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} />
+      </button>
+    </div>
+  )
+}
+
 const InlineCalendar = ({ value, onChange }: { value?: Date, onChange: (date: Date) => void }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     
@@ -1832,6 +1891,25 @@ function DepositPageComponent() {
   
   // Contacts
   const [contacts, setContacts] = useState<Contact[]>([{ phone: "", hasWhatsapp: false, hasViber: false, hasTelegram: false }])
+
+  // Chambres/suites de la fiche Hôtel — répétable, comme `contacts` (même limite assumée : pas
+  // restauré par le brouillon auto-enregistré, qui ne sérialise que les champs react-hook-form).
+  const [hotelRooms, setHotelRooms] = useState<HotelRoomConfig[]>([])
+  const [hotelRoomsError, setHotelRoomsError] = useState("")
+  // Aperçu au survol du sélecteur d'étoiles (le classement lui-même reste porté par react-hook-form).
+  const [hotelStarHover, setHotelStarHover] = useState<number | null>(null)
+  const addHotelRoom = () => setHotelRooms(prev => [...prev, emptyHotelRoom()])
+  const removeHotelRoom = (id: string) => setHotelRooms(prev => prev.length > 1 ? prev.filter(r => r.id !== id) : prev)
+  const updateHotelRoom = (id: string, patch: Partial<HotelRoomConfig>) =>
+    setHotelRooms(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r))
+  const toggleHotelRoomBed = (id: string, bedType: string) =>
+    setHotelRooms(prev => prev.map(r => {
+      if (r.id !== id) return r
+      const has = r.beds.some(b => b.bedType === bedType)
+      return { ...r, beds: has ? r.beds.filter(b => b.bedType !== bedType) : [...r.beds, { bedType, quantity: "1" }] }
+    }))
+  const updateHotelRoomBedQty = (id: string, bedType: string, quantity: string) =>
+    setHotelRooms(prev => prev.map(r => r.id === id ? { ...r, beds: r.beds.map(b => b.bedType === bedType ? { ...b, quantity } : b) } : r))
   const [userProfilePhone, setUserProfilePhone] = useState<string | null>(null)
   const [priceCentimes, setPriceCentimes] = useState<string>("")
   
@@ -2154,7 +2232,10 @@ function DepositPageComponent() {
   const allowDemolirOption = propertyType === "VILLA" || (propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE")
   // « Vente sur plan » / « En cours de réalisation » : états réservés aux ventes
   const stateAllowed = (id: string) => transactionType === "SALE" || !["SUR_PLAN", "EN_COURS_REALISATION"].includes(id)
-  const isHsConstruction = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL" && isHebergementSejourType(propertyType)
+  const isHsConstruction = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL" && isHebergementSejourConstructionType(propertyType)
+  const isHotelFiche = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL" && propertyType === "HOTEL"
+  const htlClassement = watch("htlClassement")
+  const htlAmbianceSelected: string[] = watch("htlAmbiance") || []
   const isVillaDemolition =
     propertyType === "VILLA" &&
     (currentState === "A_DEMOLIR" || String(currentState || "").toUpperCase().includes("DEMOLIR"))
@@ -2727,7 +2808,12 @@ function DepositPageComponent() {
     // Structures d'accueil « Hébergement & Séjour » en location : fiche en cours de construction —
     // on reste sur le choix du bien, le panneau d'information s'affiche sous la grille.
     const rt = getValues("realEstateType")
-    if ((rt === "HOTELIER" || rt === "HEBERGEMENT") && getValues("transactionType") === "RENTAL" && isHebergementSejourType(propertyId)) return
+    if ((rt === "HOTELIER" || rt === "HEBERGEMENT") && getValues("transactionType") === "RENTAL" && isHebergementSejourConstructionType(propertyId)) return
+    // Une chambre de départ pour ne pas atterrir sur une fiche vide — mais seulement si on arrive sur
+    // Hôtel pour la première fois : reclique/retour en arrière ne doit pas effacer les chambres déjà saisies.
+    if ((rt === "HOTELIER" || rt === "HEBERGEMENT") && getValues("transactionType") === "RENTAL" && propertyId === "HOTEL") {
+        setHotelRooms(prev => prev.length > 0 ? prev : [emptyHotelRoom()])
+    }
     // Après le choix du bien, aller à la fiche descriptive
     setCurrentStep(4)
   }
@@ -2877,6 +2963,17 @@ function DepositPageComponent() {
             "habFormule",
             "habUnitType",
         ], { shouldFocus: true })
+    } else if (isHotelFiche) {
+        // Classement/cible sont volontairement optionnels dans le schéma Zod (le reste du champ
+        // "chambres" vit hors react-hook-form) : requis ici à la main plutôt que par `trigger`,
+        // qui laisserait toujours passer un champ optionnel vide.
+        const classementValid = !!getValues("htlClassement")
+        const cibleValid = !!getValues("htlCibleClientele")
+        const roomsValid = hotelRooms.length > 0 && hotelRooms.every(r => r.roomType && Number(r.roomCount) > 0)
+        if (!classementValid) setError("htlClassement", { type: "custom", message: "Classement requis" } as any)
+        if (!cibleValid) setError("htlCibleClientele", { type: "custom", message: "Cible clientèle requise" } as any)
+        setHotelRoomsError(roomsValid ? "" : t('htlRoomsRequiredError'))
+        isValid = classementValid && cibleValid && roomsValid
     } else if (isHebergementSejourFiche) {
         const hsFields: any[] = ["hsTypeBien"]
         if (isEtablissementHebergement) hsFields.push("hsClassification", "hsTypeEtablissement")
@@ -3520,6 +3617,42 @@ function DepositPageComponent() {
         else formData.append('rooms', '0')
     }
 
+    // Hôtel — fiche dédiée « Hébergement & Séjour » (mail client du 27/09/2026) : classement, cible
+    // clientèle, ambiance et services vivent dans `data.htlXxx` (react-hook-form) ; les chambres/suites
+    // (répétables) viennent de l'état local `hotelRooms`, hors schéma Zod (voir sa déclaration plus haut).
+    const isHotelPayload = data.transactionType === "RENTAL" && data.propertyType === "HOTEL"
+    if (isHotelPayload) {
+        const toNum = (v?: string) => { const n = v ? Number(v) : NaN; return isNaN(n) ? undefined : n }
+        const rooms = hotelRooms
+            .filter(r => r.roomType)
+            .map(r => ({
+                roomType: r.roomType,
+                roomCount: toNum(r.roomCount),
+                surface: toNum(r.surface),
+                bathroomType: r.bathroomType || undefined,
+                capacity: toNum(r.capacity),
+                beds: r.beds.filter(b => toNum(b.quantity)).map(b => ({ bedType: b.bedType, quantity: toNum(b.quantity) })),
+            }))
+        const amenitiesPayload: any = {
+            hotel: {
+                classement: toNum(data.htlClassement),
+                cibleClientele: data.htlCibleClientele || undefined,
+                ambiance: data.htlAmbiance?.length ? data.htlAmbiance : undefined,
+                lingeMaison: data.htlLingeMaison?.length ? data.htlLingeMaison : undefined,
+                hygiene: data.htlHygiene?.length ? data.htlHygiene : undefined,
+                rooms,
+            },
+        }
+        formData.append("amenities", JSON.stringify(amenitiesPayload))
+
+        // area/rooms génériques (requis par le backend) — dérivés du total des chambres saisies,
+        // comme pour isHebergementSejourPayload ci-dessus.
+        const totalRooms = rooms.reduce((sum, r) => sum + (r.roomCount || 0), 0)
+        const totalArea = rooms.reduce((sum, r) => sum + (r.surface || 0) * (r.roomCount || 0), 0)
+        formData.append('area', totalArea > 0 ? String(totalArea) : '0')
+        formData.append('rooms', totalRooms > 0 ? String(totalRooms) : '0')
+    }
+
     const shouldSkipIndustrialFields = isFactoryRentalPayload || isColdRoomRentalPayload || isHangarRentalPayload
 
     // Usage Autorisé (affiché dans la carte "Conditions" de l'annonce, location uniquement) — dérivé
@@ -3551,6 +3684,7 @@ function DepositPageComponent() {
       if (isBlocAdministratifPayload && key.startsWith("bloc")) return;
       if (isHebergementHabitantPayload && (key.startsWith("hab") || key === "area" || key === "rooms")) return;
       if (isHebergementSejourPayload && (key.startsWith("hs") || key === "area" || key === "rooms")) return;
+      if (isHotelPayload && (key.startsWith("htl") || key === "area" || key === "rooms")) return;
 
       // On regroupe UNIQUEMENT bathroomType (qui n'est pas géré par le backend dans featuresPayload)
       // Les autres (kitchenEquipment, etc.) doivent être envoyés comme champs séparés car le backend
@@ -3694,7 +3828,11 @@ function DepositPageComponent() {
       case 4: {
           const sheet = t("stepDescriptiveSheet")
           const typeObj = BASE_PROPERTY_TYPES.find(p => p.id === propertyType)
-          return typeObj ? `${sheet} - ${ptLabel(typeObj.id, typeObj.label)}` : sheet
+          if (typeObj) return `${sheet} - ${ptLabel(typeObj.id, typeObj.label)}`
+          // Structures « Hébergement & Séjour » (ex. Hôtel) : pas dans BASE_PROPERTY_TYPES, résolues via
+          // leur propre liste (data/hebergementSejourTypes.ts).
+          const hsType = HEBERGEMENT_SEJOUR_TYPES.find(h => h.id === propertyType)
+          return hsType ? `${sheet} - ${ptLabel(hsType.id, hsType.label)}` : sheet
       }
       case 5: return (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? t("stepAvailability") : t("stepPriceModalities")
       case 6: return t("stepContactInfo")
@@ -3739,7 +3877,11 @@ function DepositPageComponent() {
       (userType === "PARTICULIER" && ["RENTAL", "SALE"].includes(transactionType) && ["SHOWROOM", "LOCAL_COMMERCIAL", "BLOC_ADMINISTRATIF"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_HABITANT") ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_SEJOUR");
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HEBERGEMENT_SEJOUR") ||
+      // Hôtel (Hébergement & Séjour, Phase 19) : seule structure d'accueil avec une vraie fiche pour
+      // l'instant — les 8 autres restent hors de cette liste tant qu'elles affichent le panneau
+      // "en construction" (elles n'ont de toute façon pas de contenu à débloquer ici).
+      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HOTEL");
 
   const isFormAvailable = isEligibleUser && isEligibleProperty;
 
@@ -4003,6 +4145,387 @@ function DepositPageComponent() {
                                 <p className="mt-1 text-sm text-amber-700">{t('hsUnderConstructionText')}</p>
                             </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Step 4: Fiche descriptive — Hôtel (Hébergement & Séjour) — mail client du 27/09/2026.
+                        Redesign du 27/09/2026 (retour direct du client : "le Design n'est pas du tout à
+                        la hauteur des hôtels") : bandeau d'ouverture propre à cette fiche, sélecteur
+                        d'étoiles interactif avec palier de gamme, profils de clientèle en ligne d'icônes
+                        (description affichée uniquement pour le choix actif), chambres façon
+                        configurateur d'établissement (compteurs +/-, lits à bascule avec quantité
+                        intégrée), services en liste de préférences. Toujours les codes du dépôt (teal
+                        #00BFA6, navy #003B4A), poussés plus loin que le reste du wizard sur cette seule
+                        fiche — périmètre du redesign volontairement limité à isHotelFiche. */}
+                    {currentStep === 4 && isHotelFiche && (
+                        <div className="w-full max-w-5xl animate-fade-in space-y-10">
+
+                            {/* Bandeau d'ouverture — signe distinctif de cette fiche dans le wizard */}
+                            <div className="relative overflow-hidden rounded-3xl bg-[#003B4A] px-6 sm:px-10 py-8 sm:py-9">
+                                <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#00BFA6]/10 blur-3xl" />
+                                <div className="absolute -left-10 -bottom-14 h-48 w-48 rounded-full bg-[#00BFA6]/[0.07] blur-3xl" />
+                                <div className="relative flex items-start gap-4">
+                                    <span className="hidden sm:flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/10">
+                                        <HotelIcon className="h-7 w-7 text-[#5EEAD4]" />
+                                    </span>
+                                    <div>
+                                        <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">{t('htlBannerTitle')}</h2>
+                                        <p className="mt-2 text-white/65 text-sm sm:text-[15px] leading-relaxed max-w-xl">{t('htlBannerText')}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 1. Classement */}
+                            <section className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Star className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionClassement')}
+                                </h2>
+                                <div
+                                    className="flex flex-wrap items-center gap-6"
+                                    onMouseLeave={() => setHotelStarHover(null)}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        {[1, 2, 3, 4, 5].map((n) => {
+                                            const active = (hotelStarHover ?? Number(htlClassement || 0)) >= n
+                                            return (
+                                                <label key={n} className="cursor-pointer" onMouseEnter={() => setHotelStarHover(n)}>
+                                                    <input type="radio" value={String(n)} {...register("htlClassement")} className="sr-only" />
+                                                    <Star
+                                                        className={cn(
+                                                            "h-9 w-9 sm:h-10 sm:w-10 transition-all duration-150 ease-out",
+                                                            active ? "fill-amber-400 text-amber-400 scale-105" : "fill-gray-100 text-gray-300 hover:text-gray-400"
+                                                        )}
+                                                    />
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                    {htlClassement && (
+                                        <div className="flex flex-col leading-tight">
+                                            <span className="text-lg font-bold text-gray-900">
+                                                {htlClassement} {Number(htlClassement) > 1 ? t('htlEtoiles') : t('htlEtoile')}
+                                            </span>
+                                            <span className="text-xs font-semibold text-[#00908A] uppercase tracking-wide">{HTL_STAR_TIER[Number(htlClassement)]}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {errors.htlClassement && <p className="text-red-500 text-sm mt-1">{errors.htlClassement.message as any}</p>}
+                            </section>
+
+                            {/* 2. Cible et profil de clientèle — ligne d'icônes ; la description ne s'affiche
+                                que pour le choix actif, pas répétée sous les 4 options. */}
+                            <section className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Users className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionCible')}
+                                </h2>
+                                <div className="flex flex-wrap gap-2.5">
+                                    {tGroup('HTL_CIBLE_CLIENTELE', HTL_CIBLE_CLIENTELE).map((opt) => {
+                                        const Icon = HTL_CIBLE_ICONS[opt.id] || Users
+                                        const active = watch("htlCibleClientele") === opt.id
+                                        return (
+                                            <label key={opt.id} className="cursor-pointer">
+                                                <input type="radio" value={opt.id} {...register("htlCibleClientele")} className="sr-only" />
+                                                <div className={cn(
+                                                    "flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-full border-2 transition-all",
+                                                    active ? "border-[#00BFA6] bg-[#00BFA6] text-white shadow-sm shadow-[#00BFA6]/30" : "border-gray-200 text-gray-700 hover:border-gray-300"
+                                                )}>
+                                                    <span className={cn("flex h-7 w-7 items-center justify-center rounded-full shrink-0", active ? "bg-white/20" : "bg-gray-100")}>
+                                                        <Icon className={cn("h-3.5 w-3.5", active ? "text-white" : "text-gray-500")} />
+                                                    </span>
+                                                    <span className="font-bold text-sm whitespace-nowrap">{opt.label}</span>
+                                                </div>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                                {watch("htlCibleClientele") && (
+                                    <p className="text-sm text-gray-500 leading-relaxed pl-1 animate-fade-in">
+                                        {optDesc('HTL_CIBLE_CLIENTELE', tGroup('HTL_CIBLE_CLIENTELE', HTL_CIBLE_CLIENTELE).find(o => o.id === watch("htlCibleClientele"))!)}
+                                    </p>
+                                )}
+                                {errors.htlCibleClientele && <p className="text-red-500 text-sm mt-1">{errors.htlCibleClientele.message as any}</p>}
+                            </section>
+
+                            {/* 3. Ambiance / vocation du lieu */}
+                            <section className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Sun className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionAmbiance')}
+                                </h2>
+                                <div className="flex flex-wrap gap-3">
+                                    {tGroup('HTL_AMBIANCE', HTL_AMBIANCE).map((opt) => {
+                                        const Icon = IconMap[(opt as any).iconName] || Sun
+                                        const active = htlAmbianceSelected.includes(opt.id)
+                                        return (
+                                            <label key={opt.id} className="cursor-pointer group relative">
+                                                <input type="checkbox" value={opt.id} {...register("htlAmbiance")} className="sr-only" />
+                                                <div className={cn(
+                                                    "flex flex-col items-center gap-2 w-24 py-4 rounded-2xl border-2 transition-all",
+                                                    active ? "border-[#00BFA6] bg-[#00BFA6]/5" : "border-gray-200 hover:border-gray-300"
+                                                )}>
+                                                    <span className={cn("flex h-11 w-11 items-center justify-center rounded-full transition-colors", active ? "bg-[#00BFA6] text-white" : "bg-gray-100 text-gray-500")}>
+                                                        <Icon className="h-5 w-5" />
+                                                    </span>
+                                                    <span className={cn("font-bold text-xs text-center", active ? "text-[#00908A]" : "text-gray-700")}>{opt.label}</span>
+                                                </div>
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 text-center">
+                                                    {optDesc('HTL_AMBIANCE', opt)}
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
+                                                </div>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </section>
+
+                            {/* 4. Chambres et suites — configurateur par carte, façon extranet hôtelier :
+                                compteurs +/- pour les petits entiers, lits à bascule avec quantité intégrée. */}
+                            <section className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <BedDouble className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionRooms')}
+                                </h2>
+                                <p className="text-gray-500 text-sm -mt-2">{t('htlSectionRoomsHint')}</p>
+
+                                <div className="space-y-5">
+                                    {hotelRooms.map((room, index) => {
+                                        const totalBeds = room.beds.reduce((sum, b) => sum + (Number(b.quantity) || 0), 0)
+                                        const roomTypeLabel = room.roomType ? tGroup('HTL_ROOM_TYPES', HTL_ROOM_TYPES).find(r => r.id === room.roomType)?.label : null
+                                        const isSuite = room.roomType.startsWith("SUITE")
+                                        return (
+                                            <div key={room.id} className="rounded-3xl border border-gray-200 shadow-[0_8px_24px_-12px_rgba(0,59,74,0.18)] bg-white overflow-hidden">
+                                                <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <span className={cn(
+                                                            "h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 transition-colors",
+                                                            isSuite ? "bg-amber-100 text-amber-600" : "bg-[#00BFA6]/10 text-[#00908A]"
+                                                        )}>
+                                                            <BedDouble className="h-5 w-5" />
+                                                        </span>
+                                                        <div className="min-w-0">
+                                                            <span className="block font-bold text-gray-900 text-[15px] truncate">
+                                                                {roomTypeLabel || t('htlRoomCardUntitled')}
+                                                            </span>
+                                                            <span className="block text-xs text-gray-400 font-medium">{t('htlRoomCardIndex', { n: index + 1 })}</span>
+                                                        </div>
+                                                    </div>
+                                                    {hotelRooms.length > 1 && (
+                                                        <button type="button" onClick={() => removeHotelRoom(room.id)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-lg shrink-0">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <div className="p-5 space-y-6">
+                                                    {/* Type de chambre — pastilles compactes */}
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">{t('htlRoomTypeLabel')}</label>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {tGroup('HTL_ROOM_TYPES', HTL_ROOM_TYPES).map((rt) => (
+                                                                <button
+                                                                    key={rt.id}
+                                                                    type="button"
+                                                                    onClick={() => updateHotelRoom(room.id, { roomType: rt.id })}
+                                                                    className={cn(
+                                                                        "px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all",
+                                                                        room.roomType === rt.id ? "border-[#00BFA6] bg-[#00BFA6] text-white" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                                                                    )}
+                                                                >
+                                                                    {rt.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Chiffres clés — compteurs pour les petits entiers, saisie libre pour la surface */}
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlRoomCountLabel')}</label>
+                                                            <HotelCounterField value={room.roomCount} onChange={(v) => updateHotelRoom(room.id, { roomCount: v })} min={0} />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlCapacityLabel')}</label>
+                                                            <HotelCounterField value={room.capacity} onChange={(v) => updateHotelRoom(room.id, { capacity: v })} min={0} />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlRoomSurfaceLabel')}</label>
+                                                            <div className="flex items-center h-9 rounded-xl border-2 border-gray-200 bg-white px-3 focus-within:border-[#00BFA6] transition-colors">
+                                                                <input
+                                                                    type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
+                                                                    value={room.surface}
+                                                                    onChange={(e) => updateHotelRoom(room.id, { surface: e.target.value })}
+                                                                    placeholder="22"
+                                                                    className="w-full bg-transparent outline-none font-bold text-gray-900 text-sm"
+                                                                />
+                                                                <span className="text-xs text-gray-400 font-semibold shrink-0">m²</span>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlBathroomTypeLabel')}</label>
+                                                            <div className="flex h-9 rounded-xl border-2 border-gray-200 p-0.5 gap-0.5">
+                                                                {tGroup('HTL_BATHROOM_TYPES', HTL_BATHROOM_TYPES).map((bt) => (
+                                                                    <button
+                                                                        key={bt.id}
+                                                                        type="button"
+                                                                        onClick={() => updateHotelRoom(room.id, { bathroomType: bt.id })}
+                                                                        className={cn(
+                                                                            "flex-1 rounded-lg text-xs font-bold transition-all",
+                                                                            room.bathroomType === bt.id ? "bg-[#003B4A] text-white" : "text-gray-500 hover:bg-gray-50"
+                                                                        )}
+                                                                    >
+                                                                        {bt.label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Lits présents — bascule + quantité intégrée */}
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">{t('htlBedsLabel')}</label>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            {tGroup('HTL_BED_TYPES', HTL_BED_TYPES).map((bed) => {
+                                                                const active = room.beds.find(b => b.bedType === bed.id)
+                                                                return (
+                                                                    <div
+                                                                        key={bed.id}
+                                                                        onClick={() => !active && toggleHotelRoomBed(room.id, bed.id)}
+                                                                        className={cn(
+                                                                            "flex items-center gap-3 p-2.5 rounded-xl border-2 transition-all",
+                                                                            active ? "border-[#00BFA6] bg-[#00BFA6]/5" : "border-gray-100 hover:border-gray-200 cursor-pointer"
+                                                                        )}
+                                                                    >
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => { e.stopPropagation(); toggleHotelRoomBed(room.id, bed.id) }}
+                                                                            className={cn(
+                                                                                "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
+                                                                                active ? "border-[#00BFA6] bg-[#00BFA6]" : "border-gray-300"
+                                                                            )}
+                                                                        >
+                                                                            {active && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                                                                        </button>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="text-sm font-bold text-gray-800 truncate">{bed.label}</div>
+                                                                            <div className="text-[11px] text-gray-400 font-medium">{(bed as any).dimensions}</div>
+                                                                        </div>
+                                                                        {active && (
+                                                                            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                                                                                <HotelCounterField
+                                                                                    size="sm"
+                                                                                    value={active.quantity}
+                                                                                    onChange={(v) => updateHotelRoomBedQty(room.id, bed.id, v)}
+                                                                                    min={1}
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Résumé chiffré de la carte */}
+                                                    {(Number(room.roomCount) > 0 || totalBeds > 0) && (
+                                                        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-50">
+                                                            {Number(room.roomCount) > 0 && (
+                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-bold mt-3">
+                                                                    {room.roomCount} {t('htlSummaryRooms')}
+                                                                </span>
+                                                            )}
+                                                            {Number(room.capacity) > 0 && (
+                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-bold mt-3">
+                                                                    {room.capacity} {t('htlSummaryGuests')}
+                                                                </span>
+                                                            )}
+                                                            {totalBeds > 0 && (
+                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-bold mt-3">
+                                                                    {totalBeds} {t('htlSummaryBeds')}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={addHotelRoom}
+                                    className="w-full flex items-center justify-center gap-2 py-3.5 border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 font-bold text-sm hover:border-[#00BFA6] hover:text-[#00908A] hover:bg-[#00BFA6]/5 transition-all"
+                                >
+                                    <Plus className="h-4 w-4" /> {t('htlAddRoom')}
+                                </button>
+                                {hotelRoomsError && <p className="text-red-500 text-sm">{hotelRoomsError}</p>}
+                            </section>
+
+                            {/* 5. Services inclus — liste de préférences, comme une fiche de prestations */}
+                            <section className="space-y-5">
+                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionServices')}
+                                </h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <span className="block text-xs font-bold text-gray-500 uppercase tracking-wide">{t('htlLingeLabel')}</span>
+                                        {tGroup('HTL_LINGE', HTL_LINGE).map((opt) => {
+                                            const current: string[] = watch("htlLingeMaison") || []
+                                            const active = current.includes(opt.id)
+                                            return (
+                                                <label
+                                                    key={opt.id}
+                                                    className={cn(
+                                                        "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
+                                                        active ? "border-[#00BFA6] bg-[#00BFA6]/5" : "border-gray-100 hover:border-gray-200"
+                                                    )}
+                                                >
+                                                    <input
+                                                        type="checkbox" value={opt.id} {...register("htlLingeMaison")}
+                                                        onChange={(e) => {
+                                                            // "Aucun linge fourni" est exclusif des deux autres options, et réciproquement.
+                                                            let next: string[]
+                                                            if (opt.id === "AUCUN") next = e.target.checked ? ["AUCUN"] : []
+                                                            else next = e.target.checked ? [...current.filter(v => v !== "AUCUN"), opt.id] : current.filter(v => v !== opt.id)
+                                                            setValue("htlLingeMaison", next, { shouldValidate: false })
+                                                        }}
+                                                        className="sr-only"
+                                                    />
+                                                    <span className={cn(
+                                                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                                                        active ? "border-[#00BFA6] bg-[#00BFA6]" : "border-gray-300"
+                                                    )}>
+                                                        {active && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                                                    </span>
+                                                    <span className="text-sm font-bold text-gray-800">{opt.label}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <span className="block text-xs font-bold text-gray-500 uppercase tracking-wide">{t('htlHygieneLabel')}</span>
+                                        {tGroup('HTL_HYGIENE', HTL_HYGIENE).map((opt) => {
+                                            const active: boolean = (watch("htlHygiene") || []).includes(opt.id)
+                                            return (
+                                                <label
+                                                    key={opt.id}
+                                                    className={cn(
+                                                        "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
+                                                        active ? "border-[#00BFA6] bg-[#00BFA6]/5" : "border-gray-100 hover:border-gray-200"
+                                                    )}
+                                                >
+                                                    <input type="checkbox" value={opt.id} {...register("htlHygiene")} className="sr-only" />
+                                                    <span className={cn(
+                                                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                                                        active ? "border-[#00BFA6] bg-[#00BFA6]" : "border-gray-300"
+                                                    )}>
+                                                        {active && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                                                    </span>
+                                                    <span className="text-sm font-bold text-gray-800">{opt.label}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     )}
 
@@ -7050,7 +7573,8 @@ function DepositPageComponent() {
                         isTerrainRentalParticulier ||
                         isBureauCommerceSpecialParticulier ||
                         isHebergementHabitant ||
-                        isHebergementSejourFiche
+                        isHebergementSejourFiche ||
+                        isHotelFiche
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
                             <div className="space-y-8">

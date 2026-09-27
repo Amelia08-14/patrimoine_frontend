@@ -8,7 +8,8 @@ import {
   ArrowLeft, MapPin, BedDouble, Square, Heart, Share2,
   Phone, Mail, User, Check, Building2, Car, Wind, Sun,
   Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, X, Layers, Users, FileText, Handshake,
-  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search, Play, Images
+  Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search, Play, Images,
+  Star, Mountain, Droplet
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
@@ -275,6 +276,10 @@ export default function AnnounceDetailsPage() {
   const tL = useTranslations("AnnounceDetailLabels")
   // Résout un id d'enum stocké en base vers son libellé traduit ; repli sur la map FR locale LABELS.
   const L = (id: any): any => (id != null && tL.has(String(id)) ? tL(String(id)) : ((LABELS as any)[id] ?? id))
+  // Fiche Hôtel : mêmes groupes de traduction que le dépôt (DepositOptions.HTL_*), pour ne jamais
+  // désynchroniser les libellés entre la saisie et la lecture (même pattern que PropertyCard.tsx).
+  const tDep = useTranslations("DepositOptions")
+  const htlLabel = (group: string, id: string): string => tDep.has(`${group}.${id}.label`) ? tDep(`${group}.${id}.label`) : id
   const params = useParams()
   const router = useRouter()
   const [announce, setAnnounce] = useState<any>(null)
@@ -535,6 +540,7 @@ export default function AnnounceDetailsPage() {
   let showroom: any = null;
   let local: any = null;
   let bloc: any = null;
+  let hotel: any = null;
   
   if (property.amenities) {
       try {
@@ -622,6 +628,10 @@ export default function AnnounceDetailsPage() {
               if (parsedAmenities.bloc && typeof parsedAmenities.bloc === 'object') {
                   bloc = parsedAmenities.bloc;
               }
+
+              if (parsedAmenities.hotel && typeof parsedAmenities.hotel === 'object') {
+                  hotel = parsedAmenities.hotel;
+              }
           }
       } catch (e) {
           console.error("Failed to parse amenities for specific categories", e);
@@ -690,6 +700,7 @@ export default function AnnounceDetailsPage() {
   const isFactoryRental = isRental && normalizedPropertyType === "USINE"
   const isColdRoomRental = isRental && normalizedPropertyType === "CHAMBRE_FROIDE"
   const isHangarRental = isRental && normalizedPropertyType === "HANGAR"
+  const isHotelRental = isRental && normalizedPropertyType === "HOTEL"
   const isTerrainRental = isRental && (normalizedPropertyType === "TERRAIN_RESIDENTIEL" || normalizedPropertyType === "TERRAIN_INDUSTRIEL")
   const isTerrainAgricoleProperty = normalizedPropertyType === "TERRAIN_AGRICOLE"
   const isTerrainTouristiqueProperty = normalizedPropertyType === "TERRAIN_TOURISTIQUE"
@@ -1233,6 +1244,28 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                ) : isHotelRental ? (
+                  <div className="w-full flex flex-wrap items-center gap-x-4 gap-y-4">
+                    {/* Classement, cible clientèle, puis totaux chambres/capacité — champs vides
+                        supprimés avec leur séparateur (même pattern que la chambre froide / le terrain). */}
+                    {[
+                      { show: !!hotel?.classement, Icon: Star, value: `${hotel?.classement} ★`, label: t('htlClassement') },
+                      { show: !!hotel?.cibleClientele, Icon: Users, value: htlLabel('HTL_CIBLE_CLIENTELE', hotel?.cibleClientele), label: t('htlCible') },
+                      { show: (hotel?.rooms || []).length > 0, Icon: BedDouble, value: `${(hotel?.rooms || []).reduce((s: number, r: any) => s + (r.roomCount || 0), 0)}`, label: t('htlTotalRooms') },
+                      { show: (hotel?.rooms || []).some((r: any) => r.capacity), Icon: Users, value: `${(hotel?.rooms || []).reduce((s: number, r: any) => s + (r.capacity || 0) * (r.roomCount || 1), 0)}`, label: t('htlTotalCapacity') },
+                    ].filter((it) => it.show).map((it, i) => (
+                      <Fragment key={it.label}>
+                        {i > 0 && <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
+                          <it.Icon className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                          <div>
+                            <div className="font-bold text-base leading-tight">{it.value}</div>
+                            <div className="text-xs text-gray-500 dark:text-white/50">{it.label}</div>
+                          </div>
+                        </div>
+                      </Fragment>
+                    ))}
                   </div>
                 ) : (isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty) ? (
                   <div className="w-full flex flex-wrap items-center gap-x-4 gap-y-4">
@@ -2490,6 +2523,120 @@ export default function AnnounceDetailsPage() {
             </>
           )}
           {/* ===== FIN SECTION HANGAR ===== */}
+
+          {/* ===== SECTION HÔTEL ===== */}
+          {/* Fiche dédiée « Hébergement & Séjour — Hôtel » (mail client du 27/09/2026) : classification
+              et cible clientèle, une carte par type de chambre (façon Airbnb : chiffres clés + literie),
+              puis les services inclus. Tout est optionnel côté affichage — un champ absent disparaît. */}
+          {isHotelRental && hotel && (
+            <>
+              <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
+                  <Star className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionClassification')}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {hotel.classement && (
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-2">
+                      <span className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-wide font-bold">{t('htlClassement')}</span>
+                      <div className="flex items-center gap-1 text-amber-400">
+                        {Array.from({ length: Number(hotel.classement) }).map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}
+                      </div>
+                    </div>
+                  )}
+                  {hotel.cibleClientele && (
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-2">
+                      <span className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-wide font-bold">{t('htlCible')}</span>
+                      <span className="font-bold text-gray-900 dark:text-white text-sm leading-snug">{htlLabel('HTL_CIBLE_CLIENTELE', hotel.cibleClientele)}</span>
+                    </div>
+                  )}
+                  {(hotel.ambiance || []).length > 0 && (
+                    <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50/40 p-5 flex flex-col gap-2.5">
+                      <span className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-wide font-bold">{t('htlAmbiance')}</span>
+                      <div className="flex flex-wrap gap-2">
+                        {hotel.ambiance.map((id: string) => (
+                          <span key={id} className={tagPrimaryClass}>{htlLabel('HTL_AMBIANCE', id)}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {(hotel.rooms || []).length > 0 && (
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
+                    <BedDouble className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionRooms')}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {hotel.rooms.map((room: any, idx: number) => (
+                      <div key={idx} className="rounded-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
+                        <div className="bg-gray-50/60 dark:bg-white/5 px-5 py-3 border-b border-gray-100 dark:border-white/10 flex items-center justify-between gap-3">
+                          <h3 className="font-bold text-gray-900 dark:text-white text-[15px]">{htlLabel('HTL_ROOM_TYPES', room.roomType)}</h3>
+                          {room.roomCount != null && (
+                            <span className="shrink-0 rounded-full bg-[#00BFA6]/10 text-[#00908A] text-xs font-bold px-3 py-1">
+                              {room.roomCount} {t('htlSummaryRooms')}
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-5 space-y-4">
+                          <div className="flex flex-wrap gap-2">
+                            {room.surface != null && <span className={tagNeutralClass}>{room.surface} m²</span>}
+                            {room.capacity != null && <span className={tagNeutralClass}>{room.capacity} {t('htlSummaryGuests')}</span>}
+                            {room.bathroomType && <span className={tagNeutralClass}>{htlLabel('HTL_BATHROOM_TYPES', room.bathroomType)}</span>}
+                          </div>
+                          {(room.beds || []).length > 0 && (
+                            <div className="space-y-1.5 pt-2 border-t border-gray-50 dark:border-white/5">
+                              {room.beds.map((bed: any, bi: number) => (
+                                <div key={bi} className="flex items-center justify-between gap-2 text-sm">
+                                  <span className="text-gray-600 dark:text-white/60">{htlLabel('HTL_BED_TYPES', bed.bedType)}</span>
+                                  <span className="font-bold text-gray-900 dark:text-white shrink-0">×{bed.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {((hotel.lingeMaison || []).length > 0 || (hotel.hygiene || []).length > 0) && (
+                <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 pb-4 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
+                    <Droplet className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionServices')}
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {(hotel.lingeMaison || []).length > 0 && (
+                      <div>
+                        <span className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-wide font-bold block mb-2.5">{t('htlLingeLabel')}</span>
+                        <div className="flex flex-wrap gap-2">
+                          {hotel.lingeMaison.map((id: string) => (
+                            <span key={id} className="inline-flex items-center gap-1.5 rounded-full bg-[#00BFA6]/10 text-[#00908A] text-xs font-bold px-3 py-1.5">
+                              <Check className="h-3.5 w-3.5" />{htlLabel('HTL_LINGE', id)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(hotel.hygiene || []).length > 0 && (
+                      <div>
+                        <span className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-wide font-bold block mb-2.5">{t('htlHygieneLabel')}</span>
+                        <div className="flex flex-wrap gap-2">
+                          {hotel.hygiene.map((id: string) => (
+                            <span key={id} className="inline-flex items-center gap-1.5 rounded-full bg-[#00BFA6]/10 text-[#00908A] text-xs font-bold px-3 py-1.5">
+                              <Check className="h-3.5 w-3.5" />{htlLabel('HTL_HYGIENE', id)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {/* ===== FIN SECTION HÔTEL ===== */}
 
           {/* ===== SECTION SHOWROOM ===== */}
           {isShowroomProperty && showroom && (

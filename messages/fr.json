@@ -285,6 +285,7 @@
     "overlayTotalApartments": "{n} appartements",
     "overlayCapacity": "{v} m³",
     "overlayFacades": "{n, plural, one {# façade} other {# façades}}",
+    "overlayHotelRooms": "{n, plural, one {# chambre} other {# chambres}}",
     "overlayFactoryBare": "Sans équipement",
     "overlayFactoryEquipped": "Avec équipement",
     "overlayUsageStockage": "Stockage",
@@ -1468,6 +1469,18 @@
     "f174": "Telegram",
     "adGf": "RDC",
     "ownAnnounceHint": "C'est votre annonce : vous ne pouvez pas vous écrire à vous-même.",
+    "htlSectionClassification": "Classification & clientèle",
+    "htlClassement": "Classement",
+    "htlCible": "Cible clientèle",
+    "htlAmbiance": "Ambiance",
+    "htlTotalRooms": "Chambres",
+    "htlTotalCapacity": "Capacité totale",
+    "htlSectionRooms": "Chambres et suites",
+    "htlSummaryRooms": "chambre(s)",
+    "htlSummaryGuests": "invités",
+    "htlSectionServices": "Services inclus",
+    "htlLingeLabel": "Linge de maison",
+    "htlHygieneLabel": "Produits d'hygiène",
     "adLevelGround": "Rez-de-chaussée",
     "adLevelUpper": "Étage supérieur",
     "adLevelLabel": "Niveau",
@@ -2000,6 +2013,31 @@
     "hsUnderConstructionText": "Cette fiche est en cours de construction : elle sera disponible très prochainement. Merci de votre patience.",
     "hsTypeEtablissementAutrePrecise": "Précisez le type d'établissement",
     "hsPlaceholderAutreEtablissement": "Ex: Riad, Éco-lodge...",
+    "htlBannerTitle": "Votre établissement hôtelier",
+    "htlBannerText": "Décrivez votre hôtel comme un voyageur aimerait le découvrir : classement, ambiance, chambres et services inclus.",
+    "htlSectionClassement": "Classement",
+    "htlEtoile": "Étoile",
+    "htlEtoiles": "Étoiles",
+    "htlSectionCible": "Cible et profil de clientèle",
+    "htlSectionAmbiance": "Ambiance / Vocation du lieu",
+    "htlSectionRooms": "Chambres et suites",
+    "htlSectionRoomsHint": "Ajoutez un type de chambre par carte : nombre de chambres, surface, salle de bain, capacité et literie.",
+    "htlRoomCardUntitled": "Nouvelle chambre",
+    "htlRoomCardIndex": "Chambre {n}",
+    "htlRoomTypeLabel": "Type de chambre",
+    "htlRoomCountLabel": "Nombre de chambres",
+    "htlRoomSurfaceLabel": "Surface (m²)",
+    "htlCapacityLabel": "Capacité d'accueil (invités)",
+    "htlBathroomTypeLabel": "Salle de bain",
+    "htlBedsLabel": "Lits présents",
+    "htlSummaryRooms": "chambre(s)",
+    "htlSummaryGuests": "invités max",
+    "htlSummaryBeds": "lit(s)",
+    "htlAddRoom": "Ajouter un type de chambre",
+    "htlRoomsRequiredError": "Ajoutez au moins un type de chambre (type et nombre requis)",
+    "htlSectionServices": "Services inclus",
+    "htlLingeLabel": "Linge de maison",
+    "htlHygieneLabel": "Produits d'hygiène",
     "hsSectionTypeBien": "Type de bien proposé",
     "hsTypeBienLabel": "Sélectionnez le type de bien que vous proposez",
     "hsMaisonComplete": "Maison complète",
@@ -3781,6 +3819,124 @@
       "RESIDENCE_HOTELIERE": "Résidence hôtelière",
       "CAMPING_TOURISTIQUE": "Camping touristique",
       "AUTRE": "Autre structure"
+    },
+    "HTL_CIBLE_CLIENTELE": {
+          "FAMILIAL": {
+                "label": "Exclusivement Familial",
+                "description": "Idéal pour le repos des familles, non adapté aux célibataires ou affaires"
+          },
+          "PROFESSIONNEL": {
+                "label": "Professionnel / Affaires",
+                "description": "Adapté aux séjours professionnels, séminaires, cadres et travailleurs"
+          },
+          "GROUPES": {
+                "label": "Groupes d'amis / Groupements",
+                "description": "Adapté aux groupes voyageant ensemble, randonneurs, etc."
+          },
+          "TOUS": {
+                "label": "Tout type de clientèle légalement admissible",
+                "description": "Ouvert à tous les profils respectant la réglementation en vigueur"
+          }
+    },
+    "HTL_AMBIANCE": {
+          "BALNEAIRE": {
+                "label": "Balnéaire",
+                "description": "Mer et plage"
+          },
+          "SAHARIEN": {
+                "label": "Saharien",
+                "description": "Désert, Oasis, Grand Sud"
+          },
+          "THERMAL": {
+                "label": "Thermal",
+                "description": "Proche d'un Hammam / station thermale"
+          },
+          "CLIMATIQUE": {
+                "label": "Climatique",
+                "description": "Montagne, Ski, Nature, Forêt"
+          }
+    },
+    "HTL_ROOM_TYPES": {
+          "STANDARD": {
+                "label": "Chambre standard"
+          },
+          "DOUBLE": {
+                "label": "Chambre double"
+          },
+          "TRIPLE": {
+                "label": "Chambre triple"
+          },
+          "QUADRUPLE": {
+                "label": "Chambre quadruple"
+          },
+          "FAMILIALE": {
+                "label": "Chambre familiale"
+          },
+          "PMR": {
+                "label": "Chambre PMR"
+          },
+          "SUITE_JUNIOR": {
+                "label": "Suite junior"
+          },
+          "SUITE": {
+                "label": "Suite"
+          },
+          "SUITE_EXECUTIVE": {
+                "label": "Suite Executive"
+          },
+          "SUITE_PRESIDENTIELLE": {
+                "label": "Suite présidentielle"
+          }
+    },
+    "HTL_BATHROOM_TYPES": {
+          "PRIVATIVE": {
+                "label": "Privative"
+          },
+          "PARTAGEE": {
+                "label": "Partagée"
+          }
+    },
+    "HTL_BED_TYPES": {
+          "KING_PREMIUM": {
+                "label": "Lit Double King Size Premium (200 x 200 cm)"
+          },
+          "KING": {
+                "label": "Lit Double King Size (180 x 200 cm)"
+          },
+          "QUEEN": {
+                "label": "Lit Double Queen Size (160 x 200 cm)"
+          },
+          "STANDARD_DOUBLE": {
+                "label": "Lit Double Standard (140 x 190 cm)"
+          },
+          "SIMPLE_ADULTE": {
+                "label": "Lit Simple Adulte / Canapé-lit (90 x 190 cm)"
+          },
+          "SIMPLE_ENFANT": {
+                "label": "Lit Simple Enfant (80 x 190 cm)"
+          },
+          "SUPERPOSE": {
+                "label": "Lit Superposé, 2 places séparées (90 x 190 cm x2)"
+          }
+    },
+    "HTL_LINGE": {
+          "DRAPS": {
+                "label": "Draps fournis"
+          },
+          "SERVIETTES": {
+                "label": "Serviettes fournies"
+          },
+          "AUCUN": {
+                "label": "Aucun linge fourni"
+          }
+    },
+    "HTL_HYGIENE": {
+          "SHAMPOING_SAVON": {
+                "label": "Shampoing / Savon fournis"
+          },
+          "PAPIER_TOILETTE": {
+                "label": "Papier toilette fourni"
+          }
     },
     "HS_TYPE_SALON": {
       "CANAPE_CONVERTIBLE": {

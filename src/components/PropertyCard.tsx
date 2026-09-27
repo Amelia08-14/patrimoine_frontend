@@ -40,7 +40,8 @@ const CATEGORY_OVERLAY_COLOR: Record<string, string> = {
 const IMMEUBLE_TYPES = ["IMMEUBLE_RESIDENTIEL", "IMMEUBLE_BUREAU"];
 
 // Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
-// Hébergement & Séjour non traité pour l'instant (aucun bandeau affiché).
+// Hébergement & Séjour : seule la fiche Hôtel a un vrai bandeau (classement + nb de chambres) ; les
+// 8 autres structures n'ont pas encore de fiche (aucun bandeau tant qu'elles restent "en construction").
 // Critères clés (2-3 puces) — partagés entre le bandeau de la photo et la vue « liste ».
 function useSpecItems(announce: any) {
     const t = useTranslations("PropertyCard");
@@ -130,6 +131,12 @@ function useSpecItems(announce: any) {
             if (property.landArea) items.push(t("overlayLand", { v: property.landArea }));
             if (property.builtArea) items.push(t("overlayCovered", { v: property.builtArea }));
         }
+    } else if (categoryId === "HOTELIER" && pType === "HOTEL") {
+        // Fiche Hôtel (mail client du 27/09/2026) : classement, puis nombre total de chambres.
+        const hotel = amenities?.hotel;
+        if (hotel?.classement) items.push(`${hotel.classement}★`);
+        const totalRooms = (hotel?.rooms || []).reduce((sum: number, r: any) => sum + (r.roomCount || 0), 0);
+        if (totalRooms > 0) items.push(t("overlayHotelRooms", { n: totalRooms }));
     } else if (categoryId === "TERRAIN_FONCIER") {
         // Une seule ligne : topographie • surface (sans le mot "Terrain") • nombre de façades.
         const topo = amenities?.terrain?.topographie;

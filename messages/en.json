@@ -285,6 +285,7 @@
     "overlayTotalApartments": "{n} apartments",
     "overlayCapacity": "{v} m³",
     "overlayFacades": "{n, plural, one {# facade} other {# facades}}",
+    "overlayHotelRooms": "{n, plural, one {# room} other {# rooms}}",
     "overlayFactoryBare": "Without equipment",
     "overlayFactoryEquipped": "With equipment",
     "overlayUsageStockage": "Storage",
@@ -1468,6 +1469,18 @@
     "f174": "Telegram",
     "adGf": "GF",
     "ownAnnounceHint": "This is your listing — you can't message yourself.",
+    "htlSectionClassification": "Classification & guest profile",
+    "htlClassement": "Star rating",
+    "htlCible": "Target guests",
+    "htlAmbiance": "Setting",
+    "htlTotalRooms": "Rooms",
+    "htlTotalCapacity": "Total capacity",
+    "htlSectionRooms": "Rooms & suites",
+    "htlSummaryRooms": "room(s)",
+    "htlSummaryGuests": "guests",
+    "htlSectionServices": "Services included",
+    "htlLingeLabel": "Linen",
+    "htlHygieneLabel": "Toiletries",
     "adLevelGround": "Ground floor",
     "adLevelUpper": "Upper floor",
     "adLevelLabel": "Level",
@@ -2000,6 +2013,31 @@
     "hsUnderConstructionText": "This form is being built and will be available very soon. Thank you for your patience.",
     "hsTypeEtablissementAutrePrecise": "Specify the establishment type",
     "hsPlaceholderAutreEtablissement": "E.g. Riad, Eco-lodge...",
+    "htlBannerTitle": "Your hotel property",
+    "htlBannerText": "Describe your hotel the way a traveler would want to discover it: star rating, atmosphere, rooms and included services.",
+    "htlSectionClassement": "Star rating",
+    "htlEtoile": "Star",
+    "htlEtoiles": "Stars",
+    "htlSectionCible": "Target guest profile",
+    "htlSectionAmbiance": "Setting / Purpose",
+    "htlSectionRooms": "Rooms & suites",
+    "htlSectionRoomsHint": "Add one card per room type: number of rooms, surface, bathroom, capacity and bedding.",
+    "htlRoomCardUntitled": "New room",
+    "htlRoomCardIndex": "Room {n}",
+    "htlRoomTypeLabel": "Room type",
+    "htlRoomCountLabel": "Number of rooms",
+    "htlRoomSurfaceLabel": "Surface (m²)",
+    "htlCapacityLabel": "Guest capacity",
+    "htlBathroomTypeLabel": "Bathroom",
+    "htlBedsLabel": "Beds available",
+    "htlSummaryRooms": "room(s)",
+    "htlSummaryGuests": "guests max",
+    "htlSummaryBeds": "bed(s)",
+    "htlAddRoom": "Add a room type",
+    "htlRoomsRequiredError": "Add at least one room type (type and count required)",
+    "htlSectionServices": "Services included",
+    "htlLingeLabel": "Linen",
+    "htlHygieneLabel": "Toiletries",
     "hsSectionTypeBien": "Type of property offered",
     "hsTypeBienLabel": "Select the type of property you are offering",
     "hsMaisonComplete": "Entire home",
@@ -3781,6 +3819,124 @@
       "RESIDENCE_HOTELIERE": "Hotel residence",
       "CAMPING_TOURISTIQUE": "Tourist campsite",
       "AUTRE": "Other establishment"
+    },
+    "HTL_CIBLE_CLIENTELE": {
+          "FAMILIAL": {
+                "label": "Families only",
+                "description": "Ideal for family rest, not suited to singles or business travel"
+          },
+          "PROFESSIONNEL": {
+                "label": "Professional / Business",
+                "description": "Suited to business trips, seminars, executives and workers"
+          },
+          "GROUPES": {
+                "label": "Groups of friends",
+                "description": "Suited to groups travelling together, hikers, etc."
+          },
+          "TOUS": {
+                "label": "Any legally admissible guest",
+                "description": "Open to all profiles complying with regulations in force"
+          }
+    },
+    "HTL_AMBIANCE": {
+          "BALNEAIRE": {
+                "label": "Seaside",
+                "description": "Sea and beach"
+          },
+          "SAHARIEN": {
+                "label": "Desert",
+                "description": "Desert, oasis, far south"
+          },
+          "THERMAL": {
+                "label": "Thermal",
+                "description": "Near a hammam / thermal resort"
+          },
+          "CLIMATIQUE": {
+                "label": "Mountain / Nature",
+                "description": "Mountain, skiing, nature, forest"
+          }
+    },
+    "HTL_ROOM_TYPES": {
+          "STANDARD": {
+                "label": "Standard room"
+          },
+          "DOUBLE": {
+                "label": "Double room"
+          },
+          "TRIPLE": {
+                "label": "Triple room"
+          },
+          "QUADRUPLE": {
+                "label": "Quadruple room"
+          },
+          "FAMILIALE": {
+                "label": "Family room"
+          },
+          "PMR": {
+                "label": "Accessible room"
+          },
+          "SUITE_JUNIOR": {
+                "label": "Junior suite"
+          },
+          "SUITE": {
+                "label": "Suite"
+          },
+          "SUITE_EXECUTIVE": {
+                "label": "Executive suite"
+          },
+          "SUITE_PRESIDENTIELLE": {
+                "label": "Presidential suite"
+          }
+    },
+    "HTL_BATHROOM_TYPES": {
+          "PRIVATIVE": {
+                "label": "Private"
+          },
+          "PARTAGEE": {
+                "label": "Shared"
+          }
+    },
+    "HTL_BED_TYPES": {
+          "KING_PREMIUM": {
+                "label": "Premium King Size bed (200 x 200 cm)"
+          },
+          "KING": {
+                "label": "King Size bed (180 x 200 cm)"
+          },
+          "QUEEN": {
+                "label": "Queen Size bed (160 x 200 cm)"
+          },
+          "STANDARD_DOUBLE": {
+                "label": "Standard double bed (140 x 190 cm)"
+          },
+          "SIMPLE_ADULTE": {
+                "label": "Single adult bed / sofa bed (90 x 190 cm)"
+          },
+          "SIMPLE_ENFANT": {
+                "label": "Single child's bed (80 x 190 cm)"
+          },
+          "SUPERPOSE": {
+                "label": "Bunk bed, 2 separate berths (90 x 190 cm x2)"
+          }
+    },
+    "HTL_LINGE": {
+          "DRAPS": {
+                "label": "Bed sheets provided"
+          },
+          "SERVIETTES": {
+                "label": "Towels provided"
+          },
+          "AUCUN": {
+                "label": "No linen provided"
+          }
+    },
+    "HTL_HYGIENE": {
+          "SHAMPOING_SAVON": {
+                "label": "Shampoo / Soap provided"
+          },
+          "PAPIER_TOILETTE": {
+                "label": "Toilet paper provided"
+          }
     },
     "HS_TYPE_SALON": {
       "CANAPE_CONVERTIBLE": {

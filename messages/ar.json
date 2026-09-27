@@ -285,6 +285,7 @@
     "overlayTotalApartments": "{n} شقة",
     "overlayCapacity": "{v} م³",
     "overlayFacades": "{n, plural, one {واجهة واحدة} two {واجهتان} few {# واجهات} other {# واجهة}}",
+    "overlayHotelRooms": "{n, plural, one {غرفة واحدة} two {غرفتان} few {# غرف} other {# غرفة}}",
     "overlayFactoryBare": "بدون تجهيزات",
     "overlayFactoryEquipped": "مع تجهيزات",
     "overlayUsageStockage": "تخزين",
@@ -1468,6 +1469,18 @@
     "f174": "تيليغرام",
     "adGf": "ط. أرضي",
     "ownAnnounceHint": "هذا إعلانك — لا يمكنك مراسلة نفسك.",
+    "htlSectionClassification": "التصنيف والفئة المستهدفة",
+    "htlClassement": "التصنيف",
+    "htlCible": "الفئة المستهدفة",
+    "htlAmbiance": "الأجواء",
+    "htlTotalRooms": "الغرف",
+    "htlTotalCapacity": "السعة الإجمالية",
+    "htlSectionRooms": "الغرف والأجنحة",
+    "htlSummaryRooms": "غرفة/غرف",
+    "htlSummaryGuests": "ضيوف",
+    "htlSectionServices": "الخدمات المشمولة",
+    "htlLingeLabel": "البياضات",
+    "htlHygieneLabel": "مستلزمات النظافة",
     "adLevelGround": "الطابق الأرضي",
     "adLevelUpper": "الطابق العلوي",
     "adLevelLabel": "المستوى",
@@ -2000,6 +2013,31 @@
     "hsUnderConstructionText": "هذه الاستمارة قيد الإنجاز وستتوفر قريبًا جدًا. شكرًا على صبرك.",
     "hsTypeEtablissementAutrePrecise": "حدد نوع المنشأة",
     "hsPlaceholderAutreEtablissement": "مثال: رياض، نزل بيئي...",
+    "htlBannerTitle": "منشأتك الفندقية",
+    "htlBannerText": "صف فندقك بالطريقة التي يرغب بها المسافر في اكتشافه: التصنيف، الأجواء، الغرف والخدمات المشمولة.",
+    "htlSectionClassement": "التصنيف",
+    "htlEtoile": "نجمة",
+    "htlEtoiles": "نجوم",
+    "htlSectionCible": "الفئة المستهدفة من الزبائن",
+    "htlSectionAmbiance": "الأجواء / وجهة المكان",
+    "htlSectionRooms": "الغرف والأجنحة",
+    "htlSectionRoomsHint": "أضف بطاقة لكل نوع غرفة: عدد الغرف، المساحة، الحمّام، السعة والأسرّة.",
+    "htlRoomCardUntitled": "غرفة جديدة",
+    "htlRoomCardIndex": "الغرفة {n}",
+    "htlRoomTypeLabel": "نوع الغرفة",
+    "htlRoomCountLabel": "عدد الغرف",
+    "htlRoomSurfaceLabel": "المساحة (م²)",
+    "htlCapacityLabel": "سعة الاستقبال (عدد الضيوف)",
+    "htlBathroomTypeLabel": "الحمّام",
+    "htlBedsLabel": "الأسرّة المتوفرة",
+    "htlSummaryRooms": "غرفة/غرف",
+    "htlSummaryGuests": "ضيف كحد أقصى",
+    "htlSummaryBeds": "سرير/أسرّة",
+    "htlAddRoom": "إضافة نوع غرفة",
+    "htlRoomsRequiredError": "أضف نوع غرفة واحدًا على الأقل (النوع والعدد مطلوبان)",
+    "htlSectionServices": "الخدمات المشمولة",
+    "htlLingeLabel": "البياضات",
+    "htlHygieneLabel": "مستلزمات النظافة",
     "hsSectionTypeBien": "نوع العقار المعروض",
     "hsTypeBienLabel": "اختر نوع العقار الذي تعرضه",
     "hsMaisonComplete": "منزل كامل",
@@ -3781,6 +3819,124 @@
       "RESIDENCE_HOTELIERE": "إقامة فندقية",
       "CAMPING_TOURISTIQUE": "مخيم سياحي",
       "AUTRE": "منشأة أخرى"
+    },
+    "HTL_CIBLE_CLIENTELE": {
+          "FAMILIAL": {
+                "label": "عائلي حصريًا",
+                "description": "مثالي لراحة العائلات، غير مناسب للعزّاب أو رحلات العمل"
+          },
+          "PROFESSIONNEL": {
+                "label": "مهني / رجال أعمال",
+                "description": "مناسب للإقامات المهنية والندوات والإطارات والعمّال"
+          },
+          "GROUPES": {
+                "label": "مجموعات الأصدقاء",
+                "description": "مناسب للمجموعات المسافرة معًا، المتنزهين، إلخ."
+          },
+          "TOUS": {
+                "label": "كل الزبائن المقبولين قانونيًا",
+                "description": "مفتوح لجميع الفئات الملتزمة بالتنظيم المعمول به"
+          }
+    },
+    "HTL_AMBIANCE": {
+          "BALNEAIRE": {
+                "label": "بحري",
+                "description": "البحر والشاطئ"
+          },
+          "SAHARIEN": {
+                "label": "صحراوي",
+                "description": "الصحراء، الواحات، الجنوب الكبير"
+          },
+          "THERMAL": {
+                "label": "حموي",
+                "description": "قريب من حمّام / محطة حموية"
+          },
+          "CLIMATIQUE": {
+                "label": "مناخي",
+                "description": "الجبال، التزلج، الطبيعة، الغابة"
+          }
+    },
+    "HTL_ROOM_TYPES": {
+          "STANDARD": {
+                "label": "غرفة عادية"
+          },
+          "DOUBLE": {
+                "label": "غرفة مزدوجة"
+          },
+          "TRIPLE": {
+                "label": "غرفة ثلاثية"
+          },
+          "QUADRUPLE": {
+                "label": "غرفة رباعية"
+          },
+          "FAMILIALE": {
+                "label": "غرفة عائلية"
+          },
+          "PMR": {
+                "label": "غرفة لذوي الاحتياجات الخاصة"
+          },
+          "SUITE_JUNIOR": {
+                "label": "جناح صغير"
+          },
+          "SUITE": {
+                "label": "جناح"
+          },
+          "SUITE_EXECUTIVE": {
+                "label": "جناح تنفيذي"
+          },
+          "SUITE_PRESIDENTIELLE": {
+                "label": "جناح رئاسي"
+          }
+    },
+    "HTL_BATHROOM_TYPES": {
+          "PRIVATIVE": {
+                "label": "خاص"
+          },
+          "PARTAGEE": {
+                "label": "مشترك"
+          }
+    },
+    "HTL_BED_TYPES": {
+          "KING_PREMIUM": {
+                "label": "سرير مزدوج كينغ فاخر (200 × 200 سم)"
+          },
+          "KING": {
+                "label": "سرير مزدوج كينغ (180 × 200 سم)"
+          },
+          "QUEEN": {
+                "label": "سرير مزدوج كوين (160 × 200 سم)"
+          },
+          "STANDARD_DOUBLE": {
+                "label": "سرير مزدوج عادي (140 × 190 سم)"
+          },
+          "SIMPLE_ADULTE": {
+                "label": "سرير فردي للبالغين / أريكة سرير (90 × 190 سم)"
+          },
+          "SIMPLE_ENFANT": {
+                "label": "سرير فردي للأطفال (80 × 190 سم)"
+          },
+          "SUPERPOSE": {
+                "label": "سرير بطابقين، مكانان منفصلان (90 × 190 سم ×2)"
+          }
+    },
+    "HTL_LINGE": {
+          "DRAPS": {
+                "label": "ملاءات مُوفَّرة"
+          },
+          "SERVIETTES": {
+                "label": "مناشف مُوفَّرة"
+          },
+          "AUCUN": {
+                "label": "لا يوجد بياضات"
+          }
+    },
+    "HTL_HYGIENE": {
+          "SHAMPOING_SAVON": {
+                "label": "شامبو / صابون مُوفَّر"
+          },
+          "PAPIER_TOILETTE": {
+                "label": "ورق مرحاض مُوفَّر"
+          }
     },
     "HS_TYPE_SALON": {
       "CANAPE_CONVERTIBLE": {
