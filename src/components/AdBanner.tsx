@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAds } from "@/lib/useAds"
+import { useAds, trackAdClick, trackAdView, type AdPage } from "@/lib/useAds"
 
 /**
  * Espace publicitaire défilant du haut de `/announces` (à la place de l'ancien bandeau sombre du filtre).
@@ -15,10 +15,10 @@ import { useAds } from "@/lib/useAds"
  * publiés servent d'annonces publicitaires, et à défaut deux encarts maison (déposer une annonce / boutique).
  * Défilement automatique, pause au survol, flèches et points ; respecte `prefers-reduced-motion`.
  */
-export function AdBanner() {
+export function AdBanner({ page = "ANNOUNCES", category }: { page?: AdPage; category?: string }) {
   const t = useTranslations("AnnouncesPage")
   const isRtl = useLocale() === "ar"
-  const ads = useAds()
+  const ads = useAds(page, "BANNER", category)
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
 
@@ -29,7 +29,9 @@ export function AdBanner() {
     return () => clearInterval(id)
   }, [paused, ads.length])
 
-  const current = index % ads.length
+  const current = index % Math.max(ads.length, 1)
+  useEffect(() => { trackAdView(ads[current]?.id) }, [ads, current])
+  if (ads.length === 0) return null
   const go = (dir: 1 | -1) => setIndex((i) => (i + dir + ads.length) % ads.length)
   const isExternal = (href: string) => /^https?:\/\//i.test(href)
 
@@ -53,18 +55,20 @@ export function AdBanner() {
               <div className="relative z-10 flex h-full max-w-xl flex-col justify-center gap-2 px-6 sm:ps-20 sm:pe-10">
                 {ad.title && <h2 className="font-brand text-xl sm:text-3xl leading-tight text-white">{ad.title}</h2>}
                 {ad.subtitle && <p className="text-sm sm:text-base text-white/75 line-clamp-2">{ad.subtitle}</p>}
-                <span className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-[#00BFA6] px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-black/10">
-                  {ad.cta} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                </span>
+                {ad.cta && (
+                  <span className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-[#00BFA6] px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-black/10">
+                    {ad.cta} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                  </span>
+                )}
               </div>
             </div>
           )
           return (
             <div key={ad.key} className="w-full shrink-0" aria-hidden={ads[current]?.key !== ad.key}>
               {isExternal(ad.href) ? (
-                <a href={ad.href} target="_blank" rel="noopener noreferrer" className="block">{inner}</a>
+                <a href={ad.href} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackAdClick(ad.id)}>{inner}</a>
               ) : (
-                <Link href={ad.href as any} className="block">{inner}</Link>
+                <Link href={ad.href as any} className="block" onClick={() => trackAdClick(ad.id)}>{inner}</Link>
               )}
             </div>
           )
@@ -90,7 +94,7 @@ export function AdBanner() {
                 type="button"
                 onClick={() => setIndex(i)}
                 aria-label={String(i + 1)}
-                className={cn("h-1.5 rounded-full transition-all", i === current ? "w-6 bg-[#00BFA6]" : "w-1.5 bg-white/50 hover:bg-white/80")}
+                className={cn("relative h-1.5 rounded-full transition-all before:absolute before:-inset-2.5 before:content-['']", i === current ? "w-6 bg-[#00BFA6]" : "w-1.5 bg-white/50 hover:bg-white/80")}
               />
             ))}
           </div>

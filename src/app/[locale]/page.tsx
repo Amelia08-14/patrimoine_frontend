@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { ArrowRight, MapPin, ChevronLeft, ChevronRight, Search, Building2, Home as HomeIcon, Hotel, Tent, Factory, ConciergeBell, Briefcase, BedDouble as BedDoubleIcon, PartyPopper, Warehouse, Star, Building, Store, Trees, CalendarDays, Users, Mountain, Sparkles, ShieldCheck, Globe2, Headset, Coins, ClipboardList, HandHeart, Apple, PlayCircle, LayoutGrid, ChevronDown, Check, TrendingUp, ShoppingBag } from "lucide-react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Fragment } from "react"
 import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
 import { Link, useRouter } from "@/i18n/navigation"
@@ -11,6 +11,7 @@ import { motion, useReducedMotion, type Variants } from "framer-motion"
 import { PROPERTY_TYPES, REAL_ESTATE_CATEGORIES, PUBLIC_CATEGORIES } from "@/data/propertyTypes"
 import { useLocalizedGeoName, useLocalizedContent } from "@/lib/typeLabels"
 import { PropertyCard } from "@/components/PropertyCard"
+import { AdSidebar, AdStrip } from "@/components/AdSidebar"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { getCategoryColor } from "@/data/categoryColors"
@@ -760,79 +761,93 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* EXPLORER PAR TYPE DE BIEN — comptes réels, rangées compactes pour libérer de la hauteur */}
-      <div className="bg-gray-50 dark:bg-transparent pt-6 lg:pt-8 pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
-          <h2 className="font-brand text-xl text-[#003B4A] dark:text-white mb-4">{t("exploreTypesTitle")}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {orderedCategoryIds.map(catId => {
-              const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
-              if (!catDef) return null
-              const Icon = getIcon(catDef.iconName)
-              const catColor = getCategoryColor(catId)
-              return (
-                <Link
-                  key={catId}
-                  href={`/announces?realEstateCategory=${catId}`}
-                  className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
-                  style={searchFilters.category === catId ? { borderColor: catColor.hex } : undefined}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = catColor.hex }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = searchFilters.category === catId ? catColor.hex : '' }}
-                >
-                  <span className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: `${catColor.hex}1A` }}>
-                    <Icon className="h-4.5 w-4.5" style={{ color: catColor.hex }} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold text-gray-800 dark:text-white/90 truncate">{tc(catId)}</span>
-                    <span className="block text-[11px] rtl:text-xs text-gray-400 dark:text-white/40 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
-                  </span>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* PROPERTIES BY CATEGORY */}
-      {loading ? (
-        <div className="py-12 text-center text-gray-500 dark:text-white/50">{t("loadingListings")}</div>
-      ) : (
-        <>
-          {hasLiveFilter && (
-            <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-10 pb-2 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-bold text-[#003B4A] dark:text-white">{t("liveResultsCount", { count: liveResultsCount })}</p>
-              <div className="flex items-center gap-4">
-                <button type="button" onClick={() => setSearchFilters(EMPTY_SEARCH_FILTERS)} className="text-sm font-semibold text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white">{t("liveResultsReset")}</button>
-                <Link href={liveResultsHref as any} className="inline-flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline">
-                  {t("liveResultsSeeAll")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-                </Link>
+      {/* Colonnes publicitaires latérales (comme /announces) : colonne de fin dès xl, de début dès 2xl ;
+          en dessous, les publicités passent en bandeaux entre les catégories. */}
+      <div className="mx-auto flex w-full max-w-[1900px] items-start gap-6 xl:pe-4 2xl:px-6">
+        <AdSidebar page="HOME" category={searchFilters.category || undefined} side="start" className="hidden 2xl:block mt-8" />
+        <div className="min-w-0 flex-1">
+          {/* EXPLORER PAR TYPE DE BIEN — comptes réels, rangées compactes pour libérer de la hauteur */}
+          <div className="bg-gray-50 dark:bg-transparent pt-6 lg:pt-8 pb-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
+              <h2 className="font-brand text-xl text-[#003B4A] dark:text-white mb-4">{t("exploreTypesTitle")}</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {orderedCategoryIds.map(catId => {
+                  const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
+                  if (!catDef) return null
+                  const Icon = getIcon(catDef.iconName)
+                  const catColor = getCategoryColor(catId)
+                  return (
+                    <Link
+                      key={catId}
+                      href={`/announces?realEstateCategory=${catId}`}
+                      className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
+                      style={searchFilters.category === catId ? { borderColor: catColor.hex } : undefined}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = catColor.hex }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = searchFilters.category === catId ? catColor.hex : '' }}
+                    >
+                      <span className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: `${catColor.hex}1A` }}>
+                        <Icon className="h-4.5 w-4.5" style={{ color: catColor.hex }} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-gray-800 dark:text-white/90 truncate">{tc(catId)}</span>
+                        <span className="block text-[11px] rtl:text-xs text-gray-400 dark:text-white/40 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
+                      </span>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
-          )}
-          {Object.keys(groupedAnnounces).length === 0 ? (
-            <div className="py-16 text-center">
-              <div className="text-5xl mb-4">🏙️</div>
-              <p className="text-gray-500 dark:text-white/60 font-medium">{hasLiveFilter ? t("noFilteredListings") : t("noFeaturedListings")}</p>
-              <p className="text-gray-400 dark:text-white/40 text-sm mt-1">{t("browseByCategory")}</p>
-            </div>
+          </div>
+
+          {/* PROPERTIES BY CATEGORY */}
+          {loading ? (
+            <div className="py-12 text-center text-gray-500 dark:text-white/50">{t("loadingListings")}</div>
           ) : (
-            orderedCategoryIds.map((catId) => {
-              const catData = groupedAnnounces[catId];
-              if (catData && catData.items.length > 0) {
-                return (
-                  <CarouselSection 
-                    key={catId} 
-                    categoryId={catId} 
-                    title={catData.label} 
-                    items={catData.items} 
-                  />
-                );
-              }
-              return null;
-            })
+            <>
+              {hasLiveFilter && (
+                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-10 pb-2 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-bold text-[#003B4A] dark:text-white">{t("liveResultsCount", { count: liveResultsCount })}</p>
+                  <div className="flex items-center gap-4">
+                    <button type="button" onClick={() => setSearchFilters(EMPTY_SEARCH_FILTERS)} className="text-sm font-semibold text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white">{t("liveResultsReset")}</button>
+                    <Link href={liveResultsHref as any} className="inline-flex items-center gap-1.5 text-sm font-bold text-[#00BFA6] hover:underline">
+                      {t("liveResultsSeeAll")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                    </Link>
+                  </div>
+                </div>
+              )}
+              {Object.keys(groupedAnnounces).length === 0 ? (
+                <div className="py-16 text-center">
+                  <div className="text-5xl mb-4">🏙️</div>
+                  <p className="text-gray-500 dark:text-white/60 font-medium">{hasLiveFilter ? t("noFilteredListings") : t("noFeaturedListings")}</p>
+                  <p className="text-gray-400 dark:text-white/40 text-sm mt-1">{t("browseByCategory")}</p>
+                </div>
+              ) : (
+                orderedCategoryIds
+                  .filter((catId) => groupedAnnounces[catId]?.items?.length > 0)
+                  .map((catId, i) => {
+                    const catData = groupedAnnounces[catId];
+                    return (
+                      <Fragment key={catId}>
+                        {/* Petit bandeau publicitaire entre deux catégories (jamais avant la première) */}
+                        {i > 0 && (
+                          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10 py-5">
+                            <AdStrip page="HOME" category={catId} />
+                          </div>
+                        )}
+                        <CarouselSection
+                          categoryId={catId}
+                          title={catData.label}
+                          items={catData.items}
+                        />
+                      </Fragment>
+                    );
+                  })
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+        <AdSidebar page="HOME" category={searchFilters.category || undefined} side="end" className="hidden xl:block mt-8" />
+      </div>
 
       {/* WHY CHOOSE US — présenté comme un acte certifié, pas une grille de cartes générique */}
       <section className="py-16 sm:py-20 bg-[#003B4A] text-white relative overflow-hidden">

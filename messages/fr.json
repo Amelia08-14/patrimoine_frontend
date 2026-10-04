@@ -465,7 +465,24 @@
     "refreshDone": "Demande actualisée : elle remonte en tête de liste.",
     "refreshNoPoints": "Solde de points insuffisant",
     "refreshError": "Impossible d'actualiser pour le moment",
-    "buyPoints": "Acheter des points"
+    "buyPoints": "Acheter des points",
+    "viewRequest": "Voir la fiche",
+    "backToRequests": "Retour aux demandes",
+    "requestNotFound": "Cette demande n'existe plus.",
+    "contactTitle": "Contacter le demandeur",
+    "contactSubtitle": "Vous avez un bien qui correspond ? Écrivez au demandeur ou demandez ses coordonnées.",
+    "loginToContact": "Se connecter pour contacter",
+    "ownRequest": "C'est votre propre demande.",
+    "messagePlaceholder": "Présentez votre bien (type, surface, prix, localisation)…",
+    "sendMessage": "Envoyer un message",
+    "sendMail": "Envoyer un mail",
+    "requestContact": "Demander le contact",
+    "noAccountHint": "Le demandeur n'a pas de compte : seul l'envoi de mail est possible.",
+    "msgSent": "Message envoyé. Retrouvez la conversation dans votre messagerie.",
+    "actionError": "Action impossible pour le moment, réessayez.",
+    "mailSubject": "Votre recherche n°{id} sur Patrimoine Immobilier",
+    "noEmail": "Aucune adresse e-mail disponible pour ce demandeur.",
+    "contactRequested": "Demande envoyée : le demandeur est prévenu et pourra vous répondre."
   },
   "Research": {
     "zodBranchRequired": "Choisissez une branche",
@@ -758,7 +775,8 @@
     "resHeatingLabel": "Chauffage",
     "resAcLabel": "Climatisation",
     "resSecurityLabel": "Sécurité",
-    "resConnectivityLabel": "Connectivité"
+    "resConnectivityLabel": "Connectivité",
+    "contactOptionsTitle": "Options de votre recherche"
   },
   "ProfileHome": {
     "pendingBanner": "Compte en attente de validation.",

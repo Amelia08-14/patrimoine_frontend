@@ -27,6 +27,7 @@ export function Navbar() {
   const [logoFailed, setLogoFailed] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [requestsCount, setRequestsCount] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifPreview, setNotifPreview] = useState<any[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
@@ -152,6 +153,19 @@ export function Navbar() {
     }
   }, []);
 
+  // Nombre de demandes en cours (badge rouge sur « Demandes en cours »), public donc sans connexion.
+  useEffect(() => {
+    const fetchRequestsCount = () => {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/entrusted-research/count`)
+        .then((r) => r.json())
+        .then((d) => setRequestsCount(Number(d?.count) || 0))
+        .catch(() => {});
+    };
+    fetchRequestsCount();
+    const interval = setInterval(fetchRequestsCount, 120000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Badge "non lues" — cloche du dropdown compte + petit point sur l'avatar. Rafraîchi toutes les
   // 60s : léger (juste un count), pas besoin de websocket pour ce niveau de fraîcheur.
   useEffect(() => {
@@ -246,32 +260,38 @@ export function Navbar() {
           </div>
 
           {/* 2. Center Actions (Buttons) - Centered in the remaining space */}
-          <div className="hidden lg:flex items-center gap-3 flex-1 justify-center">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-1 min-w-0 justify-center">
              <Link href="/deposit">
-               <Button className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-5 py-4 text-sm font-bold shadow-md hover:shadow-lg transition-all duration-300">
+               <Button className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-4 xl:px-5 py-4 text-sm font-bold shadow-md hover:shadow-lg transition-all duration-300 whitespace-nowrap">
                  <Plus className="h-4 w-4 mr-2 stroke-[3]" />
                  {t('depositAd')}
                </Button>
              </Link>
              <Link href="/research">
-               <Button variant="outline" className="border-[#0094BD] text-[#0094BD] hover:bg-[#E3F4FA] hover:text-[#003B4A] rounded-full px-5 py-4 text-sm font-bold border-2 transition-all duration-300">
+               <Button variant="outline" className="border-[#0094BD] text-[#0094BD] hover:bg-[#E3F4FA] hover:text-[#003B4A] rounded-full px-4 xl:px-5 py-4 text-sm font-bold border-2 transition-all duration-300 whitespace-nowrap">
                  <Plus className="h-4 w-4 mr-2 stroke-[3]" />
                  {t('entrustSearch')}
                </Button>
              </Link>
-             <Link href="/demandes" className="flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-white/70 hover:text-[#00BFA6] dark:hover:text-[#0094BD] transition-colors px-2">
+             <Link href="/demandes" title={t('pendingRequests')} className="flex items-center gap-1.5 whitespace-nowrap text-sm font-bold text-gray-600 dark:text-white/70 hover:text-[#00BFA6] dark:hover:text-[#0094BD] transition-colors px-2">
                <ClipboardList className="h-4 w-4" />
-               {t('pendingRequests')}
+               {/* Libellé masqué entre 1024 et 1280 px pour que la barre tienne sur une ligne (icône + pastille restent) */}
+               <span className="hidden xl:inline">{t('pendingRequests')}</span>
+               {requestsCount > 0 && (
+                 <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-black leading-5 text-center shadow-sm">
+                   {requestsCount > 99 ? '99+' : requestsCount}
+                 </span>
+               )}
              </Link>
           </div>
 
           {/* 3. Right Section (Auth & Language) */}
-          <div className={cn("flex items-center gap-3 md:gap-6", isRTL ? "mr-auto" : "ml-auto")}>
+          <div className={cn("flex items-center gap-3 md:gap-4 xl:gap-6 shrink-0", isRTL ? "mr-auto" : "ml-auto")}>
              {/* Quick access: Confier */}
              <Link
                href="/research"
                title={t('entrustSearch')}
-               className="hidden md:flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-600 hover:border-[#0094BD] hover:text-[#003B4A] transition-colors"
+               className="hidden md:flex lg:hidden items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-600 hover:border-[#0094BD] hover:text-[#003B4A] transition-colors"
              >
                <Handshake className={cn("h-3.5 w-3.5", isRTL ? "ml-1.5" : "mr-1.5")} />
                {t('entrustQuick')}
@@ -282,7 +302,7 @@ export function Navbar() {
                  <button
                    onClick={toggleNotifDropdown}
                    aria-label={t('notification')}
-                   className="relative h-9 w-9 flex items-center justify-center rounded-full text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/10 hover:text-[#0094BD] transition-colors"
+                   className="relative h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-full text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/10 hover:text-[#0094BD] transition-colors"
                  >
                    <Bell className="h-5 w-5" />
                    {unreadNotifications > 0 && (
@@ -343,7 +363,7 @@ export function Navbar() {
              {/* Auth Links */}
              {isLoggedIn ? (
                <div className="flex items-center gap-4 relative" ref={menuRef}>
-                  <div className={cn("hidden lg:flex flex-col cursor-pointer", isRTL ? "text-left" : "text-right")} onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                  <div className={cn("hidden xl:flex flex-col cursor-pointer", isRTL ? "text-left" : "text-right")} onClick={() => setIsMenuOpen(!isMenuOpen)}>
                      {/* Nom d'entreprise long : largeur bornée pour ne pas pousser les éléments voisins, et il défile
                          horizontalement (même animation que les titres d'annonces) au lieu de passer à la ligne. */}
                      <ScrollingTitle text={getNavbarTitle(user)} className="max-w-[200px] xl:max-w-[260px] text-sm font-bold text-gray-800 dark:text-white" />

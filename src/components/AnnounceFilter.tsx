@@ -170,7 +170,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
               key={o.id}
               type="button"
               onClick={() => onFilterChange("transactionType", filters.transactionType === o.id ? "" : o.id)}
-              className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${filters.transactionType === o.id ? o.active : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"}`}
+              className={`px-4 py-3 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${filters.transactionType === o.id ? o.active : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"}`}
             >
               {o.label}
             </button>

@@ -6,9 +6,26 @@ import { useLocalizedContent } from "@/lib/typeLabels"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
-export type Ad = { key: string; image: string; title: string; subtitle: string; cta: string; href: string }
+export type AdPage = "HOME" | "ANNOUNCES" | "DEMANDES"
+export type AdPlacement = "SIDEBAR" | "STRIP" | "BANNER"
+export type Ad = { key: string; id?: number; image: string; title: string; subtitle: string; cta: string; href: string }
 
-// Un seul appel réseau pour tous les emplacements publicitaires de la page (bandeau + colonnes latérales).
+// Un seul appel réseau par page pour tous ses emplacements (bandeau, colonnes latérales, bandeaux inter-sections).
+const adsCache: Partial<Record<AdPage, Promise<any[]>>> = {}
+function loadAds(page: AdPage): Promise<any[]> {
+  if (!adsCache[page]) {
+    adsCache[page] = fetch(`${API_URL}/ads?page=${page}`)
+      .then((r) => r.json())
+      .then((d) => (Array.isArray(d) ? d : []))
+      .catch(() => {
+        delete adsCache[page] // on retentera au prochain rendu
+        return []
+      })
+  }
+  return adsCache[page]!
+}
+
+// Un seul appel pour les slides d'accueil (ancienne source, conservée comme repli).
 let slidesPromise: Promise<any[]> | null = null
 function loadSlides(): Promise<any[]> {
   if (!slidesPromise) {
@@ -16,34 +33,71 @@ function loadSlides(): Promise<any[]> {
       .then((r) => r.json())
       .then((d) => (Array.isArray(d) ? d : []))
       .catch(() => {
-        slidesPromise = null // on retentera au prochain rendu
+        slidesPromise = null
         return []
       })
   }
   return slidesPromise
 }
 
+/** Statistiques : une impression par affichage d'une publicité, un clic au clic (sans bloquer la navigation). */
+const seenViews = new Set<number>()
+export function trackAdView(id?: number) {
+  if (!id || seenViews.has(id)) return
+  seenViews.add(id)
+  fetch(`${API_URL}/ads/${id}/view`, { method: "POST", keepalive: true }).catch(() => {})
+}
+export function trackAdClick(id?: number) {
+  if (!id) return
+  fetch(`${API_URL}/ads/${id}/click`, { method: "POST", keepalive: true }).catch(() => {})
+}
+
 /**
- * Publicités affichables dans les emplacements du site (bandeau du haut et colonnes latérales de `/announces`).
- *
- * Source : les visuels gérés dans l'admin (Contenu du site > Slides d'accueil — titre / sous-titre / bouton /
- * lien en 3 langues). Il n'existe pas encore de module de publicité dédié : tant que ce n'est pas le cas, les
- * slides publiés servent d'annonces publicitaires, et à défaut deux encarts maison (déposer une annonce /
- * boutique). Tous les emplacements lisent cette même liste.
+ * Publicités d'un emplacement du site (filtrables par page, emplacement et catégorie). Source : le module Publicités de l'admin (`/admin/ads` — image, textes
+ * en 3 langues, lien, pages et emplacements visés, période, ordre). Tant qu'aucune publicité n'est configurée
+ * pour la page, repli sur les slides d'accueil publiés puis sur deux encarts maison (déposer / boutique), pour
+ * que les emplacements ne restent jamais vides.
  */
-export function useAds(): Ad[] {
+export function useAds(page: AdPage = "ANNOUNCES", placement?: AdPlacement, categoryId?: string): Ad[] {
+  const category = categoryId === "HEBERGEMENT" ? "HOTELIER" : categoryId // même libellé / même couleur
   const t = useTranslations("AnnouncesPage")
   const lc = useLocalizedContent()
+  const [managed, setManaged] = useState<any[] | null>(null)
   const [slides, setSlides] = useState<any[]>([])
 
   useEffect(() => {
     let alive = true
+    loadAds(page).then((d) => { if (alive) setManaged(d) })
     loadSlides().then((d) => { if (alive) setSlides(d) })
     return () => { alive = false }
-  }, [])
+  }, [page])
 
   return useMemo(() => {
-    const fromAdmin = slides
+    const has = (csv: string, v?: string) => !v || String(csv || "").split(",").map((x) => x.trim()).includes(v)
+    const fromAdmin: Ad[] = (managed || [])
+      .filter((a) => a?.imageUrl && has(a.placements, placement))
+      // Catégorie : sans catégorie choisie sur la page, toutes les publicités tournent ; avec une catégorie,
+      // seules celles qui la ciblent (ou qui n'en ciblent aucune) restent, les ciblées passant en premier.
+      .filter((a) => {
+        const cats = String(a.categories || "").split(",").map((x: string) => x.trim()).filter(Boolean)
+        return !category || cats.length === 0 || cats.includes(category)
+      })
+      .sort((a, b) => {
+        const t = (x: any) => (category && String(x.categories || "").split(",").includes(category) ? 0 : 1)
+        return t(a) - t(b)
+      })
+      .map((a) => ({
+        key: `ad-${a.id}`,
+        id: a.id,
+        image: `${API_URL}${a.imageUrl}`,
+        title: lc(a.title, a.titleAr, a.titleEn),
+        subtitle: lc(a.subtitle, a.subtitleAr, a.subtitleEn),
+        cta: lc(a.buttonLabel, a.buttonLabelAr, a.buttonLabelEn),
+        href: a.link || "/announces",
+      }))
+    if (fromAdmin.length > 0) return fromAdmin
+    if (managed === null) return [] // pas encore chargé : évite d'afficher un instant les encarts de repli
+    const fromSlides = slides
       .filter((s) => s?.imageUrl)
       .map((s) => ({
         key: `slide-${s.id}`,
@@ -53,11 +107,11 @@ export function useAds(): Ad[] {
         cta: lc(s.buttonLabel, s.buttonLabelAr, s.buttonLabelEn) || t("adCta"),
         href: s.link || "/announces",
       }))
-    if (fromAdmin.length > 0) return fromAdmin
+    if (fromSlides.length > 0) return fromSlides
     return [
       { key: "deposit", image: "/points-bg.jpg", title: t("adDepositTitle"), subtitle: t("adDepositText"), cta: t("adDepositCta"), href: "/deposit" },
       { key: "boutique", image: "/boutique-bg.jpg", title: t("adBoutiqueTitle"), subtitle: t("adBoutiqueText"), cta: t("adBoutiqueCta"), href: "/profile/boutique" },
     ]
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slides, lc])
+  }, [managed, slides, placement, category, lc])
 }

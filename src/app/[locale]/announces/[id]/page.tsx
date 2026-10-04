@@ -16,6 +16,7 @@ import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import { usePropertyTypeLabel, useLocalizedPlaceName, useLocalizedContent } from "@/lib/typeLabels"
 import { Link, useRouter } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
+import { ScrollingTitle } from "@/components/ScrollingTitle"
 
   // Helper for Image URLs
   const getImageUrl = (url: string) => {
@@ -701,7 +702,7 @@ export default function AnnounceDetailsPage() {
   const isColdRoomRental = isRental && normalizedPropertyType === "CHAMBRE_FROIDE"
   const isHangarRental = isRental && normalizedPropertyType === "HANGAR"
   const isHotelRental = isRental && normalizedPropertyType === "HOTEL"
-  const isTerrainRental = isRental && (normalizedPropertyType === "TERRAIN_RESIDENTIEL" || normalizedPropertyType === "TERRAIN_INDUSTRIEL")
+  const isTerrainRental = (normalizedPropertyType === "TERRAIN_RESIDENTIEL" || normalizedPropertyType === "TERRAIN_INDUSTRIEL")
   const isTerrainAgricoleProperty = normalizedPropertyType === "TERRAIN_AGRICOLE"
   const isTerrainTouristiqueProperty = normalizedPropertyType === "TERRAIN_TOURISTIQUE"
   const isIndustrialRental = isFactoryRental || isColdRoomRental || isHangarRental
@@ -799,9 +800,11 @@ export default function AnnounceDetailsPage() {
                 </button>
                 {/* Titre de l'annonce, juste après la flèche de retour (titre saisi par le déposant,
                     à défaut le type de bien), tronqué proprement sur une ligne. */}
-                <h1 dir="auto" className="flex-1 min-w-0 truncate text-lg sm:text-xl font-bold text-gray-900 dark:text-white" title={lcName(announce.title, announce.titleAr, announce.titleEn) || propertyTypeLabel}>
-                    {lcName(announce.title, announce.titleAr, announce.titleEn) || propertyTypeLabel}
+                {/* Le titre occupe la moitié de la ligne et défile s'il est plus long que cet espace. */}
+                <h1 className="w-1/2 min-w-0 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                    <ScrollingTitle text={lcName(announce.title, announce.titleAr, announce.titleEn) || propertyTypeLabel} />
                 </h1>
+                <div className="flex-1" />
                 <div className="flex gap-2 shrink-0">
                     <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
                         <Heart className="h-4 w-4" />
@@ -1596,7 +1599,7 @@ export default function AnnounceDetailsPage() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-white font-black text-base leading-tight truncate">{lcName(announce.user?.companyName, announce.user?.companyNameAr, announce.user?.companyNameEn)}</div>
+                    <ScrollingTitle className="text-white font-black text-base leading-tight" text={lcName(announce.user?.companyName, announce.user?.companyNameAr, announce.user?.companyNameEn)} />
                     <div className="text-white/70 text-xs mt-0.5 truncate">{announce.user?.activity || t("realEstateProfessional")}</div>
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <span className="h-1.5 w-1.5 bg-green-400 rounded-full"></span>

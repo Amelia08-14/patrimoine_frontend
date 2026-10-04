@@ -244,7 +244,7 @@ function AnnouncesContent() {
       <div className="px-4 sm:px-6 lg:px-8 pt-6">
         <div className="max-w-[1600px] mx-auto">
           <h1 className="sr-only">{t("heroTitle")}</h1>
-          <AdBanner />
+          <AdBanner category={filters.realEstateCategory || undefined} />
         </div>
       </div>
 
@@ -263,12 +263,12 @@ function AnnouncesContent() {
       {/* Résultats + colonnes publicitaires latérales : la colonne de fin apparaît dès xl (≥1280px), celle de début
           dès 2xl (≥1536px) ; en dessous, la publicité passe en bandeau compact au-dessus des résultats. */}
       <div className="mx-auto flex max-w-[1600px] items-start gap-6 px-4 py-8 sm:px-6 lg:px-8">
-        <AdSidebar side="start" className="hidden 2xl:block" />
+        <AdSidebar side="start" category={filters.realEstateCategory || undefined} className="hidden 2xl:block" />
         <div className="flex w-full min-w-0 flex-1 flex-col md:flex-row gap-8">
 
           {/* Listings Grid */}
           <div className="min-w-0 flex-grow">
-            <AdStrip className="mb-6 xl:hidden" />
+            <AdStrip category={filters.realEstateCategory || undefined} className="mb-6 hidden lg:block xl:hidden" />
             <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
               <p className="text-gray-600 dark:text-white/60">
                 <span className="font-bold text-gray-900 dark:text-white">{announces.length}</span> {t("resultsFound")}
@@ -276,13 +276,13 @@ function AnnouncesContent() {
 
               {/* Bascule d'affichage — grille / grandes cartes / liste (même principe que la boutique) */}
               <div className="flex bg-gray-100 dark:bg-white/10 rounded-lg p-0.5 gap-0.5">
-                <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewGrid')}>
+                <button onClick={() => setViewMode('grid')} className={`p-2.5 sm:p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewGrid')}>
                   <LayoutGrid className="h-4 w-4" />
                 </button>
-                <button onClick={() => setViewMode('large')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'large' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewLarge')}>
+                <button onClick={() => setViewMode('large')} className={`p-2.5 sm:p-1.5 rounded-md transition-colors ${viewMode === 'large' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewLarge')}>
                   <LayoutDashboard className="h-4 w-4" />
                 </button>
-                <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewList')}>
+                <button onClick={() => setViewMode('list')} className={`p-2.5 sm:p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`} title={t('viewList')}>
                   <List className="h-4 w-4" />
                 </button>
               </div>
@@ -342,7 +342,7 @@ function AnnouncesContent() {
             )}
           </div>
         </div>
-        <AdSidebar side="end" className="hidden xl:block" />
+        <AdSidebar side="end" category={filters.realEstateCategory || undefined} className="hidden xl:block" />
       </div>
     </div>
   )

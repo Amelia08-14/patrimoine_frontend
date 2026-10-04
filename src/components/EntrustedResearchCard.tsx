@@ -22,14 +22,15 @@ ENVIRONMENT_OPTIONS.forEach((o) => { ENVIRONMENT_LABELS_FR[o.id] = o.label })
 const VILLA_ENTRANCE_LABELS_FR: Record<string, string> = {}
 VILLA_LEVEL_ENTRANCE_OPTIONS.forEach((o) => { VILLA_ENTRANCE_LABELS_FR[o.id] = o.label })
 
-// Photo d'ambiance par activité (fichiers de /public). TERRAIN_FONCIER n'a pas de photo dédiée :
-// la carte retombe sur un aplat de la couleur de la catégorie + son icône.
+// Visuels générés par activité (mention « Patrimoine Immobilier » + catégorie incrustées en bas à gauche,
+// d'où le cadrage `object-bottom`). Sans visuel, la carte retombe sur un aplat de la couleur de la catégorie.
 export const CATEGORY_IMAGES: Record<string, string> = {
-  RESIDENTIEL: "/immobilier.jpg",
-  BUREAUX_COMMERCES: "/société.jpg",
-  INDUSTRIEL: "/stockage.jpg",
-  HOTELIER: "/hotel.jpg",
-  HEBERGEMENT: "/hotel.jpg",
+  RESIDENTIEL: "/demandes/residentiel.jpg",
+  BUREAUX_COMMERCES: "/demandes/bureaux.jpg",
+  INDUSTRIEL: "/demandes/industriel.jpg",
+  TERRAIN_FONCIER: "/demandes/terrain.jpg",
+  HOTELIER: "/demandes/hotellerie.jpg",
+  HEBERGEMENT: "/demandes/hotellerie.jpg",
   EVENEMENTIEL: "/event.jpg",
 }
 export const CATEGORY_ICONS: Record<string, any> = {
@@ -44,7 +45,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
  * où l'on veut contacter le demandeur) et "Mes recherches confiées" (/profile/researches, où l'on
  * est le demandeur : pas de bouton "contacter", juste la date de dépôt).
  */
-export function EntrustedResearchCard({ research: r, variant = "public", onRefreshed }: { research: any; variant?: "public" | "mine"; onRefreshed?: () => void }) {
+export function EntrustedResearchCard({ research: r, variant = "public", onRefreshed }: { research: any; variant?: "public" | "mine" | "detail"; onRefreshed?: () => void }) {
   const t = useTranslations("Demandes")
   const locale = useLocale()
   const [refreshing, setRefreshing] = useState(false)
@@ -155,17 +156,72 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
   const villaEntranceLabel = locationCriteria?.villaLevelEntrance ? resolveVillaEntrance(locationCriteria.villaLevelEntrance) : null
   const environmentLabels: string[] = (locationCriteria?.environment || []).map((id: string) => resolveEnvironment(id)).filter(Boolean)
 
+  // Carte publique compacte (/demandes) : l'essentiel seulement, le détail et les actions de contact
+  // sont sur la fiche interne /demandes/[id].
+  if (variant === "public") {
+    const shownTypes = propertyTypeLabels.slice(0, 2)
+    const extraTypes = propertyTypeLabels.length - shownTypes.length
+    return (
+      <Link
+        href={`/demandes/${r.id}`}
+        className="group bg-white dark:bg-white/5 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col"
+      >
+        <div className="relative h-32 overflow-hidden" style={{ backgroundColor: catColor.hex }}>
+          {coverImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={encodeURI(coverImage)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-bottom transition-transform duration-500 group-hover:scale-105" />
+          ) : (
+            <CatIcon className="absolute -bottom-3 -end-1 h-24 w-24 text-white/20" />
+          )}
+          <span className="absolute top-2.5 start-2.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-white/95 text-[#003B4A] shadow-sm">
+            {r.transaction === "SALE" ? t("sale") : r.transaction === "RENTAL" ? t("rental") : t("holiday")}
+          </span>
+          {wasRefreshed && (
+            <span className="absolute top-2.5 end-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase bg-amber-400 text-amber-950">
+              <Zap className="h-3 w-3" /> {t("refreshedBadge")}
+            </span>
+          )}
+        </div>
+        <div className="p-4 flex flex-col gap-2.5 flex-1">
+          {shownTypes.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {shownTypes.map((label, i) => (
+                <span key={i} className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#00BFA6]/10 text-[#00908A] dark:text-[#5EEAD4]">{label}</span>
+              ))}
+              {extraTypes > 0 && <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/60">+{extraTypes}</span>}
+            </div>
+          )}
+          {locationLabel && (
+            <div className="flex items-start gap-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">
+              <MapPin className="h-4 w-4 text-[#00BFA6] shrink-0 mt-0.5" />
+              <span className="line-clamp-2 break-words">{locationLabel}</span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-white/60">
+            {budgetLabel && <span className="inline-flex items-center gap-1"><Wallet className="h-3.5 w-3.5 text-[#00BFA6]" />{budgetLabel}</span>}
+            {surfaceLabel && <span className="inline-flex items-center gap-1"><Ruler className="h-3.5 w-3.5 text-[#00BFA6]" />{surfaceLabel}</span>}
+            {typologyLabel && <span className="inline-flex items-center gap-1"><Home className="h-3.5 w-3.5 text-[#00BFA6]" />{typologyLabel}</span>}
+          </div>
+          <div className="mt-auto pt-2 flex items-center justify-between text-xs text-gray-400 dark:text-white/40 font-medium">
+            <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{relativeTime}</span>
+            <span className="inline-flex items-center gap-1 font-bold text-[#00BFA6]">{t("viewRequest")} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></span>
+          </div>
+        </div>
+      </Link>
+    )
+  }
+
   return (
     <div className="group bg-white dark:bg-white/5 rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col">
       {/* Bandeau photo selon l'activité */}
       <div className="relative h-36 overflow-hidden" style={{ backgroundColor: catColor.hex }}>
         {coverImage ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={encodeURI(coverImage)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <img src={encodeURI(coverImage)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-bottom transition-transform duration-500 group-hover:scale-105" />
         ) : (
           <CatIcon className="absolute -bottom-4 -end-2 h-32 w-32 text-white/20" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {!coverImage && <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />}
         <div className="absolute top-3 inset-x-3 flex items-start justify-between gap-2">
           <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white/95 text-[#003B4A] shadow-sm">
             {r.transaction === "SALE" ? t("sale") : r.transaction === "RENTAL" ? t("rental") : t("holiday")}
@@ -176,12 +232,14 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
             </span>
           )}
         </div>
-        <div className="absolute bottom-3 inset-x-3 flex items-center gap-2 text-white">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shrink-0">
-            <CatIcon className="h-4 w-4" />
-          </span>
-          <span className="text-sm font-bold drop-shadow">{getCategoryLabel(r.realEstateType) || r.realEstateType}</span>
-        </div>
+        {!coverImage && (
+          <div className="absolute bottom-3 inset-x-3 flex items-center gap-2 text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shrink-0">
+              <CatIcon className="h-4 w-4" />
+            </span>
+            <span className="text-sm font-bold drop-shadow">{getCategoryLabel(r.realEstateType) || r.realEstateType}</span>
+          </div>
+        )}
       </div>
 
       <div className="p-6 flex flex-col gap-4 flex-1">
@@ -260,7 +318,7 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
         </div>
       )}
 
-      {variant === "public" ? (
+      {variant !== "mine" ? (
         <>
           {requesterName && (
             <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-white/40 font-bold uppercase tracking-wide">
@@ -271,9 +329,6 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
           <div className="mt-auto flex items-center justify-between gap-2 text-xs text-gray-400 dark:text-white/40 font-medium">
             <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{relativeTime}</span>
           </div>
-          <Link href="/contact" className="pt-2 flex items-center gap-1.5 text-[#00BFA6] font-bold text-sm hover:underline">
-            {t("contactToRespond")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-          </Link>
         </>
       ) : (
         <div className="mt-auto pt-2 space-y-3">

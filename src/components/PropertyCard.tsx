@@ -275,14 +275,14 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
     <Link href={`/announces/${announce.id}`} className="block h-full w-full">
       <div className={cn(
         "bg-white dark:bg-[#03303c] rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gray-100 dark:border-white/10 h-full w-full overflow-hidden",
-        isHorizontal ? "flex flex-row" : "flex flex-col"
+        isHorizontal ? "flex flex-row items-start" : "flex flex-col"
       )}>
 
         {/* Image */}
         <div
           className={cn(
             "relative overflow-hidden bg-gray-100 shrink-0",
-            isHorizontal ? "w-52 sm:w-72 lg:w-[22rem] h-full min-h-[230px] sm:min-h-[250px]" : "h-[240px] min-h-[240px]"
+            isHorizontal ? "w-52 sm:w-72 lg:w-[22rem] h-[230px] sm:h-[250px] self-start" : "h-[240px] min-h-[240px]"
           )}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => { setIsHovering(false); setHeroIndex(0) }}
@@ -359,7 +359,7 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
         {/* Contenu — sur l'accueil, la catégorie reste entière puis titre et prix partagent la ligne suivante. */}
         {isHorizontal ? (
         /* Vue « liste » : contenu généreux (titre et prix plus grands, critères en puces, description), sans vide */
-        <div className="p-5 sm:p-6 flex flex-col flex-1 min-w-0 gap-3">
+        <div className="p-5 sm:p-6 flex flex-col flex-1 min-w-0 gap-3 self-stretch">
             <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                     <span dir="auto" className="block text-start text-[#00BFA6] font-bold text-xs rtl:text-sm uppercase tracking-wide">{categoryName}</span>

@@ -2838,66 +2838,13 @@ export default function ResearchPage() {
       }
 
       case 'CONTACT': {
-        // Champs masqués quand "Utiliser mes informations" est choisi (déjà pré-remplis en
-        // silence par l'effet ci-dessus, inutile de les réafficher) — visibles seulement pour
-        // saisir les coordonnées d'une autre personne/société.
-        const showManualForm = !loggedInUser || !useMyInfo;
+        // Connecté : plus de bloc « coordonnées » — le profil est repris en silence par l'effet plus haut
+        // (nom, e-mail, téléphone, adresse) et il ne reste que les deux cases à cocher.
+        // Non connecté : le formulaire de coordonnées reste nécessaire pour pouvoir répondre/alerter.
+        const showManualForm = !loggedInUser;
         return (
           <div className="w-full max-w-4xl animate-fade-in space-y-10">
-            <Section title={t('contactTitle')} icon={MapPin}>
-              {loggedInUser && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setUseMyInfo(true)}
-                    className={cn('p-4 rounded-xl border-2 text-left transition-all', useMyInfo ? 'border-[#0094BD] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
-                  >
-                    <div className="font-bold text-gray-900 text-sm">{t('contactUseMyInfo')}</div>
-                    <div className="text-xs text-gray-500 mt-1 truncate">
-                      {loggedInUser.userType === 'SOCIETE' ? loggedInUser.companyName : `${loggedInUser.firstName || ''} ${loggedInUser.lastName || ''}`.trim()} · {loggedInUser.email}
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUseMyInfo(false)}
-                    className={cn('p-4 rounded-xl border-2 text-left transition-all', !useMyInfo ? 'border-[#0094BD] bg-[#E6F8F6]' : 'border-gray-200 hover:border-gray-300')}
-                  >
-                    <div className="font-bold text-gray-900 text-sm">{t('contactEnterOtherInfo')}</div>
-                    <div className="text-xs text-gray-500 mt-1">{t('contactForOtherPersonOrCompany')}</div>
-                  </button>
-                </div>
-              )}
-
-              {/* Récapitulatif lisible de ce qui sera envoyé quand on utilise son propre profil —
-                  pas un formulaire à remplir, mais un vrai contenu à relire avant "Envoyer" (pas
-                  juste 2 boutons puis le bouton d'envoi). */}
-              {!showManualForm && (
-                <div className="rounded-xl border-2 border-gray-100 bg-gray-50 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactLastName')} / {t('contactFirstName')}</div>
-                    <div className="font-bold text-gray-900">{`${loggedInUser?.firstName || ''} ${loggedInUser?.lastName || ''}`.trim() || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactEmail')}</div>
-                    <div className="font-bold text-gray-900">{loggedInUser?.email || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactPhone')}</div>
-                    <div className="font-bold text-gray-900">{loggedInUser?.phone || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactAddress')}</div>
-                    <div className="font-bold text-gray-900">{loggedInUser?.address || '—'}</div>
-                  </div>
-                  {loggedInUser?.userType === 'SOCIETE' && loggedInUser?.companyName && (
-                    <div className="sm:col-span-2">
-                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">{t('contactCompanyName')}</div>
-                      <div className="font-bold text-gray-900">{loggedInUser.companyName}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-
+            <Section title={showManualForm ? t('contactTitle') : t('contactOptionsTitle')} icon={showManualForm ? MapPin : Handshake}>
               {showManualForm && (
                 <>
                   <div className="flex justify-center gap-4 mb-2">
@@ -2947,13 +2894,13 @@ export default function ResearchPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#022229] flex flex-col">
-      <div className="h-[220px] w-full absolute top-0 left-0 z-0 overflow-hidden bg-[#003B4A]">
+      <div className="h-[150px] md:h-[220px] w-full absolute top-0 left-0 z-0 overflow-hidden bg-[#003B4A]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#04566B] via-[#003B4A] to-[#00181E]" />
         <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-white/[0.06] blur-3xl" />
         <div className="absolute top-1/3 -left-20 w-64 h-64 rounded-full bg-white/[0.04] blur-3xl" />
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-[96px] md:pt-4">
+      <div className="flex-1 flex flex-col items-center justify-start md:justify-center relative z-10 p-4 pt-6 md:pt-4">
 
         {draftAvailable && (
           <div className="w-full max-w-5xl mb-4 md:mb-6 bg-white border-2 border-[#0094BD]/30 rounded-2xl shadow-lg px-4 py-3 md:px-6 md:py-4 flex flex-wrap items-center justify-between gap-3">

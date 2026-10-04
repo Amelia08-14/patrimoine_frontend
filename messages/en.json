@@ -465,7 +465,24 @@
     "refreshDone": "Request refreshed: it now appears at the top of the list.",
     "refreshNoPoints": "Not enough points",
     "refreshError": "Unable to refresh right now",
-    "buyPoints": "Buy points"
+    "buyPoints": "Buy points",
+    "viewRequest": "View details",
+    "backToRequests": "Back to requests",
+    "requestNotFound": "This request no longer exists.",
+    "contactTitle": "Contact the requester",
+    "contactSubtitle": "Have a matching property? Write to the requester or ask for their contact details.",
+    "loginToContact": "Log in to contact",
+    "ownRequest": "This is your own request.",
+    "messagePlaceholder": "Present your property (type, surface, price, location)…",
+    "sendMessage": "Send a message",
+    "sendMail": "Send an email",
+    "requestContact": "Request contact details",
+    "noAccountHint": "The requester has no account: only email is available.",
+    "msgSent": "Message sent. Find the conversation in your inbox.",
+    "actionError": "Action unavailable right now, please try again.",
+    "mailSubject": "Your search no. {id} on Patrimoine Immobilier",
+    "noEmail": "No email address available for this requester.",
+    "contactRequested": "Request sent: the requester has been notified and can reply to you."
   },
   "Research": {
     "zodBranchRequired": "Choose a category",
@@ -758,7 +775,8 @@
     "resHeatingLabel": "Heating",
     "resAcLabel": "Air conditioning",
     "resSecurityLabel": "Security",
-    "resConnectivityLabel": "Connectivity"
+    "resConnectivityLabel": "Connectivity",
+    "contactOptionsTitle": "Your search options"
   },
   "ProfileHome": {
     "pendingBanner": "Account pending validation.",

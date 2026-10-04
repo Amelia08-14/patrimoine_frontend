@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, Mail, Star, ChevronDown, BarChart3, Menu, X } from "lucide-react"
+import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, Mail, Star, ChevronDown, BarChart3, Menu, X, Megaphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -175,6 +175,7 @@ export default function AdminLayout({
     { name: "Utilisateurs", href: "/admin/users", icon: Users },
     { name: "Points & Achats", href: "/admin/points", icon: Coins },
     { name: "Contenu du site", href: "/admin/content", icon: BookOpen },
+    { name: "Publicités", href: "/admin/ads", icon: Megaphone },
     { name: "Requêtes Contact", href: "/admin/contacts", icon: Mail },
     { name: "KPI Première Page", href: "/admin/kpis", icon: Star },
     { name: "KPI Points & Boutiques", href: "/admin/points-kpi", icon: BarChart3 },

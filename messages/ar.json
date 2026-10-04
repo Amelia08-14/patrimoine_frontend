@@ -465,7 +465,24 @@
     "refreshDone": "تم تحديث الطلب: سيظهر في أعلى القائمة.",
     "refreshNoPoints": "رصيد النقاط غير كافٍ",
     "refreshError": "تعذر التحديث حاليًا",
-    "buyPoints": "شراء نقاط"
+    "buyPoints": "شراء نقاط",
+    "viewRequest": "عرض التفاصيل",
+    "backToRequests": "العودة إلى الطلبات",
+    "requestNotFound": "هذا الطلب لم يعد موجودًا.",
+    "contactTitle": "التواصل مع صاحب الطلب",
+    "contactSubtitle": "هل لديك عقار مناسب؟ راسل صاحب الطلب أو اطلب بيانات الاتصال به.",
+    "loginToContact": "سجّل الدخول للتواصل",
+    "ownRequest": "هذا طلبك الخاص.",
+    "messagePlaceholder": "قدّم عقارك (النوع، المساحة، السعر، الموقع)…",
+    "sendMessage": "إرسال رسالة",
+    "sendMail": "إرسال بريد إلكتروني",
+    "requestContact": "طلب بيانات الاتصال",
+    "noAccountHint": "صاحب الطلب ليس لديه حساب: يمكن فقط إرسال بريد إلكتروني.",
+    "msgSent": "تم إرسال الرسالة. ستجد المحادثة في صندوق رسائلك.",
+    "actionError": "تعذر تنفيذ الإجراء حاليًا، أعد المحاولة.",
+    "mailSubject": "بحثك رقم {id} على Patrimoine Immobilier",
+    "noEmail": "لا يوجد بريد إلكتروني متاح لصاحب الطلب.",
+    "contactRequested": "تم إرسال الطلب: تم إشعار صاحب الطلب ويمكنه الرد عليك."
   },
   "Research": {
     "zodBranchRequired": "اختر فئة",
@@ -758,7 +775,8 @@
     "resHeatingLabel": "التدفئة",
     "resAcLabel": "التكييف",
     "resSecurityLabel": "الأمن",
-    "resConnectivityLabel": "الاتصال"
+    "resConnectivityLabel": "الاتصال",
+    "contactOptionsTitle": "خيارات بحثك"
   },
   "ProfileHome": {
     "pendingBanner": "الحساب في انتظار التحقق.",

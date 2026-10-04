@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { Search, Handshake, CalendarDays, X, ArrowUpDown } from "lucide-react"
-import { EntrustedResearchCard, CATEGORY_ICONS } from "@/components/EntrustedResearchCard"
-import { getCategoryColor } from "@/data/categoryColors"
+import { Search, Handshake, CalendarDays, X } from "lucide-react"
+import { EntrustedResearchCard } from "@/components/EntrustedResearchCard"
+import { AdSidebar, AdStrip } from "@/components/AdSidebar"
 
 type Period = "ALL" | "TODAY" | "WEEK" | "MONTH"
 const PERIOD_DAYS: Record<Exclude<Period, "ALL">, number> = { TODAY: 1, WEEK: 7, MONTH: 30 }
@@ -24,7 +24,6 @@ export default function DemandesPage() {
   const [period, setPeriod] = useState<Period>("ALL")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
-  const [sort, setSort] = useState<"RECENT" | "OLDEST" | "BUDGET">("RECENT")
   const [query, setQuery] = useState("")
 
   useEffect(() => {
@@ -64,24 +63,15 @@ export default function DemandesPage() {
       }
       return true
     })
-    list.sort((a, b) => {
-      if (sort === "OLDEST") return activity(a) - activity(b)
-      if (sort === "BUDGET") return (b.maxBudget || 0) - (a.maxBudget || 0)
-      return activity(b) - activity(a)
-    })
+    // Plus récentes d'abord (dernière activité : une demande actualisée avec des points remonte).
+    list.sort((a, b) => activity(b) - activity(a))
     return list
-  }, [requests, transaction, category, period, dateFrom, dateTo, sort, query])
+  }, [requests, transaction, category, period, dateFrom, dateTo, query])
 
   const hasFilters = !!(transaction || category || period !== "ALL" || dateFrom || dateTo || query)
   const reset = () => { setTransaction(""); setCategory(""); setPeriod("ALL"); setDateFrom(""); setDateTo(""); setQuery("") }
 
-  const chip = (active: boolean) =>
-    `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border-2 transition-all ${
-      active
-        ? "border-[#0094BD] bg-[#0094BD] text-white shadow-sm"
-        : "border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 text-gray-600 dark:text-white/70 hover:border-[#0094BD]"
-    }`
-  const dateInput = "h-10 px-3 rounded-xl border-2 border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 text-sm font-medium text-gray-800 dark:text-white outline-none focus:border-[#0094BD]"
+  const ctl = "h-10 rounded-xl border-2 border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 text-sm font-semibold text-gray-800 dark:text-white outline-none focus:border-[#0094BD]"
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#022229]">
@@ -110,79 +100,66 @@ export default function DemandesPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filtres */}
-        <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-3xl p-5 md:p-6 shadow-sm space-y-5 -mt-16 relative z-10">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      {/* Colonnes publicitaires latérales (mêmes règles que /announces) */}
+      <div className="mx-auto flex max-w-[1700px] items-start gap-6 px-4 sm:px-6 lg:px-8 py-8">
+        <AdSidebar page="DEMANDES" category={category || undefined} side="start" className="hidden 2xl:block mt-24" />
+        <div className="min-w-0 flex-1">
+        {/* Filtres — une seule barre compacte, comme sur /announces */}
+        <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-3 md:p-4 shadow-sm -mt-14 relative z-10">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("searchPlaceholder")}
-                className="w-full h-11 ps-10 pe-4 rounded-xl border-2 border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 text-sm font-medium text-gray-800 dark:text-white outline-none focus:border-[#0094BD]"
+                className={`${ctl} w-full ps-9 pe-3`}
               />
             </div>
-            <div className="flex gap-2">
-              {([["", t("filterAll")], ["SALE", t("sale")], ["RENTAL", t("rental")]] as const).map(([id, label]) => (
+
+            <div className="flex w-full sm:w-auto rounded-xl border-2 border-gray-200 dark:border-white/15 overflow-hidden h-11 sm:h-10">
+              {([["SALE", t("sale"), "#00BFA6"], ["RENTAL", t("rental"), "#003B4A"]] as const).map(([id, label, color]) => (
                 <button
-                  key={id || "all"}
+                  key={id}
                   type="button"
-                  onClick={() => setTransaction(id as any)}
-                  className={`px-5 h-11 rounded-xl text-sm font-bold border-2 transition-all ${
-                    transaction === id
-                      ? id === "SALE" ? "bg-[#00BFA6] border-[#00BFA6] text-white" : id === "RENTAL" ? "bg-[#003B4A] border-[#003B4A] text-white" : "bg-gray-800 border-gray-800 text-white"
-                      : "border-gray-200 dark:border-white/15 text-gray-600 dark:text-white/70 hover:border-gray-400"
-                  }`}
+                  onClick={() => setTransaction(transaction === id ? "" : id)}
+                  className={`flex-1 sm:flex-none px-4 text-sm font-bold transition-colors ${transaction === id ? "text-white" : "text-gray-600 dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white/10"}`}
+                  style={transaction === id ? { backgroundColor: color } : undefined}
                 >
                   {label}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Activité */}
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setCategory("")} className={chip(category === "")}>{t("filterAllActivities")}</button>
-            {FILTER_CATEGORIES.map((id) => {
-              const Icon = CATEGORY_ICONS[id]
-              const active = category === id
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setCategory(active ? "" : id)}
-                  className={chip(false)}
-                  style={active ? { backgroundColor: getCategoryColor(id).hex, borderColor: getCategoryColor(id).hex, color: "#fff" } : undefined}
-                >
-                  <Icon className="h-3.5 w-3.5" /> {tc(id)}
-                </button>
-              )
-            })}
-          </div>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className={`${ctl} px-3 pe-8 min-w-0 basis-[calc(50%-0.3rem)] grow sm:basis-auto sm:grow-0`} aria-label={t("filterAllActivities")}>
+              <option value="">{t("filterAllActivities")}</option>
+              {FILTER_CATEGORIES.map((id) => <option key={id} value={id}>{tc(id)}</option>)}
+            </select>
 
-          {/* Date */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-gray-100 dark:border-white/10 pt-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-[#0094BD]" />
-              {([["ALL", t("periodAll")], ["TODAY", t("periodToday")], ["WEEK", t("periodWeek")], ["MONTH", t("periodMonth")]] as const).map(([id, label]) => (
-                <button key={id} type="button" onClick={() => { setPeriod(id); setDateFrom(""); setDateTo("") }} className={chip(period === id && !dateFrom && !dateTo)}>{label}</button>
-              ))}
+            <select
+              value={period}
+              onChange={(e) => { setPeriod(e.target.value as Period); setDateFrom(""); setDateTo("") }}
+              className={`${ctl} px-3 pe-8 min-w-0 basis-[calc(50%-0.3rem)] grow sm:basis-auto sm:grow-0`}
+              aria-label={t("periodAll")}
+            >
+              <option value="ALL">{t("periodAll")}</option>
+              <option value="TODAY">{t("periodToday")}</option>
+              <option value="WEEK">{t("periodWeek")}</option>
+              <option value="MONTH">{t("periodMonth")}</option>
+            </select>
+
+            <div className="flex w-full sm:w-auto items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-[#0094BD] shrink-0" />
+              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPeriod("ALL") }} className={`${ctl} px-2 min-w-0 flex-1 sm:flex-none sm:w-[8.5rem]`} aria-label={t("dateFrom")} />
+              <span className="text-xs font-bold text-gray-400">→</span>
+              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPeriod("ALL") }} className={`${ctl} px-2 min-w-0 flex-1 sm:flex-none sm:w-[8.5rem]`} aria-label={t("dateTo")} />
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-gray-500 dark:text-white/60">
-              <span>{t("dateFrom")}</span>
-              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPeriod("ALL") }} className={dateInput} />
-              <span>{t("dateTo")}</span>
-              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPeriod("ALL") }} className={dateInput} />
-            </div>
-            <div className="flex items-center gap-2 ms-auto">
-              <ArrowUpDown className="h-4 w-4 text-gray-400" />
-              <select value={sort} onChange={(e) => setSort(e.target.value as any)} className={dateInput}>
-                <option value="RECENT">{t("sortRecent")}</option>
-                <option value="OLDEST">{t("sortOldest")}</option>
-                <option value="BUDGET">{t("sortBudget")}</option>
-              </select>
-            </div>
+
+            {hasFilters && (
+              <button type="button" onClick={reset} className="h-10 w-10 inline-flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-white/10 transition-colors" aria-label={t("resetFilters")} title={t("resetFilters")}>
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -196,6 +173,8 @@ export default function DemandesPage() {
           )}
         </div>
 
+        <AdStrip page="DEMANDES" category={category || undefined} className="mb-5 xl:hidden" />
+
         {loading ? (
           <div className="text-center py-12 text-gray-500 dark:text-white/50">{t("loading")}</div>
         ) : filtered.length === 0 ? (
@@ -204,12 +183,14 @@ export default function DemandesPage() {
             <p className="text-gray-500 dark:text-white/60 font-medium">{hasFilters ? t("noMatch") : t("noResults")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {filtered.map((r) => (
               <EntrustedResearchCard key={r.id} research={r} variant="public" />
             ))}
           </div>
         )}
+        </div>
+        <AdSidebar page="DEMANDES" category={category || undefined} side="end" className="hidden xl:block mt-24" />
       </div>
     </div>
   )
