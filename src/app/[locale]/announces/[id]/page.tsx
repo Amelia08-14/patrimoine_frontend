@@ -1913,7 +1913,7 @@ export default function AnnounceDetailsPage() {
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                  <p className="text-gray-600 dark:text-white/60 leading-relaxed break-words [overflow-wrap:anywhere]">{lcName(announce.shortDescription, announce.shortDescriptionAr, announce.shortDescriptionEn)}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">{lcName(announce.shortDescription, announce.shortDescriptionAr, announce.shortDescriptionEn)}</p>
                 </div>
               )}
             </>
@@ -2149,7 +2149,7 @@ export default function AnnounceDetailsPage() {
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                  <p className="text-gray-600 dark:text-white/60 leading-relaxed break-words [overflow-wrap:anywhere]">{lcName(announce.shortDescription, announce.shortDescriptionAr, announce.shortDescriptionEn)}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">{lcName(announce.shortDescription, announce.shortDescriptionAr, announce.shortDescriptionEn)}</p>
                 </div>
               )}
             </>
@@ -2269,7 +2269,7 @@ export default function AnnounceDetailsPage() {
                 <div className="bg-white dark:bg-white/5 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 mb-8">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
-                  <p className="text-gray-600 dark:text-white/60 leading-relaxed break-words [overflow-wrap:anywhere]">{lcName(announce.shortDescription, announce.shortDescriptionAr, announce.shortDescriptionEn)}</p>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">{lcName(announce.shortDescription, announce.shortDescriptionAr, announce.shortDescriptionEn)}</p>
                 </div>
               )}
             </>
@@ -3457,6 +3457,7 @@ export default function AnnounceDetailsPage() {
                         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                             <textarea
                                 rows={4}
+                                maxLength={5000}
                                 placeholder={t("messagePlaceholder")}
                                 value={messageContent}
                                 onChange={(e) => setMessageContent(e.target.value)}

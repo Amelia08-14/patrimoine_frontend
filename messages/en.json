@@ -443,7 +443,29 @@
     "from": "From",
     "floor": "floor",
     "contactToRespond": "Contact us to respond to this request",
-    "submittedOn": "Submitted on {date}"
+    "submittedOn": "Submitted on {date}",
+    "totalRequests": "requests",
+    "searchPlaceholder": "Search a city, a keyword…",
+    "filterAll": "All",
+    "filterAllActivities": "All activities",
+    "periodAll": "Any date",
+    "periodToday": "Today",
+    "periodWeek": "Last 7 days",
+    "periodMonth": "Last 30 days",
+    "dateFrom": "From",
+    "dateTo": "to",
+    "sortRecent": "Most recent",
+    "sortOldest": "Oldest",
+    "sortBudget": "Highest budget",
+    "resultsCount": "{count, plural, =0 {No requests} one {# request} other {# requests}}",
+    "resetFilters": "Clear filters",
+    "noMatch": "No request matches your filters.",
+    "refreshedBadge": "Refreshed",
+    "refreshBtn": "Refresh (1 point)",
+    "refreshDone": "Request refreshed: it now appears at the top of the list.",
+    "refreshNoPoints": "Not enough points",
+    "refreshError": "Unable to refresh right now",
+    "buyPoints": "Buy points"
   },
   "Research": {
     "zodBranchRequired": "Choose a category",
@@ -458,8 +480,8 @@
     "stepHsType": "Type of accommodation",
     "hsUnderConstructionTitle": "Form under construction",
     "hsUnderConstructionText": "This form is being built and will be available very soon. Thank you for your patience.",
-    "resSearchScopeGroupee": "Apartment, Villa, Villa Level search",
-    "resSearchScopeImmeuble": "Whole apartment building search",
+    "resSearchScopeGroupee": "Apartment, Villa, Villa Level",
+    "resSearchScopeImmeuble": "Whole apartment building",
     "indScopeHangar": "Warehouse",
     "indScopeUsine": "Factory",
     "indScopeChambreFroide": "Cold Storage",
@@ -2099,7 +2121,15 @@
     "hsPositionBas": "Bottom",
     "hsConfigEspacePartage": "Shared space configuration",
     "hsNbLitsPiecePartagee": "Total number of beds in this shared room",
-    "hsEquipementsInclus": "Amenities included for the guest"
+    "hsEquipementsInclus": "Amenities included for the guest",
+    "hsModeTitle": "What kind of listing do you want to post?",
+    "hsModeNightly": "Nightly rental",
+    "hsModeNightlyDesc": "Airbnb style: house, room, bed space… rented by the night or for a stay.",
+    "hsModeFull": "Rental of a whole hotel structure",
+    "hsModeFullDesc": "Hotel, tourist resort, holiday village… rented as a whole.",
+    "hsFullBlankTitle": "Coming soon",
+    "hsFullBlankText": "The form for renting a whole hotel structure is being prepared.",
+    "catHotellerieSale": "Hospitality & Hotel Structures"
   },
   "HomePage": {
     "categoryLabel": "Category",
@@ -2392,7 +2422,9 @@
     },
     "INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS": {
       "AGENCE_IMMOBILIERE": "Real-estate agency",
-      "PARTICULIER": "Private individual"
+      "PARTICULIER": "Private individual",
+      "SOCIETE_ENTREPOSAGE": "Warehousing company",
+      "SOCIETE_ENTREPOSAGE_FRIGO": "Cold storage company"
     },
     "HTL_PROFIL_GROUPE_OPTIONS": {
       "FAMILIAL": "Families only",
@@ -3821,122 +3853,122 @@
       "AUTRE": "Other establishment"
     },
     "HTL_CIBLE_CLIENTELE": {
-          "FAMILIAL": {
-                "label": "Families only",
-                "description": "Ideal for family rest, not suited to singles or business travel"
-          },
-          "PROFESSIONNEL": {
-                "label": "Professional / Business",
-                "description": "Suited to business trips, seminars, executives and workers"
-          },
-          "GROUPES": {
-                "label": "Groups of friends",
-                "description": "Suited to groups travelling together, hikers, etc."
-          },
-          "TOUS": {
-                "label": "Any legally admissible guest",
-                "description": "Open to all profiles complying with regulations in force"
-          }
+      "FAMILIAL": {
+        "label": "Families only",
+        "description": "Ideal for family rest, not suited to singles or business travel"
+      },
+      "PROFESSIONNEL": {
+        "label": "Professional / Business",
+        "description": "Suited to business trips, seminars, executives and workers"
+      },
+      "GROUPES": {
+        "label": "Groups of friends",
+        "description": "Suited to groups travelling together, hikers, etc."
+      },
+      "TOUS": {
+        "label": "Any legally admissible guest",
+        "description": "Open to all profiles complying with regulations in force"
+      }
     },
     "HTL_AMBIANCE": {
-          "BALNEAIRE": {
-                "label": "Seaside",
-                "description": "Sea and beach"
-          },
-          "SAHARIEN": {
-                "label": "Desert",
-                "description": "Desert, oasis, far south"
-          },
-          "THERMAL": {
-                "label": "Thermal",
-                "description": "Near a hammam / thermal resort"
-          },
-          "CLIMATIQUE": {
-                "label": "Mountain / Nature",
-                "description": "Mountain, skiing, nature, forest"
-          }
+      "BALNEAIRE": {
+        "label": "Seaside",
+        "description": "Sea and beach"
+      },
+      "SAHARIEN": {
+        "label": "Desert",
+        "description": "Desert, oasis, far south"
+      },
+      "THERMAL": {
+        "label": "Thermal",
+        "description": "Near a hammam / thermal resort"
+      },
+      "CLIMATIQUE": {
+        "label": "Mountain / Nature",
+        "description": "Mountain, skiing, nature, forest"
+      }
     },
     "HTL_ROOM_TYPES": {
-          "STANDARD": {
-                "label": "Standard room"
-          },
-          "DOUBLE": {
-                "label": "Double room"
-          },
-          "TRIPLE": {
-                "label": "Triple room"
-          },
-          "QUADRUPLE": {
-                "label": "Quadruple room"
-          },
-          "FAMILIALE": {
-                "label": "Family room"
-          },
-          "PMR": {
-                "label": "Accessible room"
-          },
-          "SUITE_JUNIOR": {
-                "label": "Junior suite"
-          },
-          "SUITE": {
-                "label": "Suite"
-          },
-          "SUITE_EXECUTIVE": {
-                "label": "Executive suite"
-          },
-          "SUITE_PRESIDENTIELLE": {
-                "label": "Presidential suite"
-          }
+      "STANDARD": {
+        "label": "Standard room"
+      },
+      "DOUBLE": {
+        "label": "Double room"
+      },
+      "TRIPLE": {
+        "label": "Triple room"
+      },
+      "QUADRUPLE": {
+        "label": "Quadruple room"
+      },
+      "FAMILIALE": {
+        "label": "Family room"
+      },
+      "PMR": {
+        "label": "Accessible room"
+      },
+      "SUITE_JUNIOR": {
+        "label": "Junior suite"
+      },
+      "SUITE": {
+        "label": "Suite"
+      },
+      "SUITE_EXECUTIVE": {
+        "label": "Executive suite"
+      },
+      "SUITE_PRESIDENTIELLE": {
+        "label": "Presidential suite"
+      }
     },
     "HTL_BATHROOM_TYPES": {
-          "PRIVATIVE": {
-                "label": "Private"
-          },
-          "PARTAGEE": {
-                "label": "Shared"
-          }
+      "PRIVATIVE": {
+        "label": "Private"
+      },
+      "PARTAGEE": {
+        "label": "Shared"
+      }
     },
     "HTL_BED_TYPES": {
-          "KING_PREMIUM": {
-                "label": "Premium King Size bed (200 x 200 cm)"
-          },
-          "KING": {
-                "label": "King Size bed (180 x 200 cm)"
-          },
-          "QUEEN": {
-                "label": "Queen Size bed (160 x 200 cm)"
-          },
-          "STANDARD_DOUBLE": {
-                "label": "Standard double bed (140 x 190 cm)"
-          },
-          "SIMPLE_ADULTE": {
-                "label": "Single adult bed / sofa bed (90 x 190 cm)"
-          },
-          "SIMPLE_ENFANT": {
-                "label": "Single child's bed (80 x 190 cm)"
-          },
-          "SUPERPOSE": {
-                "label": "Bunk bed, 2 separate berths (90 x 190 cm x2)"
-          }
+      "KING_PREMIUM": {
+        "label": "Premium King Size bed (200 x 200 cm)"
+      },
+      "KING": {
+        "label": "King Size bed (180 x 200 cm)"
+      },
+      "QUEEN": {
+        "label": "Queen Size bed (160 x 200 cm)"
+      },
+      "STANDARD_DOUBLE": {
+        "label": "Standard double bed (140 x 190 cm)"
+      },
+      "SIMPLE_ADULTE": {
+        "label": "Single adult bed / sofa bed (90 x 190 cm)"
+      },
+      "SIMPLE_ENFANT": {
+        "label": "Single child's bed (80 x 190 cm)"
+      },
+      "SUPERPOSE": {
+        "label": "Bunk bed, 2 separate berths (90 x 190 cm x2)"
+      }
     },
     "HTL_LINGE": {
-          "DRAPS": {
-                "label": "Bed sheets provided"
-          },
-          "SERVIETTES": {
-                "label": "Towels provided"
-          },
-          "AUCUN": {
-                "label": "No linen provided"
-          }
+      "DRAPS": {
+        "label": "Bed sheets provided"
+      },
+      "SERVIETTES": {
+        "label": "Towels provided"
+      },
+      "AUCUN": {
+        "label": "No linen provided"
+      }
     },
     "HTL_HYGIENE": {
-          "SHAMPOING_SAVON": {
-                "label": "Shampoo / Soap provided"
-          },
-          "PAPIER_TOILETTE": {
-                "label": "Toilet paper provided"
-          }
+      "SHAMPOING_SAVON": {
+        "label": "Shampoo / Soap provided"
+      },
+      "PAPIER_TOILETTE": {
+        "label": "Toilet paper provided"
+      }
     },
     "HS_TYPE_SALON": {
       "CANAPE_CONVERTIBLE": {

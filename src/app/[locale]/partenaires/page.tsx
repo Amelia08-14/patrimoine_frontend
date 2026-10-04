@@ -221,7 +221,7 @@ function PartnerApplicationForm() {
       </div>
       <div className="sm:col-span-2">
         <label className="block text-xs font-bold text-gray-600 dark:text-white/60 mb-1.5">{t("formMessage")}</label>
-        <textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full rounded-xl border border-gray-200 dark:border-white/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
+        <textarea rows={4} maxLength={5000} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full rounded-xl border border-gray-200 dark:border-white/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]" />
       </div>
       <div className="sm:col-span-2 flex flex-col items-center gap-3 pt-2">
         {status === "error" && <p className="text-sm text-red-500 font-semibold">{t("formErrorText")}</p>}

@@ -2,8 +2,8 @@
   "Categories": {
     "RESIDENTIEL": "Résidentiel",
     "INDUSTRIEL": "Industriel",
-    "HOTELIER": "Hébergement & Séjour",
-    "HEBERGEMENT": "Hébergement & Séjour",
+    "HOTELIER": "Hôtellerie & Séjour",
+    "HEBERGEMENT": "Hôtellerie & Séjour",
     "BUREAUX_COMMERCES": "Bureaux et Commerces",
     "TERRAIN_FONCIER": "Terrains et Foncier",
     "EVENEMENTIEL": "Évènementiel"
@@ -443,7 +443,29 @@
     "from": "À partir de",
     "floor": "étage",
     "contactToRespond": "Contacter pour répondre à cette demande",
-    "submittedOn": "Confiée le {date}"
+    "submittedOn": "Confiée le {date}",
+    "totalRequests": "demandes",
+    "searchPlaceholder": "Rechercher une ville, un mot-clé…",
+    "filterAll": "Tout",
+    "filterAllActivities": "Toutes les activités",
+    "periodAll": "Toutes les dates",
+    "periodToday": "Aujourd'hui",
+    "periodWeek": "7 derniers jours",
+    "periodMonth": "30 derniers jours",
+    "dateFrom": "Du",
+    "dateTo": "au",
+    "sortRecent": "Plus récentes",
+    "sortOldest": "Plus anciennes",
+    "sortBudget": "Budget décroissant",
+    "resultsCount": "{count, plural, =0 {Aucune demande} one {# demande} other {# demandes}}",
+    "resetFilters": "Effacer les filtres",
+    "noMatch": "Aucune demande ne correspond à vos filtres.",
+    "refreshedBadge": "Actualisée",
+    "refreshBtn": "Actualiser (1 point)",
+    "refreshDone": "Demande actualisée : elle remonte en tête de liste.",
+    "refreshNoPoints": "Solde de points insuffisant",
+    "refreshError": "Impossible d'actualiser pour le moment",
+    "buyPoints": "Acheter des points"
   },
   "Research": {
     "zodBranchRequired": "Choisissez une branche",
@@ -458,8 +480,8 @@
     "stepHsType": "Type de structure d'accueil",
     "hsUnderConstructionTitle": "Fiche en cours de construction",
     "hsUnderConstructionText": "Cette fiche est en cours de construction : elle sera disponible très prochainement. Merci de votre patience.",
-    "resSearchScopeGroupee": "Recherche Appartement, Villa, Niveau de Villa",
-    "resSearchScopeImmeuble": "Recherche Immeuble d'appartements",
+    "resSearchScopeGroupee": "Appartement, Villa, Niveau de Villa",
+    "resSearchScopeImmeuble": "Immeuble d'appartements",
     "indScopeHangar": "Hangar",
     "indScopeUsine": "Usine",
     "indScopeChambreFroide": "Chambre Froide",
@@ -2099,7 +2121,15 @@
     "hsPositionBas": "Bas",
     "hsConfigEspacePartage": "Configuration de l'espace partagé",
     "hsNbLitsPiecePartagee": "Nombre total de lits dans cette même pièce partagée",
-    "hsEquipementsInclus": "Équipements inclus pour le voyageur"
+    "hsEquipementsInclus": "Équipements inclus pour le voyageur",
+    "hsModeTitle": "Que souhaitez-vous déposer comme annonce ?",
+    "hsModeNightly": "Location à la nuitée",
+    "hsModeNightlyDesc": "Style Airbnb : maison, chambre, place de lit… louées à la nuit ou au séjour.",
+    "hsModeFull": "Location d'une structure hôtelière complète",
+    "hsModeFullDesc": "Hôtel, complexe touristique, village de vacances… loué dans son ensemble.",
+    "hsFullBlankTitle": "Bientôt disponible",
+    "hsFullBlankText": "Le formulaire de location d'une structure hôtelière complète est en cours de préparation.",
+    "catHotellerieSale": "Hôtellerie et Structure Hôtelière"
   },
   "HomePage": {
     "categoryLabel": "Catégorie",
@@ -2392,7 +2422,9 @@
     },
     "INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS": {
       "AGENCE_IMMOBILIERE": "Agence immobilière",
-      "PARTICULIER": "Particulier"
+      "PARTICULIER": "Particulier",
+      "SOCIETE_ENTREPOSAGE": "Société d'entreposage",
+      "SOCIETE_ENTREPOSAGE_FRIGO": "Société d'entreposage frigorifique"
     },
     "HTL_PROFIL_GROUPE_OPTIONS": {
       "FAMILIAL": "Exclusivement Familial",
@@ -3821,122 +3853,122 @@
       "AUTRE": "Autre structure"
     },
     "HTL_CIBLE_CLIENTELE": {
-          "FAMILIAL": {
-                "label": "Exclusivement Familial",
-                "description": "Idéal pour le repos des familles, non adapté aux célibataires ou affaires"
-          },
-          "PROFESSIONNEL": {
-                "label": "Professionnel / Affaires",
-                "description": "Adapté aux séjours professionnels, séminaires, cadres et travailleurs"
-          },
-          "GROUPES": {
-                "label": "Groupes d'amis / Groupements",
-                "description": "Adapté aux groupes voyageant ensemble, randonneurs, etc."
-          },
-          "TOUS": {
-                "label": "Tout type de clientèle légalement admissible",
-                "description": "Ouvert à tous les profils respectant la réglementation en vigueur"
-          }
+      "FAMILIAL": {
+        "label": "Exclusivement Familial",
+        "description": "Idéal pour le repos des familles, non adapté aux célibataires ou affaires"
+      },
+      "PROFESSIONNEL": {
+        "label": "Professionnel / Affaires",
+        "description": "Adapté aux séjours professionnels, séminaires, cadres et travailleurs"
+      },
+      "GROUPES": {
+        "label": "Groupes d'amis / Groupements",
+        "description": "Adapté aux groupes voyageant ensemble, randonneurs, etc."
+      },
+      "TOUS": {
+        "label": "Tout type de clientèle légalement admissible",
+        "description": "Ouvert à tous les profils respectant la réglementation en vigueur"
+      }
     },
     "HTL_AMBIANCE": {
-          "BALNEAIRE": {
-                "label": "Balnéaire",
-                "description": "Mer et plage"
-          },
-          "SAHARIEN": {
-                "label": "Saharien",
-                "description": "Désert, Oasis, Grand Sud"
-          },
-          "THERMAL": {
-                "label": "Thermal",
-                "description": "Proche d'un Hammam / station thermale"
-          },
-          "CLIMATIQUE": {
-                "label": "Climatique",
-                "description": "Montagne, Ski, Nature, Forêt"
-          }
+      "BALNEAIRE": {
+        "label": "Balnéaire",
+        "description": "Mer et plage"
+      },
+      "SAHARIEN": {
+        "label": "Saharien",
+        "description": "Désert, Oasis, Grand Sud"
+      },
+      "THERMAL": {
+        "label": "Thermal",
+        "description": "Proche d'un Hammam / station thermale"
+      },
+      "CLIMATIQUE": {
+        "label": "Climatique",
+        "description": "Montagne, Ski, Nature, Forêt"
+      }
     },
     "HTL_ROOM_TYPES": {
-          "STANDARD": {
-                "label": "Chambre standard"
-          },
-          "DOUBLE": {
-                "label": "Chambre double"
-          },
-          "TRIPLE": {
-                "label": "Chambre triple"
-          },
-          "QUADRUPLE": {
-                "label": "Chambre quadruple"
-          },
-          "FAMILIALE": {
-                "label": "Chambre familiale"
-          },
-          "PMR": {
-                "label": "Chambre PMR"
-          },
-          "SUITE_JUNIOR": {
-                "label": "Suite junior"
-          },
-          "SUITE": {
-                "label": "Suite"
-          },
-          "SUITE_EXECUTIVE": {
-                "label": "Suite Executive"
-          },
-          "SUITE_PRESIDENTIELLE": {
-                "label": "Suite présidentielle"
-          }
+      "STANDARD": {
+        "label": "Chambre standard"
+      },
+      "DOUBLE": {
+        "label": "Chambre double"
+      },
+      "TRIPLE": {
+        "label": "Chambre triple"
+      },
+      "QUADRUPLE": {
+        "label": "Chambre quadruple"
+      },
+      "FAMILIALE": {
+        "label": "Chambre familiale"
+      },
+      "PMR": {
+        "label": "Chambre PMR"
+      },
+      "SUITE_JUNIOR": {
+        "label": "Suite junior"
+      },
+      "SUITE": {
+        "label": "Suite"
+      },
+      "SUITE_EXECUTIVE": {
+        "label": "Suite Executive"
+      },
+      "SUITE_PRESIDENTIELLE": {
+        "label": "Suite présidentielle"
+      }
     },
     "HTL_BATHROOM_TYPES": {
-          "PRIVATIVE": {
-                "label": "Privative"
-          },
-          "PARTAGEE": {
-                "label": "Partagée"
-          }
+      "PRIVATIVE": {
+        "label": "Privative"
+      },
+      "PARTAGEE": {
+        "label": "Partagée"
+      }
     },
     "HTL_BED_TYPES": {
-          "KING_PREMIUM": {
-                "label": "Lit Double King Size Premium (200 x 200 cm)"
-          },
-          "KING": {
-                "label": "Lit Double King Size (180 x 200 cm)"
-          },
-          "QUEEN": {
-                "label": "Lit Double Queen Size (160 x 200 cm)"
-          },
-          "STANDARD_DOUBLE": {
-                "label": "Lit Double Standard (140 x 190 cm)"
-          },
-          "SIMPLE_ADULTE": {
-                "label": "Lit Simple Adulte / Canapé-lit (90 x 190 cm)"
-          },
-          "SIMPLE_ENFANT": {
-                "label": "Lit Simple Enfant (80 x 190 cm)"
-          },
-          "SUPERPOSE": {
-                "label": "Lit Superposé, 2 places séparées (90 x 190 cm x2)"
-          }
+      "KING_PREMIUM": {
+        "label": "Lit Double King Size Premium (200 x 200 cm)"
+      },
+      "KING": {
+        "label": "Lit Double King Size (180 x 200 cm)"
+      },
+      "QUEEN": {
+        "label": "Lit Double Queen Size (160 x 200 cm)"
+      },
+      "STANDARD_DOUBLE": {
+        "label": "Lit Double Standard (140 x 190 cm)"
+      },
+      "SIMPLE_ADULTE": {
+        "label": "Lit Simple Adulte / Canapé-lit (90 x 190 cm)"
+      },
+      "SIMPLE_ENFANT": {
+        "label": "Lit Simple Enfant (80 x 190 cm)"
+      },
+      "SUPERPOSE": {
+        "label": "Lit Superposé, 2 places séparées (90 x 190 cm x2)"
+      }
     },
     "HTL_LINGE": {
-          "DRAPS": {
-                "label": "Draps fournis"
-          },
-          "SERVIETTES": {
-                "label": "Serviettes fournies"
-          },
-          "AUCUN": {
-                "label": "Aucun linge fourni"
-          }
+      "DRAPS": {
+        "label": "Draps fournis"
+      },
+      "SERVIETTES": {
+        "label": "Serviettes fournies"
+      },
+      "AUCUN": {
+        "label": "Aucun linge fourni"
+      }
     },
     "HTL_HYGIENE": {
-          "SHAMPOING_SAVON": {
-                "label": "Shampoing / Savon fournis"
-          },
-          "PAPIER_TOILETTE": {
-                "label": "Papier toilette fourni"
-          }
+      "SHAMPOING_SAVON": {
+        "label": "Shampoing / Savon fournis"
+      },
+      "PAPIER_TOILETTE": {
+        "label": "Papier toilette fourni"
+      }
     },
     "HS_TYPE_SALON": {
       "CANAPE_CONVERTIBLE": {

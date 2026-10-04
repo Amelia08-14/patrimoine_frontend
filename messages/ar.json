@@ -2,8 +2,8 @@
   "Categories": {
     "RESIDENTIEL": "سكني",
     "INDUSTRIEL": "صناعي",
-    "HOTELIER": "سياحة وإقامة",
-    "HEBERGEMENT": "سياحة وإقامة",
+    "HOTELIER": "الفندقة والإقامة",
+    "HEBERGEMENT": "الفندقة والإقامة",
     "BUREAUX_COMMERCES": "مكاتب ومحلات تجارية",
     "TERRAIN_FONCIER": "أراضٍ وعقارات",
     "EVENEMENTIEL": "فعاليات"
@@ -443,7 +443,29 @@
     "from": "ابتداءً من",
     "floor": "الطابق",
     "contactToRespond": "تواصل معنا للرد على هذا الطلب",
-    "submittedOn": "أوكلت في {date}"
+    "submittedOn": "أوكلت في {date}",
+    "totalRequests": "طلبات",
+    "searchPlaceholder": "ابحث عن مدينة أو كلمة مفتاحية…",
+    "filterAll": "الكل",
+    "filterAllActivities": "جميع الأنشطة",
+    "periodAll": "كل التواريخ",
+    "periodToday": "اليوم",
+    "periodWeek": "آخر 7 أيام",
+    "periodMonth": "آخر 30 يومًا",
+    "dateFrom": "من",
+    "dateTo": "إلى",
+    "sortRecent": "الأحدث",
+    "sortOldest": "الأقدم",
+    "sortBudget": "الميزانية الأعلى",
+    "resultsCount": "{count, plural, =0 {لا توجد طلبات} one {طلب #} other {# طلبات}}",
+    "resetFilters": "مسح التصفية",
+    "noMatch": "لا يوجد أي طلب يطابق التصفية.",
+    "refreshedBadge": "محدَّث",
+    "refreshBtn": "تحديث (نقطة واحدة)",
+    "refreshDone": "تم تحديث الطلب: سيظهر في أعلى القائمة.",
+    "refreshNoPoints": "رصيد النقاط غير كافٍ",
+    "refreshError": "تعذر التحديث حاليًا",
+    "buyPoints": "شراء نقاط"
   },
   "Research": {
     "zodBranchRequired": "اختر فئة",
@@ -458,8 +480,8 @@
     "stepHsType": "نوع هيكل الاستقبال",
     "hsUnderConstructionTitle": "الاستمارة قيد الإنشاء",
     "hsUnderConstructionText": "هذه الاستمارة قيد الإنجاز وستتوفر قريبًا جدًا. شكرًا على صبرك.",
-    "resSearchScopeGroupee": "بحث عن شقة، فيلا، مستوى فيلا",
-    "resSearchScopeImmeuble": "بحث عن عمارة شقق كاملة",
+    "resSearchScopeGroupee": "شقة، فيلا، مستوى فيلا",
+    "resSearchScopeImmeuble": "عمارة شقق كاملة",
     "indScopeHangar": "مستودع كبير (هنغار)",
     "indScopeUsine": "مصنع",
     "indScopeChambreFroide": "غرفة تبريد",
@@ -2099,7 +2121,15 @@
     "hsPositionBas": "السفلي",
     "hsConfigEspacePartage": "تهيئة الفضاء المشترك",
     "hsNbLitsPiecePartagee": "العدد الإجمالي للأسرّة في هذه الغرفة المشتركة",
-    "hsEquipementsInclus": "التجهيزات المشمولة للنزيل"
+    "hsEquipementsInclus": "التجهيزات المشمولة للنزيل",
+    "hsModeTitle": "ما نوع الإعلان الذي تريد نشره؟",
+    "hsModeNightly": "الإيجار بالليلة",
+    "hsModeNightlyDesc": "على طريقة Airbnb: منزل، غرفة، سرير… يُؤجَّر بالليلة أو لفترة إقامة.",
+    "hsModeFull": "إيجار منشأة فندقية كاملة",
+    "hsModeFullDesc": "فندق، مجمّع سياحي، قرية عطل… تُؤجَّر ككل.",
+    "hsFullBlankTitle": "قريبًا",
+    "hsFullBlankText": "استمارة إيجار منشأة فندقية كاملة قيد الإعداد.",
+    "catHotellerieSale": "الفندقة والمنشآت الفندقية"
   },
   "HomePage": {
     "categoryLabel": "الفئة",
@@ -2392,7 +2422,9 @@
     },
     "INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS": {
       "AGENCE_IMMOBILIERE": "وكالة عقارية",
-      "PARTICULIER": "خاصّ (فرد)"
+      "PARTICULIER": "خاصّ (فرد)",
+      "SOCIETE_ENTREPOSAGE": "شركة تخزين",
+      "SOCIETE_ENTREPOSAGE_FRIGO": "شركة تخزين بالتبريد"
     },
     "HTL_PROFIL_GROUPE_OPTIONS": {
       "FAMILIAL": "للعائلات حصريًا",
@@ -3821,122 +3853,122 @@
       "AUTRE": "منشأة أخرى"
     },
     "HTL_CIBLE_CLIENTELE": {
-          "FAMILIAL": {
-                "label": "عائلي حصريًا",
-                "description": "مثالي لراحة العائلات، غير مناسب للعزّاب أو رحلات العمل"
-          },
-          "PROFESSIONNEL": {
-                "label": "مهني / رجال أعمال",
-                "description": "مناسب للإقامات المهنية والندوات والإطارات والعمّال"
-          },
-          "GROUPES": {
-                "label": "مجموعات الأصدقاء",
-                "description": "مناسب للمجموعات المسافرة معًا، المتنزهين، إلخ."
-          },
-          "TOUS": {
-                "label": "كل الزبائن المقبولين قانونيًا",
-                "description": "مفتوح لجميع الفئات الملتزمة بالتنظيم المعمول به"
-          }
+      "FAMILIAL": {
+        "label": "عائلي حصريًا",
+        "description": "مثالي لراحة العائلات، غير مناسب للعزّاب أو رحلات العمل"
+      },
+      "PROFESSIONNEL": {
+        "label": "مهني / رجال أعمال",
+        "description": "مناسب للإقامات المهنية والندوات والإطارات والعمّال"
+      },
+      "GROUPES": {
+        "label": "مجموعات الأصدقاء",
+        "description": "مناسب للمجموعات المسافرة معًا، المتنزهين، إلخ."
+      },
+      "TOUS": {
+        "label": "كل الزبائن المقبولين قانونيًا",
+        "description": "مفتوح لجميع الفئات الملتزمة بالتنظيم المعمول به"
+      }
     },
     "HTL_AMBIANCE": {
-          "BALNEAIRE": {
-                "label": "بحري",
-                "description": "البحر والشاطئ"
-          },
-          "SAHARIEN": {
-                "label": "صحراوي",
-                "description": "الصحراء، الواحات، الجنوب الكبير"
-          },
-          "THERMAL": {
-                "label": "حموي",
-                "description": "قريب من حمّام / محطة حموية"
-          },
-          "CLIMATIQUE": {
-                "label": "مناخي",
-                "description": "الجبال، التزلج، الطبيعة، الغابة"
-          }
+      "BALNEAIRE": {
+        "label": "بحري",
+        "description": "البحر والشاطئ"
+      },
+      "SAHARIEN": {
+        "label": "صحراوي",
+        "description": "الصحراء، الواحات، الجنوب الكبير"
+      },
+      "THERMAL": {
+        "label": "حموي",
+        "description": "قريب من حمّام / محطة حموية"
+      },
+      "CLIMATIQUE": {
+        "label": "مناخي",
+        "description": "الجبال، التزلج، الطبيعة، الغابة"
+      }
     },
     "HTL_ROOM_TYPES": {
-          "STANDARD": {
-                "label": "غرفة عادية"
-          },
-          "DOUBLE": {
-                "label": "غرفة مزدوجة"
-          },
-          "TRIPLE": {
-                "label": "غرفة ثلاثية"
-          },
-          "QUADRUPLE": {
-                "label": "غرفة رباعية"
-          },
-          "FAMILIALE": {
-                "label": "غرفة عائلية"
-          },
-          "PMR": {
-                "label": "غرفة لذوي الاحتياجات الخاصة"
-          },
-          "SUITE_JUNIOR": {
-                "label": "جناح صغير"
-          },
-          "SUITE": {
-                "label": "جناح"
-          },
-          "SUITE_EXECUTIVE": {
-                "label": "جناح تنفيذي"
-          },
-          "SUITE_PRESIDENTIELLE": {
-                "label": "جناح رئاسي"
-          }
+      "STANDARD": {
+        "label": "غرفة عادية"
+      },
+      "DOUBLE": {
+        "label": "غرفة مزدوجة"
+      },
+      "TRIPLE": {
+        "label": "غرفة ثلاثية"
+      },
+      "QUADRUPLE": {
+        "label": "غرفة رباعية"
+      },
+      "FAMILIALE": {
+        "label": "غرفة عائلية"
+      },
+      "PMR": {
+        "label": "غرفة لذوي الاحتياجات الخاصة"
+      },
+      "SUITE_JUNIOR": {
+        "label": "جناح صغير"
+      },
+      "SUITE": {
+        "label": "جناح"
+      },
+      "SUITE_EXECUTIVE": {
+        "label": "جناح تنفيذي"
+      },
+      "SUITE_PRESIDENTIELLE": {
+        "label": "جناح رئاسي"
+      }
     },
     "HTL_BATHROOM_TYPES": {
-          "PRIVATIVE": {
-                "label": "خاص"
-          },
-          "PARTAGEE": {
-                "label": "مشترك"
-          }
+      "PRIVATIVE": {
+        "label": "خاص"
+      },
+      "PARTAGEE": {
+        "label": "مشترك"
+      }
     },
     "HTL_BED_TYPES": {
-          "KING_PREMIUM": {
-                "label": "سرير مزدوج كينغ فاخر (200 × 200 سم)"
-          },
-          "KING": {
-                "label": "سرير مزدوج كينغ (180 × 200 سم)"
-          },
-          "QUEEN": {
-                "label": "سرير مزدوج كوين (160 × 200 سم)"
-          },
-          "STANDARD_DOUBLE": {
-                "label": "سرير مزدوج عادي (140 × 190 سم)"
-          },
-          "SIMPLE_ADULTE": {
-                "label": "سرير فردي للبالغين / أريكة سرير (90 × 190 سم)"
-          },
-          "SIMPLE_ENFANT": {
-                "label": "سرير فردي للأطفال (80 × 190 سم)"
-          },
-          "SUPERPOSE": {
-                "label": "سرير بطابقين، مكانان منفصلان (90 × 190 سم ×2)"
-          }
+      "KING_PREMIUM": {
+        "label": "سرير مزدوج كينغ فاخر (200 × 200 سم)"
+      },
+      "KING": {
+        "label": "سرير مزدوج كينغ (180 × 200 سم)"
+      },
+      "QUEEN": {
+        "label": "سرير مزدوج كوين (160 × 200 سم)"
+      },
+      "STANDARD_DOUBLE": {
+        "label": "سرير مزدوج عادي (140 × 190 سم)"
+      },
+      "SIMPLE_ADULTE": {
+        "label": "سرير فردي للبالغين / أريكة سرير (90 × 190 سم)"
+      },
+      "SIMPLE_ENFANT": {
+        "label": "سرير فردي للأطفال (80 × 190 سم)"
+      },
+      "SUPERPOSE": {
+        "label": "سرير بطابقين، مكانان منفصلان (90 × 190 سم ×2)"
+      }
     },
     "HTL_LINGE": {
-          "DRAPS": {
-                "label": "ملاءات مُوفَّرة"
-          },
-          "SERVIETTES": {
-                "label": "مناشف مُوفَّرة"
-          },
-          "AUCUN": {
-                "label": "لا يوجد بياضات"
-          }
+      "DRAPS": {
+        "label": "ملاءات مُوفَّرة"
+      },
+      "SERVIETTES": {
+        "label": "مناشف مُوفَّرة"
+      },
+      "AUCUN": {
+        "label": "لا يوجد بياضات"
+      }
     },
     "HTL_HYGIENE": {
-          "SHAMPOING_SAVON": {
-                "label": "شامبو / صابون مُوفَّر"
-          },
-          "PAPIER_TOILETTE": {
-                "label": "ورق مرحاض مُوفَّر"
-          }
+      "SHAMPOING_SAVON": {
+        "label": "شامبو / صابون مُوفَّر"
+      },
+      "PAPIER_TOILETTE": {
+        "label": "ورق مرحاض مُوفَّر"
+      }
     },
     "HS_TYPE_SALON": {
       "CANAPE_CONVERTIBLE": {

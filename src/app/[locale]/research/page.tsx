@@ -13,6 +13,7 @@ import {
   Ruler, MapPin, Handshake, Compass, Sparkles, ChevronDown, Building2, Store, Zap,
   Warehouse, Snowflake, Wrench, Users, Thermometer,
   Shield, Utensils, Wallet, CreditCard, FileCheck, Truck, Tent, Palmtree, BedDouble,
+  Sun, LifeBuoy, Dumbbell, Flame, Layers, Wind, Fan, Ban, Video, Lock, Wifi, Phone, Network, Droplet, Flower2, Cog,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -119,6 +120,35 @@ const PillOption = ({ checked, onChange, label, icon: Icon }: { checked: boolean
   </label>
 );
 
+// Tuile à icône (charte du dépôt d'annonce : icône au-dessus, libellé centré, bordure qui s'active à
+// la coche) — pour les équipements, commodités, énergies… Remplace la pastille texte seule.
+const OPTION_ICONS: Record<string, any> = {
+  // Extérieurs
+  garden: Trees, terrace: Sun, balcony: Home, pool: LifeBuoy, playground: Dumbbell, barbecue: Flame, elevator: Layers,
+  // Chauffage / climatisation
+  CENTRAL: Wind, SOL: Thermometer, GAZ: Flame, SPLIT: Fan, SANS: Ban,
+  // Sécurité / connectivité
+  cameras: Video, alarm: Lock, guardian: Shield, fiber: Wifi, adsl: Network, phone_line: Phone,
+  // Usine / énergies
+  MURS_NUS: Ban, EQUIPEE: Cog, ELECTRICITE: Zap, EAU: Droplet, ASSAINISSEMENT: Droplet,
+};
+
+const IconTile = ({ checked, onChange, label, optionId, type = 'checkbox' }: { checked: boolean; onChange: () => void; label: string; optionId: string; type?: 'checkbox' | 'radio' }) => {
+  const Icon = OPTION_ICONS[optionId] || Flower2;
+  return (
+    <label className="cursor-pointer block group">
+      <input type={type} checked={checked} onChange={onChange} className="peer sr-only" />
+      <div className={cn(
+        'flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all h-24 bg-white',
+        checked ? 'border-[#0094BD] bg-[#0094BD]/[0.06] text-[#0094BD]' : 'border-gray-200 text-gray-700 hover:border-[#0094BD]'
+      )}>
+        <Icon className={cn('h-6 w-6', checked ? 'text-[#0094BD]' : 'text-gray-400 group-hover:text-gray-600')} />
+        <span className="text-xs font-bold text-center leading-tight">{label}</span>
+      </div>
+    </label>
+  );
+};
+
 function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
@@ -141,7 +171,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
 }
 
 function OptionGroup({
-  label, options, field, watch, toggle, icons = {}, gridClassName, translateNs,
+  label, options, field, watch, toggle, icons = {}, gridClassName, translateNs, tiles,
 }: {
   label: string;
   options: { id: string; label: string }[];
@@ -153,6 +183,8 @@ function OptionGroup({
   /** Nom du groupe dans le namespace i18n ResearchOptions (ex. "ENVIRONMENT_OPTIONS") — si fourni,
       remplace `opt.label` (français en dur) par sa traduction quand elle existe. */
   translateNs?: string;
+  /** Affiche chaque option en tuile à icône (équipements, énergies…). */
+  tiles?: boolean;
 }) {
   const selected: string[] = watch(field) || [];
   const tOpt = useTranslations('ResearchOptions');
@@ -164,8 +196,10 @@ function OptionGroup({
   return (
     <div>
       <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
-      <div className={gridClassName || 'grid grid-cols-2 md:grid-cols-3 gap-3'}>
-        {options.map((opt) => (
+      <div className={tiles ? 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3' : (gridClassName || 'grid grid-cols-2 md:grid-cols-3 gap-3')}>
+        {options.map((opt) => tiles ? (
+          <IconTile key={opt.id} optionId={opt.id} checked={selected.includes(opt.id)} label={resolveLabel(opt)} onChange={() => toggle(field, opt.id)} />
+        ) : (
           <PillOption key={opt.id} checked={selected.includes(opt.id)} label={resolveLabel(opt)} icon={icons[opt.id]} onChange={() => toggle(field, opt.id)} />
         ))}
       </div>
@@ -388,7 +422,7 @@ export default function ResearchPage() {
     currency: z.enum(['DA', 'EUR', 'USD']).optional(),
     budgetUnit: z.enum(['DA', 'DA_M2', 'MILLION', 'MILLION_M2', 'MILLIARD']).optional(),
     installationDate: z.string().optional(),
-    comment: z.string().min(10, t('zodCommentRequired')),
+    comment: z.string().min(10, t('zodCommentRequired')).max(5000),
 
     // Fiche détaillée Résidentiel — Achat / Habitation
     situation: z.enum(['RESIDENT_NATIONAL', 'DIASPORA']).optional(),
@@ -689,7 +723,13 @@ export default function ResearchPage() {
   const selectedCityId = watch('cityId');
   const selectedCityIds: string[] = watch('cityIds') || [];
   useEffect(() => {
-    const ids = isResidentielLocation ? selectedCityIds : (selectedCityId ? [String(selectedCityId)] : []);
+    // Toutes les fiches : wilaya(s) du champ multiple (cityIds) ET/OU wilaya unique du parcours générique
+    // (cityId) — avant, seules les fiches Résidentiel Location chargeaient les communes de cityIds, donc
+    // la liste « Communes » restait vide partout ailleurs.
+    const ids = Array.from(new Set([
+      ...selectedCityIds.map(String),
+      ...(selectedCityId ? [String(selectedCityId)] : []),
+    ]));
     if (ids.length === 0) { setTowns([]); return; }
     // `ids` peut contenir plusieurs wilayas (Résidentiel Location) — chaque fetch tourne en
     // parallèle et deux résolutions peuvent s'entrecroiser si l'utilisateur re-coche vite. Le
@@ -700,18 +740,27 @@ export default function ResearchPage() {
     Promise.all(ids.map((id) => axios.get(`${apiUrl}/cities/${id}/towns`).then((res) => res.data).catch(() => [])))
       .then((results) => {
         if (cancelled) return;
+        // Dédoublonnage : par id, puis par nom normalisé (sans accents/casse, tirets = espaces — « Alger
+        // Centre » = « Alger-Centre »), puis on écarte un nom générique qui n'est que le début d'un autre
+        // de la même wilaya (« Alger » à côté de « Alger Centre »).
+        const norm = (tw: any) => String(tw.nameFr || tw.name || tw.nameAr || '')
+          .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9؀-ۿ]+/g, ' ').trim();
         const seen = new Set<string>();
-        const deduped = results.flat().filter((tw: any) => {
-          const key = String(tw.id);
-          if (seen.has(key)) return false;
-          seen.add(key);
+        const unique = results.flat().filter((tw: any) => {
+          const keys = [`id:${tw.id}`, `n:${tw.cityId ?? ''}:${norm(tw)}`];
+          if (keys.some((k) => seen.has(k))) return false;
+          keys.forEach((k) => seen.add(k));
           return true;
+        });
+        const deduped = unique.filter((tw: any) => {
+          const n = norm(tw);
+          return !n || !unique.some((o: any) => o !== tw && (o.cityId ?? '') === (tw.cityId ?? '') && norm(o).startsWith(n + ' '));
         });
         setTowns(deduped);
       });
     return () => { cancelled = true };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isResidentielLocation, selectedCityId, selectedCityIds.join(',')]);
+  }, [selectedCityId, selectedCityIds.join(',')]);
 
   // Étape Contact : les champs restent toujours visibles/modifiables (plus de bloc masqué quand
   // on est connecté) — "Utiliser mes informations" les pré-remplit juste, pour laisser le temps
@@ -1262,12 +1311,12 @@ export default function ResearchPage() {
 
   // Interlocuteur — seulement 2 choix (Agence immobilière / Particulier) pour les fiches
   // Industriel Location (Hangar/Usine/Chambre Froide), contrairement aux 3 choix du Résidentiel.
-  const renderIndustrielLocationInterlocutorSection = () => (
+  const renderIndustrielLocationInterlocutorSection = (warehousing: 'SOCIETE_ENTREPOSAGE' | 'SOCIETE_ENTREPOSAGE_FRIGO') => (
     <Section title={t('stepInterlocutor')} icon={Handshake}>
       <div className="space-y-3">
         <p className="text-sm text-gray-500">{t('interlocutorChooseWho')}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
-          {INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS.map((opt) => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[...INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS, { id: warehousing, label: warehousing === 'SOCIETE_ENTREPOSAGE' ? "Société d'entreposage" : "Société d'entreposage frigorifique" }].map((opt) => (
             <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={optLabel('INDUSTRIEL_LOCATION_INTERLOCUTOR_OPTIONS', opt)} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
           ))}
         </div>
@@ -1452,43 +1501,43 @@ export default function ResearchPage() {
       <div className="space-y-5">
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-2">{t('resExteriorLabel')}</label>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
             {RES_EXTERIOR_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('resExterior') || []).includes(opt.id)} label={optLabel('RES_EXTERIOR_OPTIONS', opt)} onChange={() => toggleArrayValue('resExterior', opt.id)} />
+              <IconTile key={opt.id} optionId={opt.id} checked={(watch('resExterior') || []).includes(opt.id)} label={optLabel('RES_EXTERIOR_OPTIONS', opt)} onChange={() => toggleArrayValue('resExterior', opt.id)} />
             ))}
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">{t('resHeatingLabel')}</label>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {RES_HEATING_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('resHeating') === opt.id} label={optLabel('RES_HEATING_OPTIONS', opt)} onChange={() => setValue('resHeating', opt.id as any)} />
+                <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resHeating') === opt.id} label={optLabel('RES_HEATING_OPTIONS', opt)} onChange={() => setValue('resHeating', opt.id as any)} />
               ))}
             </div>
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">{t('resAcLabel')}</label>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {RES_AC_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('resAc') === opt.id} label={optLabel('RES_AC_OPTIONS', opt)} onChange={() => setValue('resAc', opt.id as any)} />
+                <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resAc') === opt.id} label={optLabel('RES_AC_OPTIONS', opt)} onChange={() => setValue('resAc', opt.id as any)} />
               ))}
             </div>
           </div>
         </div>
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-2">{t('resSecurityLabel')}</label>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {RES_SECURITY_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('resSecurity') || []).includes(opt.id)} label={optLabel('RES_SECURITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resSecurity', opt.id)} />
+              <IconTile key={opt.id} optionId={opt.id} checked={(watch('resSecurity') || []).includes(opt.id)} label={optLabel('RES_SECURITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resSecurity', opt.id)} />
             ))}
           </div>
         </div>
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-2">{t('resConnectivityLabel')}</label>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {RES_CONNECTIVITY_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('resConnectivity') || []).includes(opt.id)} label={optLabel('RES_CONNECTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resConnectivity', opt.id)} />
+              <IconTile key={opt.id} optionId={opt.id} checked={(watch('resConnectivity') || []).includes(opt.id)} label={optLabel('RES_CONNECTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resConnectivity', opt.id)} />
             ))}
           </div>
         </div>
@@ -1498,7 +1547,7 @@ export default function ResearchPage() {
 
   const renderCommentSection = () => (
     <Section title={t('resLocCommentTitle')} icon={Sparkles}>
-      <textarea {...register('comment')} rows={3} className={inputCls} placeholder={t('resLocCommentPlaceholder')}></textarea>
+      <textarea {...register('comment')} rows={3} maxLength={5000} className={inputCls} placeholder={t('resLocCommentPlaceholder')}></textarea>
       {errors.comment && <span className="text-red-500 text-sm">{errors.comment.message}</span>}
     </Section>
   );
@@ -1653,7 +1702,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burEnergyTitle')} icon={Zap}>
-        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="baEnergie" watch={watch} toggle={toggleArrayValue} translateNs="OFFICE_ENERGY_OPTIONS" />
+        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="baEnergie" watch={watch} toggle={toggleArrayValue} tiles translateNs="OFFICE_ENERGY_OPTIONS" />
       </Section>
 
       {renderLocalisationSection()}
@@ -1817,7 +1866,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burEnergyTitle')} icon={Zap}>
-        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="hgEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="OFFICE_ENERGY_OPTIONS" />
+        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="hgEnergie" watch={watch} toggle={toggleArrayValue} tiles translateNs="OFFICE_ENERGY_OPTIONS" />
       </Section>
 
       <Section title={t('indAccessTransportTitle')} icon={Truck}>
@@ -1830,7 +1879,7 @@ export default function ResearchPage() {
 
       {renderIndustrielLegalDocumentsSection()}
       {renderLocalisationSection({ hideDate: true })}
-      {renderIndustrielLocationInterlocutorSection()}
+      {renderIndustrielLocationInterlocutorSection('SOCIETE_ENTREPOSAGE')}
       {renderCommentSection()}
     </>
   );
@@ -1856,9 +1905,9 @@ export default function ResearchPage() {
         </Section>
 
         <Section title={t('usEquipmentTitle')} icon={Wrench}>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {USINE_EQUIPMENT_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('usEquipement') || []).includes(opt.id)} label={optLabel('USINE_EQUIPMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('usEquipement', opt.id)} />
+              <IconTile key={opt.id} optionId={opt.id} checked={(watch('usEquipement') || []).includes(opt.id)} label={optLabel('USINE_EQUIPMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('usEquipement', opt.id)} />
             ))}
           </div>
         </Section>
@@ -1882,7 +1931,7 @@ export default function ResearchPage() {
         </Section>
 
         <Section title={t('burEnergyTitle')} icon={Zap}>
-          <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="usEnergie" watch={watch} toggle={toggleArrayValue} gridClassName="grid grid-cols-2 sm:grid-cols-4 gap-3" translateNs="OFFICE_ENERGY_OPTIONS" />
+          <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="usEnergie" watch={watch} toggle={toggleArrayValue} tiles translateNs="OFFICE_ENERGY_OPTIONS" />
         </Section>
 
         <Section title={t('indAccessTransportTitle')} icon={Truck}>
@@ -1895,7 +1944,7 @@ export default function ResearchPage() {
 
         {renderIndustrielLegalDocumentsSection()}
         {renderLocalisationSection({ hideDate: true })}
-        {renderIndustrielLocationInterlocutorSection()}
+        {renderIndustrielLocationInterlocutorSection('SOCIETE_ENTREPOSAGE')}
         {renderCommentSection()}
       </>
     );
@@ -1956,7 +2005,7 @@ export default function ResearchPage() {
 
         {renderIndustrielLegalDocumentsSection()}
         {renderLocalisationSection({ hideDate: true })}
-        {renderIndustrielLocationInterlocutorSection()}
+        {renderIndustrielLocationInterlocutorSection('SOCIETE_ENTREPOSAGE_FRIGO')}
         {renderCommentSection()}
       </>
     );
@@ -2538,7 +2587,7 @@ export default function ResearchPage() {
         )}
 
         <Field label={t('budgetComment')} full>
-          <textarea {...register('comment')} rows={3} className={inputCls}></textarea>
+          <textarea {...register('comment')} rows={3} maxLength={5000} className={inputCls}></textarea>
           {errors.comment && <span className="text-red-500 text-sm">{errors.comment.message}</span>}
         </Field>
       </div>
@@ -2988,29 +3037,27 @@ export default function ResearchPage() {
               </button>
             )}
             <h1 className="text-lg md:text-2xl font-bold text-gray-800">{STEP_LABELS[currentStep]}</h1>
+            {/* Repère de contexte (catégorie / transaction) — en face du titre d'étape. */}
+            {branch && (
+              <div className="flex flex-wrap items-center gap-2 sm:ms-auto">
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
+                  style={{ backgroundColor: `${getCategoryColor(branch).hex}14`, color: getCategoryColor(branch).hex }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(branch).hex }} />
+                  {tc(branch)}
+                </span>
+                {watch('transaction') && (
+                  <>
+                    <span className="text-gray-300">/</span>
+                    <span className="text-xs font-bold text-gray-500 px-3 py-1.5 rounded-full bg-gray-100">
+                      {watch('transaction') === TransactionType.RENTAL ? t('transactionRental') : t('transactionSale')}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
-
-          {/* Repère de contexte — rappelle catégorie/transaction en cours pour ne pas se perdre
-              dans un parcours à plusieurs étapes ; n'apparaît qu'une fois la branche choisie. */}
-          {branch && (
-            <div className="px-4 md:px-8 pt-4 flex flex-wrap items-center gap-2">
-              <span
-                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: `${getCategoryColor(branch).hex}14`, color: getCategoryColor(branch).hex }}
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(branch).hex }} />
-                {tc(branch)}
-              </span>
-              {watch('transaction') && (
-                <>
-                  <span className="text-gray-300">/</span>
-                  <span className="text-xs font-bold text-gray-500 px-3 py-1.5 rounded-full bg-gray-100">
-                    {watch('transaction') === TransactionType.RENTAL ? t('transactionRental') : t('transactionSale')}
-                  </span>
-                </>
-              )}
-            </div>
-          )}
 
           <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-left">
             {renderStep()}

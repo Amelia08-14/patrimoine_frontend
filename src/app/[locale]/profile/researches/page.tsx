@@ -15,7 +15,7 @@ export default function ResearchesPage() {
   const [researches, setResearches] = useState<any[] | null>(null)
   const [transactionFilter, setTransactionFilter] = useState<"" | "SALE" | "RENTAL">("")
 
-  useEffect(() => {
+  const load = () => {
     const token = localStorage.getItem("token")
     if (!token) { router.push("/auth/login"); return }
     axios.get(`${API_URL}/entrusted-research/mine`, { headers: { Authorization: `Bearer ${token}` } })
@@ -24,7 +24,8 @@ export default function ResearchesPage() {
         if (e?.response?.status === 401) { localStorage.removeItem("token"); router.push("/auth/login"); return }
         setResearches([])
       })
-  }, [router])
+  }
+  useEffect(load, [router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     if (!researches) return []
@@ -91,7 +92,7 @@ export default function ResearchesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filtered.map((r) => (
-              <EntrustedResearchCard key={r.id} research={r} variant="mine" />
+              <EntrustedResearchCard key={r.id} research={r} variant="mine" onRefreshed={load} />
             ))}
           </div>
         )}

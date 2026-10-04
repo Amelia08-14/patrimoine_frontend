@@ -424,7 +424,7 @@ export default function BoutiqueConfigPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1">{t("descriptionLabel")}</label>
-                    <textarea value={config.description} onChange={e => handleChange('description', e.target.value)} rows={3} className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none font-medium resize-none text-sm" placeholder={t("descriptionPlaceholder")} />
+                    <textarea maxLength={5000} value={config.description} onChange={e => handleChange('description', e.target.value)} rows={3} className="w-full p-3 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:border-[#00BFA6] outline-none font-medium resize-none text-sm" placeholder={t("descriptionPlaceholder")} />
                   </div>
                 </div>
               </div>
@@ -785,6 +785,7 @@ export default function BoutiqueConfigPage() {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-1.5">{t("companyDescriptionLabel")}</label>
                   <textarea
+                    maxLength={5000}
                     value={config.aboutDescription || ''}
                     onChange={e => handleChange('aboutDescription', e.target.value)}
                     rows={5}

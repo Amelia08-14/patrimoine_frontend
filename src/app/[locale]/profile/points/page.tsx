@@ -264,7 +264,7 @@ export default function EspacePublicitairePage() {
   // rester bloqué sur une page devenue vide.
   useEffect(() => { setHistoryPage(1) }, [actionFilter, history])
 
-  const filteredHistory = history.filter((h: any) => actionFilter === 'ALL' || h.action === actionFilter)
+  const filteredHistory = history.filter((h: any) => actionFilter === 'ALL' || h.action === actionFilter || (actionFilter === 'BOOST' && h.action === 'BOOST_RESEARCH'))
   const historyTotalPages = Math.max(1, Math.ceil(filteredHistory.length / HISTORY_PAGE_SIZE))
   const pagedHistory = filteredHistory.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE)
 
@@ -550,9 +550,9 @@ export default function EspacePublicitairePage() {
                     <div key={h.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/10 last:border-0">
                       <div>
                         <span className="font-bold text-gray-900 dark:text-white text-sm">
-                          {h.action === 'BOOST' ? t("actionBoost") : t("actionFeature")}
+                          {h.action === 'BOOST' || h.action === 'BOOST_RESEARCH' ? t("actionBoost") : t("actionFeature")}
                         </span>
-                        <span className="text-gray-500 dark:text-white/50 text-xs ml-2">— {t("refLabel", { ref: h.announce?.reference || `#${h.announceId}` })}</span>
+                        <span className="text-gray-500 dark:text-white/50 text-xs ml-2">— {t("refLabel", { ref: h.announce?.reference || (h.researchId ? `R-${h.researchId}` : `#${h.announceId}`) })}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-gray-400 dark:text-white/40">{new Date(h.usageDate).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>

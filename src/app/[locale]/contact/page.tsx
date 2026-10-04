@@ -93,7 +93,7 @@ function ContactPageContent() {
     name: z.string().min(5, t('nameTooShort')).max(150),
     email: z.string().email(t('invalidEmail')).max(254),
     subject: z.string().min(1, t('subjectRequired')),
-    message: z.string().min(3, t('messageTooShort')).max(2000),
+    message: z.string().min(3, t('messageTooShort')).max(5000),
   });
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -253,7 +253,7 @@ function ContactPageContent() {
 
                 <div>
                   <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">{t('messageLabel')}</label>
-                  <textarea {...register('message')} rows={5} className={inputCls} placeholder={t('messagePlaceholder')}></textarea>
+                  <textarea {...register('message')} rows={5} maxLength={5000} className={inputCls} placeholder={t('messagePlaceholder')}></textarea>
                   {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message.message}</p>}
                 </div>
 

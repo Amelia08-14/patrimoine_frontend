@@ -1067,7 +1067,7 @@ const formSchema = z.object({
   typologyCustom: z.string().optional(), // Ajout de ce champ
   
   title: z.string().min(5, "Le titre doit contenir au moins 5 caractères").max(100, "Le titre est trop long").optional().or(z.literal("")),
-  shortDescription: z.string().max(300, "La description est trop longue").optional().or(z.literal("")),
+  shortDescription: z.string().max(5000, "La description est trop longue").optional().or(z.literal("")),
   
   city: z.string().min(2, "Wilaya requise"),
   commune: z.string().min(2, "Commune requise"),
@@ -1896,6 +1896,9 @@ function DepositPageComponent() {
   // restauré par le brouillon auto-enregistré, qui ne sérialise que les champs react-hook-form).
   const [hotelRooms, setHotelRooms] = useState<HotelRoomConfig[]>([])
   const [hotelRoomsError, setHotelRoomsError] = useState("")
+  // Hôtellerie & Séjour (location) : choix préalable avant la liste des structures —
+  // NIGHTLY = location à la nuitée (style Airbnb, parcours existant), FULL = structure hôtelière complète (vierge).
+  const [hsMode, setHsMode] = useState<"NIGHTLY" | "FULL" | null>(null)
   // Aperçu au survol du sélecteur d'étoiles (le classement lui-même reste porté par react-hook-form).
   const [hotelStarHover, setHotelStarHover] = useState<number | null>(null)
   const addHotelRoom = () => setHotelRooms(prev => [...prev, emptyHotelRoom()])
@@ -2232,7 +2235,11 @@ function DepositPageComponent() {
   const allowDemolirOption = propertyType === "VILLA" || (propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE")
   // « Vente sur plan » / « En cours de réalisation » : états réservés aux ventes
   const stateAllowed = (id: string) => transactionType === "SALE" || !["SUR_PLAN", "EN_COURS_REALISATION"].includes(id)
-  const isHsConstruction = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL" && isHebergementSejourConstructionType(propertyType)
+  const isHsConstruction = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && (
+    (transactionType === "RENTAL" && isHebergementSejourConstructionType(propertyType)) ||
+    (transactionType === "SALE" && isHebergementSejourType(propertyType))
+  )
+  const isHsCategoryRental = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL"
   const isHotelFiche = (realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL" && propertyType === "HOTEL"
   const htlClassement = watch("htlClassement")
   const htlAmbianceSelected: string[] = watch("htlAmbiance") || []
@@ -2531,6 +2538,7 @@ function DepositPageComponent() {
     if (propertyType === "IMMEUBLE_RESIDENTIEL" && transactionType === "SALE") return
     setValue("state", "" as any, { shouldValidate: true })
   }, [propertyType, transactionType, currentState, setValue])
+  const catLabel = (id: string) => (transactionType === "SALE" && (id === "HOTELIER" || id === "HEBERGEMENT")) ? t("catHotellerieSale") : tc(id)
   const getFilteredCategories = () => {
     let categories = [...BASE_REAL_ESTATE_CATEGORIES]
     if (userType === "PARTICULIER") {
@@ -2540,7 +2548,11 @@ function DepositPageComponent() {
       categories = categories.filter(cat => cat.id !== "HEBERGEMENT")
     }
     if (transactionType === "SALE") {
-      categories = categories.filter(cat => cat.id !== "HEBERGEMENT")
+      // Vente : Hôtellerie & Séjour (structures hôtelières) proposée aussi — HEBERGEMENT pour les
+      // particuliers, HOTELIER pour les pros (même libellé), accès direct aux sous-catégories.
+      if (userType === "PARTICULIER") {
+        categories = [...BASE_REAL_ESTATE_CATEGORIES].filter(cat => cat.id !== "EVENEMENTIEL" && cat.id !== "HOTELIER")
+      }
       if (userType === "SOCIETE") {
         categories = categories.filter(cat => cat.id !== "EVENEMENTIEL")
       }
@@ -2554,7 +2566,7 @@ function DepositPageComponent() {
     types = types.filter(t => t.categoryId === realEstateType)
     // Hébergement & Séjour en LOCATION (professionnels et particuliers) : les structures d'accueil de
     // l'inscription (hôtel, complexe, village de vacances…). Chaque fiche est « en cours de construction ».
-    if ((realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && transactionType === "RENTAL") {
+    if ((realEstateType === "HOTELIER" || realEstateType === "HEBERGEMENT") && (transactionType === "RENTAL" || transactionType === "SALE")) {
       return HEBERGEMENT_SEJOUR_TYPES.map(hs => ({
         id: hs.id,
         label: hs.label,
@@ -2784,6 +2796,7 @@ function DepositPageComponent() {
   }
 
   const handleCategoryClick = (categoryId: string) => {
+    setHsMode(null)
     reset(
       {
         ...initialDefaultValues,
@@ -2808,7 +2821,11 @@ function DepositPageComponent() {
     // Structures d'accueil « Hébergement & Séjour » en location : fiche en cours de construction —
     // on reste sur le choix du bien, le panneau d'information s'affiche sous la grille.
     const rt = getValues("realEstateType")
-    if ((rt === "HOTELIER" || rt === "HEBERGEMENT") && getValues("transactionType") === "RENTAL" && isHebergementSejourConstructionType(propertyId)) return
+    const tx = getValues("transactionType")
+    if ((rt === "HOTELIER" || rt === "HEBERGEMENT") && (
+      (tx === "RENTAL" && isHebergementSejourConstructionType(propertyId)) ||
+      (tx === "SALE" && isHebergementSejourType(propertyId))
+    )) return
     // Une chambre de départ pour ne pas atterrir sur une fiche vide — mais seulement si on arrive sur
     // Hôtel pour la première fois : reclique/retour en arrière ne doit pas effacer les chambres déjà saisies.
     if ((rt === "HOTELIER" || rt === "HEBERGEMENT") && getValues("transactionType") === "RENTAL" && propertyId === "HOTEL") {
@@ -3060,7 +3077,14 @@ function DepositPageComponent() {
     }
   }
 
-  const prevStep = () => setCurrentStep((prev) => prev - 1)
+  const prevStep = () => {
+    // À l'étape 3 d'Hôtellerie & Séjour, « Retour » revient d'abord au choix nuitée / structure complète.
+    if (currentStep === 3 && isHsCategoryRental && hsMode) {
+      setHsMode(null)
+      return
+    }
+    setCurrentStep((prev) => prev - 1)
+  }
 
   const handleIndustrialSectorChange = (sectorId: string) => {
     setValue("industrialSector", [sectorId], { shouldValidate: true })
@@ -3961,7 +3985,7 @@ function DepositPageComponent() {
                             style={{ backgroundColor: `${getCategoryColor(realEstateType).hex}14`, color: getCategoryColor(realEstateType).hex }}
                         >
                             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(realEstateType).hex }} />
-                            {tc(realEstateType)}
+                            {catLabel(realEstateType)}
                         </span>
                         {transactionType && (
                             <>
@@ -4093,7 +4117,7 @@ function DepositPageComponent() {
                                                 className={cn("text-lg font-bold text-center max-w-[180px] transition-colors", !isSelected && "text-gray-500")}
                                                 style={isSelected ? { color: catColor.hex } : undefined}
                                             >
-                                                {tc(cat.id)}
+                                                {catLabel(cat.id)}
                                             </span>
                                         </div>
                                     )
@@ -4103,7 +4127,32 @@ function DepositPageComponent() {
                     )}
 
                     {/* Step 3: Property Type */}
-                    {currentStep === 3 && (
+                    {currentStep === 3 && isHsCategoryRental && !hsMode && (
+                        <div className="w-full max-w-3xl animate-fade-in py-8">
+                            <h2 className="text-center text-xl font-bold text-gray-800 mb-8">{t('hsModeTitle')}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                {([
+                                    { id: "NIGHTLY", Icon: Home, label: t('hsModeNightly'), desc: t('hsModeNightlyDesc') },
+                                    { id: "FULL", Icon: HotelIcon, label: t('hsModeFull'), desc: t('hsModeFullDesc') },
+                                ] as const).map(({ id, Icon, label, desc }) => (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        onClick={() => setHsMode(id)}
+                                        className="group flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-100 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-[#00BFA6] hover:shadow-md"
+                                    >
+                                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-colors group-hover:bg-[#00BFA6] group-hover:text-white">
+                                            <Icon className="h-8 w-8" />
+                                        </span>
+                                        <span className="text-base font-bold text-gray-800">{label}</span>
+                                        <span className="text-sm text-gray-500">{desc}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {currentStep === 3 && !(isHsCategoryRental && !hsMode) && (
                         <div className="w-full max-w-5xl animate-fade-in py-8">
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 justify-items-center">
                                 {filteredPropertyTypes.map((type) => {
@@ -9671,9 +9720,11 @@ function DepositPageComponent() {
                                             <textarea 
                                                 {...register("shortDescription")}
                                                 rows={4}
+                                                maxLength={5000}
                                                 placeholder={t('f408')} 
                                                 className="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 placeholder:text-gray-500 bg-white resize-none font-medium"
                                             ></textarea>
+                                            <p className="text-xs text-gray-400 mt-1 text-end">{(watch("shortDescription") || "").length} / 5000</p>
                                             {errors.shortDescription && <p className="text-red-500 text-sm mt-1">{errors.shortDescription.message}</p>}
                                         </div>
                                     </div>

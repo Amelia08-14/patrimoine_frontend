@@ -98,7 +98,7 @@ export default function BoutiqueAboutPage({ params }: { params: Promise<{ userId
 
         {config.aboutDescription && (
           <div className="prose max-w-none mb-10">
-            <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-line">{config.aboutDescription}</p>
+            <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">{config.aboutDescription}</p>
           </div>
         )}
 

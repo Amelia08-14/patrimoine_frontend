@@ -771,7 +771,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
           )}
 
           {config.description && (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: headerTextColor, opacity: 0.7 }}>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]" style={{ color: headerTextColor, opacity: 0.7 }}>
               {config.description}
             </p>
           )}
@@ -1050,7 +1050,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
               )}
               <h3 className="text-xl font-black">{config.companyName || "Notre Boutique"}</h3>
               {config.slogan && <p className="mt-2 text-white/75 text-sm">{config.slogan}</p>}
-              {config.description && <p className="mt-3 text-white/60 text-xs leading-relaxed">{config.description}</p>}
+              {config.description && <p className="mt-3 text-white/60 text-xs leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">{config.description}</p>}
             </div>
 
             {/* Column 2: Contact */}
@@ -1149,6 +1149,7 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
                 <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                   <textarea
                     rows={4}
+                    maxLength={5000}
                     placeholder={tm('messagePlaceholder')}
                     value={msgText}
                     onChange={(e) => setMsgText(e.target.value)}
