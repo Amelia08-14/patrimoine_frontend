@@ -129,7 +129,7 @@ export function LegalRichEditor({ initialHtml, published, saving, onSave, onPubl
       />
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <Button onClick={() => { onSave(currentHtml()); setDirty(false) }} disabled={saving} className="bg-gray-900 hover:bg-black text-white">
           {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />} Enregistrer les modifications
         </Button>

@@ -161,7 +161,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
 
   return (
     <div className="w-full" ref={dropdownRef}>
-      <div className="bg-white dark:bg-[#03303c] rounded-2xl sm:rounded-full shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-1.5 flex flex-col sm:flex-row items-stretch gap-1.5">
+      <div className="bg-white dark:bg-[#03303c] rounded-2xl lg:rounded-full shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-1.5 flex flex-col lg:flex-row items-stretch gap-1.5">
 
         {/* Transaction — bascule segmentée, même langage que la barre d'accueil */}
         <div className="flex bg-gray-50 dark:bg-white/5 rounded-full p-1 shrink-0 overflow-x-auto">
@@ -445,7 +445,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
           <button
             type="button"
             onClick={() => toggleDropdown("more")}
-            className="w-full sm:w-auto h-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-bold text-gray-600 dark:text-white/70 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
+            className="w-full lg:w-auto h-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-bold text-gray-600 dark:text-white/70 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
             style={openDropdown === "more" ? { boxShadow: `inset 0 0 0 2px ${accent}`, color: accent } : undefined}
           >
             <SlidersHorizontal className="h-4 w-4" />
@@ -542,7 +542,7 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
         {/* Rechercher — les résultats se filtrent déjà en direct ; ce bouton confirme / partage l'URL */}
         <div className="shrink-0">
           <Button
-            className="w-full sm:w-auto text-white rounded-full px-6 h-[46px] sm:h-full font-bold text-sm shadow-md transition-all active:scale-95"
+            className="w-full lg:w-auto text-white rounded-full px-6 h-[46px] lg:h-full font-bold text-sm shadow-md transition-all active:scale-95"
             style={{ backgroundColor: accent }}
             onClick={onSearch}
           >

@@ -298,7 +298,7 @@ function AdminAnnouncesContent() {
           </h1>
           <p className="text-gray-500">Examinez, validez ou rejetez les annonces publiées.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={exportExcel} disabled={exporting !== null} title="Exporter en Excel">
             <FileSpreadsheet className="h-4 w-4 mr-1.5" /> {exporting === 'excel' ? 'Export...' : 'Excel'}
           </Button>

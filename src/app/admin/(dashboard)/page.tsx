@@ -306,7 +306,7 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-bold text-[#003B4A] font-brand">Vue d'ensemble</h1>
           <p className="text-gray-500">Activité de la plateforme en temps réel.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={exportExcel} disabled={!stats || exporting !== null} title="Exporter en Excel">
             <FileSpreadsheet className="h-4 w-4 mr-1.5" /> {exporting === 'excel' ? 'Export...' : 'Excel'}
           </Button>
@@ -344,20 +344,20 @@ export default function AdminDashboard() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1.5 text-sm ml-auto">
+        <div className="flex w-full sm:w-auto items-center gap-1.5 text-sm sm:ml-auto">
           <span className="text-xs text-gray-400">Du</span>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => { setDateFrom(e.target.value); setActivePreset("") }}
-            className="px-2 py-1.5 border-2 border-gray-200 rounded-lg text-xs font-medium bg-white outline-none"
+            className="min-w-0 flex-1 sm:flex-none px-2 py-1.5 border-2 border-gray-200 rounded-lg text-xs font-medium bg-white outline-none"
           />
           <span className="text-xs text-gray-400">au</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => { setDateTo(e.target.value); setActivePreset("") }}
-            className="px-2 py-1.5 border-2 border-gray-200 rounded-lg text-xs font-medium bg-white outline-none"
+            className="min-w-0 flex-1 sm:flex-none px-2 py-1.5 border-2 border-gray-200 rounded-lg text-xs font-medium bg-white outline-none"
           />
         </div>
       </div>
