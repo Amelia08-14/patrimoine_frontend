@@ -482,7 +482,10 @@
     "actionError": "Action unavailable right now, please try again.",
     "mailSubject": "Your search no. {id} on Patrimoine Immobilier",
     "noEmail": "No email address available for this requester.",
-    "contactRequested": "Request sent: the requester has been notified and can reply to you."
+    "contactRequested": "Request sent: the requester has been notified and can reply to you.",
+    "viewGrid": "Grid",
+    "viewLarge": "Large cards",
+    "viewList": "List"
   },
   "Research": {
     "zodBranchRequired": "Choose a category",
@@ -776,7 +779,9 @@
     "resAcLabel": "Air conditioning",
     "resSecurityLabel": "Security",
     "resConnectivityLabel": "Connectivity",
-    "contactOptionsTitle": "Your search options"
+    "contactOptionsTitle": "Your search options",
+    "searchTitleLabel": "Title of your search",
+    "searchTitlePlaceholder": "e.g. Furnished and secure studio in Algiers Centre"
   },
   "ProfileHome": {
     "pendingBanner": "Account pending validation.",
@@ -960,7 +965,20 @@
     "sortLeastPoints": "Points spent (low to high)",
     "pointsUsageBadge": "{count, plural, one {# use} other {# uses}} · {total} pts",
     "noResultsFiltered": "No listing matches these filters.",
-    "resetFilters": "Reset"
+    "resetFilters": "Reset",
+    "editBtn": "Edit",
+    "deleteBtn": "Delete",
+    "editModalTitle": "Edit listing",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "priceLabel": "Price (DA)",
+    "revalidationNotice": "After editing, your listing is submitted again for validation by our team and stays hidden until it is re-approved.",
+    "saveChanges": "Save",
+    "cancel": "Cancel",
+    "deleteConfirmTitle": "Delete this listing?",
+    "deleteConfirmText": "Listing {reference} will be permanently deleted. This cannot be undone.",
+    "deleteDone": "Listing deleted",
+    "editDone": "Changes saved — listing submitted for validation"
   },
   "ProfileInfo": {
     "title": "My Profile",
@@ -2147,7 +2165,8 @@
     "hsModeFullDesc": "Hotel, tourist resort, holiday village… rented as a whole.",
     "hsFullBlankTitle": "Coming soon",
     "hsFullBlankText": "The form for renting a whole hotel structure is being prepared.",
-    "catHotellerieSale": "Hospitality & Hotel Structures"
+    "catHotellerieSale": "Hotel structures",
+    "standbyBadge": "Coming soon"
   },
   "HomePage": {
     "categoryLabel": "Category",

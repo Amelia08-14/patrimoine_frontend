@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { Search, Handshake, CalendarDays, X } from "lucide-react"
+import { Search, Handshake, CalendarDays, X, LayoutGrid, LayoutDashboard, List } from "lucide-react"
 import { EntrustedResearchCard } from "@/components/EntrustedResearchCard"
 import { AdSidebar, AdStrip } from "@/components/AdSidebar"
 
@@ -25,6 +25,7 @@ export default function DemandesPage() {
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
   const [query, setQuery] = useState("")
+  const [viewMode, setViewMode] = useState<"grid" | "large" | "list">("grid")
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -166,11 +167,28 @@ export default function DemandesPage() {
         {/* Résultats */}
         <div className="mt-6 mb-4 flex items-center justify-between gap-3">
           <p className="text-sm font-bold text-gray-600 dark:text-white/70">{t("resultsCount", { count: filtered.length })}</p>
-          {hasFilters && (
-            <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 text-sm font-bold text-[#0094BD] hover:underline">
-              <X className="h-4 w-4" /> {t("resetFilters")}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {hasFilters && (
+              <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 text-sm font-bold text-[#0094BD] hover:underline">
+                <X className="h-4 w-4" /> {t("resetFilters")}
+              </button>
+            )}
+            {/* Bascule d'affichage — grille / grandes cartes / liste, comme sur /announces */}
+            <div className="flex bg-gray-100 dark:bg-white/10 rounded-lg p-0.5 gap-0.5">
+              {([["grid", LayoutGrid, "viewGrid"], ["large", LayoutDashboard, "viewLarge"], ["list", List, "viewList"]] as const).map(([id, Icon, key]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setViewMode(id)}
+                  title={t(key)}
+                  aria-label={t(key)}
+                  className={`p-2.5 sm:p-1.5 rounded-md transition-colors ${viewMode === id ? "bg-white dark:bg-white/20 shadow text-gray-900 dark:text-white" : "text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70"}`}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <AdStrip page="DEMANDES" category={category || undefined} className="mb-5 xl:hidden" />
@@ -183,9 +201,9 @@ export default function DemandesPage() {
             <p className="text-gray-500 dark:text-white/60 font-medium">{hasFilters ? t("noMatch") : t("noResults")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className={viewMode === "list" ? "flex flex-col gap-4" : viewMode === "large" ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"}>
             {filtered.map((r) => (
-              <EntrustedResearchCard key={r.id} research={r} variant="public" />
+              <EntrustedResearchCard key={r.id} research={r} variant="public" display={viewMode} />
             ))}
           </div>
         )}

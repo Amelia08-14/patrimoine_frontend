@@ -422,6 +422,7 @@ export default function ResearchPage() {
     currency: z.enum(['DA', 'EUR', 'USD']).optional(),
     budgetUnit: z.enum(['DA', 'DA_M2', 'MILLION', 'MILLION_M2', 'MILLIARD']).optional(),
     installationDate: z.string().optional(),
+    title: z.string().max(120).optional(),
     comment: z.string().min(10, t('zodCommentRequired')).max(5000),
 
     // Fiche détaillée Résidentiel — Achat / Habitation
@@ -1104,6 +1105,7 @@ export default function ResearchPage() {
         // "principale" pour l'affichage existant, la liste complète part dans `amenities`.
         cityId: data.cityId || (data.cityIds && data.cityIds.length > 0 ? Number(data.cityIds[0]) : undefined),
         towns: JSON.stringify(data.towns || []),
+        title: data.title?.trim() || undefined,
         comment: data.comment,
         ...contact,
         userId: loggedInUser?.id,
@@ -1547,6 +1549,9 @@ export default function ResearchPage() {
 
   const renderCommentSection = () => (
     <Section title={t('resLocCommentTitle')} icon={Sparkles}>
+      <Field label={t('searchTitleLabel')}>
+        <input type="text" {...register('title')} maxLength={120} className={inputCls} placeholder={t('searchTitlePlaceholder')} />
+      </Field>
       <textarea {...register('comment')} rows={3} maxLength={5000} className={inputCls} placeholder={t('resLocCommentPlaceholder')}></textarea>
       {errors.comment && <span className="text-red-500 text-sm">{errors.comment.message}</span>}
     </Section>
@@ -2585,6 +2590,10 @@ export default function ResearchPage() {
             </div>
           </Field>
         )}
+
+        <Field label={t('searchTitleLabel')} full>
+          <input type="text" {...register('title')} maxLength={120} className={inputCls} placeholder={t('searchTitlePlaceholder')} />
+        </Field>
 
         <Field label={t('budgetComment')} full>
           <textarea {...register('comment')} rows={3} maxLength={5000} className={inputCls}></textarea>

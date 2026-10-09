@@ -482,7 +482,10 @@
     "actionError": "Action impossible pour le moment, réessayez.",
     "mailSubject": "Votre recherche n°{id} sur Patrimoine Immobilier",
     "noEmail": "Aucune adresse e-mail disponible pour ce demandeur.",
-    "contactRequested": "Demande envoyée : le demandeur est prévenu et pourra vous répondre."
+    "contactRequested": "Demande envoyée : le demandeur est prévenu et pourra vous répondre.",
+    "viewGrid": "Grille",
+    "viewLarge": "Grandes cartes",
+    "viewList": "Liste"
   },
   "Research": {
     "zodBranchRequired": "Choisissez une branche",
@@ -776,7 +779,9 @@
     "resAcLabel": "Climatisation",
     "resSecurityLabel": "Sécurité",
     "resConnectivityLabel": "Connectivité",
-    "contactOptionsTitle": "Options de votre recherche"
+    "contactOptionsTitle": "Options de votre recherche",
+    "searchTitleLabel": "Titre de votre recherche",
+    "searchTitlePlaceholder": "Ex : Studio équipé et sécurisé à Alger-Centre"
   },
   "ProfileHome": {
     "pendingBanner": "Compte en attente de validation.",
@@ -960,7 +965,20 @@
     "sortLeastPoints": "Points consommés (bas → haut)",
     "pointsUsageBadge": "{count, plural, one {# util.} other {# util.}} · {total} pts",
     "noResultsFiltered": "Aucune annonce ne correspond à ces filtres.",
-    "resetFilters": "Réinitialiser"
+    "resetFilters": "Réinitialiser",
+    "editBtn": "Modifier",
+    "deleteBtn": "Supprimer",
+    "editModalTitle": "Modifier l'annonce",
+    "titleLabel": "Titre",
+    "descriptionLabel": "Description",
+    "priceLabel": "Prix (DA)",
+    "revalidationNotice": "Après modification, votre annonce est de nouveau soumise à validation par notre équipe et n'est plus visible tant qu'elle n'est pas revalidée.",
+    "saveChanges": "Enregistrer",
+    "cancel": "Annuler",
+    "deleteConfirmTitle": "Supprimer cette annonce ?",
+    "deleteConfirmText": "L'annonce {reference} sera définitivement supprimée. Cette action est irréversible.",
+    "deleteDone": "Annonce supprimée",
+    "editDone": "Modifications enregistrées — annonce soumise à validation"
   },
   "ProfileInfo": {
     "title": "Mon Profil",
@@ -2147,7 +2165,8 @@
     "hsModeFullDesc": "Hôtel, complexe touristique, village de vacances… loué dans son ensemble.",
     "hsFullBlankTitle": "Bientôt disponible",
     "hsFullBlankText": "Le formulaire de location d'une structure hôtelière complète est en cours de préparation.",
-    "catHotellerieSale": "Hôtellerie et Structure Hôtelière"
+    "catHotellerieSale": "Structures hôtelières",
+    "standbyBadge": "Bientôt disponible"
   },
   "HomePage": {
     "categoryLabel": "Catégorie",

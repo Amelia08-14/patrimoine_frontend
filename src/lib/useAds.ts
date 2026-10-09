@@ -8,7 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 export type AdPage = "HOME" | "ANNOUNCES" | "DEMANDES"
 export type AdPlacement = "SIDEBAR" | "STRIP" | "BANNER"
-export type Ad = { key: string; id?: number; image: string; title: string; subtitle: string; cta: string; href: string }
+export type Ad = { key: string; id?: number; categoryId?: string; categoryLabel?: string; image: string; title: string; subtitle: string; cta: string; href: string }
 
 // Un seul appel réseau par page pour tous ses emplacements (bandeau, colonnes latérales, bandeaux inter-sections).
 const adsCache: Partial<Record<AdPage, Promise<any[]>>> = {}
@@ -61,6 +61,7 @@ export function trackAdClick(id?: number) {
 export function useAds(page: AdPage = "ANNOUNCES", placement?: AdPlacement, categoryId?: string): Ad[] {
   const category = categoryId === "HEBERGEMENT" ? "HOTELIER" : categoryId // même libellé / même couleur
   const t = useTranslations("AnnouncesPage")
+  const tc = useTranslations("Categories")
   const lc = useLocalizedContent()
   const [managed, setManaged] = useState<any[] | null>(null)
   const [slides, setSlides] = useState<any[]>([])
@@ -89,6 +90,9 @@ export function useAds(page: AdPage = "ANNOUNCES", placement?: AdPlacement, cate
       .map((a) => ({
         key: `ad-${a.id}`,
         id: a.id,
+        // Étiquette de catégorie affichée sur la publicité (la 1re catégorie ciblée)
+        categoryId: String(a.categories || "").split(",").map((x: string) => x.trim()).filter(Boolean)[0],
+        categoryLabel: (() => { const c = String(a.categories || "").split(",").map((x: string) => x.trim()).filter(Boolean)[0]; return c && tc.has(c) ? tc(c) : "" })(),
         image: `${API_URL}${a.imageUrl}`,
         title: lc(a.title, a.titleAr, a.titleEn),
         subtitle: lc(a.subtitle, a.subtitleAr, a.subtitleEn),
@@ -113,5 +117,5 @@ export function useAds(page: AdPage = "ANNOUNCES", placement?: AdPlacement, cate
       { key: "boutique", image: "/boutique-bg.jpg", title: t("adBoutiqueTitle"), subtitle: t("adBoutiqueText"), cta: t("adBoutiqueCta"), href: "/profile/boutique" },
     ]
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [managed, slides, placement, category, lc])
+  }, [managed, slides, placement, category, lc, tc])
 }

@@ -26,17 +26,6 @@ const TERRAIN_TOPOGRAPHIE_LABELS: Record<string, string> = {
     ACCIDENTE: "Accidenté",
 };
 
-// Fondu par domaine (dégradé, pas un aplat) — donne un repère visuel par catégorie tout en
-// gardant les infos lisibles sans écraser la photo. Indépendant du badge vente/location.
-const CATEGORY_OVERLAY_COLOR: Record<string, string> = {
-    RESIDENTIEL: getCategoryColor("RESIDENTIEL").overlayFrom,
-    BUREAUX_COMMERCES: getCategoryColor("BUREAUX_COMMERCES").overlayFrom,
-    INDUSTRIEL: getCategoryColor("INDUSTRIEL").overlayFrom,
-    TERRAIN_FONCIER: getCategoryColor("TERRAIN_FONCIER").overlayFrom,
-    HOTELIER: getCategoryColor("HOTELIER").overlayFrom,
-    HEBERGEMENT: getCategoryColor("HEBERGEMENT").overlayFrom,
-};
-
 const IMMEUBLE_TYPES = ["IMMEUBLE_RESIDENTIEL", "IMMEUBLE_BUREAU"];
 
 // Bandeau inférieur de la photo : 2-3 critères clés, propres à chaque domaine.
@@ -157,7 +146,7 @@ function PhotoOverlaySpecs({ announce }: { announce: any }) {
         <div className={cn(
             "absolute bottom-0 inset-x-0 px-3.5 pt-9 pb-2.5 flex bg-gradient-to-t to-transparent",
             stacked ? "flex-col items-start gap-0.5" : "items-end gap-2 flex-wrap",
-            CATEGORY_OVERLAY_COLOR[categoryId as string] || "from-[#003B4A]/90"
+            "from-black/75 via-black/25" // fondu neutre : aucune teinte de marque sur les photos (chartes propres aux clients)
         )}>
             {items.map((item, i) => (
                 <span key={i} className="flex items-center gap-2 text-white text-[11px] rtl:text-xs font-bold [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]">

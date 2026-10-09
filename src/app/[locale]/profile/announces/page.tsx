@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import axios from "axios"
-import { Calendar, MapPin, Zap, Star, Loader2, AlertCircle, Check, X, Coins, Edit, Eye, Filter, RotateCcw, ListChecks, TrendingUp, Images } from "lucide-react"
+import { Calendar, MapPin, Zap, Star, Loader2, AlertCircle, Check, X, Coins, Edit, Trash2, Eye, Filter, RotateCcw, ListChecks, TrendingUp, Images } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -15,6 +15,58 @@ function getImageUrl(url: string) {
   let clean = url.replace(/\\/g, '/')
   if (clean.startsWith('/')) clean = clean.substring(1)
   return `${API_URL}/${clean}`
+}
+
+// Modifier une annonce : champs éditoriaux seulement ; l'annonce repasse en attente de validation
+function EditModal({ announce, onClose, onSuccess }: { announce: any; onClose: () => void; onSuccess: () => void }) {
+  const t = useTranslations("ProfileAnnounces")
+  const [title, setTitle] = useState(announce.title || "")
+  const [description, setDescription] = useState(announce.shortDescription || "")
+  const [price, setPrice] = useState(String(announce.price ?? ""))
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const submit = async () => {
+    setLoading(true); setError("")
+    try {
+      const token = localStorage.getItem('token')
+      await axios.patch(`${API_URL}/announces/${announce.id}`, {
+        title, shortDescription: description, price: Number(price),
+      }, { headers: { Authorization: `Bearer ${token}` } })
+      onSuccess()
+    } catch (e: any) {
+      setError(e?.response?.data?.message || t("errorGeneric"))
+    } finally { setLoading(false) }
+  }
+  const field = "w-full rounded-xl border-2 border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00BFA6]"
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#03303c] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t("editModalTitle")}</h2>
+        <p className="text-xs text-gray-500 dark:text-white/50 mb-4">{announce.reference}</p>
+        <div className="space-y-3">
+          <label className="block text-sm font-bold text-gray-700 dark:text-white/70">{t("titleLabel")}
+            <input className={`${field} mt-1`} value={title} maxLength={190} onChange={(e) => setTitle(e.target.value)} />
+          </label>
+          <label className="block text-sm font-bold text-gray-700 dark:text-white/70">{t("descriptionLabel")}
+            <textarea className={`${field} mt-1 resize-none`} rows={5} maxLength={5000} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <span className="block text-end text-xs font-normal text-gray-400">{description.length} / 5000</span>
+          </label>
+          <label className="block text-sm font-bold text-gray-700 dark:text-white/70">{t("priceLabel")}
+            <input type="number" min={0} className={`${field} mt-1`} value={price} onChange={(e) => setPrice(e.target.value)} />
+          </label>
+        </div>
+        <p className="mt-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-800 dark:text-amber-300">{t("revalidationNotice")}</p>
+        {error && <p className="mt-2 text-sm font-semibold text-red-500">{error}</p>}
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-sm font-bold text-gray-600 dark:text-white/70">{t("cancel")}</button>
+          <button onClick={submit} disabled={loading || !title.trim()} className="inline-flex items-center gap-2 rounded-xl bg-[#00BFA6] px-5 py-2 text-sm font-bold text-white hover:bg-[#00908A] disabled:opacity-50">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />} {t("saveChanges")}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // Modal publicité
@@ -86,6 +138,9 @@ export default function MyAnnouncesPage() {
   const [loading, setLoading] = useState(true)
   const [boosting, setBoosting] = useState<number | null>(null)
   const [featureTarget, setFeatureTarget] = useState<any | null>(null)
+  const [editTarget, setEditTarget] = useState<any | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState("")
 
   // Filtres — statut (actualisée/boostée), période, tri
@@ -129,6 +184,20 @@ export default function MyAnnouncesPage() {
     } finally {
       setBoosting(null)
     }
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const token = localStorage.getItem('token')
+      await axios.delete(`${API_URL}/announces/${deleteTarget.id}`, { headers: { Authorization: `Bearer ${token}` } })
+      showToast(t("deleteDone"))
+      setDeleteTarget(null)
+      await load()
+    } catch (e: any) {
+      showToast("❌ " + (e?.response?.data?.message || t("errorGeneric")))
+    } finally { setDeleting(false) }
   }
 
   const isCurrentlyFeatured = (a: any) => {
@@ -175,6 +244,21 @@ export default function MyAnnouncesPage() {
         </div>
       )}
 
+      {editTarget && <EditModal announce={editTarget} onClose={() => setEditTarget(null)} onSuccess={() => { setEditTarget(null); load(); showToast(t("editDone")) }} />}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#03303c] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t("deleteConfirmTitle")}</h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-white/60">{t("deleteConfirmText", { reference: deleteTarget.reference })}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setDeleteTarget(null)} className="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-sm font-bold text-gray-600 dark:text-white/70">{t("cancel")}</button>
+              <button onClick={confirmDelete} disabled={deleting} className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-50">
+                {deleting && <Loader2 className="h-4 w-4 animate-spin" />} {t("deleteBtn")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {featureTarget && (
         <FeatureModal announce={featureTarget} onClose={() => setFeatureTarget(null)} onSuccess={() => { load(); showToast(t("adFeaturedSuccess")) }} />
       )}
@@ -361,6 +445,12 @@ export default function MyAnnouncesPage() {
                           className="p-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-gray-300 hover:text-gray-700 transition-colors" title={t("viewTitle")}>
                           <Eye className="h-4 w-4" />
                         </a>
+                        <button onClick={() => setEditTarget(a)} className="p-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-[#0094BD] hover:text-[#0094BD] transition-colors" title={t("editBtn")} aria-label={t("editBtn")}>
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => setDeleteTarget(a)} className="p-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-red-300 hover:text-red-500 transition-colors" title={t("deleteBtn")} aria-label={t("deleteBtn")}>
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                         {a.status === 'VALIDATED' && (
                           <>
                             <button

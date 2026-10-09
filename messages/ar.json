@@ -482,7 +482,10 @@
     "actionError": "تعذر تنفيذ الإجراء حاليًا، أعد المحاولة.",
     "mailSubject": "بحثك رقم {id} على Patrimoine Immobilier",
     "noEmail": "لا يوجد بريد إلكتروني متاح لصاحب الطلب.",
-    "contactRequested": "تم إرسال الطلب: تم إشعار صاحب الطلب ويمكنه الرد عليك."
+    "contactRequested": "تم إرسال الطلب: تم إشعار صاحب الطلب ويمكنه الرد عليك.",
+    "viewGrid": "شبكة",
+    "viewLarge": "بطاقات كبيرة",
+    "viewList": "قائمة"
   },
   "Research": {
     "zodBranchRequired": "اختر فئة",
@@ -776,7 +779,9 @@
     "resAcLabel": "التكييف",
     "resSecurityLabel": "الأمن",
     "resConnectivityLabel": "الاتصال",
-    "contactOptionsTitle": "خيارات بحثك"
+    "contactOptionsTitle": "خيارات بحثك",
+    "searchTitleLabel": "عنوان بحثك",
+    "searchTitlePlaceholder": "مثال: استوديو مجهز وآمن في وسط الجزائر"
   },
   "ProfileHome": {
     "pendingBanner": "الحساب في انتظار التحقق.",
@@ -960,7 +965,20 @@
     "sortLeastPoints": "النقاط المستهلكة (من الأدنى)",
     "pointsUsageBadge": "{count} استخدام · {total} نقطة",
     "noResultsFiltered": "لا يوجد إعلان يطابق هذه الفلاتر.",
-    "resetFilters": "إعادة التعيين"
+    "resetFilters": "إعادة التعيين",
+    "editBtn": "تعديل",
+    "deleteBtn": "حذف",
+    "editModalTitle": "تعديل الإعلان",
+    "titleLabel": "العنوان",
+    "descriptionLabel": "الوصف",
+    "priceLabel": "السعر (دج)",
+    "revalidationNotice": "بعد التعديل يُعاد إرسال إعلانك للتحقق من طرف فريقنا ولا يظهر للزوار إلى أن تتم الموافقة عليه من جديد.",
+    "saveChanges": "حفظ",
+    "cancel": "إلغاء",
+    "deleteConfirmTitle": "حذف هذا الإعلان؟",
+    "deleteConfirmText": "سيتم حذف الإعلان {reference} نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+    "deleteDone": "تم حذف الإعلان",
+    "editDone": "تم حفظ التعديلات — الإعلان قيد التحقق"
   },
   "ProfileInfo": {
     "title": "ملفي الشخصي",
@@ -2147,7 +2165,8 @@
     "hsModeFullDesc": "فندق، مجمّع سياحي، قرية عطل… تُؤجَّر ككل.",
     "hsFullBlankTitle": "قريبًا",
     "hsFullBlankText": "استمارة إيجار منشأة فندقية كاملة قيد الإعداد.",
-    "catHotellerieSale": "الفندقة والمنشآت الفندقية"
+    "catHotellerieSale": "المنشآت الفندقية",
+    "standbyBadge": "قريبًا"
   },
   "HomePage": {
     "categoryLabel": "الفئة",

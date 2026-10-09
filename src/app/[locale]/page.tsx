@@ -482,6 +482,7 @@ export default function HomePage() {
   const [heroSlides, setHeroSlides] = useState<{ id: number; categoryId: string | null; imageUrl: string; title: string | null; titleAr?: string | null; titleEn?: string | null; subtitle: string | null; subtitleAr?: string | null; subtitleEn?: string | null; buttonLabel?: string | null; buttonLabelAr?: string | null; buttonLabelEn?: string | null; showButton1?: boolean; button2Label?: string | null; button2LabelAr?: string | null; button2LabelEn?: string | null; button2Link?: string | null; showButton2?: boolean; link?: string | null }[]>([]);
   const lc = useLocalizedContent();
   const [searchFilters, setSearchFilters] = useState<SearchFilters>(EMPTY_SEARCH_FILTERS);
+  const [offerPacks, setOfferPacks] = useState<any[]>([]);
   const [partners, setPartners] = useState<{ id: number; name: string; nameAr?: string | null; nameEn?: string | null; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
   const handleCategoryClick = (categoryId: string) => {
@@ -525,6 +526,8 @@ export default function HomePage() {
     }
     fetchAnnounces();
     fetch(`${apiUrl}/content/hero-slides`).then((r) => r.json()).then((d) => setHeroSlides(Array.isArray(d) ? d : [])).catch(() => {});
+    // Offres Points & Boutique éditées dans l'admin : l'accueil lit les mêmes données que les pages d'achat
+    fetch(`${apiUrl}/offer-packs`, { cache: 'no-store' }).then((r) => r.json()).then((d) => setOfferPacks(Array.isArray(d) ? d : [])).catch(() => {});
     fetch(`${apiUrl}/content/partners`).then((r) => r.json()).then((d) => setPartners(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
@@ -648,11 +651,9 @@ export default function HomePage() {
               />
             ))}
 
-            {/* Fondu : vert/navy de la charte plein sur le texte, dégradé vers la photo à droite */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#003B4A] via-[#003B4A]/85 to-[#00BFA6]/10 sm:via-[#003B4A]/80 sm:to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#00BFA6]/40 via-transparent to-transparent" />
-            {/* Léger fondu bas pour la transition vers la barre de recherche */}
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#003B4A]/70 to-transparent" />
+            {/* Fondu NEUTRE (noir) pour la lisibilité du texte : aucune teinte verte/marque sur les photos des slides */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/10 sm:to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/40 to-transparent" />
           </div>
 
           {/* Lien de renvoi du slide sur la photo elle-même (pas seulement sur le bouton CTA) :
@@ -1023,6 +1024,22 @@ export default function HomePage() {
                 </div>
               </div>
 
+
+              {/* Offres en vigueur (titres, descriptions et prix gérés depuis l'admin) */}
+              {offerPacks.filter((p) => p.kind === "POINTS").length > 0 && (
+                <ul className="mt-5 space-y-2">
+                  {offerPacks.filter((p) => p.kind === "POINTS").map((p) => (
+                    <li key={p.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-white/5 px-3.5 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-[#003B4A] dark:text-white">{lc(p.title, p.titleAr, p.titleEn)}</span>
+                        {lc(p.description, p.descriptionAr, p.descriptionEn) && <span className="block text-xs text-gray-500 dark:text-white/50 whitespace-pre-line break-words">{lc(p.description, p.descriptionAr, p.descriptionEn)}</span>}
+                      </span>
+                      <span className="shrink-0 text-end text-sm font-extrabold text-[#003B4A] dark:text-white">{new Intl.NumberFormat("fr-DZ").format(p.price)} <span className="text-[10px] font-bold text-gray-400">DA</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
               <Link href="/profile/points" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#C2570C] transition-colors">
                 {t("pointsParticulierCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
               </Link>
@@ -1080,6 +1097,22 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+
+
+              {/* Offres en vigueur (titres, descriptions et prix gérés depuis l'admin) */}
+              {offerPacks.filter((p) => p.kind === "BOUTIQUE").length > 0 && (
+                <ul className="mt-5 space-y-2">
+                  {offerPacks.filter((p) => p.kind === "BOUTIQUE").map((p) => (
+                    <li key={p.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-white/5 px-3.5 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-[#003B4A] dark:text-white">{lc(p.title, p.titleAr, p.titleEn)}</span>
+                        {lc(p.description, p.descriptionAr, p.descriptionEn) && <span className="block text-xs text-gray-500 dark:text-white/50 whitespace-pre-line break-words">{lc(p.description, p.descriptionAr, p.descriptionEn)}</span>}
+                      </span>
+                      <span className="shrink-0 text-end text-sm font-extrabold text-[#003B4A] dark:text-white">{new Intl.NumberFormat("fr-DZ").format(p.price)} <span className="text-[10px] font-bold text-gray-400">DA</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               <Link href="/profile/boutique" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[#003B4A] dark:text-white hover:text-[#00BFA6] transition-colors">
                 {t("pointsProCta")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />

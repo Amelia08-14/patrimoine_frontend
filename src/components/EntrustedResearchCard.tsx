@@ -45,7 +45,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
  * où l'on veut contacter le demandeur) et "Mes recherches confiées" (/profile/researches, où l'on
  * est le demandeur : pas de bouton "contacter", juste la date de dépôt).
  */
-export function EntrustedResearchCard({ research: r, variant = "public", onRefreshed }: { research: any; variant?: "public" | "mine" | "detail"; onRefreshed?: () => void }) {
+export function EntrustedResearchCard({ research: r, variant = "public", onRefreshed, display = "grid" }: { research: any; variant?: "public" | "mine" | "detail"; onRefreshed?: () => void; display?: "grid" | "large" | "list" }) {
   const t = useTranslations("Demandes")
   const locale = useLocale()
   const [refreshing, setRefreshing] = useState(false)
@@ -159,14 +159,16 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
   // Carte publique compacte (/demandes) : l'essentiel seulement, le détail et les actions de contact
   // sont sur la fiche interne /demandes/[id].
   if (variant === "public") {
-    const shownTypes = propertyTypeLabels.slice(0, 2)
+    const isList = display === "list"
+    const isLarge = display === "large"
+    const shownTypes = propertyTypeLabels.slice(0, isList || isLarge ? 4 : 2)
     const extraTypes = propertyTypeLabels.length - shownTypes.length
     return (
       <Link
         href={`/demandes/${r.id}`}
-        className="group bg-white dark:bg-white/5 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col"
+        className={`group bg-white dark:bg-white/5 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex ${isList ? "flex-row" : "flex-col"}`}
       >
-        <div className="relative h-32 overflow-hidden" style={{ backgroundColor: catColor.hex }}>
+        <div className={`relative overflow-hidden ${isList ? "w-36 sm:w-56 lg:w-72 shrink-0 min-h-[10rem]" : isLarge ? "h-48" : "h-32"}`} style={{ backgroundColor: catColor.hex }}>
           {coverImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={encodeURI(coverImage)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-bottom transition-transform duration-500 group-hover:scale-105" />
@@ -182,7 +184,8 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
             </span>
           )}
         </div>
-        <div className="p-4 flex flex-col gap-2.5 flex-1">
+        <div className={`flex flex-col gap-2.5 flex-1 min-w-0 ${isList ? "p-4 sm:p-5" : isLarge ? "p-5" : "p-4"}`}>
+          {r.title && <h3 className="font-extrabold text-gray-900 dark:text-white leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]">{r.title}</h3>}
           {shownTypes.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {shownTypes.map((label, i) => (
@@ -196,6 +199,9 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
               <MapPin className="h-4 w-4 text-[#00BFA6] shrink-0 mt-0.5" />
               <span className="line-clamp-2 break-words">{locationLabel}</span>
             </div>
+          )}
+          {(isList || isLarge) && r.comment && (
+            <p className={`text-sm text-gray-600 dark:text-white/60 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] ${isList ? "line-clamp-2" : "line-clamp-3"}`}>{r.comment}</p>
           )}
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-white/60">
             {budgetLabel && <span className="inline-flex items-center gap-1"><Wallet className="h-3.5 w-3.5 text-[#00BFA6]" />{budgetLabel}</span>}
@@ -243,6 +249,8 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
       </div>
 
       <div className="p-6 flex flex-col gap-4 flex-1">
+      {r.title && <h2 className="text-lg font-extrabold text-gray-900 dark:text-white leading-snug break-words [overflow-wrap:anywhere]">{r.title}</h2>}
+
       {propertyTypeLabels.length > 0 && (
         propertyTypeLabels.length === 1 ? (
           <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-white/90">

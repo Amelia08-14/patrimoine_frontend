@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff, FileDown, FileSpreadsheet, Languages } from "lucide-react"
+import { CheckCircle, XCircle, Eye, MapPin, Building, Search, RefreshCw, Star, StarOff, FileDown, FileSpreadsheet, Languages, MessageSquare, Send, X as XIcon } from "lucide-react"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
 import { PeriodFilterBar } from "@/components/admin/PeriodFilterBar"
 import { DATE_PRESETS, todayStr, periodLabel } from "@/lib/datePresets"
@@ -262,6 +262,43 @@ function AdminAnnouncesContent() {
   }
 
   const [translating, setTranslating] = useState(false)
+  // Message d'explication au propriétaire (annonce non éligible, informations manquantes…)
+  const [msgTarget, setMsgTarget] = useState<any | null>(null)
+  const [msgText, setMsgText] = useState("")
+  const [msgReject, setMsgReject] = useState(false)
+  const [msgSending, setMsgSending] = useState(false)
+  const MSG_TEMPLATES = [
+    "Votre annonce n'est pas éligible en l'état : des photos de meilleure qualité (au moins 3, nettes et lumineuses) sont nécessaires.",
+    "Votre annonce est incomplète : merci de renseigner toutes les caractéristiques du bien et de joindre les informations demandées.",
+    "Votre annonce ne respecte pas nos conditions de publication (contenu, prix ou description non conformes). Merci de la corriger puis de la soumettre à nouveau.",
+    "Une annonce identique est déjà publiée sur la plateforme : merci de ne pas la dupliquer.",
+  ]
+  const openMessage = (a: any) => { setMsgTarget(a); setMsgText(""); setMsgReject(a.status !== 'REJECTED' && a.status !== 'VALIDATED') }
+  const sendMessage = async () => {
+    if (!msgTarget || !msgText.trim()) return
+    setMsgSending(true)
+    try {
+      const token = localStorage.getItem('admin_token')
+      const res = await fetch(`${API_URL}/admin/announces/${msgTarget.id}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: msgText.trim() }),
+      })
+      if (!res.ok) throw new Error()
+      if (msgReject && msgTarget.status !== 'REJECTED') {
+        await fetch(`${API_URL}/admin/announces/${msgTarget.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status: 'REJECTED' }),
+        })
+        setAnnounces((list) => list.map((a) => a.id === msgTarget.id ? { ...a, status: 'REJECTED' } : a))
+      }
+      setMsgTarget(null)
+      alert("Message envoyé au propriétaire de l'annonce.")
+    } catch {
+      alert("Envoi impossible pour le moment.")
+    } finally { setMsgSending(false) }
+  }
   // Traduit (fr/ar/en) les titres des annonces existantes qui n'ont pas encore de traduction.
   const translateMissingTitles = async () => {
     setTranslating(true)
@@ -288,6 +325,47 @@ function AdminAnnouncesContent() {
 
   return (
     <div className="space-y-6">
+      {msgTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setMsgTarget(null)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Message au propriétaire</h2>
+                <p className="text-xs text-gray-500">Annonce {msgTarget.reference} — {msgTarget.user?.companyName || `${msgTarget.user?.firstName || ''} ${msgTarget.user?.lastName || ''}`}</p>
+              </div>
+              <button onClick={() => setMsgTarget(null)} className="text-gray-400 hover:text-gray-700"><XIcon className="h-5 w-5" /></button>
+            </div>
+            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Motifs courants</p>
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {MSG_TEMPLATES.map((m, i) => (
+                <button key={i} type="button" onClick={() => setMsgText(m)} className="rounded-full border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:border-[#00BFA6] hover:text-[#00BFA6]">
+                  {["Photos", "Incomplète", "Non conforme", "Doublon"][i]}
+                </button>
+              ))}
+            </div>
+            <textarea
+              rows={5}
+              maxLength={5000}
+              value={msgText}
+              onChange={(e) => setMsgText(e.target.value)}
+              placeholder="Expliquez au propriétaire pourquoi son annonce n'est pas éligible…"
+              className="w-full resize-none rounded-xl border-2 border-gray-200 p-3 text-sm outline-none focus:border-[#00BFA6]"
+            />
+            {msgTarget.status !== 'REJECTED' && msgTarget.status !== 'VALIDATED' && (
+              <label className="mt-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input type="checkbox" checked={msgReject} onChange={(e) => setMsgReject(e.target.checked)} className="h-4 w-4 accent-red-500" />
+                Rejeter aussi l'annonce
+              </label>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setMsgTarget(null)}>Annuler</Button>
+              <Button onClick={sendMessage} disabled={!msgText.trim() || msgSending} className="bg-[#00BFA6] hover:bg-[#00908A] text-white">
+                <Send className="mr-1.5 h-4 w-4" /> {msgSending ? 'Envoi…' : 'Envoyer'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#003B4A] font-brand flex items-center gap-3">
@@ -497,6 +575,15 @@ function AdminAnnouncesContent() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </a>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-[#0094BD] border-[#0094BD]/30 hover:bg-[#0094BD]/5"
+                            onClick={() => openMessage(announce)}
+                            title="Envoyer un message d'explication au propriétaire"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
                         {announce.status !== 'VALIDATED' && (
                             <Button
                                 size="sm"

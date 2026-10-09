@@ -698,9 +698,9 @@ export default function AnnounceDetailsPage() {
   const isSaleVillaDemolition = isSale && isVilla && (normalizedState === "A_DEMOLIR" || normalizedState.includes("DEMOLIR"))
   
   const normalizedPropertyType = typeof property.propertyType === "string" ? property.propertyType.toUpperCase() : "";
-  const isFactoryRental = isRental && normalizedPropertyType === "USINE"
-  const isColdRoomRental = isRental && normalizedPropertyType === "CHAMBRE_FROIDE"
-  const isHangarRental = isRental && normalizedPropertyType === "HANGAR"
+  const isFactoryRental = normalizedPropertyType === "USINE"
+  const isColdRoomRental = normalizedPropertyType === "CHAMBRE_FROIDE"
+  const isHangarRental = normalizedPropertyType === "HANGAR"
   const isHotelRental = isRental && normalizedPropertyType === "HOTEL"
   const isTerrainRental = (normalizedPropertyType === "TERRAIN_RESIDENTIEL" || normalizedPropertyType === "TERRAIN_INDUSTRIEL")
   const isTerrainAgricoleProperty = normalizedPropertyType === "TERRAIN_AGRICOLE"
@@ -2839,7 +2839,7 @@ export default function AnnounceDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Description Courte */}
                       {announce.shortDescription && (
-                          <div className="min-w-0">
+                          <div className="min-w-0 md:col-span-2">
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Layers className="h-5 w-5 text-[#00BFA6]" />{t('f050')}</h2>
                               <p className="text-gray-600 dark:text-white/60 leading-relaxed text-sm md:text-base break-words [overflow-wrap:anywhere]">
@@ -2848,9 +2848,9 @@ export default function AnnounceDetailsPage() {
                           </div>
                       )}
 
-                      {/* Cadre et mode de vie — environnement (choix multiple) */}
+                      {/* Cadre et mode de vie — environnement (choix multiple) : sur la même ligne que « Usage », sous la description pleine largeur */}
                       {buildingUsageTypes.length > 0 && (
-                          <div>
+                          <div className="min-w-0">
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />{t('f128')}</h2>
                               <div className="flex flex-wrap gap-2">
@@ -2865,7 +2865,7 @@ export default function AnnounceDetailsPage() {
 
                       {/* Usage / Type d'accès — choix unique (villa / niveau de villa) */}
                       {property.usageType && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
-                          <div>
+                          <div className="min-w-0">
                               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                   <Users className="h-5 w-5 text-[#00BFA6]" />
                                   {normalizedPropertyType === "NIVEAU_VILLA" ? t('f181') : t('f180')}

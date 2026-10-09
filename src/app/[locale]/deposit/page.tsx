@@ -1506,6 +1506,11 @@ const formSchema = z.object({
         data.transactionType === "RENTAL" &&
         data.realEstateType === "INDUSTRIEL" &&
         data.propertyType === "HANGAR"
+    // Industriel en VENTE (Usine / Chambre froide / Hangar) : mêmes fiches que la location, seul le prix est exigé.
+    const isIndustrialSale =
+        data.transactionType === "SALE" &&
+        data.realEstateType === "INDUSTRIEL" &&
+        ["USINE", "CHAMBRE_FROIDE", "HANGAR"].includes(data.propertyType)
     const isTerrainRental =
         data.transactionType === "RENTAL" &&
         ["TERRAIN_RESIDENTIEL", "TERRAIN_INDUSTRIEL", "TERRAIN_AGRICOLE", "TERRAIN_TOURISTIQUE"].includes(data.propertyType)
@@ -1519,7 +1524,7 @@ const formSchema = z.object({
     const isBureauCommerceHybrid = ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL"].includes(data.propertyType)
     const isAnyCommercial = isSpecialBureauCommerce || isBureauCommerceHybrid
 
-    if (isTerrainSale) {
+    if (isTerrainSale || isIndustrialSale) {
         const num = Number(String(data.price || "").replace(/\s/g, ""))
         if (!data.price || isNaN(num) || num <= 0) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Prix requis", path: ["price"] })
@@ -2167,6 +2172,11 @@ function DepositPageComponent() {
     transactionType === "RENTAL" &&
     propertyType === "HANGAR"
   const isIndustrialRentalParticulier = isUsineRentalParticulier || isChambreFroideRentalParticulier || isHangarRentalParticulier
+  // Fiches Industriel : identiques en location et en vente (la vente garde l'étape prix standard).
+  const isUsineFiche = ["RENTAL", "SALE"].includes(transactionType) && propertyType === "USINE"
+  const isChambreFroideFiche = ["RENTAL", "SALE"].includes(transactionType) && propertyType === "CHAMBRE_FROIDE"
+  const isHangarFiche = ["RENTAL", "SALE"].includes(transactionType) && propertyType === "HANGAR"
+  const isIndustrialFiche = isUsineFiche || isChambreFroideFiche || isHangarFiche
   const isCommercialPropertyType = ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU"].includes(propertyType)
   const isTerrainRentalParticulier =
     transactionType === "RENTAL" &&
@@ -2334,7 +2344,7 @@ function DepositPageComponent() {
   useEffect(() => {
     setPhotoCategories(prev => {
       const allPhotos = prev.flatMap(c => c.photos)
-      if (isIndustrialRentalParticulier) {
+      if (isIndustrialFiche) {
         return [
           { id: "non_classees", label: "Photos uploadées", icon: ImageIcon, photos: allPhotos },
           { id: "equipements", label: "Équipements", icon: WarehouseIcon, photos: [] },
@@ -2361,7 +2371,7 @@ function DepositPageComponent() {
         { id: "common", label: "Espaces communs", icon: Home, photos: [] },
       ]
     })
-  }, [isIndustrialRentalParticulier, isTerrainFiche])
+  }, [isIndustrialFiche, isTerrainFiche])
 
   useEffect(() => {
     if (!currentPrice) {
@@ -2855,7 +2865,7 @@ function DepositPageComponent() {
     let isValid = false;
     
     // Validation selon le type de bien
-    if (isChambreFroideRentalParticulier) {
+    if (isChambreFroideFiche) {
         isValid = await trigger([
             "cfSector",
             "cfSectorOther",
@@ -2876,7 +2886,7 @@ function DepositPageComponent() {
         ], { shouldFocus: true })
     } else if (isShowroomParticulier || isLocalCommercialParticulier || isBlocAdministratifParticulier) {
         isValid = true
-    } else if (isUsineRentalParticulier) {
+    } else if (isUsineFiche) {
         isValid = await trigger([
             "industrialSector",
             "industrialSectorOther",
@@ -3160,7 +3170,7 @@ function DepositPageComponent() {
     const isBuildingDemolitionPayload = data.transactionType === "SALE" && data.propertyType === 'IMMEUBLE_RESIDENTIEL' && data.state === "A_DEMOLIR"
     const shouldSkipAreaRooms = data.propertyType === "VILLA" || isBuildingDemolitionPayload
     const isFactoryRentalPayload =
-        data.transactionType === "RENTAL" &&
+        ["RENTAL", "SALE"].includes(data.transactionType) &&
         data.propertyType === "USINE"
 
     if (isFactoryRentalPayload) {
@@ -3222,7 +3232,7 @@ function DepositPageComponent() {
     }
 
     const isColdRoomRentalPayload =
-        data.transactionType === "RENTAL" &&
+        ["RENTAL", "SALE"].includes(data.transactionType) &&
         data.propertyType === "CHAMBRE_FROIDE"
 
     if (isColdRoomRentalPayload) {
@@ -3269,7 +3279,7 @@ function DepositPageComponent() {
     }
 
     const isHangarRentalPayload =
-        data.transactionType === "RENTAL" &&
+        ["RENTAL", "SALE"].includes(data.transactionType) &&
         data.propertyType === "HANGAR"
 
     if (isHangarRentalPayload) {
@@ -3909,9 +3919,7 @@ function DepositPageComponent() {
       (userType === "PARTICULIER" && transactionType === "SALE" && propertyType === "NIVEAU_VILLA") ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
       (userType === "PARTICULIER" && transactionType === "SALE" && (propertyType === "APPARTEMENT" || propertyType === "DUPLEX" || propertyType === "TRIPLEX" || propertyType === "STUDIO" || propertyType === "IMMEUBLE_RESIDENTIEL")) ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "USINE") ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "CHAMBRE_FROIDE") ||
-      (userType === "PARTICULIER" && transactionType === "RENTAL" && propertyType === "HANGAR") ||
+      (userType === "PARTICULIER" && ["RENTAL", "SALE"].includes(transactionType) && ["USINE", "CHAMBRE_FROIDE", "HANGAR"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "RENTAL" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU", "IMMEUBLE_COMMERCIAL"].includes(propertyType)) ||
       (userType === "PARTICULIER" && transactionType === "SALE" && ["VILLA_COMMERCIALE", "NIVEAU_VILLA_COMMERCIAL", "APPARTEMENT_COMMERCIAL", "IMMEUBLE_BUREAU", "IMMEUBLE_COMMERCIAL"].includes(propertyType)) ||
       (userType === "PARTICULIER" && ["RENTAL", "SALE"].includes(transactionType) && ["SHOWROOM", "LOCAL_COMMERCIAL", "BLOC_ADMINISTRATIF"].includes(propertyType)) ||
@@ -4106,11 +4114,14 @@ function DepositPageComponent() {
                                     const Icon = IconMap[cat.iconName] || Home
                                     const isSelected = realEstateType === cat.id
                                     const catColor = getCategoryColor(cat.id)
+                                    // « Structures hôtelières » en vente : mise en attente (visible mais non sélectionnable)
+                                    const standby = transactionType === "SALE" && (cat.id === "HOTELIER" || cat.id === "HEBERGEMENT")
                                     return (
                                         <div
                                             key={cat.id}
-                                            onClick={() => handleCategoryClick(cat.id)}
-                                            className="flex flex-col items-center gap-4 cursor-pointer group w-full"
+                                            onClick={() => { if (!standby) handleCategoryClick(cat.id) }}
+                                            aria-disabled={standby}
+                                            className={cn("flex flex-col items-center gap-4 group w-full relative", standby ? "cursor-not-allowed opacity-50" : "cursor-pointer")}
                                         >
                                             <div
                                                 className={cn(
@@ -4135,6 +4146,7 @@ function DepositPageComponent() {
                                             >
                                                 {catLabel(cat.id)}
                                             </span>
+                                            {standby && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">{t('standbyBadge')}</span>}
                                         </div>
                                     )
                                 })}
@@ -4594,7 +4606,7 @@ function DepositPageComponent() {
                         </div>
                     )}
 
-                    {currentStep === 4 && isUsineRentalParticulier && (
+                    {currentStep === 4 && isUsineFiche && (
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
                             <section className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
@@ -4972,7 +4984,7 @@ function DepositPageComponent() {
                     )}
 
                     {/* Step 4: Fiche descriptive - Hangar */}
-                    {currentStep === 4 && isHangarRentalParticulier && (
+                    {currentStep === 4 && isHangarFiche && (
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
 
                             {/* Section 1 : Dimensions & Surface */}
@@ -5321,7 +5333,7 @@ function DepositPageComponent() {
                     )}
 
                     {/* Step 4: Fiche descriptive - Chambre froide */}
-                    {currentStep === 4 && isChambreFroideRentalParticulier && (
+                    {currentStep === 4 && isChambreFroideFiche && (
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
 
                             {/* Section 1 : Activités & Usages autorisés */}
@@ -5762,12 +5774,14 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            {/* Section C : État Juridique & Urbanisme */}
+                            {/* Section C : État Juridique & Urbanisme (en location : seulement la viabilisation, sans documents) */}
+                            {(transactionType === "SALE" || (!isTerrainAgricole && !isTerrainTouristique)) && (
                             <section className={`space-y-6 ${isTerrainAgricole ? "order-3" : "order-2"}`}>
                                 <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
-                                    <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f095')}</h2>
+                                    <FileText className="h-5 w-5 text-[#00BFA6]" />{transactionType === "SALE" ? t('f095') : t('f091')}</h2>
                                 <div className="space-y-5">
-                                    {/* Documents disponibles — tous sur une seule ligne */}
+                                    {/* Documents juridiques : uniquement pour la VENTE (retirés de la location de terrains) */}
+                                    {transactionType === "SALE" && (
                                     <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f096')}</div>
                                         <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -5779,6 +5793,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
+                                    )}
                                     {/* Viabilisation & Raccordements — masqué pour agricole et touristique (viabilité déjà dans Caractéristiques Physiques) */}
                                     {!isTerrainAgricole && !isTerrainTouristique && <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f091')}</div>
@@ -5804,6 +5819,7 @@ function DepositPageComponent() {
                                     </div>}
                                 </div>
                             </section>
+                            )}
 
                             {/* Section Agricole — uniquement pour Terrain Agricole */}
                             {isTerrainAgricole && (
@@ -7632,9 +7648,9 @@ function DepositPageComponent() {
                         (propertyType === "NIVEAU_VILLA_COMMERCIAL" && (transactionType === "RENTAL" || transactionType === "SALE")) ||
                         ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE")) ||
                         isImmeubleCommercialParticulier ||
-                        isUsineRentalParticulier ||
-                        isChambreFroideRentalParticulier ||
-                        isHangarRentalParticulier ||
+                        isUsineFiche ||
+                        isChambreFroideFiche ||
+                        isHangarFiche ||
                         isTerrainFiche ||
                         isBureauCommerceSpecialParticulier ||
                         isHebergementHabitant ||

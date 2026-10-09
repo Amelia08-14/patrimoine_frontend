@@ -54,7 +54,8 @@ export function AdSidebar({ side, className, page = "ANNOUNCES", category }: { s
             className={cn("absolute inset-0 block transition-opacity duration-1000", i === index ? "opacity-100" : "pointer-events-none opacity-0")}
           >
             <img src={ad.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#003B4A] via-[#003B4A]/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
+            {ad.categoryLabel && <span className="absolute top-3 start-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#003B4A] shadow-sm">{ad.categoryLabel}</span>}
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4">
               {ad.title && <h3 className="font-brand text-lg leading-tight text-white line-clamp-3">{ad.title}</h3>}
               {ad.subtitle && <p className="text-xs leading-snug text-white/75 line-clamp-4">{ad.subtitle}</p>}
@@ -90,9 +91,10 @@ export function AdStrip({ className, page = "ANNOUNCES", category }: { className
     <aside aria-label={t("adLabel")} className={cn("relative overflow-hidden rounded-2xl bg-[#003B4A] shadow-sm", className)}>
       <AdLink href={ad.href} adId={ad.id} className="relative flex h-24 sm:h-28 items-center">
         <img key={ad.key} src={ad.image} alt="" className="absolute inset-0 h-full w-full object-cover animate-in fade-in duration-700" />
-        <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-[#003B4A] via-[#003B4A]/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-black/80 via-black/50 to-transparent" />
         <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3 px-4">
           <div className="min-w-0 flex-1">
+            {ad.categoryLabel && <span className="mb-1 inline-block rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#003B4A]">{ad.categoryLabel}</span>}
             {ad.title && <p className="line-clamp-2 sm:truncate font-brand text-base sm:text-lg leading-tight text-white">{ad.title}</p>}
             {ad.subtitle && <p className="mt-0.5 hidden sm:block truncate text-xs text-white/70">{ad.subtitle}</p>}
           </div>
