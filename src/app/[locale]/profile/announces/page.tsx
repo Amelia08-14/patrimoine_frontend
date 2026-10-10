@@ -445,7 +445,17 @@ export default function MyAnnouncesPage() {
                           className="p-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-gray-300 hover:text-gray-700 transition-colors" title={t("viewTitle")}>
                           <Eye className="h-4 w-4" />
                         </a>
-                        <button onClick={() => setEditTarget(a)} className="p-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-[#0094BD] hover:text-[#0094BD] transition-colors" title={t("editBtn")} aria-label={t("editBtn")}>
+                        <button onClick={() => {
+                          // Annonce déposée avec le formulaire complet : on le rouvre (tout est modifiable) ;
+                          // sinon (annonce plus ancienne) : édition limitée titre / description / prix.
+                          if (a.hasSnapshot) {
+                            let isPro = false
+                            try { isPro = JSON.parse(localStorage.getItem('user') || '{}')?.userType === 'SOCIETE' } catch {}
+                            router.push(`/deposit/${isPro ? 'professionnel' : 'particulier'}?edit=${a.id}` as any)
+                          } else {
+                            setEditTarget(a)
+                          }
+                        }} className="p-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-[#0094BD] hover:text-[#0094BD] transition-colors" title={t("editBtn")} aria-label={t("editBtn")}>
                           <Edit className="h-4 w-4" />
                         </button>
                         <button onClick={() => setDeleteTarget(a)} className="p-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-red-300 hover:text-red-500 transition-colors" title={t("deleteBtn")} aria-label={t("deleteBtn")}>

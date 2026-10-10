@@ -2166,7 +2166,9 @@
     "hsFullBlankTitle": "Bientôt disponible",
     "hsFullBlankText": "Le formulaire de location d'une structure hôtelière complète est en cours de préparation.",
     "catHotellerieSale": "Structures hôtelières",
-    "standbyBadge": "Bientôt disponible"
+    "standbyBadge": "Bientôt disponible",
+    "editNoSnapshot": "Cette annonce a été déposée avant l'activation de la modification complète : seuls le titre, la description et le prix sont modifiables depuis « Mes annonces ».",
+    "editLoadError": "Impossible de charger l'annonce à modifier. Réessayez depuis « Mes annonces »."
   },
   "HomePage": {
     "categoryLabel": "Catégorie",

@@ -2166,7 +2166,9 @@
     "hsFullBlankTitle": "Coming soon",
     "hsFullBlankText": "The form for renting a whole hotel structure is being prepared.",
     "catHotellerieSale": "Hotel structures",
-    "standbyBadge": "Coming soon"
+    "standbyBadge": "Coming soon",
+    "editNoSnapshot": "This listing was posted before full editing was available: only the title, description and price can be edited from “My listings”.",
+    "editLoadError": "Unable to load the listing to edit. Please try again from “My listings”."
   },
   "HomePage": {
     "categoryLabel": "Category",

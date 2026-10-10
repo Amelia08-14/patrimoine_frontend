@@ -2086,6 +2086,62 @@ function DepositPageComponent() {
   // coupure réseau...), il retrouve sa saisie en revenant sur la page. Les photos/vidéos (objets
   // File) ne peuvent pas être sérialisées dans localStorage : seuls les champs texte/choix sont
   // restaurés, il faudra ré-ajouter les médias. Expire après 7 jours.
+  // --- Mode MODIFICATION : /deposit/...?edit=<id> rouvre l'annonce dans ce même formulaire (tout son contenu).
+  // Les valeurs viennent de la copie du formulaire enregistrée au dépôt ; les photos/vidéos existantes sont
+  // rechargées comme fichiers (donc réorganisables/supprimables) et renvoyées avec le reste à l'enregistrement.
+  const [editId, setEditId] = useState<number | null>(null)
+  const [editLoading, setEditLoading] = useState(false)
+  const [editMedia, setEditMedia] = useState<{ files: File[]; cats: string[]; mainIndex: number; videos: File[]; coverVideoIndex: number | null } | null>(null)
+
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get('edit')
+    const id = raw ? Number(raw) : NaN
+    if (!Number.isInteger(id) || id <= 0) return
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const abs = (u: string) => (u.startsWith('http') ? u : `${api}/${u.replace(/\\/g, '/').replace(/^\/+/, '')}`)
+    const toFile = async (u: string, fallbackType: string) => {
+      const res = await fetch(abs(u))
+      const blob = await res.blob()
+      return new File([blob], u.split(/[\\/]/).pop() || 'media', { type: blob.type || fallbackType })
+    }
+    setEditLoading(true)
+    ;(async () => {
+      try {
+        const res = await fetch(`${api}/announces/${id}/edit-data`, { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) throw new Error(String(res.status))
+        const data = await res.json()
+        if (!data.snapshot?.values) {
+          alert(t('editNoSnapshot'))
+          router.replace('/profile/announces')
+          return
+        }
+        reset(data.snapshot.values)
+        if (Array.isArray(data.snapshot.contacts) && data.snapshot.contacts.length > 0) setContacts(data.snapshot.contacts)
+        if (Array.isArray(data.snapshot.hotelRooms)) setHotelRooms(data.snapshot.hotelRooms)
+        const imgs: any[] = data.images || []
+        const files = await Promise.all(imgs.map((i) => toFile(i.url, i.contentType || 'image/jpeg')))
+        const videos = await Promise.all((data.videos || []).map((v: string) => toFile(v, 'video/mp4')))
+        setEditMedia({
+          files,
+          cats: imgs.map((i) => i.category || 'general'),
+          mainIndex: imgs.findIndex((i) => i.isMain),
+          videos,
+          coverVideoIndex: typeof data.coverVideoIndex === 'number' ? data.coverVideoIndex : null,
+        })
+        setEditId(id)
+        setCurrentStep(4)
+      } catch {
+        alert(t('editLoadError'))
+        router.replace('/profile/announces')
+      } finally {
+        setEditLoading(false)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const DEPOSIT_DRAFT_KEY = 'deposit-draft-v1'
   const DEPOSIT_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
   const [depositDraftAvailable, setDepositDraftAvailable] = useState<{ savedAt: number } | null>(null)
@@ -2094,6 +2150,8 @@ function DepositPageComponent() {
   useEffect(() => {
     if (depositDraftCheckedRef.current) return
     depositDraftCheckedRef.current = true
+    // Modification d'une annonce existante : pas de brouillon (il écraserait les données de l'annonce)
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('edit')) return
     try {
       const raw = localStorage.getItem(DEPOSIT_DRAFT_KEY)
       if (!raw) return
@@ -2111,6 +2169,7 @@ function DepositPageComponent() {
       const timeout = setTimeout(() => {
         try {
           if (!values.realEstateType) return
+          if (new URLSearchParams(window.location.search).get('edit')) return
           localStorage.setItem(DEPOSIT_DRAFT_KEY, JSON.stringify({ values, step: currentStep, savedAt: Date.now() }))
         } catch { /* quota localStorage dépassé ou navigation privée — on ignore */ }
       }, 800)
@@ -2372,6 +2431,28 @@ function DepositPageComponent() {
       ]
     })
   }, [isIndustrialFiche, isTerrainFiche])
+
+  // Modification : une fois le type de bien appliqué (les catégories de photos en dépendent), on y range les médias existants.
+  useEffect(() => {
+    if (!editMedia || !propertyType) return
+    setSelectedFiles(editMedia.files)
+    setMainPhoto(editMedia.mainIndex >= 0 ? editMedia.files[editMedia.mainIndex] : null)
+    setSelectedVideos(editMedia.videos)
+    setMainVideo(editMedia.coverVideoIndex !== null ? editMedia.videos[editMedia.coverVideoIndex] || null : null)
+    setPhotoCategories((prev) => {
+      const fallback = prev.find((c) => c.id === 'non_classees' || c.id === 'other') ?? prev[0]
+      return prev.map((cat) => ({
+        ...cat,
+        photos: editMedia.files.filter((_, i) => {
+          const wanted = prev.some((c) => c.id === editMedia.cats[i]) ? editMedia.cats[i] : fallback.id
+          return wanted === cat.id
+        }),
+      }))
+    })
+    setPhotoOrganizationStep('organize')
+    setEditMedia(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editMedia, propertyType, isIndustrialFiche, isTerrainFiche])
 
   useEffect(() => {
     if (!currentPrice) {
@@ -3098,6 +3179,7 @@ function DepositPageComponent() {
   }
 
   const goToStep = (step: number) => {
+    if (editId && step < 4) return // le type de bien d'une annonce existante n'est pas modifiable
     if (step < currentStep) {
       setCurrentStep(step)
     }
@@ -3794,6 +3876,11 @@ function DepositPageComponent() {
     if (contacts.length > 0 && contacts[0].phone) {
         formData.append('contacts', JSON.stringify(contacts));
     }
+
+    // 4. Copie du formulaire : permet de rouvrir l'annonce plus tard dans ce même formulaire pour la modifier
+    try {
+        formData.append('formSnapshot', JSON.stringify({ values: getValues(), contacts, hotelRooms }))
+    } catch { /* non bloquant */ }
     
     // Debug
     console.log("Submitting form data:")
@@ -3805,8 +3892,8 @@ function DepositPageComponent() {
     try {
       const token = localStorage.getItem('token')
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces`, {
-        method: 'POST',
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/announces${editId ? `/${editId}/full` : ''}`, {
+        method: editId ? 'PUT' : 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -3988,7 +4075,7 @@ function DepositPageComponent() {
             {/* Main Card */}
             <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col">
                 <div className="p-4 md:p-8 border-b border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1">
-                    {currentStep > 1 && (
+                    {currentStep > (editId ? 4 : 1) && (
                         <button
                             onClick={prevStep}
                             className="flex items-center gap-2 text-gray-500 hover:text-[#00BFA6] transition-colors font-medium shrink-0"
