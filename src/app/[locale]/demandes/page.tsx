@@ -1,37 +1,118 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import axios from "axios"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { Search, Handshake, CalendarDays, X, LayoutGrid, LayoutDashboard, List } from "lucide-react"
-import { EntrustedResearchCard } from "@/components/EntrustedResearchCard"
+import { Search, Handshake, CalendarDays, X, LayoutGrid, LayoutDashboard, List, ChevronDown, Check } from "lucide-react"
+import { EntrustedResearchCard, CATEGORY_ICONS } from "@/components/EntrustedResearchCard"
+import { AdBanner } from "@/components/AdBanner"
 import { AdSidebar, AdStrip } from "@/components/AdSidebar"
+import { getCategoryColor } from "@/data/categoryColors"
+import { useLocalizedPlaceName } from "@/lib/typeLabels"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 type Period = "ALL" | "TODAY" | "WEEK" | "MONTH"
 const PERIOD_DAYS: Record<Exclude<Period, "ALL">, number> = { TODAY: 1, WEEK: 7, MONTH: 30 }
-// Catégories proposées au public (Évènementiel et Hébergement chez l'habitant sont masquées côté site).
+// Catégories proposées au public (Évènementiel et Hébergement chez l'habitant sont masquées côté
+// site) — Hébergement & Séjour volontairement en dernier (demande client du 15/10/2026, même choix
+// que REAL_ESTATE_CATEGORIES/RESEARCH_BRANCHES).
 const FILTER_CATEGORIES = ["RESIDENTIEL", "BUREAUX_COMMERCES", "INDUSTRIEL", "TERRAIN_FONCIER", "HOTELIER"] as const
+
+const ctl = "h-10 rounded-xl border-2 border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 text-sm font-semibold text-gray-800 dark:text-white outline-none focus:border-[#0094BD]"
+
+// Pastille à icône colorée par catégorie — même traitement que le filtre de /announces
+// (AnnounceFilter) : icône dans un rond teinté à la couleur de la catégorie.
+const chip = (hex: string, Icon: any) => (
+  <span className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${hex}1A` }}>
+    <Icon className="h-3.5 w-3.5" style={{ color: hex }} />
+  </span>
+)
+
+// Liste déroulante Catégorie — icône + couleur par option, même esprit que le sélecteur de
+// catégorie de /announces (demande client du 15/10/2026 : "ajouter les icônes et les couleurs").
+function CategoryDropdown({ value, onChange, allLabel }: { value: string; onChange: (v: string) => void; allLabel: string }) {
+  const tc = useTranslations("Categories")
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selectedColor = value ? getCategoryColor(value).hex : null
+  const SelectedIcon = value ? (CATEGORY_ICONS[value] || LayoutGrid) : LayoutGrid
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener("mousedown", onDown)
+    return () => document.removeEventListener("mousedown", onDown)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative min-w-0 basis-[calc(50%-0.3rem)] grow sm:basis-auto sm:grow-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`${ctl} w-full flex items-center gap-2 px-2.5`}
+      >
+        {value ? chip(selectedColor!, SelectedIcon) : <span className="shrink-0 h-7 w-7 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3.5 w-3.5 text-gray-500 dark:text-white/60" /></span>}
+        <span className="flex-1 truncate text-start">{value ? tc(value) : allLabel}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute start-0 top-full z-30 mt-2 w-60 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] p-1.5 shadow-xl">
+          <button
+            type="button"
+            onClick={() => { onChange(""); setOpen(false) }}
+            className={`w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${!value ? "bg-gray-50 dark:bg-white/5" : ""}`}
+          >
+            <span className="shrink-0 h-7 w-7 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3.5 w-3.5 text-gray-500 dark:text-white/60" /></span>
+            <span className="flex-1 truncate text-[13px] font-semibold text-gray-700 dark:text-white/80">{allLabel}</span>
+            {!value && <Check className="h-3.5 w-3.5 text-gray-400" />}
+          </button>
+          {FILTER_CATEGORIES.map((id) => {
+            const color = getCategoryColor(id).hex
+            const Icon = CATEGORY_ICONS[id] || LayoutGrid
+            const active = value === id
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => { onChange(id); setOpen(false) }}
+                className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                style={active ? { backgroundColor: `${color}12` } : undefined}
+              >
+                {chip(color, Icon)}
+                <span className="flex-1 truncate text-[13px] font-semibold text-gray-800 dark:text-white/90" style={active ? { color } : undefined}>{tc(id)}</span>
+                {active && <Check className="h-3.5 w-3.5" style={{ color }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function DemandesPage() {
   const t = useTranslations("Demandes")
-  const tc = useTranslations("Categories")
+  const place = useLocalizedPlaceName()
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [cities, setCities] = useState<Array<{ id: number; nameFr?: string; nameAr?: string }>>([])
+  const [towns, setTowns] = useState<Array<{ id: number; nameFr?: string; nameAr?: string }>>([])
 
   const [transaction, setTransaction] = useState<"" | "SALE" | "RENTAL">("")
   const [category, setCategory] = useState("")
+  const [wilaya, setWilaya] = useState("")
+  const [commune, setCommune] = useState("")
   const [period, setPeriod] = useState<Period>("ALL")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
-  const [query, setQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "large" | "list">("grid")
 
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        const res = await axios.get(`${apiUrl}/entrusted-research`)
+        const res = await axios.get(`${API_URL}/entrusted-research`)
         setRequests(res.data)
       } catch (err) {
         console.error("Error fetching entrusted researches:", err)
@@ -40,84 +121,84 @@ export default function DemandesPage() {
       }
     }
     fetchRequests()
+    axios.get(`${API_URL}/cities`).then((r) => setCities(Array.isArray(r.data) ? r.data : [])).catch(() => {})
   }, [])
+
+  // Communes de la wilaya choisie — même endpoint que /research et /announces.
+  useEffect(() => {
+    if (!wilaya) { setTowns([]); setCommune(""); return }
+    axios.get(`${API_URL}/cities/${wilaya}/towns`).then((r) => setTowns(Array.isArray(r.data) ? r.data : [])).catch(() => setTowns([]))
+  }, [wilaya])
 
   const filtered = useMemo(() => {
     const activity = (r: any) => new Date(r.lastActivityAt || r.refreshDate || r.createdAt).getTime()
     const now = Date.now()
     const from = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null
     const to = dateTo ? new Date(`${dateTo}T23:59:59`).getTime() : null
-    const q = query.trim().toLowerCase()
     const list = requests.filter((r) => {
       if (transaction && r.transaction !== transaction) return false
       if (category) {
         const rc = r.realEstateType === "HEBERGEMENT" ? "HOTELIER" : r.realEstateType
         if (rc !== category) return false
       }
+      // Wilaya/commune : mêmes champs bruts que le backend (cityId, towns en JSON) — cf.
+      // entrusted-research.service.ts `enrich()`, qui renvoie aussi cityName/townNames résolus
+      // pour l'affichage mais garde les ids bruts pour un filtrage précis côté client.
+      if (wilaya && String(r.cityId) !== wilaya) return false
+      if (commune) {
+        let townIds: number[] = []
+        try { townIds = JSON.parse(r.towns || "[]").map(Number) } catch { townIds = [] }
+        if (!townIds.includes(Number(commune))) return false
+      }
       const a = activity(r)
       if (period !== "ALL" && now - a > PERIOD_DAYS[period] * 86400000) return false
       if (from !== null && a < from) return false
       if (to !== null && a > to) return false
-      if (q) {
-        const hay = [r.comment, r.cityName, ...(r.townNames || []), r.propertyType].filter(Boolean).join(" ").toLowerCase()
-        if (!hay.includes(q)) return false
-      }
       return true
     })
     // Plus récentes d'abord (dernière activité : une demande actualisée avec des points remonte).
     list.sort((a, b) => activity(b) - activity(a))
     return list
-  }, [requests, transaction, category, period, dateFrom, dateTo, query])
+  }, [requests, transaction, category, wilaya, commune, period, dateFrom, dateTo])
 
-  const hasFilters = !!(transaction || category || period !== "ALL" || dateFrom || dateTo || query)
-  const reset = () => { setTransaction(""); setCategory(""); setPeriod("ALL"); setDateFrom(""); setDateTo(""); setQuery("") }
-
-  const ctl = "h-10 rounded-xl border-2 border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 text-sm font-semibold text-gray-800 dark:text-white outline-none focus:border-[#0094BD]"
+  const hasFilters = !!(transaction || category || wilaya || commune || period !== "ALL" || dateFrom || dateTo)
+  const reset = () => { setTransaction(""); setCategory(""); setWilaya(""); setCommune(""); setPeriod("ALL"); setDateFrom(""); setDateTo("") }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#022229]">
-      {/* En-tête */}
-      <div className="relative overflow-hidden bg-[#003B4A] text-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/seeker-bg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#003B4A] via-[#003B4A]/85 to-[#0094BD]/40" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-          <div className="max-w-2xl">
-            <h1 className="text-3xl md:text-4xl font-extrabold">{t("title")}</h1>
-            <p className="mt-3 text-white/80">{t("subtitle")}</p>
-          </div>
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="rounded-2xl bg-white/10 backdrop-blur px-5 py-3 text-center">
-              <div className="text-3xl font-black leading-none">{requests.length}</div>
-              <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-white/70">{t("totalRequests")}</div>
-            </div>
-            <Link
-              href="/research"
-              className="inline-flex items-center gap-2 bg-[#00BFA6] hover:bg-[#00a893] text-white rounded-full px-6 py-3.5 font-bold transition-colors"
-            >
-              <Handshake className="h-4 w-4" /> {t("entrustMySearch")}
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-transparent pb-12">
+      <h1 className="sr-only">{t("title")}</h1>
+
+      {/* Espace publicitaire défilant — même structure que /announces (plus de bandeau photo avec
+          overlay sombre, retiré à la demande du client du 15/10/2026). */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="max-w-[1600px] mx-auto">
+          <AdBanner page="DEMANDES" category={category || undefined} />
+        </div>
+      </div>
+
+      {/* Repère + CTA "Confier ma recherche" — déplacés hors du bandeau photo supprimé. */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-5">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-gray-500 dark:text-white/50">
+            <span className="font-bold text-gray-900 dark:text-white">{requests.length}</span> {t("totalRequests")}
+          </p>
+          <Link
+            href="/research"
+            className="inline-flex items-center gap-2 bg-[#00BFA6] hover:bg-[#00a893] text-white rounded-full px-5 py-2.5 text-sm font-bold transition-colors shrink-0"
+          >
+            <Handshake className="h-4 w-4" /> {t("entrustMySearch")}
+          </Link>
         </div>
       </div>
 
       {/* Colonnes publicitaires latérales (mêmes règles que /announces) */}
       <div className="mx-auto flex max-w-[1700px] items-start gap-6 px-4 sm:px-6 lg:px-8 py-8">
-        <AdSidebar page="DEMANDES" category={category || undefined} side="start" className="hidden 2xl:block mt-24" />
+        <AdSidebar page="DEMANDES" category={category || undefined} side="start" className="hidden 2xl:block" />
         <div className="min-w-0 flex-1">
-        {/* Filtres — une seule barre compacte, comme sur /announces */}
-        <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-3 md:p-4 shadow-sm -mt-14 relative z-10">
+        {/* Filtres — même filtre que sur /announces (icônes/couleurs par catégorie, wilaya +
+            commune, pas de recherche libre) — demande client du 15/10/2026. */}
+        <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-3 md:p-4 shadow-sm relative z-10">
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("searchPlaceholder")}
-                className={`${ctl} w-full ps-9 pe-3`}
-              />
-            </div>
-
             <div className="flex w-full sm:w-auto rounded-xl border-2 border-gray-200 dark:border-white/15 overflow-hidden h-11 sm:h-10">
               {([["SALE", t("sale"), "#00BFA6"], ["RENTAL", t("rental"), "#003B4A"]] as const).map(([id, label, color]) => (
                 <button
@@ -132,9 +213,27 @@ export default function DemandesPage() {
               ))}
             </div>
 
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className={`${ctl} px-3 pe-8 min-w-0 basis-[calc(50%-0.3rem)] grow sm:basis-auto sm:grow-0`} aria-label={t("filterAllActivities")}>
-              <option value="">{t("filterAllActivities")}</option>
-              {FILTER_CATEGORIES.map((id) => <option key={id} value={id}>{tc(id)}</option>)}
+            <CategoryDropdown value={category} onChange={setCategory} allLabel={t("filterAllActivities")} />
+
+            <select
+              value={wilaya}
+              onChange={(e) => setWilaya(e.target.value)}
+              className={`${ctl} px-3 pe-8 min-w-0 basis-[calc(50%-0.3rem)] grow sm:basis-auto sm:grow-0`}
+              aria-label={t("wilayaPlaceholder")}
+            >
+              <option value="">{t("wilayaPlaceholder")}</option>
+              {cities.map((c) => <option key={c.id} value={c.id}>{place.city(c)}</option>)}
+            </select>
+
+            <select
+              value={commune}
+              onChange={(e) => setCommune(e.target.value)}
+              disabled={!wilaya}
+              className={`${ctl} px-3 pe-8 min-w-0 basis-[calc(50%-0.3rem)] grow sm:basis-auto sm:grow-0 disabled:opacity-50`}
+              aria-label={t("communePlaceholder")}
+            >
+              <option value="">{t("communePlaceholder")}</option>
+              {towns.map((tw) => <option key={tw.id} value={tw.id}>{place.town(tw)}</option>)}
             </select>
 
             <select
@@ -208,7 +307,7 @@ export default function DemandesPage() {
           </div>
         )}
         </div>
-        <AdSidebar page="DEMANDES" category={category || undefined} side="end" className="hidden xl:block mt-24" />
+        <AdSidebar page="DEMANDES" category={category || undefined} side="end" className="hidden xl:block" />
       </div>
     </div>
   )

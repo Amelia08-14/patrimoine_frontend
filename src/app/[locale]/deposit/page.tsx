@@ -178,13 +178,15 @@ const HTL_STAR_TIER: Record<number, string> = {
   5: "Luxe",
 }
 
+// HOTELIER/HEBERGEMENT (Hébergement & Séjour) en dernière position — demande client du
+// 15/10/2026 (même choix que REAL_ESTATE_CATEGORIES/RESEARCH_BRANCHES).
 const BASE_REAL_ESTATE_CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
-  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
-  { id: "HEBERGEMENT", label: "Hébergement & Séjour", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Briefcase" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "TerrainFoncier" },
+  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
+  { id: "HEBERGEMENT", label: "Hébergement & Séjour", iconName: "Hotel" },
 ]
 
 // Types de biens par catégorie
@@ -1953,6 +1955,16 @@ function DepositPageComponent() {
     if (!user.adminVerified) {
         alert("Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas encore déposer d'annonce.")
         router.push('/')
+        return
+    }
+
+    // Les professionnels doivent avoir complété leur profil (registre de commerce, agrément...)
+    // avant de pouvoir déposer une annonce — demande client du 15/10/2026 : ce n'est plus vérifié
+    // à la connexion (le particulier ET le professionnel passent directement à l'accueil après
+    // connexion), seulement au moment précis où un professionnel tente de déposer.
+    if (user.userType === "SOCIETE" && !user.isProfileComplete) {
+        alert("Merci de compléter votre profil pour pouvoir déposer une annonce.")
+        router.push('/profile/complete')
         return
     }
 

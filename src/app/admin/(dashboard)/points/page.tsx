@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search, Pencil, Save, Trash2, Plus, FileDown, FileSpreadsheet } from "lucide-react"
+import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search, Pencil, Save, Trash2, Plus, FileDown, FileSpreadsheet, FileText } from "lucide-react"
 import { DATE_PRESETS, todayStr, periodLabel } from "@/lib/datePresets"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -33,6 +33,8 @@ type Purchase = {
   createdAt: string
   validatedAt: string | null
   expiresAt: string | null
+  paymentMethod: string | null
+  receiptUrl: string | null
   user: {
     id: number
     firstName: string
@@ -677,6 +679,19 @@ export default function AdminPointsPage() {
                         {packDef?.title || p.pack}
                       </span>
                       <div className="text-[10px] text-gray-400 mt-0.5">{p.points} pts</div>
+                      {/* Moyen de paiement déclaré + reçu joint (2026-10-15) — utile pour la
+                          validation : savoir comment chercher le paiement (CCP/virement...) et
+                          pouvoir vérifier la preuve jointe. */}
+                      {p.paymentMethod && (
+                        <div className="text-[10px] font-bold text-gray-500 mt-1">
+                          {{ CCP: 'CCP', VIREMENT: 'Virement', SUR_PLACE: 'Sur place', BARIDIMOB: 'BaridiMob' }[p.paymentMethod as string] || p.paymentMethod}
+                        </div>
+                      )}
+                      {p.receiptUrl && (
+                        <a href={`${API_URL}${p.receiptUrl}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0094BD] hover:underline mt-0.5">
+                          <FileText className="h-2.5 w-2.5" /> Voir le reçu
+                        </a>
+                      )}
                     </div>
                     <div className="text-center">
                       <span className="font-black text-gray-900">{p.price.toLocaleString()}</span>

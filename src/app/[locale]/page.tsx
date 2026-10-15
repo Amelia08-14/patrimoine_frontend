@@ -234,7 +234,13 @@ function CategorySelect({ value, onChange, placeholder }: { value: string; onCha
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey) }
   }, [open])
 
-  const chip = (hex: string, Icon: ReturnType<typeof getIcon>, size = "h-7 w-7") => (
+  // Tailles/paddings en px fixes (pas les classes rem par défaut de Tailwind) : la racine <html>
+  // passe à 17px en arabe (meilleure lisibilité des glyphes, cf. globals.css) et tout ce qui est en
+  // rem grossit avec elle — ce composant doit garder les mêmes proportions quelle que soit la
+  // langue, donc son padding/espacement est épinglé en px (demande client du 15/10/2026). Le texte
+  // lui-même (`text-sm`, `text-[13px]`...) continue de suivre la racine, volontairement : c'est ce
+  // qui rend l'arabe lisible, seule la boîte autour ne doit pas gonfler avec lui.
+  const chip = (hex: string, Icon: ReturnType<typeof getIcon>, size = "h-[26px] w-[26px]") => (
     <span className={cn("shrink-0 rounded-lg flex items-center justify-center", size)} style={{ backgroundColor: `${hex}1A` }}>
       <Icon className="h-3.5 w-3.5" style={{ color: hex }} />
     </span>
@@ -247,23 +253,23 @@ function CategorySelect({ value, onChange, placeholder }: { value: string; onCha
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 py-1.5 text-sm font-semibold text-gray-800 dark:text-white text-start"
+        className="w-full flex items-center gap-[8px] py-[6px] text-sm font-semibold text-gray-800 dark:text-white text-start"
       >
-        {selected ? chip(getCategoryColor(selected.id).hex, getIcon(selected.iconName), "h-7 w-7") : <Building2 className="h-4 w-4 text-gray-400 shrink-0" />}
+        {selected ? chip(getCategoryColor(selected.id).hex, getIcon(selected.iconName), "h-[26px] w-[26px]") : <Building2 className="h-4 w-4 text-gray-400 shrink-0" />}
         <span className={cn("flex-1 truncate", !selected && "text-gray-800 dark:text-white")}>{selected ? tc(selected.id) : placeholder}</span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-gray-400 transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
-        <div role="listbox" className="absolute start-0 top-full z-30 mt-3 w-64 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] p-1.5 shadow-xl shadow-black/10">
+        <div role="listbox" className="absolute start-0 top-full z-30 mt-[11px] w-64 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] p-[6px] shadow-xl shadow-black/10">
           <button
             type="button"
             role="option"
             aria-selected={!value}
             onClick={() => { onChange(""); setOpen(false) }}
-            className={cn("w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", !value && "bg-gray-50 dark:bg-white/5")}
+            className={cn("w-full flex items-center gap-[9px] rounded-xl px-[8px] py-[8px] text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", !value && "bg-gray-50 dark:bg-white/5")}
           >
-            <span className="h-7 w-7 shrink-0 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3.5 w-3.5 text-gray-500 dark:text-white/60" /></span>
+            <span className="h-[26px] w-[26px] shrink-0 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3.5 w-3.5 text-gray-500 dark:text-white/60" /></span>
             <span className="flex-1 truncate text-[13px] font-semibold text-gray-700 dark:text-white/80">{placeholder}</span>
             {!value && <Check className="h-3.5 w-3.5 text-gray-400" />}
           </button>
@@ -277,7 +283,7 @@ function CategorySelect({ value, onChange, placeholder }: { value: string; onCha
                 role="option"
                 aria-selected={active}
                 onClick={() => { onChange(c.id); setOpen(false) }}
-                className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                className="w-full flex items-center gap-[9px] rounded-xl px-[8px] py-[8px] text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                 style={active ? { backgroundColor: `${color.hex}12` } : undefined}
               >
                 {chip(color.hex, getIcon(c.iconName))}
@@ -317,8 +323,10 @@ function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, 
   useEffect(() => { if (!open) setQuery("") }, [open])
   useEffect(() => { if (disabled) setOpen(false) }, [disabled])
 
+  // Padding/espacement épinglés en px — même raison que CategorySelect ci-dessus (la racine passe
+  // à 17px en arabe, tout ce qui est en rem grossirait sinon avec elle).
   const badge = (text: string, active = false) => (
-    <span className={cn("shrink-0 min-w-[1.9rem] h-6 px-1.5 rounded-md flex items-center justify-center text-[11px] font-bold tabular-nums", active ? "bg-[#00BFA6] text-white" : "bg-[#00BFA6]/10 text-[#00BFA6]")}>{text}</span>
+    <span className={cn("shrink-0 min-w-[28px] h-[23px] px-[6px] rounded-md flex items-center justify-center text-[11px] font-bold tabular-nums", active ? "bg-[#00BFA6] text-white" : "bg-[#00BFA6]/10 text-[#00BFA6]")}>{text}</span>
   )
 
   return (
@@ -329,7 +337,7 @@ function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, 
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={cn("w-full flex items-center gap-2 py-1.5 text-sm font-semibold text-start", disabled ? "text-gray-400 cursor-not-allowed" : "text-gray-800 dark:text-white")}
+        className={cn("w-full flex items-center gap-[8px] py-[6px] text-sm font-semibold text-start", disabled ? "text-gray-400 cursor-not-allowed" : "text-gray-800 dark:text-white")}
       >
         <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
         {selected?.badge && badge(selected.badge)}
@@ -338,29 +346,29 @@ function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, 
       </button>
 
       {open && (
-        <div className="absolute start-0 top-full z-30 mt-3 w-72 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] shadow-xl shadow-black/10">
-          <div className="p-2 border-b border-gray-100 dark:border-white/10">
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-white/5 px-3">
+        <div className="absolute start-0 top-full z-30 mt-[11px] w-72 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] shadow-xl shadow-black/10">
+          <div className="p-[8px] border-b border-gray-100 dark:border-white/10">
+            <div className="flex items-center gap-[8px] rounded-xl bg-gray-50 dark:bg-white/5 px-[11px]">
               <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
               <input
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full bg-transparent py-2 text-[13px] font-medium text-gray-800 dark:text-white outline-none placeholder:text-gray-400"
+                className="w-full bg-transparent py-[8px] text-[13px] font-medium text-gray-800 dark:text-white outline-none placeholder:text-gray-400"
               />
             </div>
           </div>
-          <div role="listbox" className="max-h-64 overflow-y-auto p-1.5">
+          <div role="listbox" className="max-h-64 overflow-y-auto p-[6px]">
             {!q && (
               <button
                 type="button"
                 role="option"
                 aria-selected={!value}
                 onClick={() => { onChange(""); setOpen(false) }}
-                className={cn("w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", !value && "bg-gray-50 dark:bg-white/5")}
+                className={cn("w-full flex items-center gap-[9px] rounded-xl px-[8px] py-[8px] text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", !value && "bg-gray-50 dark:bg-white/5")}
               >
-                <span className="shrink-0 min-w-[1.9rem] h-6 rounded-md bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3 w-3 text-gray-500 dark:text-white/60" /></span>
+                <span className="shrink-0 min-w-[28px] h-[23px] rounded-md bg-gray-100 dark:bg-white/10 flex items-center justify-center"><LayoutGrid className="h-3 w-3 text-gray-500 dark:text-white/60" /></span>
                 <span className="flex-1 truncate text-[13px] font-semibold text-gray-700 dark:text-white/80">{placeholder}</span>
                 {!value && <Check className="h-3.5 w-3.5 text-gray-400" />}
               </button>
@@ -374,7 +382,7 @@ function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, 
                   role="option"
                   aria-selected={active}
                   onClick={() => { onChange(o.value); setOpen(false) }}
-                  className={cn("w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", active && "bg-[#00BFA6]/10")}
+                  className={cn("w-full flex items-center gap-[9px] rounded-xl px-[8px] py-[8px] text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5", active && "bg-[#00BFA6]/10")}
                 >
                   {o.badge && badge(o.badge, active)}
                   <span className={cn("flex-1 truncate text-[13px] font-semibold", active ? "text-[#00BFA6]" : "text-gray-800 dark:text-white/90")}>{o.label}</span>
@@ -382,7 +390,7 @@ function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, 
                 </button>
               )
             })}
-            {shown.length === 0 && <p className="px-3 py-4 text-center text-xs text-gray-400">—</p>}
+            {shown.length === 0 && <p className="px-[11px] py-[15px] text-center text-xs text-gray-400">—</p>}
           </div>
         </div>
       )}
@@ -421,15 +429,22 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
   }
 
   return (
-    <div className="w-full bg-white dark:bg-[#03303c] rounded-[26px] shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-2 sm:p-2.5 flex flex-col lg:flex-row items-stretch gap-2">
-      <div className="flex bg-gray-50 dark:bg-white/5 rounded-2xl p-1 shrink-0">
+    // Padding/espacement épinglés en px (pas les classes rem par défaut de Tailwind) : la racine
+    // <html> passe à 17px en arabe (lisibilité des glyphes, cf. globals.css) et tout ce qui est en
+    // rem grossirait avec elle — cette barre doit garder exactement les mêmes proportions quelle
+    // que soit la langue. Les boutons Acheter/Louer et "Rechercher" reçoivent aussi une largeur
+    // minimale calée sur le français (le mot le plus long des 3 langues), pour que des libellés
+    // anglais/arabes plus courts ("Buy"/"Rent"/"Search") ne rétrécissent pas ces segments et ne
+    // déséquilibrent pas les proportions de la barre (demande client du 15/10/2026).
+    <div className="w-full bg-white dark:bg-[#03303c] rounded-[26px] shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-[8px] sm:p-[9px] flex flex-col lg:flex-row items-stretch gap-[8px]">
+      <div className="flex bg-gray-50 dark:bg-white/5 rounded-2xl p-[4px] shrink-0">
         {([{ id: "SALE", label: t("searchBuy") }, { id: "RENTAL", label: t("searchRent") }] as const).map((o) => (
           <button
             key={o.id}
             type="button"
             onClick={() => setTransactionType(transactionType === o.id ? "" : (o.id as "SALE" | "RENTAL"))}
             className={cn(
-              "px-4 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
+              "min-w-[92px] px-[15px] py-[9px] rounded-xl text-sm font-bold transition-all whitespace-nowrap",
               transactionType === o.id ? (o.id === "SALE" ? "bg-[#00BFA6] text-white shadow-sm" : "bg-[#003B4A] text-white shadow-sm") : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"
             )}
           >
@@ -438,11 +453,11 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
         ))}
       </div>
 
-      <div className="flex-1 flex items-center gap-2 px-3 border-y lg:border-y-0 lg:border-x border-gray-100 dark:border-white/10 min-w-0">
+      <div className="flex-1 flex items-center gap-[8px] px-[11px] border-y lg:border-y-0 lg:border-x border-gray-100 dark:border-white/10 min-w-0">
         <CategorySelect value={category} onChange={setCategory} placeholder={t("searchCategoryPlaceholder")} />
       </div>
 
-      <div className="flex-1 flex items-center gap-2 px-3 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-white/10 min-w-0">
+      <div className="flex-1 flex items-center gap-[8px] px-[11px] border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-white/10 min-w-0">
         <ListSelect
           value={wilaya}
           onChange={(v) => onChange({ wilaya: v, commune: "" })}
@@ -452,7 +467,7 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
         />
       </div>
 
-      <div className="flex-1 flex items-center gap-2 px-3 min-w-0">
+      <div className="flex-1 flex items-center gap-[8px] px-[11px] min-w-0">
         <ListSelect
           value={commune}
           onChange={setCommune}
@@ -463,8 +478,8 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
         />
       </div>
 
-      <Button onClick={submit} className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-2xl px-6 py-6 lg:py-0 text-sm font-extrabold shrink-0">
-        <Search className="h-4 w-4 mr-2" /> {t("searchButton")}
+      <Button onClick={submit} className="min-w-[150px] bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-2xl px-[22px] py-[22px] lg:py-0 text-sm font-extrabold shrink-0">
+        <Search className="h-4 w-4 me-[8px]" /> {t("searchButton")}
       </Button>
     </div>
   )
@@ -612,12 +627,13 @@ export default function HomePage() {
   })();
 
   // Ordre d'affichage des catégories
+  // HOTELIER en dernier — demande client du 15/10/2026 (même choix que REAL_ESTATE_CATEGORIES).
   const orderedCategoryIds = [
     "RESIDENTIEL",
     "INDUSTRIEL",
-    "HOTELIER",
     "BUREAUX_COMMERCES",
     "TERRAIN_FONCIER",
+    "HOTELIER",
   ];
 
   // Comptes réels par domaine (toutes les annonces en ligne, pas seulement celles en vedette)

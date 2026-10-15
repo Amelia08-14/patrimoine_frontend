@@ -156,36 +156,42 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
   const villaEntranceLabel = locationCriteria?.villaLevelEntrance ? resolveVillaEntrance(locationCriteria.villaLevelEntrance) : null
   const environmentLabels: string[] = (locationCriteria?.environment || []).map((id: string) => resolveEnvironment(id)).filter(Boolean)
 
-  // Carte publique compacte (/demandes) : l'essentiel seulement, le détail et les actions de contact
-  // sont sur la fiche interne /demandes/[id].
+  // Carte publique (/demandes) — même échelle visuelle que PropertyCard (image généreuse, mêmes
+  // badges, même rythme typographique) mais SANS ligne "prix" en haut à côté du titre : une
+  // recherche confiée n'a pas de prix fixe, seulement une fourchette de budget, qui reste affichée
+  // plus bas avec les autres critères (surface, typologie) plutôt que forcée en haut comme sur une
+  // annonce. L'image gagne l'espace ainsi libéré (demande client du 15/10/2026).
   if (variant === "public") {
     const isList = display === "list"
     const isLarge = display === "large"
     const shownTypes = propertyTypeLabels.slice(0, isList || isLarge ? 4 : 2)
     const extraTypes = propertyTypeLabels.length - shownTypes.length
+    const specChips = [budgetLabel, surfaceLabel, typologyLabel].filter(Boolean) as string[]
     return (
       <Link
         href={`/demandes/${r.id}`}
-        className={`group bg-white dark:bg-white/5 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex ${isList ? "flex-row" : "flex-col"}`}
+        className={`group bg-white dark:bg-[#03303c] rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex ${isList ? "flex-row items-start" : "flex-col"}`}
       >
-        <div className={`relative overflow-hidden ${isList ? "w-36 sm:w-56 lg:w-72 shrink-0 min-h-[10rem]" : isLarge ? "h-48" : "h-32"}`} style={{ backgroundColor: catColor.hex }}>
+        <div
+          className={`relative overflow-hidden shrink-0 ${isList ? "w-52 sm:w-72 lg:w-[22rem] h-[230px] sm:h-[250px] self-start" : isLarge ? "h-[280px]" : "h-[240px] min-h-[240px]"}`}
+          style={{ backgroundColor: catColor.hex }}
+        >
           {coverImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={encodeURI(coverImage)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-bottom transition-transform duration-500 group-hover:scale-105" />
           ) : (
             <CatIcon className="absolute -bottom-3 -end-1 h-24 w-24 text-white/20" />
           )}
-          <span className="absolute top-2.5 start-2.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-white/95 text-[#003B4A] shadow-sm">
+          <span className={`absolute top-3.5 start-3.5 rounded-full font-bold uppercase tracking-wide text-white ${isList ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[10px] rtl:text-xs"} ${r.transaction === "SALE" ? "bg-[#00BFA6]" : r.transaction === "RENTAL" ? "bg-[#003B4A]" : "bg-gray-700"}`}>
             {r.transaction === "SALE" ? t("sale") : r.transaction === "RENTAL" ? t("rental") : t("holiday")}
           </span>
           {wasRefreshed && (
-            <span className="absolute top-2.5 end-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase bg-amber-400 text-amber-950">
+            <span className="absolute top-3 end-3 inline-flex items-center gap-1 h-8 px-2.5 rounded-full text-[11px] font-bold uppercase bg-amber-400 text-amber-950">
               <Zap className="h-3 w-3" /> {t("refreshedBadge")}
             </span>
           )}
         </div>
-        <div className={`flex flex-col gap-2.5 flex-1 min-w-0 ${isList ? "p-4 sm:p-5" : isLarge ? "p-5" : "p-4"}`}>
-          {r.title && <h3 className="font-extrabold text-gray-900 dark:text-white leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]">{r.title}</h3>}
+        <div className={`flex flex-col gap-2.5 flex-1 min-w-0 ${isList ? "p-5 sm:p-6" : "p-4"}`}>
           {shownTypes.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {shownTypes.map((label, i) => (
@@ -194,21 +200,26 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
               {extraTypes > 0 && <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/60">+{extraTypes}</span>}
             </div>
           )}
+          {r.title && (
+            <h3 className={`font-bold text-gray-900 dark:text-white leading-snug line-clamp-2 break-words [overflow-wrap:anywhere] ${isList ? "text-xl" : "text-[15px]"}`}>{r.title}</h3>
+          )}
           {locationLabel && (
-            <div className="flex items-start gap-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">
+            <div className="flex items-start gap-1.5 text-sm text-gray-500 dark:text-white/50 font-medium">
               <MapPin className="h-4 w-4 text-[#00BFA6] shrink-0 mt-0.5" />
               <span className="line-clamp-2 break-words">{locationLabel}</span>
             </div>
           )}
-          {(isList || isLarge) && r.comment && (
-            <p className={`text-sm text-gray-600 dark:text-white/60 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] ${isList ? "line-clamp-2" : "line-clamp-3"}`}>{r.comment}</p>
+          {specChips.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {specChips.map((label, i) => (
+                <span key={i} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-white/80">{label}</span>
+              ))}
+            </div>
           )}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-white/60">
-            {budgetLabel && <span className="inline-flex items-center gap-1"><Wallet className="h-3.5 w-3.5 text-[#00BFA6]" />{budgetLabel}</span>}
-            {surfaceLabel && <span className="inline-flex items-center gap-1"><Ruler className="h-3.5 w-3.5 text-[#00BFA6]" />{surfaceLabel}</span>}
-            {typologyLabel && <span className="inline-flex items-center gap-1"><Home className="h-3.5 w-3.5 text-[#00BFA6]" />{typologyLabel}</span>}
-          </div>
-          <div className="mt-auto pt-2 flex items-center justify-between text-xs text-gray-400 dark:text-white/40 font-medium">
+          {(isList || isLarge) && r.comment && (
+            <p className={`text-sm text-gray-500 dark:text-white/50 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] ${isList ? "line-clamp-2" : "line-clamp-3"}`}>{r.comment}</p>
+          )}
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-gray-100 dark:border-white/10 pt-3 text-xs text-gray-400 dark:text-white/40 font-medium">
             <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{relativeTime}</span>
             <span className="inline-flex items-center gap-1 font-bold text-[#00BFA6]">{t("viewRequest")} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></span>
           </div>
@@ -219,8 +230,8 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
 
   return (
     <div className="group bg-white dark:bg-white/5 rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col">
-      {/* Bandeau photo selon l'activité */}
-      <div className="relative h-36 overflow-hidden" style={{ backgroundColor: catColor.hex }}>
+      {/* Bandeau photo selon l'activité — agrandi pour la même échelle que les cartes /announces */}
+      <div className="relative h-48 overflow-hidden" style={{ backgroundColor: catColor.hex }}>
         {coverImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={encodeURI(coverImage)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-bottom transition-transform duration-500 group-hover:scale-105" />

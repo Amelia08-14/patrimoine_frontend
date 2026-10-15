@@ -9,6 +9,7 @@ import {
   AlertCircle, X, ShieldCheck, LayoutTemplate, ArrowRight,
 } from "lucide-react"
 import { useLocalizedContent } from "@/lib/typeLabels"
+import { PurchaseConfirmStep, type PaymentMethod } from "@/components/PurchaseConfirmStep"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -58,11 +59,21 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
   const [ordering, setOrdering] = useState<string | null>(null)
   const [error, setError] = useState("")
 
-  const order = async (packId: string) => {
-    setOrdering(packId); setError("")
+  // Même principe que /profile/points : une étape de confirmation (récapitulatif + moyen de
+  // paiement + reçu facultatif) s'intercale avant l'envoi réel de la commande — demande client
+  // du 15/10/2026.
+  const [selectedPack, setSelectedPack] = useState<typeof BOUTIQUE_PACKS[number] | null>(null)
+
+  const order = async (paymentMethod: PaymentMethod, receipt: File | null) => {
+    if (!selectedPack) return
+    setOrdering(selectedPack.id); setError("")
     try {
       const token = localStorage.getItem('token')
-      await axios.post(`${API_URL}/boutique-sub/purchase`, { pack: packId }, { headers: { Authorization: `Bearer ${token}` } })
+      const formData = new FormData()
+      formData.append('pack', selectedPack.id)
+      formData.append('paymentMethod', paymentMethod)
+      if (receipt) formData.append('receipt', receipt)
+      await axios.post(`${API_URL}/boutique-sub/purchase`, formData, { headers: { Authorization: `Bearer ${token}` } })
       onSuccess()
       onClose()
     } catch (e: any) {
@@ -78,58 +89,76 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="font-black text-gray-900 dark:text-white text-xl flex items-center gap-2">
-              <Store className="h-6 w-6 text-[#00BFA6]" /> {t("activateBoutiqueTitle")}
+              <Store className="h-6 w-6 text-[#00BFA6]" /> {selectedPack ? t("confirmPurchaseTitle") : t("activateBoutiqueTitle")}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{t("activateBoutiqueSubtitle")}</p>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{selectedPack ? selectedPack.label : t("activateBoutiqueSubtitle")}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="h-5 w-5" /></button>
         </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
+
+        {selectedPack ? (
+          <div className="max-w-md mx-auto">
+            <PurchaseConfirmStep
+              packLabel={selectedPack.label}
+              price={selectedPack.price}
+              points={selectedPack.points}
+              pointsUnitLabel={t("pointsUnit")}
+              color={selectedPack.color}
+              onBack={() => { setSelectedPack(null); setError("") }}
+              onConfirm={order}
+              submitting={ordering === selectedPack.id}
+              error={error}
+            />
           </div>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {BOUTIQUE_PACKS.map(pack => {
-            const Icon = pack.icon
-            return (
-              <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 ${pack.border} overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6]' : ''}`}>
-                {pack.popular && (
-                  <div className="absolute top-0 inset-x-0 text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
-                )}
-                <div className={`p-5 ${pack.popular ? 'pt-9' : ''}`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: pack.color + '20' }}>
-                      <Icon className="h-5 w-5" style={{ color: pack.color }} />
-                    </div>
-                    <div>
-                      <div className="font-black text-gray-900 dark:text-white text-sm">{pack.label}</div>
-                      <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
+        ) : (
+          <>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {BOUTIQUE_PACKS.map(pack => {
+                const Icon = pack.icon
+                return (
+                  <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 ${pack.border} overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6]' : ''}`}>
+                    {pack.popular && (
+                      <div className="absolute top-0 inset-x-0 text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
+                    )}
+                    <div className={`p-5 ${pack.popular ? 'pt-9' : ''}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: pack.color + '20' }}>
+                          <Icon className="h-5 w-5" style={{ color: pack.color }} />
+                        </div>
+                        <div>
+                          <div className="font-black text-gray-900 dark:text-white text-sm">{pack.label}</div>
+                          <div className="text-lg font-black" style={{ color: pack.color }}>{t("ptsIncluded", { points: pack.points })}</div>
+                        </div>
+                      </div>
+                      <div className="text-xl font-black text-gray-900 dark:text-white mb-1">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500 dark:text-white/50">{t("perMonth")}</span></div>
+                      {pack.description && <p className="text-[11px] text-gray-400 dark:text-white/40 mb-3">{pack.description}</p>}
+                      <ul className={`space-y-1.5 mb-4 ${pack.description ? '' : 'mt-2'}`}>
+                        {pack.features.map(f => (
+                          <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-white/60">
+                            <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
+                          </li>
+                        ))}
+                      </ul>
+                      <button
+                        onClick={() => setSelectedPack(pack)}
+                        className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
+                        style={{ backgroundColor: pack.color }}
+                      >
+                        <Store className="h-4 w-4" />
+                        {t("order")}
+                      </button>
                     </div>
                   </div>
-                  <div className="text-xl font-black text-gray-900 dark:text-white mb-1">{pack.price.toLocaleString()} <span className="text-sm font-bold text-gray-500 dark:text-white/50">{t("perMonth")}</span></div>
-                  {pack.description && <p className="text-[11px] text-gray-400 dark:text-white/40 mb-3">{pack.description}</p>}
-                  <ul className={`space-y-1.5 mb-4 ${pack.description ? '' : 'mt-2'}`}>
-                    {pack.features.map(f => (
-                      <li key={f} className="flex items-start gap-2 text-xs text-gray-600 dark:text-white/60">
-                        <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: pack.color }} /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={() => order(pack.id)}
-                    disabled={ordering === pack.id}
-                    className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
-                    style={{ backgroundColor: pack.color }}
-                  >
-                    {ordering === pack.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
-                    {t("order")}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

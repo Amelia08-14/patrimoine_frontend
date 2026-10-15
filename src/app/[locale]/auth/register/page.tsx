@@ -428,7 +428,10 @@ export default function RegisterPage() {
             {userType === "SOCIETE" && (
               <div className="space-y-6">
                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-4 md:gap-y-8 md:gap-x-6 justify-items-center">
+                    {/* Les 4 familles d'activité sur une seule ligne, chacune illustrée par une
+                        photo représentative de ses sous-catégories (au lieu d'une simple icône
+                        dans un cercle) — demande client du 15/10/2026. */}
+                    <div className="grid grid-cols-4 gap-2 sm:gap-3">
                       {ACTIVITY_FAMILIES.map((family) => {
                         const Icon = family.icon
                         const isActive = activityFamily === family.id
@@ -440,31 +443,39 @@ export default function RegisterPage() {
                               setActivityFamily(family.id)
                               setValue("activityType", undefined)
                             }}
-                            className="flex flex-col items-center gap-3 cursor-pointer group w-full"
+                            className="group relative flex flex-col items-center gap-2 cursor-pointer"
                           >
                             <div
                               className={cn(
-                                "w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-200 border-4 relative",
+                                "relative w-full aspect-square rounded-2xl overflow-hidden border-4 transition-all duration-200",
                                 isActive
-                                  ? "bg-white dark:bg-white/5 border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
-                                  : "bg-white dark:bg-white/5 border-[#00BFA6]/20 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/45 group-hover:-translate-y-0.5"
+                                  ? "border-[#00BFA6] shadow-[0_8px_16px_rgba(0,191,166,0.25)] -translate-y-0.5"
+                                  : "border-transparent shadow-[0_8px_16px_rgba(0,0,0,0.08)] group-hover:border-[#00BFA6]/40 group-hover:-translate-y-0.5"
                               )}
                             >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={family.image}
+                                alt=""
+                                className={cn(
+                                  "absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
+                                  !isActive && "grayscale-[35%] opacity-80 group-hover:opacity-100 group-hover:grayscale-0"
+                                )}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                               <div
                                 className={cn(
-                                  "w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors duration-200",
-                                  isActive
-                                    ? "bg-[#00BFA6] text-white"
-                                    : "bg-gray-50 dark:bg-transparent text-gray-400 dark:text-white/40 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
+                                  "absolute top-1.5 start-1.5 sm:top-2 sm:start-2 flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full transition-colors duration-200",
+                                  isActive ? "bg-[#00BFA6] text-white" : "bg-white/90 text-gray-600 backdrop-blur-sm"
                                 )}
                               >
-                                <Icon size={18} strokeWidth={2.5} className="sm:hidden" />
-                                <Icon size={22} strokeWidth={2.5} className="hidden sm:block" />
+                                <Icon size={14} strokeWidth={2.5} className="sm:hidden" />
+                                <Icon size={16} strokeWidth={2.5} className="hidden sm:block" />
                               </div>
                             </div>
                             <span
                               className={cn(
-                                "text-[10px] font-extrabold text-center max-w-[150px] leading-snug transition-colors whitespace-pre-line",
+                                "text-[9px] sm:text-[10px] font-extrabold text-center leading-snug transition-colors whitespace-pre-line",
                                 isActive ? "text-[#00BFA6]" : "text-gray-600 dark:text-white/60 group-hover:text-[#00BFA6]"
                               )}
                             >

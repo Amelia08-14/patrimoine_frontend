@@ -58,11 +58,33 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const minAreaBoxRef = useRef<HTMLDivElement>(null)
+  const maxAreaBoxRef = useRef<HTMLDivElement>(null)
+  const minPriceBoxRef = useRef<HTMLDivElement>(null)
+  const maxPriceBoxRef = useRef<HTMLDivElement>(null)
 
   // Couleur d'accent : celle de la catégorie active, sinon le bleu de marque par défaut — utilisée
   // pour tous les états actifs (anneaux de focus, pastilles sélectionnées) afin que le filtre entier
   // se "teinte" avec la catégorie en cours, comme demandé.
   const accent = accentColor || "#0094BD"
+
+  // Anneau de focus posé sur l'ENCADRÉ (input + pastille d'unité), pas seulement l'input, pour que
+  // la pastille "DA"/"m²" reste visuellement à l'intérieur du même champ surligné.
+  const setBoxFocus = (ref: React.RefObject<HTMLDivElement | null>, focused: boolean) => {
+    if (!ref.current) return
+    ref.current.style.boxShadow = focused ? `0 0 0 2px ${accent}` : "none"
+    ref.current.style.borderColor = focused ? "transparent" : ""
+  }
+
+  // "Capacité (m³)" au lieu de "Surface (m²)" pour une Chambre Froide — même distinction que sur
+  // la fiche de dépôt/lecture d'annonce (demande client du 15/10/2026 : adapter l'unité au type
+  // de bien choisi dans le filtre).
+  const isCapacityUnit = filters.propertyType === "CHAMBRE_FROIDE"
+
+  // Même formatage que le prix d'une annonce (séparateur de milliers fr-DZ), pour la saisie du
+  // budget min/max — la valeur stockée dans les filtres reste un nombre brut, seul l'affichage
+  // est habillé (cf. onChange qui retire tout sauf les chiffres).
+  const formatThousands = (v: string) => (v ? new Intl.NumberFormat("fr-DZ").format(Number(v)) : "")
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -462,67 +484,83 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
 
           {openDropdown === "more" && (
             <div className="absolute top-full end-0 mt-2 w-80 max-w-[90vw] bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 p-4 space-y-4">
-              {/* Surface : minimum / maximum (saisie libre, pas de valeurs proposées) */}
+              {/* Surface / Capacité : l'unité s'adapte au type de bien choisi (m³ pour une Chambre
+                  Froide, m² sinon), et vit dans une pastille collée au champ plutôt que dans le
+                  libellé — demande client du 15/10/2026. */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("surfaceMinLabel")}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={filters.minArea}
-                    onChange={(e) => onFilterChange("minArea", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
-                    placeholder="Ex: 50"
-                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
-                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
-                  />
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{isCapacityUnit ? t("capacityMinLabel") : t("surfaceMinLabel")}</label>
+                  <div
+                    className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all"
+                    ref={minAreaBoxRef}
+                  >
+                    <input
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={filters.minArea}
+                      onChange={(e) => onFilterChange("minArea", e.target.value)}
+                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
+                      placeholder="Ex: 50"
+                      onFocus={() => setBoxFocus(minAreaBoxRef, true)}
+                      onBlur={() => setBoxFocus(minAreaBoxRef, false)}
+                    />
+                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{isCapacityUnit ? "m³" : "m²"}</span>
+                  </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("surfaceMaxLabel")}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={filters.maxArea}
-                    onChange={(e) => onFilterChange("maxArea", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
-                    placeholder="Ex: 300"
-                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
-                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
-                  />
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{isCapacityUnit ? t("capacityMaxLabel") : t("surfaceMaxLabel")}</label>
+                  <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={maxAreaBoxRef}>
+                    <input
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={filters.maxArea}
+                      onChange={(e) => onFilterChange("maxArea", e.target.value)}
+                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
+                      placeholder="Ex: 300"
+                      onFocus={() => setBoxFocus(maxAreaBoxRef, true)}
+                      onBlur={() => setBoxFocus(maxAreaBoxRef, false)}
+                    />
+                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{isCapacityUnit ? "m³" : "m²"}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Budget : minimum / maximum */}
+              {/* Budget : minimum / maximum — unité "DA" en pastille + séparateur de milliers,
+                  exactement comme le prix affiché sur une annonce, au lieu d'un libellé "(DA)". */}
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-white/10">
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("budgetMinLabel")}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={filters.minPrice}
-                    onChange={(e) => onFilterChange("minPrice", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
-                    placeholder="Ex: 10000"
-                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
-                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
-                  />
+                  <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={minPriceBoxRef}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatThousands(filters.minPrice)}
+                      onChange={(e) => onFilterChange("minPrice", e.target.value.replace(/[^\d]/g, ""))}
+                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
+                      placeholder="Ex: 10 000"
+                      onFocus={() => setBoxFocus(minPriceBoxRef, true)}
+                      onBlur={() => setBoxFocus(minPriceBoxRef, false)}
+                    />
+                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{t("curDA")}</span>
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("budgetMaxLabel")}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={filters.maxPrice}
-                    onChange={(e) => onFilterChange("maxPrice", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-transparent text-gray-800 dark:text-white rounded-lg outline-none transition-all"
-                    placeholder="Ex: 50000"
-                    onFocus={(e) => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}`; e.currentTarget.style.borderColor = "transparent" }}
-                    onBlur={(e) => { e.currentTarget.style.boxShadow = "none" }}
-                  />
+                  <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={maxPriceBoxRef}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatThousands(filters.maxPrice)}
+                      onChange={(e) => onFilterChange("maxPrice", e.target.value.replace(/[^\d]/g, ""))}
+                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
+                      placeholder="Ex: 50 000"
+                      onFocus={() => setBoxFocus(maxPriceBoxRef, true)}
+                      onBlur={() => setBoxFocus(maxPriceBoxRef, false)}
+                    />
+                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{t("curDA")}</span>
+                  </div>
                 </div>
               </div>
 

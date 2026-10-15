@@ -10,6 +10,7 @@ import {
   CalendarDays, Crown, Check, ShieldCheck
 } from "lucide-react"
 import { useLocalizedContent } from "@/lib/typeLabels"
+import { PurchaseConfirmStep, type PaymentMethod } from "@/components/PurchaseConfirmStep"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -53,11 +54,21 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
       }))
     : FALLBACK
 
-  const order = async (packId: string) => {
-    setOrdering(packId); setError("")
+  // Choisir une formule n'envoie plus directement la commande : une étape de confirmation
+  // explicite (récapitulatif + moyen de paiement + reçu facultatif) s'intercale d'abord —
+  // demande client du 15/10/2026.
+  const [selectedPack, setSelectedPack] = useState<typeof POINT_PACKS[number] | null>(null)
+
+  const order = async (paymentMethod: PaymentMethod, receipt: File | null) => {
+    if (!selectedPack) return
+    setOrdering(selectedPack.id); setError("")
     try {
       const token = localStorage.getItem('token')
-      await axios.post(`${API_URL}/points/purchase`, { pack: packId }, { headers: { Authorization: `Bearer ${token}` } })
+      const formData = new FormData()
+      formData.append('pack', selectedPack.id)
+      formData.append('paymentMethod', paymentMethod)
+      if (receipt) formData.append('receipt', receipt)
+      await axios.post(`${API_URL}/points/purchase`, formData, { headers: { Authorization: `Bearer ${token}` } })
       onSuccess()
       onClose()
     } catch (e: any) {
@@ -68,48 +79,64 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-white/5 rounded-2xl shadow-xl w-full max-w-2xl p-6">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white dark:bg-white/5 rounded-2xl shadow-xl w-full max-w-2xl p-6 my-4">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="font-black text-gray-900 dark:text-white text-xl flex items-center gap-2">
-              <Coins className="h-6 w-6 text-[#00BFA6]" /> {t("buyPointsTitle")}
+              <Coins className="h-6 w-6 text-[#00BFA6]" /> {selectedPack ? t("confirmPurchaseTitle") : t("buyPointsTitle")}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{t("buyPointsSubtitle")}</p>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">{selectedPack ? selectedPack.label : t("buyPointsSubtitle")}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="h-5 w-5" /></button>
         </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
-          </div>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {POINT_PACKS.map(pack => (
-            <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : 'border-gray-200 dark:border-white/10'}`}>
-              {pack.popular && (
-                <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
-              )}
-              <div className={`p-5 text-center ${pack.popular ? '' : ''}`}>
-                <div className="text-3xl font-black mb-1" style={{ color: pack.color }}>{pack.points}</div>
-                <div className="text-sm font-bold text-gray-500 dark:text-white/50 mb-3">{t("pointsUnit")}</div>
-                <div className="text-xl font-black text-gray-900 dark:text-white mb-1">{pack.price.toLocaleString()}</div>
-                <div className="text-xs text-gray-400 dark:text-white/40">{t("oneTimePayment")}</div>
-                <div className="text-[11px] text-gray-400 dark:text-white/40 mb-4 min-h-[1em]">{pack.description || ''}</div>
-                <button
-                  onClick={() => order(pack.id)}
-                  disabled={ordering === pack.id}
-                  className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
-                  style={{ backgroundColor: pack.color }}
-                >
-                  {ordering === pack.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
-                  {t("order")}
-                </button>
+
+        {selectedPack ? (
+          <PurchaseConfirmStep
+            packLabel={selectedPack.label}
+            price={selectedPack.price}
+            points={selectedPack.points}
+            pointsUnitLabel={t("pointsUnit")}
+            color={selectedPack.color}
+            onBack={() => { setSelectedPack(null); setError("") }}
+            onConfirm={order}
+            submitting={ordering === selectedPack.id}
+            error={error}
+          />
+        ) : (
+          <>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
               </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {POINT_PACKS.map(pack => (
+                <div key={pack.id} className={`relative bg-white dark:bg-white/5 rounded-2xl border-2 overflow-hidden ${pack.popular ? 'ring-2 ring-[#00BFA6] border-[#00BFA6]/30' : 'border-gray-200 dark:border-white/10'}`}>
+                  {pack.popular && (
+                    <div className="text-center py-1.5 text-xs font-black text-white bg-[#00BFA6]">{t("mostPopular")}</div>
+                  )}
+                  <div className={`p-5 text-center ${pack.popular ? '' : ''}`}>
+                    <div className="text-3xl font-black mb-1" style={{ color: pack.color }}>{pack.points}</div>
+                    <div className="text-sm font-bold text-gray-500 dark:text-white/50 mb-3">{t("pointsUnit")}</div>
+                    <div className="text-xl font-black text-gray-900 dark:text-white mb-1">{pack.price.toLocaleString()}</div>
+                    <div className="text-xs text-gray-400 dark:text-white/40">{t("oneTimePayment")}</div>
+                    <div className="text-[11px] text-gray-400 dark:text-white/40 mb-4 min-h-[1em]">{pack.description || ''}</div>
+                    <button
+                      onClick={() => setSelectedPack(pack)}
+                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
+                      style={{ backgroundColor: pack.color }}
+                    >
+                      <Coins className="h-4 w-4" />
+                      {t("order")}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <p className="text-xs text-gray-400 dark:text-white/40 text-center mt-4">{t("pointsValidityNote")}</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 text-center mt-4">{t("pointsValidityNote")}</p>
+          </>
+        )}
       </div>
     </div>
   )

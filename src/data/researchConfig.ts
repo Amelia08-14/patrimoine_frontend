@@ -1,11 +1,13 @@
 // Configuration du module "Confier votre recherche" — dynamique par branche immobilière
 
+// HOTELIER (Hébergement & Séjour) en dernière position — même choix que REAL_ESTATE_CATEGORIES
+// (data/propertyTypes.ts), demande client du 15/10/2026.
 export const RESEARCH_BRANCHES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
-  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Briefcase" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "Trees" },
+  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
 ] as const;
 
 export type ResearchBranchId = typeof RESEARCH_BRANCHES[number]["id"];
@@ -308,6 +310,24 @@ export const RES_CONNECTIVITY_OPTIONS = [
   { id: "fiber", label: "Fibre" },
   { id: "adsl", label: "ADSL" },
   { id: "phone_line", label: "Ligne fixe" },
+];
+
+// Cuisine (type + équipements) — mêmes ids que KITCHEN_TYPES / VILLA_EQUIPMENTS.kitchen de
+// /deposit (demande client du 15/10/2026 : dupliquer "Cuisine et équipements" sur /research).
+export const RES_KITCHEN_TYPES = [
+  { id: "AMERICAINE", label: "Ouverte" },
+  { id: "FERMEE", label: "Fermée" },
+  { id: "SEMI_OUVERTE", label: "Semi-ouverte" },
+];
+export const RES_KITCHEN_EQUIPMENT_OPTIONS = [
+  { id: "plates", label: "Plaques" },
+  { id: "oven", label: "Four" },
+  { id: "hood", label: "Hotte" },
+  { id: "dishwasher", label: "Lave-vaisselle" },
+  { id: "microwave", label: "Micro-onde" },
+  { id: "fridge", label: "Frigo" },
+  { id: "washing_machine", label: "Machine à laver" },
+  { id: "no_appliances", label: "Vide" },
 ];
 
 // --- Fiche "Recherche Immeuble d'appartements" (Résidentiel — recherche d'un immeuble entier) ---

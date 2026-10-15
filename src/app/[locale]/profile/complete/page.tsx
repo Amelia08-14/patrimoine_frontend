@@ -22,22 +22,31 @@ export default function CompleteProfilePage() {
   const [cities, setCities] = useState<Array<{ id: number; nameFr: string }>>([])
   const [towns, setTowns] = useState<Array<{ id: number; nameFr: string }>>([])
 
+  // Âge minimum légal pour utiliser le site (retour client du 15/10/2026) : calculé précisément
+  // (pas juste la différence d'années) pour ne pas accepter un anniversaire pas encore atteint.
+  const MINIMUM_AGE = 18
+  const getAge = (isoDate: string): number => {
+    const dob = new Date(isoDate)
+    const today = new Date()
+    let age = today.getFullYear() - dob.getFullYear()
+    const hasHadBirthdayThisYear = today.getMonth() > dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate())
+    if (!hasHadBirthdayThisYear) age -= 1
+    return age
+  }
+
   const profileSchema = z.object({
-    civility: z.enum(["M", "MME"], { message: t("civilityRequired") }),
     lastName: z.string().min(2, t("lastNameRequired")),
     firstName: z.string().min(2, t("firstNameRequired")),
     dateOfBirth: z.string().optional(),
 
     phone: z.string().min(9, t("phoneRequired")),
     landline: z.string().optional(),
-    address: z.string().min(5, t("addressRequired")),
     wilaya: z.string().min(1, t("wilayaRequired")),
     commune: z.string().min(1, t("communeRequired")),
 
     // Société Specific
     commercialRegister: z.string().optional(),
     agreementNumber: z.string().optional(),
-    companyName: z.string().optional(),
     position: z.string().optional(),
 
     // Files
@@ -45,12 +54,20 @@ export default function CompleteProfilePage() {
     agreementDocument: z.any().optional(),
     agencyLogo: z.any().optional(),
   }).superRefine((data, ctx) => {
-    if (user?.userType === "PARTICULIER" && !data.dateOfBirth) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: t("dobRequired"),
-        path: ["dateOfBirth"],
-      })
+    if (user?.userType === "PARTICULIER") {
+      if (!data.dateOfBirth) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("dobRequired"),
+          path: ["dateOfBirth"],
+        })
+      } else if (getAge(data.dateOfBirth) < MINIMUM_AGE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("dobMinimumAge", { age: MINIMUM_AGE }),
+          path: ["dateOfBirth"],
+        })
+      }
     }
   })
 
@@ -71,9 +88,7 @@ export default function CompleteProfilePage() {
       // Pré-remplir les champs connus
       setValue("firstName", parsedUser.firstName)
       setValue("lastName", parsedUser.lastName)
-      setValue("companyName", parsedUser.companyName)
       setValue("phone", parsedUser.phone || "")
-      setValue("civility", parsedUser.civility)
     } else {
       window.location.href = '/auth/login'
     }
@@ -228,28 +243,7 @@ export default function CompleteProfilePage() {
                     {user.userType === 'PARTICULIER' ? t("section1TitleParticulier") : t("section1TitleSociete")}
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("civilityLabel")}</label>
-                        <div className="flex gap-4">
-                            <label className={cn(
-                                "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
-                                watch("civility") === "M" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 dark:border-white/10 hover:border-gray-300 bg-gray-50 dark:bg-transparent"
-                            )}>
-                                <input type="radio" value="M" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold text-gray-700 dark:text-white/70">{t("mr")}</span>
-                            </label>
-                            <label className={cn(
-                                "flex-1 flex items-center justify-center gap-2 cursor-pointer border-2 rounded-xl p-2 transition-all h-[42px]",
-                                watch("civility") === "MME" ? "border-[#00BFA6] bg-[#E6F8F6] text-[#003B4A]" : "border-gray-200 dark:border-white/10 hover:border-gray-300 bg-gray-50 dark:bg-transparent"
-                            )}>
-                                <input type="radio" value="MME" {...register("civility")} className="hidden" />
-                                <span className="text-sm font-bold text-gray-700 dark:text-white/70">{t("mrs")}</span>
-                            </label>
-                        </div>
-                        {errors.civility && <p className="text-red-500 text-xs pl-1 mt-1">{errors.civility.message}</p>}
-                    </div>
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("lastNameLabel")}</label>
                         <input {...register("lastName")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px]" />
@@ -317,11 +311,6 @@ export default function CompleteProfilePage() {
                                  </select>
                                  {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
                              </div>
-                             <div className="space-y-1 sm:col-span-2">
-                                 <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("addressLabel")}</label>
-                                 <input {...register("address")} placeholder={t("addressPlaceholder")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px]" />
-                                 {errors.address && <p className="text-red-500 text-xs pl-1">{errors.address.message}</p>}
-                             </div>
                         </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -349,10 +338,8 @@ export default function CompleteProfilePage() {
                     </h3>
 
                     <div className="space-y-6">
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 dark:text-white/50 uppercase ml-1">{t("companyNameLabel")}</label>
-                            <input {...register("companyName")} className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-500" />
-                        </div>
+                        {/* Raison sociale retirée (déjà saisie à l'inscription, modifiable ensuite
+                            via l'onglet Profil) — demande client du 15/10/2026. */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("rcLabel")}</label>

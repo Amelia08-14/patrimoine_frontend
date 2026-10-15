@@ -1,12 +1,15 @@
 // Catégories disponibles sur le site.
+// HOTELIER (Hébergement & Séjour) volontairement en dernière position : la plupart de ses
+// structures restent "en construction" (seul Hôtel a une vraie fiche, cf. Phase 19) — demande
+// client du 15/10/2026 de la reléguer en fin de liste partout plutôt qu'en 3e position.
 export const REAL_ESTATE_CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel", iconName: "Home" },
   { id: "INDUSTRIEL", label: "Industriel", iconName: "Factory" },
-  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
-  { id: "HEBERGEMENT", label: "Hébergement & Séjour", iconName: "BedDouble" },
   { id: "BUREAUX_COMMERCES", label: "Bureaux et Commerces", iconName: "Building2" },
   { id: "TERRAIN_FONCIER", label: "Terrains et Foncier", iconName: "Trees" },
   { id: "EVENEMENTIEL", label: "Évènementiel", iconName: "PartyPopper" },
+  { id: "HEBERGEMENT", label: "Hébergement & Séjour", iconName: "BedDouble" },
+  { id: "HOTELIER", label: "Hébergement & Séjour", iconName: "Hotel" },
 ];
 
 // Catégories retirées des filtres et de la navigation publique (accueil, /announces, boutiques,

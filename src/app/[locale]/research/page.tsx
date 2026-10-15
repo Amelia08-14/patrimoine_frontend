@@ -14,6 +14,7 @@ import {
   Warehouse, Snowflake, Wrench, Users, Thermometer,
   Shield, Utensils, Wallet, CreditCard, FileCheck, Truck, Tent, Palmtree, BedDouble,
   Sun, LifeBuoy, Dumbbell, Flame, Layers, Wind, Fan, Ban, Video, Lock, Wifi, Phone, Network, Droplet, Flower2, Cog,
+  LayoutGrid, CookingPot, Waves,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -26,6 +27,7 @@ import {
   ENVIRONMENT_OPTIONS,
   RESIDENTIEL_TYPE_IDS, VILLA_LEVEL_ENTRANCE_OPTIONS,
   RES_EXTERIOR_OPTIONS, RES_HEATING_OPTIONS, RES_AC_OPTIONS, RES_SECURITY_OPTIONS, RES_CONNECTIVITY_OPTIONS,
+  RES_KITCHEN_TYPES, RES_KITCHEN_EQUIPMENT_OPTIONS,
   HANGAR_USAGE_OPTIONS, INDUSTRIAL_ZONE_OPTIONS, USINE_EQUIPMENT_OPTIONS, USINE_ACTIVITY_OPTIONS,
   CF_ACTIVITY_OPTIONS, CF_TYPE_FROID_OPTIONS, CF_MODE_GESTION_OPTIONS,
   CF_STRUCTURE_TYPES, INDUSTRIAL_ACCESS_TRANSPORT, LEGAL_DOCUMENTS_SALE,
@@ -131,6 +133,8 @@ const OPTION_ICONS: Record<string, any> = {
   cameras: Video, alarm: Lock, guardian: Shield, fiber: Wifi, adsl: Network, phone_line: Phone,
   // Usine / énergies
   MURS_NUS: Ban, EQUIPEE: Cog, ELECTRICITE: Zap, EAU: Droplet, ASSAINISSEMENT: Droplet,
+  // Cuisine (équipements)
+  plates: LayoutGrid, oven: CookingPot, hood: Fan, dishwasher: Droplet, microwave: Zap, fridge: Snowflake, washing_machine: Waves, no_appliances: Ban,
 };
 
 const IconTile = ({ checked, onChange, label, optionId, type = 'checkbox' }: { checked: boolean; onChange: () => void; label: string; optionId: string; type?: 'checkbox' | 'radio' }) => {
@@ -464,6 +468,15 @@ export default function ResearchPage() {
     resSecurity: z.array(z.string()).optional(),
     resConnectivity: z.array(z.string()).optional(),
 
+    // Cuisine et équipements + Énergie/Eau/Technique — mêmes champs que la fiche Résidentiel de
+    // /deposit (KITCHEN_TYPES, VILLA_EQUIPMENTS.kitchen, waterCounter/elecCounter/gasCounter),
+    // demandés par le client le 15/10/2026 en duplication identique sur /research.
+    resKitchenType: z.string().optional(),
+    resKitchenEquipment: z.array(z.string()).optional(),
+    resWaterCounter: z.string().optional(),
+    resElecCounter: z.string().optional(),
+    resGasCounter: z.string().optional(),
+
     // Résidentiel — choix entre fiche "Recherche Groupée" (ci-dessus) et fiche dédiée à la
     // recherche d'un immeuble d'appartements entier (ci-dessous).
     searchScope: z.enum(['GROUPEE', 'IMMEUBLE']).optional(),
@@ -505,7 +518,11 @@ export default function ResearchPage() {
     companyName: z.string().optional(),
     activity: z.string().optional(),
     userType: z.enum(['PARTICULIER', 'SOCIETE']).optional(),
-    isDelegate: z.boolean().optional(),
+    // Consentement obligatoire — tout l'intérêt de "Confier votre recherche" repose sur ce choix
+    // explicite ; jusqu'ici la case n'était jamais vérifiée et l'envoi passait sans qu'elle soit
+    // cochée (retour client du 15/10/2026 : "il valide directe sans me donner la main de choisir").
+    isDelegate: z.boolean({ error: "Vous devez cocher cette case pour confier votre recherche à Patrimoine Immobilier." })
+      .refine((v) => v === true, { message: "Vous devez cocher cette case pour confier votre recherche à Patrimoine Immobilier." }),
     receiveAlert: z.boolean().optional(),
   });
 
@@ -590,6 +607,7 @@ export default function ResearchPage() {
       resExterior: [],
       resSecurity: [],
       resConnectivity: [],
+      resKitchenEquipment: [],
       hgUsageType: [],
       hgZone: [],
       hgEnergie: [],
@@ -603,6 +621,8 @@ export default function ResearchPage() {
       cfTypeFroidChoices: [],
       cfModeGestionChoices: [],
       indLegalDocuments: [],
+      isDelegate: false,
+      receiveAlert: false,
     },
   });
 
@@ -686,7 +706,7 @@ export default function ResearchPage() {
   // contact direct. Les autres branches gardent le parcours complet (Budget/Interlocuteur en
   // étapes à part).
   const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
-    ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'INTERLOCUTOR', 'CONTACT']
     : isBureauxCommerces
     ? ['TRANSACTION', 'BRANCH', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
     : isIndustrielFiche
@@ -840,14 +860,16 @@ export default function ResearchPage() {
             };
             break;
           }
-          // Extérieur / chauffage / climatisation / sécurité / connectivité — communs aux fiches
-          // Location et Achat (mêmes champs que /deposit).
+          // Extérieur / chauffage / climatisation / sécurité / connectivité / cuisine / énergie-eau
+          // — communs aux fiches Location et Achat (mêmes champs que /deposit).
           const resEquipments = {
             exterior: data.resExterior || [],
             heating: data.resHeating,
             ac: data.resAc,
             security: data.resSecurity || [],
             connectivity: data.resConnectivity || [],
+            kitchen: { type: data.resKitchenType, equipment: data.resKitchenEquipment || [] },
+            energy: { water: data.resWaterCounter, elec: data.resElecCounter, gas: data.resGasCounter },
           };
           if (data.transaction === TransactionType.RENTAL) {
             amenities.residentiel.location = {
@@ -1147,6 +1169,14 @@ export default function ResearchPage() {
       alert(t('alertCommentRequired'));
       return;
     }
+    if (formErrors.isDelegate) {
+      // La case de consentement vit toujours sur l'étape Contact, la dernière du parcours. Message
+      // du schéma zod (module-level, donc en français en dur comme les ~35 autres messages de
+      // validation de ce fichier — cf. CLAUDE.md).
+      setCurrentStepIndex(steps.indexOf('CONTACT'));
+      alert(formErrors.isDelegate.message);
+      return;
+    }
     // Repli : au lieu d'un message générique qui ne dit rien, on liste précisément le(s) champ(s)
     // en cause — un champ à choix (enum) rempli avec une valeur inattendue lève une erreur ici
     // même s'il est "optionnel", et le message générique masquait totalement ce genre de cas.
@@ -1180,9 +1210,9 @@ export default function ResearchPage() {
           </div>
         </Section>
 
+        {/* Interlocuteur souhaité + message explicatif : page 2 du parcours (étape INTERLOCUTOR),
+            cf. steps array plus bas — demande client du 15/10/2026. */}
         {renderLocalisationSection({ hideDate: true })}
-        {renderSharedInterlocutorSection()}
-        {renderCommentSection()}
       </>
     );
   };
@@ -1385,8 +1415,11 @@ export default function ResearchPage() {
   );
 
   // Champ "boxé" façon création d'annonce pour un montant unique (Budget min / Budget max).
-  // L'unité (DA / m² / Millions...) est repliée dans le champ Budget Max lui-même (chip collée à
-  // droite, dans le même encadré) au lieu d'une colonne "Devise" à part — gagne une colonne.
+  // Unité fixée à "DA" — exactement comme le prix affiché sur une annonce (/announces), qui est
+  // toujours un montant brut en dinars, jamais en "Millions"/"Milliards"/m² (demande client du
+  // 15/10/2026 ; corrige aussi une incohérence pré-existante : la carte de recherche confiée
+  // affichait déjà le budget en DA brut quel que soit `budgetUnit`, donc le sélecteur précédent
+  // pouvait induire en erreur sur ce qu'un chiffre saisi représentait réellement).
   const renderBoxedBudgetField = (label: string, field: 'minBudget' | 'maxBudget', opts?: { withUnit?: boolean }) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
@@ -1401,16 +1434,9 @@ export default function ResearchPage() {
           className="w-full min-w-0 p-2 outline-none bg-transparent font-medium text-gray-900 text-base text-center"
         />
         {opts?.withUnit && (
-          <select
-            {...register('budgetUnit')}
-            className="h-full shrink-0 ps-1.5 pe-1 border-s-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-700 outline-none cursor-pointer"
-          >
-            <option value="DA">{t('curDA')}</option>
-            <option value="DA_M2">{t('curMDAM2')}</option>
-            <option value="MILLION">{t('curMDA')}</option>
-            <option value="MILLION_M2">{t('curMDAM2')}</option>
-            <option value="MILLIARD">{t('curMdDA')}</option>
-          </select>
+          <span className="h-full shrink-0 flex items-center ps-1.5 pe-2 border-s-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-500">
+            {t('curDA')}
+          </span>
         )}
       </div>
     </div>
@@ -1453,13 +1479,17 @@ export default function ResearchPage() {
           Administratif, Bloc Commercial, Local Commercial) gardent la date ici. */}
       <div className={cn('grid grid-cols-1 gap-6', opts?.hideDate ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
         <Field label={t('budgetCity')}>
-          <MultiSelectDropdown
-            options={cities.map((c) => ({ id: c.id, label: place.city(c) }))}
-            selected={watch('cityIds') || []}
-            onToggle={(id) => toggleArrayValue('cityIds', id)}
-            placeholder={t('optSelect')}
-            selectedLabel={(count) => t('wilayasSelectedCount', { count })}
-          />
+          {/* Wilaya en choix unique (demande client du 15/10/2026) — stockée comme tableau à un
+              seul élément pour ne rien changer au reste (effet de chargement des communes, payload
+              de soumission), qui lisent déjà `cityIds` comme un tableau. */}
+          <select
+            value={(watch('cityIds') || [])[0] ?? ''}
+            onChange={(e) => setValue('cityIds', e.target.value ? [e.target.value as any] : [])}
+            className={inputCls}
+          >
+            <option value="">{t('optSelect')}</option>
+            {cities.map((c) => <option key={c.id} value={c.id}>{place.city(c)}</option>)}
+          </select>
         </Field>
         <Field label={t('budgetTowns')}>
           <MultiSelectDropdown
@@ -1496,55 +1526,105 @@ export default function ResearchPage() {
     </Section>
   );
 
-  // Espace extérieur / chauffage / climatisation / sécurité / connectivité — mêmes critères que
-  // la fiche Résidentiel de /deposit, partagés par Achat ET Location.
+  // Cuisine et équipements / Extérieurs & Commodités / Énergie, Eau & Technique — dupliqués
+  // identiquement depuis la fiche Résidentiel de /deposit (même ordre, mêmes champs, mêmes libellés
+  // de section), demande client du 15/10/2026. Sécurité et Connectivité sont côte à côte (face à
+  // face) comme dans l'affichage de la fiche annonce (/announces/[id]).
   const renderResidentielEquipmentsSection = () => (
-    <Section title={t('resEquipmentsTitle')} icon={Shield}>
-      <div className="space-y-5">
-        <div>
-          <label className="block text-sm font-bold text-gray-900 mb-2">{t('resExteriorLabel')}</label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-            {RES_EXTERIOR_OPTIONS.map((opt) => (
-              <IconTile key={opt.id} optionId={opt.id} checked={(watch('resExterior') || []).includes(opt.id)} label={optLabel('RES_EXTERIOR_OPTIONS', opt)} onChange={() => toggleArrayValue('resExterior', opt.id)} />
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+    <>
+      <Section title={t('resKitchenTitle')} icon={Utensils}>
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resHeatingLabel')}</label>
-            <div className="grid grid-cols-3 gap-3">
-              {RES_HEATING_OPTIONS.map((opt) => (
-                <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resHeating') === opt.id} label={optLabel('RES_HEATING_OPTIONS', opt)} onChange={() => setValue('resHeating', opt.id as any)} />
+            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resKitchenTypeLabel')}</label>
+            <div className="flex flex-wrap gap-3">
+              {RES_KITCHEN_TYPES.map((opt) => (
+                <PillOption key={opt.id} checked={watch('resKitchenType') === opt.id} label={optLabel('RES_KITCHEN_TYPES', opt)} onChange={() => setValue('resKitchenType', opt.id as any)} />
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resAcLabel')}</label>
-            <div className="grid grid-cols-3 gap-3">
-              {RES_AC_OPTIONS.map((opt) => (
-                <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resAc') === opt.id} label={optLabel('RES_AC_OPTIONS', opt)} onChange={() => setValue('resAc', opt.id as any)} />
+            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resKitchenEquipmentLabel')}</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+              {RES_KITCHEN_EQUIPMENT_OPTIONS.map((opt) => (
+                <IconTile key={opt.id} optionId={opt.id} checked={(watch('resKitchenEquipment') || []).includes(opt.id)} label={optLabel('RES_KITCHEN_EQUIPMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('resKitchenEquipment', opt.id)} />
               ))}
             </div>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-900 mb-2">{t('resSecurityLabel')}</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {RES_SECURITY_OPTIONS.map((opt) => (
-              <IconTile key={opt.id} optionId={opt.id} checked={(watch('resSecurity') || []).includes(opt.id)} label={optLabel('RES_SECURITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resSecurity', opt.id)} />
-            ))}
+      </Section>
+
+      <Section title={t('resExteriorCommoditiesTitle')} icon={Trees}>
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resExteriorLabel')}</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+              {RES_EXTERIOR_OPTIONS.map((opt) => (
+                <IconTile key={opt.id} optionId={opt.id} checked={(watch('resExterior') || []).includes(opt.id)} label={optLabel('RES_EXTERIOR_OPTIONS', opt)} onChange={() => toggleArrayValue('resExterior', opt.id)} />
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resHeatingLabel')}</label>
+              <div className="grid grid-cols-3 gap-3">
+                {RES_HEATING_OPTIONS.map((opt) => (
+                  <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resHeating') === opt.id} label={optLabel('RES_HEATING_OPTIONS', opt)} onChange={() => setValue('resHeating', opt.id as any)} />
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resAcLabel')}</label>
+              <div className="grid grid-cols-3 gap-3">
+                {RES_AC_OPTIONS.map((opt) => (
+                  <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resAc') === opt.id} label={optLabel('RES_AC_OPTIONS', opt)} onChange={() => setValue('resAc', opt.id as any)} />
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Sécurité et Connectivité face à face — même disposition que /announces/[id] */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resSecurityLabel')}</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {RES_SECURITY_OPTIONS.map((opt) => (
+                  <IconTile key={opt.id} optionId={opt.id} checked={(watch('resSecurity') || []).includes(opt.id)} label={optLabel('RES_SECURITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resSecurity', opt.id)} />
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resConnectivityLabel')}</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {RES_CONNECTIVITY_OPTIONS.map((opt) => (
+                  <IconTile key={opt.id} optionId={opt.id} checked={(watch('resConnectivity') || []).includes(opt.id)} label={optLabel('RES_CONNECTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resConnectivity', opt.id)} />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-900 mb-2">{t('resConnectivityLabel')}</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {RES_CONNECTIVITY_OPTIONS.map((opt) => (
-              <IconTile key={opt.id} optionId={opt.id} checked={(watch('resConnectivity') || []).includes(opt.id)} label={optLabel('RES_CONNECTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resConnectivity', opt.id)} />
-            ))}
-          </div>
+      </Section>
+
+      <Section title={t('resEnergyTitle')} icon={Zap}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {([
+            ['resWaterLabel', 'resWaterCounter', Droplet, 'text-blue-500'],
+            ['resElecLabel', 'resElecCounter', Zap, 'text-yellow-500'],
+            ['resGasLabel', 'resGasCounter', Flame, 'text-orange-500'],
+          ] as const).map(([labelKey, field, Icon, colorCls]) => (
+            <div key={field} className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+              <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Icon className={cn('w-4 h-4', colorCls)} />{t(labelKey)}</h4>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                  <input type="radio" value="INDIVIDUEL" checked={watch(field) === 'INDIVIDUEL'} onChange={() => setValue(field, 'INDIVIDUEL' as any)} className="accent-[#0094BD] w-4 h-4" />{t('resCounterIndividuel')}
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+                  <input type="radio" value="COMMUN" checked={watch(field) === 'COMMUN'} onChange={() => setValue(field, 'COMMUN' as any)} className="accent-[#0094BD] w-4 h-4" />{t('resCounterCommun')}
+                </label>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-    </Section>
+      </Section>
+    </>
   );
 
   const renderCommentSection = () => (
@@ -1640,11 +1720,12 @@ export default function ResearchPage() {
           </Section>
         )}
 
-        {/* Localisation / Cadre de vie et Environnement / Interlocuteur / Message — exactement les
-            mêmes blocs partagés que la fiche "Recherche Appartement, Villa, Niveau de Villa". */}
+        {/* Localisation / Cadre de vie et Environnement — exactement les mêmes blocs partagés que
+            la fiche "Recherche Appartement, Villa, Niveau de Villa". Interlocuteur souhaité +
+            message explicatif : page 2 du parcours (étape INTERLOCUTOR, commune à tout le branche
+            Résidentiel) — demande client du 15/10/2026. */}
         {renderLocalisationSection({ hideDate: true })}
         {renderEnvironmentSection()}
-        {renderSharedInterlocutorSection()}
 
         {/* Stade de réalisation — uniquement pour l'achat d'un immeuble (une location d'immeuble
             entier ne se conçoit pas "sur plan"). */}
@@ -1657,8 +1738,6 @@ export default function ResearchPage() {
             </div>
           </Section>
         )}
-
-        {renderCommentSection()}
       </>
     );
   };
@@ -1671,8 +1750,8 @@ export default function ResearchPage() {
         {renderLocalisationSection({ hideDate: true })}
         {renderEnvironmentSection()}
         {renderResidentielEquipmentsSection()}
-        {renderSharedInterlocutorSection()}
-        {renderCommentSection()}
+        {/* Interlocuteur souhaité + message explicatif : page 2 du parcours (étape INTERLOCUTOR),
+            cf. steps array plus bas — demande client du 15/10/2026. */}
       </>
     );
   };
@@ -2842,6 +2921,9 @@ export default function ResearchPage() {
                 <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={optLabel(optionsNs, opt)} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
               ))}
             </div>
+            {/* Message explicatif — seulement pour la branche Résidentiel, qui a déplacé ce bloc ici
+                (page 2) ; les autres branches (Industriel...) le gardent sur la page des critères. */}
+            {branch === 'RESIDENTIEL' && renderCommentSection()}
           </div>
         );
       }
@@ -2882,11 +2964,18 @@ export default function ResearchPage() {
                 </>
               )}
 
+              {/* Consentement obligatoire : rendu comme une case à part, clairement requise, pour
+                  qu'elle demande une décision explicite avant l'envoi plutôt qu'un détail qu'on
+                  peut manquer (retour client du 15/10/2026). */}
               <div className="space-y-3 mt-2">
-                <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                  <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 accent-[#0094BD]" />
-                  {t('contactIsDelegate')}
+                <label className={cn(
+                  'flex items-start gap-2.5 text-sm font-bold p-3 rounded-xl border-2 transition-colors',
+                  errors.isDelegate ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#0094BD]/30 bg-[#0094BD]/[0.04] text-gray-900'
+                )}>
+                  <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 mt-0.5 accent-[#0094BD] shrink-0" />
+                  <span>{t('contactIsDelegate')} <span className="text-red-500">*</span></span>
                 </label>
+                {errors.isDelegate && <p className="text-red-500 text-sm">{errors.isDelegate.message as any}</p>}
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
                   <input type="checkbox" {...register('receiveAlert')} className="h-4 w-4 accent-[#0094BD]" />
                   {t('contactReceiveAlert')}

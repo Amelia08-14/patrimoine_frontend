@@ -42,11 +42,12 @@ export default function LoginPage() {
         localStorage.setItem('token', result.access_token)
         localStorage.setItem('user', JSON.stringify(result.user))
 
-        // Redirection conditionnelle
+        // Redirection conditionnelle — la complétion de profil n'est plus imposée à la connexion
+        // (particulier ET professionnel atterrissent directement sur l'accueil) ; le professionnel
+        // n'est renvoyé vers /profile/complete qu'au moment où il tente de déposer une annonce
+        // (cf. deposit/page.tsx) — demande client du 15/10/2026.
         if (result.user.userType === 'ADMIN') {
             window.location.href = '/admin'
-        } else if (!result.user.isProfileComplete) {
-            window.location.href = '/profile/complete'
         } else {
             window.location.href = '/'
         }
