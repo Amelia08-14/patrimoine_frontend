@@ -114,10 +114,26 @@ export default function ProfileInfoPage() {
     }
   };
 
+  // Contrôles avant envoi — jusqu'ici ce formulaire n'en avait aucun (ni nom/prénom obligatoires,
+  // ni confirmation de mot de passe vérifiée) : un changement pouvait échouer silencieusement ou
+  // partir avec un mot de passe mal confirmé (retour client du 17/10/2026).
+  const validate = (): string | null => {
+    if (!formData.firstName.trim()) return t("firstNameRequired");
+    if (!formData.lastName.trim()) return t("lastNameRequired");
+    if (formData.newPassword) {
+      if (!formData.currentPassword) return t("currentPasswordRequired");
+      if (formData.newPassword.length < 6) return t("newPasswordTooShort");
+      if (formData.newPassword !== formData.confirmPassword) return t("passwordMismatch");
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError = validate();
+    if (validationError) { alert(validationError); return; }
     setSaving(true);
-    
+
     try {
         const token = localStorage.getItem('token');
         const submitData = new FormData();
@@ -169,7 +185,9 @@ export default function ProfileInfoPage() {
             }
         } else {
             const text = await response.text().catch(() => "");
-            alert(text || t("updateError"));
+            let message = text;
+            try { message = JSON.parse(text)?.message || text; } catch { /* texte brut */ }
+            alert((Array.isArray(message) ? message.join("\n") : message) || t("updateError"));
         }
     } catch (error) {
         console.error(error);

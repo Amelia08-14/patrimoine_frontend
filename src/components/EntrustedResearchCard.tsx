@@ -119,12 +119,27 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
 
   const requesterName = r.user?.companyName || r.user?.firstName || null
 
+  // Unité du budget — vit dans amenities (un des 4 emplacements possibles selon la fiche), pas
+  // dans une colonne dédiée. L'afficher est nécessaire : minBudget/maxBudget stockent le chiffre
+  // SAISI tel quel ("25" si l'utilisateur a choisi "Millions"), jamais converti en DA brut — sans
+  // l'unité, "25" se lirait à tort comme 25 DA (retour client du 17/10/2026).
+  const budgetUnit: string =
+    amenities?.residentiel?.location?.budgetUnit ||
+    amenities?.residentiel?.achatHabitation?.budgetUnit ||
+    amenities?.bureaux?.groupee?.budgetUnit ||
+    amenities?.bureaux?.blocAdministratif?.budgetUnit ||
+    "DA"
+  const BUDGET_UNIT_LABELS: Record<string, string> = {
+    DA: "DA", DA_M2: "DA/m²", MILLION: t("curMillions"), MILLION_M2: t("curMillionsM2"), MILLIARD: t("curMilliards"),
+  }
+  const budgetUnitLabel = BUDGET_UNIT_LABELS[budgetUnit] || "DA"
+  const fmtBudget = (n: number) => `${new Intl.NumberFormat("fr-DZ").format(n)} ${budgetUnitLabel}`
   const budgetLabel = r.minBudget && r.maxBudget
-    ? `${new Intl.NumberFormat("fr-DZ").format(r.minBudget)} - ${new Intl.NumberFormat("fr-DZ").format(r.maxBudget)} DA`
+    ? `${new Intl.NumberFormat("fr-DZ").format(r.minBudget)} - ${fmtBudget(r.maxBudget)}`
     : r.maxBudget
-    ? `${t("upTo")} ${new Intl.NumberFormat("fr-DZ").format(r.maxBudget)} DA`
+    ? `${t("upTo")} ${fmtBudget(r.maxBudget)}`
     : r.minBudget
-    ? `${t("from")} ${new Intl.NumberFormat("fr-DZ").format(r.minBudget)} DA`
+    ? `${t("from")} ${fmtBudget(r.minBudget)}`
     : null
 
   const surfaceMin = locationCriteria?.minSurface || r.minSurface

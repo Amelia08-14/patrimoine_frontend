@@ -93,6 +93,20 @@ export default function RegisterPage() {
   const [isLoadingCities, setIsLoadingCities] = useState(false)
   const [isLoadingTowns, setIsLoadingTowns] = useState(false)
 
+  // Âge minimum légal — même calcul que /profile/complete (différence en années entières, pas une
+  // simple soustraction d'années qui accepterait quelqu'un dont l'anniversaire n'est pas encore
+  // passé cette année) ; demandé explicitement dès l'inscription, pas seulement à la complétion de
+  // profil (retour client du 17/10/2026 : "création compte particulier manque Age").
+  const MINIMUM_AGE = 18
+  const getAge = (isoDate: string): number => {
+    const dob = new Date(isoDate)
+    const now = new Date()
+    let age = now.getFullYear() - dob.getFullYear()
+    const hasHadBirthdayThisYear = now.getMonth() > dob.getMonth() || (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate())
+    if (!hasHadBirthdayThisYear) age -= 1
+    return age
+  }
+
   const registerSchema = z.object({
     userType: z.enum(["PARTICULIER", "SOCIETE"]),
     email: z.string().email(t("invalidEmail")),
@@ -103,6 +117,7 @@ export default function RegisterPage() {
     // Particulier
     firstName: z.string().optional(),
     lastName: z.string().optional(),
+    dateOfBirth: z.string().optional(),
 
     // Société
     companyName: z.string().optional(),
@@ -117,6 +132,11 @@ export default function RegisterPage() {
     if (data.userType === "PARTICULIER") {
       if (!data.firstName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("firstNameRequired"), path: ["firstName"] });
       if (!data.lastName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("lastNameRequired"), path: ["lastName"] });
+      if (!data.dateOfBirth) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("dobRequired"), path: ["dateOfBirth"] });
+      } else if (getAge(data.dateOfBirth) < MINIMUM_AGE) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("dobMinimumAge", { age: MINIMUM_AGE }), path: ["dateOfBirth"] });
+      }
     }
     if (data.userType === "SOCIETE") {
       if (!data.companyName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("companyNameRequired"), path: ["companyName"] });
@@ -214,7 +234,8 @@ export default function RegisterPage() {
           position: undefined,
         } : {
           firstName: undefined,
-          lastName: undefined
+          lastName: undefined,
+          dateOfBirth: undefined,
         })
       }
 
@@ -225,9 +246,11 @@ export default function RegisterPage() {
       })
 
       if (response.ok) {
-        // Rediriger vers une page de succès ou afficher un message modal
-        alert(t("successMessage"))
-        // Optionnel: window.location.href = '/auth/check-email'
+        // Message dédié pour le professionnel : rappel explicite qu'il devra valider son profil
+        // avec ses documents juridiques (RC, agrément, NIF/NIS) avant de pouvoir déposer une
+        // annonce — en plus du blocage déjà en place au moment du dépôt (retour client du
+        // 17/10/2026 : "créer un message de suite validation profil avec les documents juridiques").
+        alert(userType === "SOCIETE" ? t("successMessageSociete") : t("successMessage"))
       } else {
         const errorData = await response.json()
         if (response.status === 409) {
@@ -420,6 +443,16 @@ export default function RegisterPage() {
                     placeholder={t("lastNamePlaceholder")}
                   />
                   {errors.lastName && <p className="text-red-500 text-xs pl-1">{errors.lastName.message}</p>}
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 pl-1">{t("dobLabel")}</label>
+                  <input
+                    type="date"
+                    {...register("dateOfBirth")}
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white"
+                  />
+                  <p className="text-[11px] text-gray-400 dark:text-white/40 pl-1">{t("dobAgeNotice")}</p>
+                  {errors.dateOfBirth && <p className="text-red-500 text-xs pl-1">{errors.dateOfBirth.message}</p>}
                 </div>
               </div>
             )}

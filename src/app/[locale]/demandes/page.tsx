@@ -97,7 +97,7 @@ export default function DemandesPage() {
   const place = useLocalizedPlaceName()
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [cities, setCities] = useState<Array<{ id: number; nameFr?: string; nameAr?: string }>>([])
+  const [cities, setCities] = useState<Array<{ id: number; nameFr?: string; nameAr?: string; code?: number }>>([])
   const [towns, setTowns] = useState<Array<{ id: number; nameFr?: string; nameAr?: string }>>([])
 
   const [transaction, setTransaction] = useState<"" | "SALE" | "RENTAL">("")
@@ -222,7 +222,7 @@ export default function DemandesPage() {
               aria-label={t("wilayaPlaceholder")}
             >
               <option value="">{t("wilayaPlaceholder")}</option>
-              {cities.map((c) => <option key={c.id} value={c.id}>{place.city(c)}</option>)}
+              {cities.map((c) => <option key={c.id} value={c.id}>{c.code ? `${c.code} - ${place.city(c)}` : place.city(c)}</option>)}
             </select>
 
             <select

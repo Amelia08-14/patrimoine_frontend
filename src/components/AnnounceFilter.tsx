@@ -86,6 +86,35 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
   // est habillé (cf. onChange qui retire tout sauf les chiffres).
   const formatThousands = (v: string) => (v ? new Intl.NumberFormat("fr-DZ").format(Number(v)) : "")
 
+  // Unités de saisie pour Surface et Budget — purement locales à ce composant (pas dans
+  // `filters`/l'URL) : `filters.minPrice`/`maxPrice`/`minArea`/`maxArea` restent toujours le
+  // nombre brut comparé à `announce.price`/`property.area`, seul l'AFFICHAGE/la SAISIE convertit
+  // via l'unité choisie (ex. taper "25" avec "Millions" pousse 25000000 dans le filtre). Retour
+  // client du 17/10/2026 : la simplification du 15/10/2026 ("tout en DA/m²") est revenue en
+  // arrière — les unités Million/Milliard/hectare manquaient réellement.
+  const [priceUnit, setPriceUnit] = useState<'DA' | 'MILLION' | 'MILLIARD'>('DA')
+  const [areaUnit, setAreaUnit] = useState<'M2' | 'HECTARE'>('M2')
+  const PRICE_UNIT_FACTORS: Record<string, number> = { DA: 1, MILLION: 1_000_000, MILLIARD: 1_000_000_000 }
+  const AREA_UNIT_FACTORS: Record<string, number> = { M2: 1, HECTARE: 10_000 }
+  const priceFactor = PRICE_UNIT_FACTORS[priceUnit]
+  const areaFactor = isCapacityUnit ? 1 : AREA_UNIT_FACTORS[areaUnit]
+  const displayMinPrice = filters.minPrice ? String(Math.round(Number(filters.minPrice) / priceFactor)) : ''
+  const displayMaxPrice = filters.maxPrice ? String(Math.round(Number(filters.maxPrice) / priceFactor)) : ''
+  const displayMinArea = filters.minArea ? String(Math.round(Number(filters.minArea) / areaFactor)) : ''
+  const displayMaxArea = filters.maxArea ? String(Math.round(Number(filters.maxArea) / areaFactor)) : ''
+  const onPriceUnitChange = (unit: 'DA' | 'MILLION' | 'MILLIARD') => {
+    const newFactor = PRICE_UNIT_FACTORS[unit]
+    if (filters.minPrice) onFilterChange("minPrice", String(Math.round(Number(displayMinPrice) * newFactor)))
+    if (filters.maxPrice) onFilterChange("maxPrice", String(Math.round(Number(displayMaxPrice) * newFactor)))
+    setPriceUnit(unit)
+  }
+  const onAreaUnitChange = (unit: 'M2' | 'HECTARE') => {
+    const newFactor = AREA_UNIT_FACTORS[unit]
+    if (filters.minArea) onFilterChange("minArea", String(Math.round(Number(displayMinArea) * newFactor)))
+    if (filters.maxArea) onFilterChange("maxArea", String(Math.round(Number(displayMaxArea) * newFactor)))
+    setAreaUnit(unit)
+  }
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -484,9 +513,11 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
 
           {openDropdown === "more" && (
             <div className="absolute top-full end-0 mt-2 w-80 max-w-[90vw] bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 p-4 space-y-4">
-              {/* Surface / Capacité : l'unité s'adapte au type de bien choisi (m³ pour une Chambre
-                  Froide, m² sinon), et vit dans une pastille collée au champ plutôt que dans le
-                  libellé — demande client du 15/10/2026. */}
+              {/* Surface / Capacité — unité choisie par un vrai sélecteur (m² / hectare), sauf pour
+                  une Chambre Froide où l'unité reste m³ fixe (capacité, pas une surface qui se
+                  convertit en hectares). Retour client du 17/10/2026 : "manque sur plus de critère
+                  les unités sur m2 m3 hectare et autre" — la pastille fixe du 15/10/2026 ne
+                  suffisait pas, il fallait un vrai choix. */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{isCapacityUnit ? t("capacityMinLabel") : t("surfaceMinLabel")}</label>
@@ -495,40 +526,55 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                     ref={minAreaBoxRef}
                   >
                     <input
-                      type="number"
-                      min="0"
+                      type="text"
                       inputMode="numeric"
-                      value={filters.minArea}
-                      onChange={(e) => onFilterChange("minArea", e.target.value)}
+                      value={displayMinArea}
+                      onChange={(e) => onFilterChange("minArea", e.target.value.replace(/[^\d]/g, "") ? String(Number(e.target.value.replace(/[^\d]/g, "")) * areaFactor) : "")}
                       className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
                       placeholder="Ex: 50"
                       onFocus={() => setBoxFocus(minAreaBoxRef, true)}
                       onBlur={() => setBoxFocus(minAreaBoxRef, false)}
                     />
-                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{isCapacityUnit ? "m³" : "m²"}</span>
+                    {isCapacityUnit ? (
+                      <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">m³</span>
+                    ) : (
+                      <select value={areaUnit} onChange={(e) => onAreaUnitChange(e.target.value as 'M2' | 'HECTARE')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
+                        <option value="M2">m²</option>
+                        <option value="HECTARE">{t("unitHectare")}</option>
+                      </select>
+                    )}
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{isCapacityUnit ? t("capacityMaxLabel") : t("surfaceMaxLabel")}</label>
                   <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={maxAreaBoxRef}>
                     <input
-                      type="number"
-                      min="0"
+                      type="text"
                       inputMode="numeric"
-                      value={filters.maxArea}
-                      onChange={(e) => onFilterChange("maxArea", e.target.value)}
+                      value={displayMaxArea}
+                      onChange={(e) => onFilterChange("maxArea", e.target.value.replace(/[^\d]/g, "") ? String(Number(e.target.value.replace(/[^\d]/g, "")) * areaFactor) : "")}
                       className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
                       placeholder="Ex: 300"
                       onFocus={() => setBoxFocus(maxAreaBoxRef, true)}
                       onBlur={() => setBoxFocus(maxAreaBoxRef, false)}
                     />
-                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{isCapacityUnit ? "m³" : "m²"}</span>
+                    {isCapacityUnit ? (
+                      <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">m³</span>
+                    ) : (
+                      <select value={areaUnit} onChange={(e) => onAreaUnitChange(e.target.value as 'M2' | 'HECTARE')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
+                        <option value="M2">m²</option>
+                        <option value="HECTARE">{t("unitHectare")}</option>
+                      </select>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Budget : minimum / maximum — unité "DA" en pastille + séparateur de milliers,
-                  exactement comme le prix affiché sur une annonce, au lieu d'un libellé "(DA)". */}
+              {/* Budget : minimum / maximum — vrai sélecteur d'unité (DA / Millions / Milliards),
+                  restauré après le retour client du 17/10/2026 ("manque unité ... million milliards
+                  dinars"). La valeur tapée est convertie en DA brut avant d'être poussée dans le
+                  filtre (ex. "25" + Millions -> 25000000), donc la comparaison avec le prix réel
+                  des annonces reste exacte quelle que soit l'unité choisie à l'écran. */}
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-white/10">
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("budgetMinLabel")}</label>
@@ -536,14 +582,21 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={formatThousands(filters.minPrice)}
-                      onChange={(e) => onFilterChange("minPrice", e.target.value.replace(/[^\d]/g, ""))}
+                      value={formatThousands(displayMinPrice)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/[^\d]/g, "")
+                        onFilterChange("minPrice", digits ? String(Math.round(Number(digits) * priceFactor)) : "")
+                      }}
                       className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
                       placeholder="Ex: 10 000"
                       onFocus={() => setBoxFocus(minPriceBoxRef, true)}
                       onBlur={() => setBoxFocus(minPriceBoxRef, false)}
                     />
-                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{t("curDA")}</span>
+                    <select value={priceUnit} onChange={(e) => onPriceUnitChange(e.target.value as 'DA' | 'MILLION' | 'MILLIARD')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
+                      <option value="DA">{t("curDA")}</option>
+                      <option value="MILLION">{t("curMillions")}</option>
+                      <option value="MILLIARD">{t("curMilliards")}</option>
+                    </select>
                   </div>
                 </div>
                 <div>
@@ -552,14 +605,21 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={formatThousands(filters.maxPrice)}
-                      onChange={(e) => onFilterChange("maxPrice", e.target.value.replace(/[^\d]/g, ""))}
+                      value={formatThousands(displayMaxPrice)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/[^\d]/g, "")
+                        onFilterChange("maxPrice", digits ? String(Math.round(Number(digits) * priceFactor)) : "")
+                      }}
                       className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
                       placeholder="Ex: 50 000"
                       onFocus={() => setBoxFocus(maxPriceBoxRef, true)}
                       onBlur={() => setBoxFocus(maxPriceBoxRef, false)}
                     />
-                    <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{t("curDA")}</span>
+                    <select value={priceUnit} onChange={(e) => onPriceUnitChange(e.target.value as 'DA' | 'MILLION' | 'MILLIARD')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
+                      <option value="DA">{t("curDA")}</option>
+                      <option value="MILLION">{t("curMillions")}</option>
+                      <option value="MILLIARD">{t("curMilliards")}</option>
+                    </select>
                   </div>
                 </div>
               </div>

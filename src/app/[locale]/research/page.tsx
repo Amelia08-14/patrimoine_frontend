@@ -143,7 +143,10 @@ const IconTile = ({ checked, onChange, label, optionId, type = 'checkbox' }: { c
     <label className="cursor-pointer block group">
       <input type={type} checked={checked} onChange={onChange} className="peer sr-only" />
       <div className={cn(
-        'flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all h-24 bg-white',
+        // min-h (pas h fixe) : un libellé un peu long ("Machine à laver", "Gardiennage 24/7"...)
+        // ne doit jamais déborder d'une hauteur figée et casser l'alignement de la grille (retour
+        // client du 17/10/2026 : "cuisine et équipement extérieurs non aligner").
+        'flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all min-h-24 h-full bg-white',
         checked ? 'border-[#0094BD] bg-[#0094BD]/[0.06] text-[#0094BD]' : 'border-gray-200 text-gray-700 hover:border-[#0094BD]'
       )}>
         <Icon className={cn('h-6 w-6', checked ? 'text-[#0094BD]' : 'text-gray-400 group-hover:text-gray-600')} />
@@ -1415,11 +1418,12 @@ export default function ResearchPage() {
   );
 
   // Champ "boxé" façon création d'annonce pour un montant unique (Budget min / Budget max).
-  // Unité fixée à "DA" — exactement comme le prix affiché sur une annonce (/announces), qui est
-  // toujours un montant brut en dinars, jamais en "Millions"/"Milliards"/m² (demande client du
-  // 15/10/2026 ; corrige aussi une incohérence pré-existante : la carte de recherche confiée
-  // affichait déjà le budget en DA brut quel que soit `budgetUnit`, donc le sélecteur précédent
-  // pouvait induire en erreur sur ce qu'un chiffre saisi représentait réellement).
+  // L'unité (DA / DA-m² / Millions / Millions-m² / Milliards) est de nouveau un vrai sélecteur —
+  // retour client du 17/10/2026 ("confier recherche manque unité ... million milliards dinars") :
+  // la tentative précédente de la fixer à "DA" seul (15/10/2026) est revenue en arrière. Même
+  // 5 choix que `renderBudgetInputs` juste au-dessus, pour rester cohérent dans tout le fichier.
+  // La saisie garde son séparateur de milliers ; c'est l'affichage (cartes /demandes) qui doit
+  // interpréter `budgetUnit` pour rendre un montant lisible "comme sur une annonce", pas ce champ.
   const renderBoxedBudgetField = (label: string, field: 'minBudget' | 'maxBudget', opts?: { withUnit?: boolean }) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
@@ -1434,9 +1438,16 @@ export default function ResearchPage() {
           className="w-full min-w-0 p-2 outline-none bg-transparent font-medium text-gray-900 text-base text-center"
         />
         {opts?.withUnit && (
-          <span className="h-full shrink-0 flex items-center ps-1.5 pe-2 border-s-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-500">
-            {t('curDA')}
-          </span>
+          <select
+            {...register('budgetUnit')}
+            className="h-full shrink-0 ps-1.5 pe-1 border-s-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-700 outline-none cursor-pointer"
+          >
+            <option value="DA">{t('curDA')}</option>
+            <option value="DA_M2">{t('curDAM2')}</option>
+            <option value="MILLION">{t('curMillions')}</option>
+            <option value="MILLION_M2">{t('curMillionsM2')}</option>
+            <option value="MILLIARD">{t('curMilliards')}</option>
+          </select>
         )}
       </div>
     </div>
@@ -1488,7 +1499,7 @@ export default function ResearchPage() {
             className={inputCls}
           >
             <option value="">{t('optSelect')}</option>
-            {cities.map((c) => <option key={c.id} value={c.id}>{place.city(c)}</option>)}
+            {cities.map((c) => <option key={c.id} value={c.id}>{c.code ? `${c.code} - ${place.city(c)}` : place.city(c)}</option>)}
           </select>
         </Field>
         <Field label={t('budgetTowns')}>
@@ -2606,7 +2617,7 @@ export default function ResearchPage() {
         <Field label={t('budgetCity')}>
           <select {...register('cityId', { valueAsNumber: true })} className={inputCls}>
             <option value="">{t('optSelect')}</option>
-            {cities.map((c) => <option key={c.id} value={c.id}>{place.city(c)}</option>)}
+            {cities.map((c) => <option key={c.id} value={c.id}>{c.code ? `${c.code} - ${place.city(c)}` : place.city(c)}</option>)}
           </select>
         </Field>
 

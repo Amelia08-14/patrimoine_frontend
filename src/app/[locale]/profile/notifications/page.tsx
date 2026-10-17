@@ -4,13 +4,13 @@ import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { useRouter, Link } from "@/i18n/navigation"
 import axios from "axios"
-import { Bell, MessageSquare, Search, CheckCircle2, XCircle, Loader2, CheckCheck, AlertTriangle } from "lucide-react"
+import { Bell, MessageSquare, Search, CheckCircle2, XCircle, Loader2, CheckCheck, AlertTriangle, Store } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 interface RawNotification {
   id: number
-  type: "MESSAGE" | "RESEARCH_MATCH" | "ANNOUNCE_VALIDATED" | "ANNOUNCE_REJECTED" | "POINTS_EXPIRING" | "POINTS_EXPIRED"
+  type: "MESSAGE" | "RESEARCH_MATCH" | "ANNOUNCE_VALIDATED" | "ANNOUNCE_REJECTED" | "POINTS_EXPIRING" | "POINTS_EXPIRED" | "BOUTIQUE_EXPIRING" | "BOUTIQUE_EXPIRED"
   title: string
   body: string | null
   link: string | null
@@ -25,6 +25,8 @@ const TYPE_ICON: Record<string, any> = {
   ANNOUNCE_REJECTED: XCircle,
   POINTS_EXPIRING: Bell,
   POINTS_EXPIRED: AlertTriangle,
+  BOUTIQUE_EXPIRING: Store,
+  BOUTIQUE_EXPIRED: Store,
 }
 
 const TYPE_COLOR: Record<string, string> = {
@@ -34,6 +36,8 @@ const TYPE_COLOR: Record<string, string> = {
   ANNOUNCE_REJECTED: "#EF4444",
   POINTS_EXPIRING: "#F59E0B",
   POINTS_EXPIRED: "#EF4444",
+  BOUTIQUE_EXPIRING: "#F59E0B",
+  BOUTIQUE_EXPIRED: "#EF4444",
 }
 
 export default function NotificationsPage() {
