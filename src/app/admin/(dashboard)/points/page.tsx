@@ -3,10 +3,21 @@
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search, Pencil, Save, Trash2, Plus, FileDown, FileSpreadsheet, FileText } from "lucide-react"
+import { Coins, Check, X, Loader2, AlertCircle, RefreshCw, User, MapPin, Search, Pencil, Save, Trash2, Plus, FileDown, FileSpreadsheet, FileText, MessageSquare, Send } from "lucide-react"
 import { DATE_PRESETS, todayStr, periodLabel } from "@/lib/datePresets"
+import { CenterToast } from "@/components/CenterToast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+// Moyens de paiement proposés au client (cf. components/PurchaseConfirmStep.tsx) — "NONE" = commande
+// passée sans moyen déclaré (anciennes commandes).
+const PAYMENT_METHODS = [
+  { id: 'CCP', label: 'CCP' },
+  { id: 'VIREMENT', label: 'Virement' },
+  { id: 'BARIDIMOB', label: 'BaridiMob' },
+  { id: 'SUR_PLACE', label: 'Sur place' },
+] as const
+const paymentLabel = (m: string | null) => (m ? PAYMENT_METHODS.find((x) => x.id === m)?.label || m : 'Non précisé')
 
 type OfferPack = {
   id: number
@@ -53,6 +64,13 @@ export default function AdminPointsPage() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'VALIDATED' | 'REJECTED'>('PENDING')
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'POINTS' | 'BOUTIQUE'>('ALL')
   const [accountTypeFilter, setAccountTypeFilter] = useState<'ALL' | 'PARTICULIER' | 'SOCIETE'>('ALL')
+  // Type de paiement (CCP / virement / BaridiMob / sur place) — pour vérifier les paiements par
+  // canal (relevé CCP, relevé bancaire...) — demande client du 25/10/2026.
+  const [paymentFilter, setPaymentFilter] = useState<string>('ALL')
+  // Fenêtre "Message au client" (commande en attente : reçu illisible, montant différent...).
+  const [messageTarget, setMessageTarget] = useState<Purchase | null>(null)
+  const [messageText, setMessageText] = useState("")
+  const [sendingMessage, setSendingMessage] = useState(false)
   const [search, setSearch] = useState("")
   const [wilaya, setWilaya] = useState("")
   const [commune, setCommune] = useState("")
@@ -74,7 +92,7 @@ export default function AdminPointsPage() {
   const [creatingKind, setCreatingKind] = useState<'POINTS' | 'BOUTIQUE' | null>(null)
   const [createForm, setCreateForm] = useState<{ key: string; title: string; titleAr: string; titleEn: string; description: string; descriptionAr: string; descriptionEn: string; price: string; points: string }>({ key: "", title: "", titleAr: "", titleEn: "", description: "", descriptionAr: "", descriptionEn: "", price: "", points: "" })
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
+  const showToast = (msg: string) => setToast(msg)
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('admin_token')}` })
 
   const loadPacks = useCallback(async () => {
@@ -204,11 +222,12 @@ export default function AdminPointsPage() {
     return purchases.filter((p) => {
       if (sourceFilter !== 'ALL' && p.source !== sourceFilter) return false
       if (accountTypeFilter !== 'ALL' && p.user.userType !== accountTypeFilter) return false
+      if (paymentFilter !== 'ALL' && (p.paymentMethod || 'NONE') !== paymentFilter) return false
       if (dateFrom && new Date(p.createdAt) < new Date(dateFrom)) return false
       if (dateTo && new Date(p.createdAt) > new Date(`${dateTo}T23:59:59`)) return false
       return true
     })
-  }, [purchases, sourceFilter, accountTypeFilter, dateFrom, dateTo])
+  }, [purchases, sourceFilter, accountTypeFilter, paymentFilter, dateFrom, dateTo])
 
   const validate = async (p: Purchase) => {
     setProcessing(p.id)
@@ -239,6 +258,31 @@ export default function AdminPointsPage() {
     }
   }
 
+  // Message au client depuis une commande : passe par la messagerie normale (POST /messages avec le
+  // jeton admin) — le client le reçoit dans "Mes messages" sous le nom Patrimoine-Immobilier, avec
+  // une notification. Le texte est pré-rempli avec la référence de la commande.
+  const openMessage = (p: Purchase) => {
+    const packDef = packs.find((pk) => pk.kind === p.source && pk.key === p.pack)
+    setMessageTarget(p)
+    setMessageText(
+      `Bonjour,\n\nConcernant votre commande n°${p.id} (${p.source === 'BOUTIQUE' ? 'abonnement boutique' : 'pack de points'} « ${packDef?.title || p.pack} », ${p.price.toLocaleString('fr-FR')} DA, du ${new Date(p.createdAt).toLocaleDateString('fr-FR')}) : \n\n`
+    )
+  }
+
+  const sendMessage = async () => {
+    if (!messageTarget || !messageText.trim()) return
+    setSendingMessage(true)
+    try {
+      await axios.post(`${API_URL}/messages`, { receiverId: messageTarget.user.id, content: messageText.trim() }, { headers: getHeaders() })
+      showToast("✅ Message envoyé au client")
+      setMessageTarget(null)
+    } catch (e: any) {
+      showToast("❌ " + (e?.response?.data?.message || "Envoi impossible"))
+    } finally {
+      setSendingMessage(false)
+    }
+  }
+
   const pendingCount = purchases.filter(p => p.status === 'PENDING').length
 
   const applyPreset = (preset: typeof DATE_PRESETS[number]) => {
@@ -251,6 +295,7 @@ export default function AdminPointsPage() {
     type: p.user.userType === 'SOCIETE' ? 'Professionnel' : 'Particulier',
     offre: p.source === 'BOUTIQUE' ? 'Boutique' : 'Points',
     pack: packs.find((pk) => pk.kind === p.source && pk.key === p.pack)?.title || p.pack,
+    paiement: paymentLabel(p.paymentMethod),
     points: p.points,
     prix: `${p.price.toLocaleString()} DA`,
     statut: p.status === 'VALIDATED' ? 'Validée' : p.status === 'REJECTED' ? 'Refusée' : 'En attente',
@@ -268,8 +313,8 @@ export default function AdminPointsPage() {
         [`Période : ${periodLabel(dateFrom, dateTo)}`],
         [`Généré le ${new Date().toLocaleString('fr-FR')}`],
         [],
-        ['Compte', 'Type', 'Offre', 'Pack', 'Points', 'Prix', 'Statut', 'Localisation', 'Date'],
-        ...rows.map((r) => [r.compte, r.type, r.offre, r.pack, r.points, r.prix, r.statut, r.localisation, r.date]),
+        ['Compte', 'Type', 'Offre', 'Pack', 'Points', 'Prix', 'Paiement', 'Statut', 'Localisation', 'Date'],
+        ...rows.map((r) => [r.compte, r.type, r.offre, r.pack, r.points, r.prix, r.paiement, r.statut, r.localisation, r.date]),
       ])
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, sheet, 'Points & Achats')
@@ -289,8 +334,8 @@ export default function AdminPointsPage() {
       doc.text(`Généré le ${new Date().toLocaleString('fr-FR')}`, 14, 30)
       autoTable(doc, {
         startY: 36,
-        head: [['Compte', 'Type', 'Offre', 'Pack', 'Points', 'Prix', 'Statut', 'Localisation', 'Date']],
-        body: exportRows().map((r) => [r.compte, r.type, r.offre, r.pack, String(r.points), r.prix, r.statut, r.localisation, r.date]),
+        head: [['Compte', 'Type', 'Offre', 'Pack', 'Points', 'Prix', 'Paiement', 'Statut', 'Localisation', 'Date']],
+        body: exportRows().map((r) => [r.compte, r.type, r.offre, r.pack, String(r.points), r.prix, r.paiement, r.statut, r.localisation, r.date]),
         headStyles: { fillColor: [0, 191, 166] },
         styles: { fontSize: 8 },
       })
@@ -300,9 +345,8 @@ export default function AdminPointsPage() {
 
   return (
     <div>
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
-      )}
+      {/* Message de retour au centre de l'écran (CenterToast) — plus de toast en haut à droite. */}
+      <CenterToast message={toast} onClose={() => setToast("")} />
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
@@ -357,6 +401,12 @@ export default function AdminPointsPage() {
             <option value="ALL">Type de pack : Tous</option>
             <option value="POINTS">Pack points</option>
             <option value="BOUTIQUE">Pack boutique</option>
+          </select>
+
+          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
+            <option value="ALL">Type de paiement : Tous</option>
+            {PAYMENT_METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+            <option value="NONE">Non précisé</option>
           </select>
 
           <select value={wilaya} onChange={(e) => { setWilaya(e.target.value); setCommune("") }} className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium bg-white outline-none">
@@ -683,9 +733,7 @@ export default function AdminPointsPage() {
                           validation : savoir comment chercher le paiement (CCP/virement...) et
                           pouvoir vérifier la preuve jointe. */}
                       {p.paymentMethod && (
-                        <div className="text-[10px] font-bold text-gray-500 mt-1">
-                          {{ CCP: 'CCP', VIREMENT: 'Virement', SUR_PLACE: 'Sur place', BARIDIMOB: 'BaridiMob' }[p.paymentMethod as string] || p.paymentMethod}
-                        </div>
+                        <div className="text-[10px] font-bold text-gray-500 mt-1">{paymentLabel(p.paymentMethod)}</div>
                       )}
                       {p.receiptUrl && (
                         <a href={`${API_URL}${p.receiptUrl}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0094BD] hover:underline mt-0.5">
@@ -715,6 +763,10 @@ export default function AdminPointsPage() {
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs font-bold hover:bg-red-100 disabled:opacity-60 transition-colors">
                             <X className="h-3.5 w-3.5" /> Rejeter
                           </button>
+                          <button onClick={() => openMessage(p)} title="Contacter le client au sujet de cette commande"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-[#0094BD] border border-[#0094BD]/40 rounded-lg text-xs font-bold hover:bg-[#0094BD]/5 transition-colors">
+                            <MessageSquare className="h-3.5 w-3.5" /> Message
+                          </button>
                         </>
                       ) : (
                         <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${p.status === 'VALIDATED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -731,6 +783,36 @@ export default function AdminPointsPage() {
           </div>
         )}
       </div>
+      {messageTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={(e) => e.target === e.currentTarget && setMessageTarget(null)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900"><MessageSquare className="h-5 w-5 text-[#0094BD]" /> Message au client</h2>
+                <p className="mt-0.5 text-sm text-gray-500">
+                  {messageTarget.user.companyName || `${messageTarget.user.firstName} ${messageTarget.user.lastName}`} — commande n°{messageTarget.id}
+                </p>
+              </div>
+              <button onClick={() => setMessageTarget(null)} className="text-gray-400 hover:text-gray-700"><X className="h-5 w-5" /></button>
+            </div>
+            <textarea
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              rows={8}
+              maxLength={5000}
+              className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm text-gray-900 outline-none focus:border-[#0094BD]"
+            />
+            <p className="mt-1 text-xs text-gray-400">Le client le recevra dans « Mes messages » de son profil, avec une notification.</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button onClick={() => setMessageTarget(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Annuler</button>
+              <button onClick={sendMessage} disabled={sendingMessage || !messageText.trim()} className="inline-flex items-center gap-2 rounded-lg bg-[#0094BD] px-5 py-2 text-sm font-bold text-white hover:bg-[#003B4A] disabled:opacity-60">
+                {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Envoyer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!loading && filtered.length > 0 && (
         <div className="mt-4 flex items-center gap-6 text-sm text-gray-500">
           <span>{filtered.length} demande{filtered.length > 1 ? 's' : ''}</span>

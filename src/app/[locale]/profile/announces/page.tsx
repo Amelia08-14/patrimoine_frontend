@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import axios from "axios"
 import { Calendar, MapPin, Zap, Star, Loader2, AlertCircle, Check, X, Coins, Edit, Trash2, Eye, Filter, RotateCcw, ListChecks, TrendingUp, Images } from "lucide-react"
+import { CenterToast } from "@/components/CenterToast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -149,7 +150,7 @@ export default function MyAnnouncesPage() {
   const [dateTo, setDateTo] = useState("")
   const [sortBy, setSortBy] = useState<'RECENT' | 'OLDEST' | 'POINTS_DESC' | 'POINTS_ASC'>('RECENT')
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
+  const showToast = (msg: string) => setToast(msg)
 
   const load = async () => {
     const token = localStorage.getItem('token')
@@ -180,7 +181,10 @@ export default function MyAnnouncesPage() {
       showToast(t("adRefreshedSuccess"))
       await load()
     } catch (e: any) {
-      showToast("❌ " + (e?.response?.data?.message || t("errorGeneric")))
+      const data = e?.response?.data
+      // Délai de 45 min entre deux actualisations (code renvoyé par l'API).
+      if (data?.code === "REFRESH_COOLDOWN") showToast("⏳ " + t("refreshCooldown", { minutes: data.remainingMinutes }))
+      else showToast("❌ " + (data?.message || t("errorGeneric")))
     } finally {
       setBoosting(null)
     }
@@ -238,11 +242,8 @@ export default function MyAnnouncesPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
       {/* Toast */}
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">
-          {toast}
-        </div>
-      )}
+      {/* Message de retour au centre de l'écran (CenterToast) — plus de toast en haut à droite. */}
+      <CenterToast message={toast} onClose={() => setToast("")} />
 
       {editTarget && <EditModal announce={editTarget} onClose={() => setEditTarget(null)} onSuccess={() => { setEditTarget(null); load(); showToast(t("editDone")) }} />}
       {deleteTarget && (

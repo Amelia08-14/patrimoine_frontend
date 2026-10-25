@@ -667,9 +667,9 @@ export default function HomePage() {
               />
             ))}
 
-            {/* Fondu NEUTRE (noir) pour la lisibilité du texte : aucune teinte verte/marque sur les photos des slides */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/10 sm:to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/40 to-transparent" />
+            {/* AUCUN calque sur les photos (ni vert/navy, ni noir) — demande client du 25/10/2026 :
+                la lisibilité du texte passe par une ombre portée sur le texte lui-même (heroTextShadow
+                ci-dessous), jamais par un voile sur l'image. Ne pas réintroduire de fondu ici. */}
           </div>
 
           {/* Lien de renvoi du slide sur la photo elle-même (pas seulement sur le bouton CTA) :
@@ -715,8 +715,10 @@ export default function HomePage() {
           {/* Contenu texte — posé sur le fondu, aligné à gauche ; ne fixe plus sa propre hauteur,
               c'est lui qui détermine celle de la section (au moins min-h-*, plus si besoin). */}
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-0 pointer-events-none">
+            {/* heroTextShadow : ombre portée héritée par tout le texte du hero — remplace l'ancien
+                voile sur la photo pour garder le blanc lisible sur une image claire. */}
             <motion.div
-              className="max-w-xl pointer-events-auto"
+              className="max-w-xl pointer-events-auto [text-shadow:0_1px_3px_rgb(0_0_0_/_0.65),0_2px_14px_rgb(0_0_0_/_0.45)]"
               initial={heroReducedMotion ? "visible" : "hidden"}
               animate="visible"
               variants={heroStagger}
@@ -735,7 +737,7 @@ export default function HomePage() {
                   <span className="text-[#00BFA6]">{t("heroTitleAccent")}</span>
                 </motion.h1>
               )}
-              <motion.p variants={heroItem} className="mt-4 sm:mt-5 text-white/70 text-sm sm:text-lg leading-relaxed max-w-lg">
+              <motion.p variants={heroItem} className="mt-4 sm:mt-5 text-white text-sm sm:text-lg leading-relaxed max-w-lg">
                 {lc(activeSlide?.subtitle, activeSlide?.subtitleAr, activeSlide?.subtitleEn) || t("heroSubtitle")}
               </motion.p>
 

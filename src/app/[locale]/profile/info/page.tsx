@@ -175,9 +175,11 @@ export default function ProfileInfoPage() {
                  updatedUser.agencyLogoUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${updatedUser.agencyLogoUrl}`;
             }
 
+            // Le cache local reprend adminVerified (repassé à false si le profil a changé) : le
+            // dépôt d'annonce, qui lit ce cache, bloque donc aussitôt jusqu'à la revalidation.
             localStorage.setItem('user', JSON.stringify({ ...user, ...updatedUser }));
             setUser({ ...user, ...updatedUser });
-            alert(t("updateSuccess"));
+            alert(updatedUser.pendingRevalidation ? t("updatePendingValidation") : t("updateSuccess"));
 
             // Si le mot de passe a été changé, on peut réinitialiser les champs
             if (formData.newPassword) {

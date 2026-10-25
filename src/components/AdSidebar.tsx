@@ -28,9 +28,14 @@ function useRotation(count: number, everyMs: number, offsetMs: number) {
   return index % Math.max(count, 1)
 }
 
+// Pas de voile sur les visuels publicitaires (demande client du 25/10/2026, "aucun overlay") : le texte
+// éventuel reste lisible grâce à cette ombre portée, héritée par tout le bloc de texte.
+const AD_TEXT_SHADOW = "[text-shadow:0_1px_3px_rgb(0_0_0_/_0.7),0_2px_12px_rgb(0_0_0_/_0.5)]"
+
 /**
- * Colonne publicitaire verticale, collée sous l'en-tête pendant le défilement. Elle s'adapte à l'espace libre :
- * largeur et hauteur suivent la fenêtre (clamp), et l'appelant choisit à partir de quelle largeur d'écran
+ * Colonne publicitaire verticale, collée sous l'en-tête pendant le défilement. Format VERTICAL de
+ * `lib/adFormats.ts` : largeur qui suit la fenêtre (clamp) mais ratio FIXE 1:2, pour que le visuel fourni
+ * (600 × 1200 px) s'affiche entier, jamais recadré. L'appelant choisit à partir de quelle largeur d'écran
  * elle apparaît (classes `hidden xl:block`, `hidden 2xl:block`…). Deux colonnes se partagent la liste
  * d'annonces (paires / impaires) et tournent en décalé.
  */
@@ -45,7 +50,7 @@ export function AdSidebar({ side, className, page = "ANNOUNCES", category }: { s
 
   return (
     <aside aria-label={t("adLabel")} className={cn("sticky top-24 shrink-0 self-start", className)}>
-      <div className="relative w-[clamp(10.5rem,11vw,17rem)] h-[clamp(20rem,64vh,38rem)] overflow-hidden rounded-3xl bg-[#003B4A] shadow-md">
+      <div className="relative w-[clamp(10.5rem,11vw,17rem)] aspect-[1/2] overflow-hidden rounded-3xl bg-[#003B4A] shadow-md">
         {ads.map((ad, i) => (
           <AdLink
             key={ad.key}
@@ -54,13 +59,12 @@ export function AdSidebar({ side, className, page = "ANNOUNCES", category }: { s
             className={cn("absolute inset-0 block transition-opacity duration-1000", i === index ? "opacity-100" : "pointer-events-none opacity-0")}
           >
             <img src={ad.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
             {ad.categoryLabel && <span className="absolute top-3 start-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#003B4A] shadow-sm">{ad.categoryLabel}</span>}
-            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4">
+            <div className={cn("absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4", AD_TEXT_SHADOW)}>
               {ad.title && <h3 className="font-brand text-lg leading-tight text-white line-clamp-3">{ad.title}</h3>}
-              {ad.subtitle && <p className="text-xs leading-snug text-white/75 line-clamp-4">{ad.subtitle}</p>}
+              {ad.subtitle && <p className="text-xs leading-snug text-white line-clamp-4">{ad.subtitle}</p>}
               {ad.cta && (
-                <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-[#00BFA6] px-3.5 py-2 text-xs font-extrabold text-white shadow-lg shadow-black/10">
+                <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-[#00BFA6] px-3.5 py-2 text-xs font-extrabold text-white shadow-lg shadow-black/10 [text-shadow:none]">
                   {ad.cta} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
                 </span>
               )}
@@ -77,7 +81,9 @@ export function AdSidebar({ side, className, page = "ANNOUNCES", category }: { s
 
 /**
  * Pendant mobile / tablette des colonnes : quand l'écran est trop étroit pour des colonnes, la publicité passe
- * en bandeau bas et compact, inséré dans la liste. Même source, même rotation.
+ * en bandeau bas et compact, inséré dans la liste. Même source, même rotation. Format HORIZONTAL de
+ * `lib/adFormats.ts` (même visuel 1800 × 300 que le bandeau principal) : 6:1 dès 1024 px, 3:1 en dessous
+ * (seule la zone centrale du visuel reste alors visible).
  */
 export function AdStrip({ className, page = "ANNOUNCES", category }: { className?: string; page?: AdPage; category?: string }) {
   const t = useTranslations("AnnouncesPage")
@@ -89,14 +95,13 @@ export function AdStrip({ className, page = "ANNOUNCES", category }: { className
 
   return (
     <aside aria-label={t("adLabel")} className={cn("relative overflow-hidden rounded-2xl bg-[#003B4A] shadow-sm", className)}>
-      <AdLink href={ad.href} adId={ad.id} className="relative flex h-24 sm:h-28 items-center">
+      <AdLink href={ad.href} adId={ad.id} className="relative flex aspect-[3/1] lg:aspect-[6/1] items-center">
         <img key={ad.key} src={ad.image} alt="" className="absolute inset-0 h-full w-full object-cover animate-in fade-in duration-700" />
-        <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-black/80 via-black/50 to-transparent" />
         <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3 px-4">
-          <div className="min-w-0 flex-1">
-            {ad.categoryLabel && <span className="mb-1 inline-block rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#003B4A]">{ad.categoryLabel}</span>}
+          <div className={cn("min-w-0 flex-1", AD_TEXT_SHADOW)}>
+            {ad.categoryLabel && <span className="mb-1 inline-block rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#003B4A] [text-shadow:none]">{ad.categoryLabel}</span>}
             {ad.title && <p className="line-clamp-2 sm:truncate font-brand text-base sm:text-lg leading-tight text-white">{ad.title}</p>}
-            {ad.subtitle && <p className="mt-0.5 hidden sm:block truncate text-xs text-white/70">{ad.subtitle}</p>}
+            {ad.subtitle && <p className="mt-0.5 hidden sm:block truncate text-xs text-white">{ad.subtitle}</p>}
           </div>
           {ad.cta && (
             <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#00BFA6] px-3 sm:px-3.5 py-2 text-xs font-extrabold text-white">

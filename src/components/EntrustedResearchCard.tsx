@@ -8,6 +8,7 @@ import { MapPin, Calendar, Wallet, Ruler, ArrowRight, Home, User, Store, Factory
 import { getCategoryColor } from "@/data/categoryColors"
 import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
 import { RESEARCH_PROPERTY_TYPES, ENVIRONMENT_OPTIONS, VILLA_LEVEL_ENTRANCE_OPTIONS } from "@/data/researchConfig"
+import { CenterToast } from "@/components/CenterToast"
 
 // Tables de correspondance id -> libellé FRANÇAIS (repli), construites à partir de toutes les branches
 // (recherche + dépôt). La traduction se fait au rendu via les namespaces i18n (voir le composant).
@@ -49,7 +50,7 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
   const t = useTranslations("Demandes")
   const locale = useLocale()
   const [refreshing, setRefreshing] = useState(false)
-  const [refreshMsg, setRefreshMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [refreshMsg, setRefreshMsg] = useState<{ ok: boolean; text: string; wait?: boolean } | null>(null)
 
   // Actualiser (1 point) : la demande remonte en tête de /demandes, comme « actualiser » une annonce.
   const refresh = async () => {
@@ -62,7 +63,15 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
       setRefreshMsg({ ok: true, text: t("refreshDone") })
       onRefreshed?.()
     } catch (e: any) {
-      setRefreshMsg({ ok: false, text: e?.response?.status === 400 ? t("refreshNoPoints") : t("refreshError") })
+      const data = e?.response?.data
+      setRefreshMsg({
+        ok: false,
+        wait: data?.code === "REFRESH_COOLDOWN",
+        // Délai de 45 min entre deux actualisations — distinct du solde insuffisant (autre 400).
+        text: data?.code === "REFRESH_COOLDOWN"
+          ? t("refreshCooldown", { minutes: data.remainingMinutes })
+          : e?.response?.status === 400 ? t("refreshNoPoints") : t("refreshError"),
+      })
     } finally {
       setRefreshing(false)
     }
@@ -379,11 +388,15 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
             {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {t("refreshBtn")}
           </button>
-          {refreshMsg && (
-            <p className={refreshMsg.ok ? "text-xs font-bold text-emerald-600" : "text-xs font-bold text-red-500"}>
-              {refreshMsg.text}{!refreshMsg.ok && <> — <Link href="/profile/points" className="underline">{t("buyPoints")}</Link></>}
-            </p>
-          )}
+          {/* Retour d'actualisation au centre de l'écran (succès, délai de 45 min, points insuffisants). */}
+          <CenterToast
+            message={refreshMsg?.text}
+            variant={refreshMsg?.ok ? "success" : refreshMsg?.wait ? "wait" : "error"}
+            onClose={() => setRefreshMsg(null)}
+            action={refreshMsg && !refreshMsg.ok && !refreshMsg.wait
+              ? <Link href="/profile/points" className="font-bold text-[#0094BD] underline">{t("buyPoints")}</Link>
+              : undefined}
+          />
         </div>
       )}
       </div>

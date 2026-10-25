@@ -501,7 +501,8 @@
     "contactRequested": "Request sent: the requester has been notified and can reply to you.",
     "viewGrid": "Grid",
     "viewLarge": "Large cards",
-    "viewList": "List"
+    "viewList": "List",
+    "refreshCooldown": "You already refreshed this search recently. Next refresh possible in {minutes} min (one refresh every 45 min)."
   },
   "Research": {
     "zodBranchRequired": "Choose a category",
@@ -807,7 +808,9 @@
     "resCounterCommun": "Shared meter",
     "contactOptionsTitle": "Your search options",
     "searchTitleLabel": "Title of your search",
-    "searchTitlePlaceholder": "e.g. Furnished and secure studio in Algiers Centre"
+    "searchTitlePlaceholder": "e.g. Furnished and secure studio in Algiers Centre",
+    "alertAccountPending": "Your account is awaiting administrator approval. You cannot submit a search until it is approved.",
+    "standbyBadge": "Coming soon"
   },
   "ProfileHome": {
     "pendingBanner": "Account pending validation.",
@@ -914,7 +917,8 @@
     "send": "Send",
     "browseListings": "Browse listings",
     "noConversationsHint": "Contact an advertiser from a listing page to start a conversation.",
-    "youPrefix": "You: "
+    "youPrefix": "You: ",
+    "adminSenderName": "Patrimoine-Immobilier (customer service)"
   },
   "ProfilePacks": {
     "title": "Our Points Packages",
@@ -1004,7 +1008,8 @@
     "deleteConfirmTitle": "Delete this listing?",
     "deleteConfirmText": "Listing {reference} will be permanently deleted. This cannot be undone.",
     "deleteDone": "Your listing has been successfully deleted.",
-    "editDone": "Changes saved — listing submitted for validation"
+    "editDone": "Changes saved — listing submitted for validation",
+    "refreshCooldown": "You already refreshed this listing recently. Next refresh possible in {minutes} min (one refresh every 45 min)."
   },
   "ProfileInfo": {
     "title": "My Profile",
@@ -1049,7 +1054,8 @@
     "saving": "Saving...",
     "saveChanges": "Save changes",
     "updateSuccess": "Profile updated successfully!",
-    "updateError": "An error occurred while updating"
+    "updateError": "An error occurred while updating",
+    "updatePendingValidation": "Your changes have been saved and sent to the administrator for approval. Until then, your account can no longer publish listings or searches."
   },
   "ProfileComplete": {
     "civilityRequired": "Title is required",
@@ -1217,7 +1223,19 @@
     "subPurchaseSuccess": "Thank you for your request! A sales agent will contact you for the next steps.",
     "pointsPurchaseSuccess": "Thank you for your order! A sales agent will contact you to finalize the payment. Your points will be credited after validation.",
     "insufficientBalanceBoutique": "⚠️ Insufficient balance — top up your shop",
-    "adRefreshedSuccessBoutique": "🎉 Congratulations! Your listing is back at the top of its category."
+    "adRefreshedSuccessBoutique": "🎉 Congratulations! Your listing is back at the top of its category.",
+    "ordersTitle": "My orders",
+    "ordersSubtitle": "Track the approval of your orders and attach your payment receipt while they are pending.",
+    "ordersPendingBanner": "Order of {date} ({amount} DA) is awaiting approval. You can place a new one once it is approved.",
+    "orderPendingError": "You already have an order awaiting approval: order of {date}, amount {amount} DA. Please wait for it to be approved before placing a new one.",
+    "ordersKindPoints": "Points pack",
+    "ordersKindBoutique": "Shop subscription",
+    "ordersLine": "Order #{id} of {date} · {amount} DA",
+    "ordersViewReceipt": "View receipt",
+    "ordersAttachReceipt": "Attach receipt",
+    "ordersReplaceReceipt": "Replace receipt",
+    "ordersReceiptSent": "Receipt sent — it will be checked when your order is approved.",
+    "ordersReceiptError": "Could not send the receipt."
   },
   "ProfileBoutique": {
     "companyNameAgence": "Real estate agency name",
@@ -1272,7 +1290,7 @@
     "alignCenter": "Centered",
     "alignSides": "Side by side",
     "bannerLabel": "Banner(s)",
-    "bannerHint": "1920×400 px recommended · auto slider if multiple",
+    "bannerHint": "auto slider if several",
     "addSlide": "Add a slide",
     "uploadBanner": "Upload a banner",
     "colorsTitle": "Colors",
@@ -1340,7 +1358,9 @@
     "defaultShopName": "My Shop",
     "aboutImageUploadError": "An error occurred while uploading the about image.",
     "saveError": "An error occurred while saving.",
-    "fileTooLarge": "File too large (max 10 MB)"
+    "fileTooLarge": "File too large (max 10 MB)",
+    "bannerSizeWarningTitle": "Required size: 1920 × 400 pixels",
+    "bannerSizeWarningText": "Create your visual at exactly this size (landscape, 1920 px wide by 400 px high). The banner is shown in full at the top of your shop: an image of another size will be cropped."
   },
   "AnnounceDetail": {
     "loading": "Loading...",

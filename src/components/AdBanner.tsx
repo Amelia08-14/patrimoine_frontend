@@ -48,16 +48,18 @@ export function AdBanner({ page = "ANNOUNCES", category }: { page?: AdPage; cate
         style={{ transform: `translateX(${isRtl ? "" : "-"}${current * 100}%)` }}
       >
         {ads.map((ad) => {
+          // Format HORIZONTAL de lib/adFormats.ts : ratio fixe (6:1 dès 1024 px, 3:1 en dessous, zone
+          // centrale du visuel 1800 × 300) au lieu des hauteurs fixes d'avant, qui recadraient le visuel
+          // différemment à chaque largeur d'écran. Pas de voile sur l'image : ombre portée sur le texte.
           const inner = (
-            <div className="relative h-44 sm:h-52 lg:h-60 w-full">
+            <div className="relative aspect-[3/1] lg:aspect-[6/1] w-full">
               <img src={ad.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-black/80 via-black/50 to-transparent" />
-              <div className="relative z-10 flex h-full max-w-xl flex-col justify-center gap-2 px-6 sm:ps-20 sm:pe-10">
-                {ad.categoryLabel && <span className="w-fit rounded-full bg-white/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-[#003B4A]">{ad.categoryLabel}</span>}
-                {ad.title && <h2 className="font-brand text-xl sm:text-3xl leading-tight text-white">{ad.title}</h2>}
-                {ad.subtitle && <p className="text-sm sm:text-base text-white/75 line-clamp-2">{ad.subtitle}</p>}
+              <div className="relative z-10 flex h-full max-w-xl flex-col justify-center gap-1.5 sm:gap-2 overflow-hidden px-6 sm:ps-20 sm:pe-10 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.7),0_2px_12px_rgb(0_0_0_/_0.5)]">
+                {ad.categoryLabel && <span className="hidden sm:inline-block w-fit rounded-full bg-white/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-[#003B4A] [text-shadow:none]">{ad.categoryLabel}</span>}
+                {ad.title && <h2 className="font-brand text-lg sm:text-3xl leading-tight text-white line-clamp-2">{ad.title}</h2>}
+                {ad.subtitle && <p className="hidden sm:block text-sm sm:text-base text-white line-clamp-1">{ad.subtitle}</p>}
                 {ad.cta && (
-                  <span className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-[#00BFA6] px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-black/10">
+                  <span className="mt-1 sm:mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-[#00BFA6] px-4 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-lg shadow-black/10 [text-shadow:none]">
                     {ad.cta} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
                   </span>
                 )}

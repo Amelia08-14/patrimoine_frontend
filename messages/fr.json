@@ -501,7 +501,8 @@
     "contactRequested": "Demande envoyée : le demandeur est prévenu et pourra vous répondre.",
     "viewGrid": "Grille",
     "viewLarge": "Grandes cartes",
-    "viewList": "Liste"
+    "viewList": "Liste",
+    "refreshCooldown": "Vous avez déjà actualisé cette recherche récemment. Prochaine actualisation possible dans {minutes} min (une actualisation toutes les 45 min)."
   },
   "Research": {
     "zodBranchRequired": "Choisissez une branche",
@@ -807,7 +808,9 @@
     "resCounterCommun": "Compteur Commun",
     "contactOptionsTitle": "Options de votre recherche",
     "searchTitleLabel": "Titre de votre recherche",
-    "searchTitlePlaceholder": "Ex : Studio équipé et sécurisé à Alger-Centre"
+    "searchTitlePlaceholder": "Ex : Studio équipé et sécurisé à Alger-Centre",
+    "alertAccountPending": "Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas confier de recherche tant qu'il n'est pas validé.",
+    "standbyBadge": "Bientôt disponible"
   },
   "ProfileHome": {
     "pendingBanner": "Compte en attente de validation.",
@@ -914,7 +917,8 @@
     "send": "Envoyer",
     "browseListings": "Parcourir les annonces",
     "noConversationsHint": "Contactez un annonceur depuis une fiche annonce pour démarrer une conversation.",
-    "youPrefix": "Vous : "
+    "youPrefix": "Vous : ",
+    "adminSenderName": "Patrimoine-Immobilier (service client)"
   },
   "ProfilePacks": {
     "title": "Nos Packs de Points",
@@ -1004,7 +1008,8 @@
     "deleteConfirmTitle": "Supprimer cette annonce ?",
     "deleteConfirmText": "L'annonce {reference} sera définitivement supprimée. Cette action est irréversible.",
     "deleteDone": "Votre annonce a bien été supprimée.",
-    "editDone": "Modifications enregistrées — annonce soumise à validation"
+    "editDone": "Modifications enregistrées — annonce soumise à validation",
+    "refreshCooldown": "Vous avez déjà actualisé cette annonce récemment. Prochaine actualisation possible dans {minutes} min (une actualisation toutes les 45 min)."
   },
   "ProfileInfo": {
     "title": "Mon Profil",
@@ -1049,7 +1054,8 @@
     "saving": "Enregistrement...",
     "saveChanges": "Enregistrer les modifications",
     "updateSuccess": "Profil mis à jour avec succès !",
-    "updateError": "Erreur lors de la mise à jour"
+    "updateError": "Erreur lors de la mise à jour",
+    "updatePendingValidation": "Vos modifications ont été enregistrées et envoyées à l'administrateur pour validation. En attendant, votre compte ne peut plus publier d'annonce ni de recherche."
   },
   "ProfileComplete": {
     "civilityRequired": "Civilité requise",
@@ -1217,7 +1223,19 @@
     "subPurchaseSuccess": "Merci pour votre demande ! Un agent commercial va vous contacter pour la suite de la procédure.",
     "pointsPurchaseSuccess": "Merci pour votre commande ! Un agent commercial va prendre contact avec vous pour finaliser le paiement. Vos points seront crédités après validation.",
     "insufficientBalanceBoutique": "⚠️ Solde insuffisant — rechargez votre boutique",
-    "adRefreshedSuccessBoutique": "🎉 Félicitations ! Votre annonce est de nouveau en première position de sa catégorie."
+    "adRefreshedSuccessBoutique": "🎉 Félicitations ! Votre annonce est de nouveau en première position de sa catégorie.",
+    "ordersTitle": "Mes commandes",
+    "ordersSubtitle": "Suivez la validation de vos commandes et joignez votre reçu de paiement tant qu'elles sont en attente.",
+    "ordersPendingBanner": "Commande du {date} ({amount} DA) en cours de validation. Vous pourrez en passer une nouvelle une fois celle-ci validée.",
+    "orderPendingError": "Vous avez déjà une commande en cours de validation : commande du {date}, d'un montant de {amount} DA. Attendez sa validation avant d'en passer une nouvelle.",
+    "ordersKindPoints": "Pack de points",
+    "ordersKindBoutique": "Abonnement boutique",
+    "ordersLine": "Commande n°{id} du {date} · {amount} DA",
+    "ordersViewReceipt": "Voir le reçu",
+    "ordersAttachReceipt": "Joindre le reçu",
+    "ordersReplaceReceipt": "Remplacer le reçu",
+    "ordersReceiptSent": "Reçu envoyé — il sera vérifié lors de la validation de votre commande.",
+    "ordersReceiptError": "Envoi du reçu impossible."
   },
   "ProfileBoutique": {
     "companyNameAgence": "Nom de l'agence immobilière",
@@ -1272,7 +1290,7 @@
     "alignCenter": "Centré",
     "alignSides": "Côte à côte",
     "bannerLabel": "Bannière(s)",
-    "bannerHint": "1920×400 px recommandé · slider auto si plusieurs",
+    "bannerHint": "slider automatique si plusieurs",
     "addSlide": "Ajouter une slide",
     "uploadBanner": "Uploader une bannière",
     "colorsTitle": "Couleurs",
@@ -1340,7 +1358,9 @@
     "defaultShopName": "Ma Boutique",
     "aboutImageUploadError": "Erreur lors de l'upload de l'image à propos.",
     "saveError": "Erreur lors de la sauvegarde.",
-    "fileTooLarge": "Fichier trop lourd (max 10 Mo)"
+    "fileTooLarge": "Fichier trop lourd (max 10 Mo)",
+    "bannerSizeWarningTitle": "Taille obligatoire : 1920 × 400 pixels",
+    "bannerSizeWarningText": "Créez votre visuel exactement à ce format (paysage, 1920 px de large sur 400 px de haut). La bannière s'affiche entière en haut de votre boutique : une image d'une autre taille sera recadrée."
   },
   "AnnounceDetail": {
     "loading": "Chargement...",

@@ -5,8 +5,9 @@ import { useParams } from "next/navigation"
 import axios from "axios"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { ArrowLeft, Send, Mail, UserCheck, Loader2, CheckCircle2, Lock } from "lucide-react"
+import { ArrowLeft, Send, Mail, UserCheck, Loader2, Lock } from "lucide-react"
 import { EntrustedResearchCard } from "@/components/EntrustedResearchCard"
+import { CenterToast } from "@/components/CenterToast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
@@ -147,11 +148,7 @@ export default function DemandeDetailPage() {
                 </>
               )}
 
-              {feedback && (
-                <p className={`text-sm font-bold flex items-start gap-2 ${feedback.ok ? "text-emerald-600" : "text-red-500"}`}>
-                  {feedback.ok && <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />} {feedback.text}
-                </p>
-              )}
+              <CenterToast message={feedback?.text} variant={feedback?.ok ? "success" : "error"} onClose={() => setFeedback(null)} />
             </aside>
           </div>
         )}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, Mail, Star, ChevronDown, BarChart3, Menu, X, Megaphone } from "lucide-react"
+import { LayoutDashboard, Users, FileText, Coins, LogOut, Search, User as UserIcon, Building2, Loader2, BookOpen, Mail, Star, ChevronDown, BarChart3, Menu, X, Megaphone, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -165,6 +165,25 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [adminUser, setAdminUser] = useState<any>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  // Messages non lus envoyés par les utilisateurs à l'administration (badge du menu "Messages").
+  const [unreadMessages, setUnreadMessages] = useState(0)
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token')
+    if (!token) return
+    const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const refresh = () => {
+      fetch(`${api}/admin/messages/unread-count`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d) setUnreadMessages(d.count || 0) })
+        .catch(() => {})
+    }
+    refresh()
+    const id = setInterval(refresh, 30000)
+    // La page Messages prévient quand elle marque une conversation comme lue (badge à jour sans attendre).
+    window.addEventListener('admin-messages-read', refresh)
+    return () => { clearInterval(id); window.removeEventListener('admin-messages-read', refresh) }
+  }, [pathname])
 
   // La navigation ferme le tiroir mobile automatiquement à chaque changement de page
   useEffect(() => { setSidebarOpen(false) }, [pathname])
@@ -174,6 +193,7 @@ export default function AdminLayout({
     { name: "Annonces", href: "/admin/announces", icon: FileText },
     { name: "Utilisateurs", href: "/admin/users", icon: Users },
     { name: "Points & Achats", href: "/admin/points", icon: Coins },
+    { name: "Messages", href: "/admin/messages", icon: MessageSquare },
     { name: "Contenu du site", href: "/admin/content", icon: BookOpen },
     { name: "Publicités", href: "/admin/ads", icon: Megaphone },
     { name: "Requêtes Contact", href: "/admin/contacts", icon: Mail },
@@ -252,6 +272,14 @@ export default function AdminLayout({
               >
                 <item.icon className="h-5 w-5" />
                 {item.name}
+                {item.href === "/admin/messages" && unreadMessages > 0 && (
+                  <span className={cn(
+                    "ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full text-[11px] font-black flex items-center justify-center",
+                    isActive ? "bg-white text-[#00BFA6]" : "bg-red-500 text-white"
+                  )}>
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </span>
+                )}
               </Link>
             )
           })}

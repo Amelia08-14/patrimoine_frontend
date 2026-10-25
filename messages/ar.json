@@ -501,7 +501,8 @@
     "contactRequested": "تم إرسال الطلب: تم إشعار صاحب الطلب ويمكنه الرد عليك.",
     "viewGrid": "شبكة",
     "viewLarge": "بطاقات كبيرة",
-    "viewList": "قائمة"
+    "viewList": "قائمة",
+    "refreshCooldown": "لقد قمت بتحديث هذا البحث مؤخرًا. يمكنك التحديث مجددًا بعد {minutes} دقيقة (تحديث واحد كل 45 دقيقة)."
   },
   "Research": {
     "zodBranchRequired": "اختر فئة",
@@ -807,7 +808,9 @@
     "resCounterCommun": "عدّاد مشترك",
     "contactOptionsTitle": "خيارات بحثك",
     "searchTitleLabel": "عنوان بحثك",
-    "searchTitlePlaceholder": "مثال: استوديو مجهز وآمن في وسط الجزائر"
+    "searchTitlePlaceholder": "مثال: استوديو مجهز وآمن في وسط الجزائر",
+    "alertAccountPending": "حسابك في انتظار مصادقة المسؤول. لا يمكنك إيداع طلب بحث قبل المصادقة عليه.",
+    "standbyBadge": "قريبًا"
   },
   "ProfileHome": {
     "pendingBanner": "الحساب في انتظار التحقق.",
@@ -914,7 +917,8 @@
     "send": "إرسال",
     "browseListings": "تصفح الإعلانات",
     "noConversationsHint": "تواصل مع معلن من صفحة إعلان لبدء محادثة.",
-    "youPrefix": "أنت: "
+    "youPrefix": "أنت: ",
+    "adminSenderName": "Patrimoine-Immobilier (خدمة العملاء)"
   },
   "ProfilePacks": {
     "title": "باقات النقاط لدينا",
@@ -1004,7 +1008,8 @@
     "deleteConfirmTitle": "حذف هذا الإعلان؟",
     "deleteConfirmText": "سيتم حذف الإعلان {reference} نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
     "deleteDone": "تم حذف إعلانك بنجاح.",
-    "editDone": "تم حفظ التعديلات — الإعلان قيد التحقق"
+    "editDone": "تم حفظ التعديلات — الإعلان قيد التحقق",
+    "refreshCooldown": "لقد قمت بتحديث هذا الإعلان مؤخرًا. يمكنك التحديث مجددًا بعد {minutes} دقيقة (تحديث واحد كل 45 دقيقة)."
   },
   "ProfileInfo": {
     "title": "ملفي الشخصي",
@@ -1049,7 +1054,8 @@
     "saving": "جارٍ الحفظ...",
     "saveChanges": "حفظ التعديلات",
     "updateSuccess": "تم تحديث الملف الشخصي بنجاح!",
-    "updateError": "حدث خطأ أثناء التحديث"
+    "updateError": "حدث خطأ أثناء التحديث",
+    "updatePendingValidation": "تم حفظ تعديلاتك وإرسالها إلى المسؤول للمصادقة. في انتظار ذلك، لا يمكن لحسابك نشر إعلانات أو طلبات بحث."
   },
   "ProfileComplete": {
     "civilityRequired": "اللقب مطلوب",
@@ -1217,7 +1223,19 @@
     "subPurchaseSuccess": "شكرًا على طلبكم! سيتصل بكم أحد وكلائنا التجاريين لمتابعة الإجراءات.",
     "pointsPurchaseSuccess": "شكرًا على طلبكم! سيتصل بكم أحد وكلائنا التجاريين لإتمام عملية الدفع. سيتم إضافة النقاط بعد التحقق.",
     "insufficientBalanceBoutique": "⚠️ الرصيد غير كافٍ — اشحن متجرك",
-    "adRefreshedSuccessBoutique": "🎉 تهانينا! عاد إعلانك إلى الصدارة في فئته."
+    "adRefreshedSuccessBoutique": "🎉 تهانينا! عاد إعلانك إلى الصدارة في فئته.",
+    "ordersTitle": "طلباتي",
+    "ordersSubtitle": "تابع المصادقة على طلباتك وأرفق وصل الدفع ما دامت في الانتظار.",
+    "ordersPendingBanner": "الطلب المؤرخ في {date} ({amount} دج) قيد المصادقة. يمكنك تقديم طلب جديد بعد المصادقة عليه.",
+    "orderPendingError": "لديك طلب قيد المصادقة بالفعل: طلب بتاريخ {date} بمبلغ {amount} دج. يرجى انتظار المصادقة عليه قبل تقديم طلب جديد.",
+    "ordersKindPoints": "باقة نقاط",
+    "ordersKindBoutique": "اشتراك المتجر",
+    "ordersLine": "الطلب رقم {id} بتاريخ {date} · {amount} دج",
+    "ordersViewReceipt": "عرض الوصل",
+    "ordersAttachReceipt": "إرفاق الوصل",
+    "ordersReplaceReceipt": "استبدال الوصل",
+    "ordersReceiptSent": "تم إرسال الوصل — سيتم التحقق منه عند المصادقة على طلبك.",
+    "ordersReceiptError": "تعذر إرسال الوصل."
   },
   "ProfileBoutique": {
     "companyNameAgence": "اسم الوكالة العقارية",
@@ -1272,7 +1290,7 @@
     "alignCenter": "في الوسط",
     "alignSides": "جنبًا إلى جنب",
     "bannerLabel": "لافتة (لافتات)",
-    "bannerHint": "يُنصح بـ 1920×400 بكسل · عرض تلقائي عند تعدد اللافتات",
+    "bannerHint": "عرض تلقائي إذا كانت عدة صور",
     "addSlide": "إضافة شريحة",
     "uploadBanner": "رفع لافتة",
     "colorsTitle": "الألوان",
@@ -1340,7 +1358,9 @@
     "defaultShopName": "متجري",
     "aboutImageUploadError": "حدث خطأ أثناء رفع صورة \"من نحن\".",
     "saveError": "حدث خطأ أثناء الحفظ.",
-    "fileTooLarge": "الملف كبير جدًا (بحد أقصى 10 ميغابايت)"
+    "fileTooLarge": "الملف كبير جدًا (بحد أقصى 10 ميغابايت)",
+    "bannerSizeWarningTitle": "المقاس الإلزامي: 1920 × 400 بكسل",
+    "bannerSizeWarningText": "صمّم صورتك بهذا المقاس بالضبط (أفقي، عرض 1920 بكسل وارتفاع 400 بكسل). تظهر اللافتة كاملة أعلى متجرك: أي صورة بمقاس آخر سيتم قصّها."
   },
   "AnnounceDetail": {
     "loading": "جارٍ التحميل...",

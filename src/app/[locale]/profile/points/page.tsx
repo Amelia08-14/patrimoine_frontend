@@ -11,6 +11,8 @@ import {
 } from "lucide-react"
 import { useLocalizedContent } from "@/lib/typeLabels"
 import { PurchaseConfirmStep, type PaymentMethod } from "@/components/PurchaseConfirmStep"
+import { MyOrders, useOrderErrorMessage } from "@/components/MyOrders"
+import { CenterToast } from "@/components/CenterToast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -34,6 +36,7 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
   const lc = useLocalizedContent()
   const [ordering, setOrdering] = useState<string | null>(null)
   const [error, setError] = useState("")
+  const orderErrorMessage = useOrderErrorMessage()
 
   // Repli si l'API est injoignable (les 3 packs d'origine) ; sinon, tout ce qui est en base.
   const FALLBACK: { id: string; label: string; description: string | null; points: number; price: number; color: string; popular?: boolean }[] = [
@@ -72,7 +75,8 @@ function PointPackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferP
       onSuccess()
       onClose()
     } catch (e: any) {
-      setError(e?.response?.data?.message || t("orderError"))
+      // "Commande déjà en cours de validation (date, montant)" si une commande attend déjà.
+      setError(orderErrorMessage(e))
     } finally {
       setOrdering(null)
     }
@@ -218,6 +222,7 @@ export default function EspacePublicitairePage() {
   const [showPointPackModal, setShowPointPackModal] = useState(false)
   const [toast, setToast] = useState("")
   const [offerPacks, setOfferPacks] = useState<OfferPack[]>([])
+  const [ordersReloadKey, setOrdersReloadKey] = useState(0)
   // La boutique est réservée aux comptes professionnels — jamais proposée à un particulier.
   const [isPro, setIsPro] = useState(false)
 
@@ -239,7 +244,7 @@ export default function EspacePublicitairePage() {
     } catch { /* ignore */ }
   }, [])
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
+  const showToast = (msg: string) => setToast(msg)
 
   const load = async () => {
     const token = localStorage.getItem('token')
@@ -347,7 +352,10 @@ export default function EspacePublicitairePage() {
       showToast(t("adRefreshedSuccessBoutique"))
       await load()
     } catch (e: any) {
-      showToast("❌ " + (e?.response?.data?.message || ta("errorGeneric")))
+      const data = e?.response?.data
+      // Délai de 45 min entre deux actualisations (code renvoyé par l'API).
+      if (data?.code === "REFRESH_COOLDOWN") showToast("⏳ " + ta("refreshCooldown", { minutes: data.remainingMinutes }))
+      else showToast("❌ " + (data?.message || ta("errorGeneric")))
     } finally {
       setBoosting(null)
     }
@@ -359,10 +367,9 @@ export default function EspacePublicitairePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
-      )}
-      {showPointPackModal && <PointPackModal offerPacks={offerPacks} onClose={() => setShowPointPackModal(false)} onSuccess={() => { showToast(t("pointsPurchaseSuccess")); load() }} />}
+      {/* Message de retour au centre de l'écran (CenterToast) — plus de toast en haut à droite. */}
+      <CenterToast message={toast} onClose={() => setToast("")} />
+      {showPointPackModal && <PointPackModal offerPacks={offerPacks} onClose={() => setShowPointPackModal(false)} onSuccess={() => { showToast(t("pointsPurchaseSuccess")); load(); setOrdersReloadKey((k) => k + 1) }} />}
       {featureTarget && <FeatureModal announce={featureTarget} onClose={() => setFeatureTarget(null)} onSuccess={() => { load(); showToast(ta("adFeaturedSuccess")) }} />}
 
       <div className="max-w-5xl mx-auto space-y-6">
@@ -414,6 +421,9 @@ export default function EspacePublicitairePage() {
             </div>
           </div>
         </div>
+
+        {/* Mes commandes (points + boutique pour un pro) : statut et reçu de paiement */}
+        <MyOrders offerPacks={offerPacks} includeBoutique={isPro} reloadKey={ordersReloadKey} />
 
         {/* Formules de points disponibles — toujours visible, comme la grille des formules
             boutique sur "Ma boutique" (les packs de points s'additionnent, ne se remplacent pas :

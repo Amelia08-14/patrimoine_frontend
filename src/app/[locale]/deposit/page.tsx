@@ -39,6 +39,12 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { HEBERGEMENT_SEJOUR_TYPES, isHebergementSejourType, isHebergementSejourConstructionType } from "@/data/hebergementSejourTypes"
+import { isLockedCategory } from "@/data/lockedCategories"
+import {
+  INDUSTRIAL_SITUATIONS, INDUSTRIAL_ACCESS_TRANSPORT, INDUSTRIAL_SOCIAL_LOCALES, INDUSTRIAL_HEBERGEMENT, INDUSTRIAL_SECURITY, INDUSTRIAL_WATER_SOURCES, INDUSTRIAL_FIRE_NETWORK, INDUSTRIAL_FIRE_EQUIPMENT,
+  CF_ZONE_DECHARGEMENT, CF_TECHNIQUE_FROID, CF_MODE_DIFFUSION, TERRAIN_RACCORDEMENTS, TERRAIN_AGRICOLE_RESSOURCES_EAU, TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE,
+  TERRAIN_AGRICOLE_ACCES, TERRAIN_AGRICOLE_ACCES_LOURDS, TERRAIN_AGRICOLE_CONSTRUCTIONS, TERRAIN_AGRICOLE_CLOTURE, TERRAIN_TOURISTIQUE_ZONE, TERRAIN_TOURISTIQUE_PAT,
+} from "@/data/industrialTerrainOptions"
 import {
   HTL_CLASSEMENT, HTL_CIBLE_CLIENTELE, HTL_AMBIANCE, HTL_ROOM_TYPES, HTL_BATHROOM_TYPES,
   HTL_BED_TYPES, HTL_LINGE, HTL_HYGIENE, emptyHotelRoom, type HotelRoomConfig,
@@ -317,55 +323,18 @@ const INDUSTRIAL_MURS = [
     { id: "MIXTE", label: "Mixte" },
 ]
 
-const INDUSTRIAL_SITUATIONS = [
-    { id: "ZONE_INDUSTRIELLE", label: "Zone industrielle (ZI/ZAC)" },
-    { id: "ZONE_URBAINE", label: "Zone urbaine (Ville)" },
-]
 
-const INDUSTRIAL_ACCESS_TRANSPORT = [
-    { id: "SEMI_REMORQUE", label: "Semi-remorque (40 T)" },
-    { id: "CAMIONNETTE", label: "Camionnette (3.5 T)" },
-    { id: "PETIT_PORTEUR", label: "Petit porteur (10T)" },
-]
 
 const INDUSTRIAL_ACCESS_PRODUCTION = [
     { id: "QUAI_DECHARGEMENT", label: "Quai de déchargement" },
     { id: "ENTREE_PLAIN_PIED", label: "Entrée de plain-pied (Portail large)" },
 ]
 
-const INDUSTRIAL_SOCIAL_LOCALES = [
-    { id: "VESTIAIRES", label: "Vestiaires" },
-    { id: "REFECTOIRE", label: "Réfectoire" },
-    { id: "SANITAIRES_HF", label: "Sanitaires H/F" },
-]
 
-const INDUSTRIAL_HEBERGEMENT = [
-    { id: "LOGEMENT_FONCTION", label: "Logement" },
-    { id: "DORTOIRS", label: "Dortoirs" },
-]
 
-const INDUSTRIAL_SECURITY = [
-    { id: "POSTE_GARDE", label: "Poste de garde" },
-    { id: "CLOTURE_MACONNEE", label: "Clôture maçonnée" },
-    { id: "CAMERAS", label: "Caméras" },
-]
 
-const INDUSTRIAL_WATER_SOURCES = [
-    { id: "RESEAU_ADE", label: "Réseau ADE" },
-    { id: "FORAGE", label: "Forage" },
-    { id: "BACHE_EAU", label: "Bâche à eau" },
-]
 
-const INDUSTRIAL_FIRE_NETWORK = [
-    { id: "RIA", label: "R.I.A (Robinets d'Incendie Armés)" },
-    { id: "SPRINKLERS", label: "Système Sprinklers" },
-    { id: "COLONNES_SECHES", label: "Colonnes sèches" },
-]
 
-const INDUSTRIAL_FIRE_EQUIPMENT = [
-    { id: "BACHE_EAU", label: "Bâche à eau anti-incendie (réserve dédiée)" },
-    { id: "MOTOPOMPE", label: "Motopompe / Groupe de surpression" },
-]
 
 // ===== CHAMBRE FROIDE =====
 const CF_SECTORS = [
@@ -380,27 +349,14 @@ const CF_STRUCTURE_TYPES = [
     { id: "CELLULE_UNIQUE", label: "Cellule unique (Une seule chambre)" },
     { id: "COMPLEXE_FRIGORIFIQUE", label: "Plusieurs cellules (Complexe frigorifique)" },
 ]
-const CF_ZONE_DECHARGEMENT = [
-    { id: "QUAI_NIVELEUR_SAS", label: "Quai niveleur SAS étanche" },
-    { id: "QUAI_SIMPLE", label: "Quai simple" },
-    { id: "PLAIN_PIED_DECHARGT", label: "Plain-pied" },
-]
 const CF_TRACABILITE = [
     { id: "ENREGISTREUR_T24", label: "Enregistreur T° H24" },
     { id: "SYSTEME_ALERTE_SMS", label: "Système d'alerte SMS" },
-]
-const CF_TECHNIQUE_FROID = [
-    { id: "SOL_CHAUFFANT", label: "Sol chauffant (Anti-gel dalle)" },
-    { id: "DEGIVRAGE_AUTO", label: "Dégivrage Auto" },
 ]
 const CF_TYPE_FROID = [
     { id: "POSITIF", label: "Positif" },
     { id: "NEGATIF", label: "Négatif" },
     { id: "ULTRA_FROID", label: "Ultra Froid (Tunnel de congélation)" },
-]
-const CF_MODE_DIFFUSION = [
-    { id: "FROID_VENTILE", label: "Froid Ventilé" },
-    { id: "FROID_STATIQUE", label: "Froid Statique" },
 ]
 const CF_MODE_GESTION = [
     { id: "SANS_GESTION", label: "SANS GESTION (Murs seuls)", desc: "Le locataire gère son personnel et ses flux." },
@@ -445,13 +401,6 @@ const TERRAIN_DOCUMENTS = [
     { id: "PERMIS_CONSTRUIRE", label: "Permis de construire (Existant)" },
     { id: "PLAN_MASSE", label: "Plan de masse" },
 ]
-const TERRAIN_RACCORDEMENTS = [
-    { id: "EAU", label: "Eau (ADE)" },
-    { id: "ELECTRICITE", label: "Électricité (Sonelgaz)" },
-    { id: "GAZ", label: "Gaz" },
-    { id: "ASSAINISSEMENT", label: "Assainissement" },
-    { id: "INTERNET", label: "Internet / Fibre" },
-]
 // ===== TERRAIN AGRICOLE =====
 const TERRAIN_AGRICOLE_UNITE = [
     { id: "M2", label: "m²" },
@@ -465,14 +414,6 @@ const TERRAIN_AGRICOLE_VOCATION = [
     { id: "CEREALES", label: "Céréales (blé, orge…)" },
     { id: "ELEVAGE", label: "Élevage" },
     { id: "MIXTE", label: "Autre" },
-]
-const TERRAIN_AGRICOLE_RESSOURCES_EAU = [
-    { id: "PUITS", label: "Puits" },
-    { id: "CANAL_IRRIGATION", label: "Canal d'irrigation" },
-    { id: "BARRAGE_RETENUE", label: "Barrage / retenue d'eau" },
-    { id: "BASSIN_COLLECTE", label: "Bassin de collecte" },
-    { id: "RESEAU_ADE", label: "Réseau ADE" },
-    { id: "FORAGE", label: "Forage" },
 ]
 const TERRAIN_AGRICOLE_EXPOSITION = [
     { id: "NORD", label: "Nord" },
@@ -500,37 +441,11 @@ const TERRAIN_AGRICOLE_QUALITE_EAU = [
     { id: "SAUMATRE", label: "Saumâtre" },
     { id: "AUTRE_EAU", label: "Autre" },
 ]
-const TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE = [
-    { id: "BASSIN_RETENTION", label: "Bassin de rétention / Réservoir" },
-    { id: "IRRIGATION_GOUTTE", label: "Système d'irrigation goutte-à-goutte" },
-    { id: "AUTRE_SYSTEME", label: "Autre système" },
-]
 const TERRAIN_AGRICOLE_TYPE_CULTURE = [
     { id: "ARBORICULTURE", label: "Arboriculture (Arbres fruitiers, oliviers…)" },
     { id: "MARAICHAGE", label: "Maraîchage (Légumes)" },
     { id: "GRANDES_CULTURES", label: "Grandes cultures (Céréales, fourrage)" },
     { id: "AUTRE_CULTURE", label: "Autre" },
-]
-const TERRAIN_AGRICOLE_ACCES = [
-    { id: "ROUTE_GOUDRON", label: "Route goudronnée" },
-    { id: "PISTE_CARROSSABLE", label: "Piste carrossable (accessible en voiture)" },
-    { id: "ACCES_DIFFICILE", label: "Accès difficile (nécessite 4x4)" },
-]
-const TERRAIN_AGRICOLE_ACCES_LOURDS = [
-    { id: "CAMION_PORTEUR", label: "Accessible en Camion porteur" },
-    { id: "SEMI_REMORQUE", label: "Accessible en Semi-remorque" },
-]
-const TERRAIN_AGRICOLE_CONSTRUCTIONS = [
-    { id: "HANGAR_STOCKAGE", label: "Hangar de stockage" },
-    { id: "ECURIES_ELEVAGE", label: "Bâtiment d'élevage" },
-    { id: "MAISON_GARDIENNAGE", label: "Logement de fonction" },
-    { id: "AUCUNE", label: "Aucune construction" },
-]
-const TERRAIN_AGRICOLE_CLOTURE = [
-    { id: "OUVERT", label: "Terrain non clôturé" },
-    { id: "GRILLAGE", label: "Clôture en grillage" },
-    { id: "MURS_ENCEINTE", label: "Murs d'enceinte" },
-    { id: "HAIES", label: "Haies naturelles" },
 ]
 const TERRAIN_AGRICOLE_ZONE = [
     { id: "URBAINE", label: "Zone urbaine" },
@@ -538,22 +453,9 @@ const TERRAIN_AGRICOLE_ZONE = [
     { id: "SAHARIENNE", label: "Zone saharienne" },
 ]
 // ===== TERRAIN TOURISTIQUE =====
-const TERRAIN_TOURISTIQUE_ZONE = [
-    { id: "BALNEAIRE", label: "Zone balnéaire (Littoral, bord de mer)" },
-    { id: "SAHARIEN", label: "Zone saharienne (Sud, oasis, tourisme saharien)" },
-    { id: "CLIMATIQUE", label: "Zone climatique (Montagne, forêt, tourisme vert)" },
-    { id: "THERMAL", label: "Zone thermale (Sources thermales, hammams)" },
-    { id: "URBAINE", label: "Zone urbaine (Centre-ville, tourisme d'affaires)" },
-    { id: "AUTRE_ZONE", label: "Autre situation" },
-]
 const TERRAIN_TOURISTIQUE_ZET = [
     { id: "OUI", label: "Oui — Situé dans une Z.E.T décrétée" },
     { id: "NON", label: "Non" },
-]
-const TERRAIN_TOURISTIQUE_PAT = [
-    { id: "OUI_APPROUVE", label: "Oui (Approuvé et publié)" },
-    { id: "EN_COURS", label: "En cours d'étude / En cours d'approbation" },
-    { id: "NON", label: "Non / Aucun plan d'aménagement disponible" },
 ]
 const TERRAIN_TOURISTIQUE_RESEAUX = [
     { id: "ASSAINISSEMENT", label: "Assainissement (Réseau d'égouts)" },
@@ -1953,8 +1855,23 @@ function DepositPageComponent() {
 
     const user = JSON.parse(userStr)
     if (!user.adminVerified) {
-        alert("Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas encore déposer d'annonce.")
-        router.push('/')
+        // Le cache local peut être périmé (compte revalidé par l'admin depuis la dernière
+        // sauvegarde du profil) : on revérifie auprès de l'API avant de bloquer, et on rafraîchit
+        // le cache au passage.
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((fresh) => {
+                if (fresh) localStorage.setItem('user', JSON.stringify({ ...user, adminVerified: fresh.adminVerified }))
+                if (!fresh?.adminVerified) {
+                    alert("Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas encore déposer d'annonce.")
+                    router.push('/')
+                } else {
+                    // Validé entre-temps : on recharge pour repasser par les autres contrôles
+                    // ci-dessous (profil pro complet, type de compte) avec le cache à jour.
+                    window.location.reload()
+                }
+            })
+            .catch(() => { router.push('/') })
         return
     }
 
@@ -2196,6 +2113,14 @@ function DepositPageComponent() {
       const raw = localStorage.getItem(DEPOSIT_DRAFT_KEY)
       if (!raw) return
       const parsed = JSON.parse(raw)
+      // Brouillon d'une catégorie verrouillée depuis (Hébergement & Séjour) : on garde la transaction
+      // mais on renvoie au choix de catégorie, sans rouvrir la fiche verrouillée.
+      if (isLockedCategory(parsed.values?.realEstateType)) {
+        reset({ ...initialDefaultValues, transactionType: parsed.values?.transactionType } as any, { keepDefaultValues: true })
+        setCurrentStep(parsed.values?.transactionType ? 2 : 1)
+        setDepositDraftAvailable(null)
+        return
+      }
       reset(parsed.values)
       if (typeof parsed.step === 'number') setCurrentStep(parsed.step)
     } catch { /* ignore */ }
@@ -4213,8 +4138,9 @@ function DepositPageComponent() {
                                     const Icon = IconMap[cat.iconName] || Home
                                     const isSelected = realEstateType === cat.id
                                     const catColor = getCategoryColor(cat.id)
-                                    // « Structures hôtelières » en vente : mise en attente (visible mais non sélectionnable)
-                                    const standby = transactionType === "SALE" && (cat.id === "HOTELIER" || cat.id === "HEBERGEMENT")
+                                    // Hébergement & Séjour : verrouillé en location ET en vente (visible mais non
+                                    // sélectionnable) — demande client du 25/10/2026, liste dans data/lockedCategories.ts.
+                                    const standby = isLockedCategory(cat.id)
                                     return (
                                         <div
                                             key={cat.id}

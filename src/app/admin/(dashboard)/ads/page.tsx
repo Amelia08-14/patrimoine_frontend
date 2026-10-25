@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react"
 import axios from "axios"
-import { Megaphone, Plus, Pencil, Trash2, Loader2, Eye, MousePointerClick, X, Save, ImageIcon } from "lucide-react"
+import { Megaphone, Plus, Pencil, Trash2, Loader2, Eye, MousePointerClick, X, Save, ImageIcon, Ruler, AlertTriangle } from "lucide-react"
+import { AD_FORMATS, formatOfPlacement, type AdFormatId } from "@/lib/adFormats"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 const PLACEMENTS = [
-  { id: "SIDEBAR", label: "Colonnes latérales", hint: "Grands encarts verticaux (grands écrans)" },
-  { id: "STRIP", label: "Bandeaux compacts", hint: "Entre les catégories de l'accueil, et sur mobile / tablette" },
-  { id: "BANNER", label: "Bandeau principal", hint: "Grand bandeau défilant en haut de /announces" },
+  { id: "SIDEBAR", label: "Colonnes latérales", hint: "Format vertical 600 × 1200 px — grands encarts (grands écrans)" },
+  { id: "STRIP", label: "Bandeaux compacts", hint: "Format horizontal 1800 × 300 px — entre les catégories de l'accueil, et sur mobile / tablette" },
+  { id: "BANNER", label: "Bandeau principal", hint: "Format horizontal 1800 × 300 px — grand bandeau défilant en haut de /announces et /demandes" },
 ] as const
 const CATEGORIES = [
   { id: "RESIDENTIEL", label: "Résidentiel" },
@@ -23,6 +24,11 @@ const PAGES = [
   { id: "ANNOUNCES", label: "Annonces" },
   { id: "DEMANDES", label: "Demandes en cours" },
 ] as const
+
+// Formats (vertical / horizontal) couverts par une liste d'emplacements — une publicité ne doit en
+// couvrir qu'un seul : un même visuel ne peut pas remplir une colonne portrait ET un bandeau 6:1.
+const formatsOf = (placements: string[]): AdFormatId[] => [...new Set(placements.map(formatOfPlacement))]
+const sizeLabel = (f: AdFormatId) => `${AD_FORMATS[f].width} × ${AD_FORMATS[f].height} px`
 
 type Ad = {
   id: number; name: string; imageUrl: string; link: string | null
@@ -46,7 +52,7 @@ type Draft = {
 const emptyDraft = (): Draft => ({
   name: "", link: "", title: "", titleAr: "", titleEn: "", subtitle: "", subtitleAr: "", subtitleEn: "",
   buttonLabel: "", buttonLabelAr: "", buttonLabelEn: "",
-  placements: PLACEMENTS.map((p) => p.id), pages: PAGES.map((p) => p.id), categories: [], isActive: true, startDate: "", endDate: "", order: "0",
+  placements: [...AD_FORMATS.HORIZONTAL.placements], pages: PAGES.map((p) => p.id), categories: [], isActive: true, startDate: "", endDate: "", order: "0",
 })
 const toDraft = (a: Ad): Draft => ({
   name: a.name, link: a.link || "",
@@ -89,6 +95,10 @@ export default function AdminAdsPage() {
     if (!draft.name.trim()) { setError("Donnez un nom interne à la publicité."); return }
     if (editing === "new" && !file) { setError("Ajoutez une image."); return }
     if (draft.placements.length === 0 || draft.pages.length === 0) { setError("Choisissez au moins une page et un emplacement."); return }
+    if (formatsOf(draft.placements).length > 1) {
+      setError(`Une publicité ne peut cibler qu'un seul format : soit les colonnes latérales (vertical ${sizeLabel("VERTICAL")}), soit les bandeaux (horizontal ${sizeLabel("HORIZONTAL")}). Créez une publicité par format.`)
+      return
+    }
     setSaving(true); setError("")
     try {
       const fd = new FormData()
@@ -144,6 +154,31 @@ export default function AdminAdsPage() {
         </button>
       </div>
 
+      {/* Dimensions exactes à transmettre aux annonceurs — mêmes valeurs que celles appliquées par le site
+          (lib/adFormats.ts), pas une approximation. */}
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900"><Ruler className="h-4 w-4 text-[#0094BD]" /> Formats et dimensions des visuels à fournir</h2>
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {(Object.keys(AD_FORMATS) as AdFormatId[]).map((f) => {
+            const fmt = AD_FORMATS[f]
+            return (
+              <div key={f} className="flex gap-3 rounded-lg bg-gray-50 p-3">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center">
+                  <div className="rounded border-2 border-[#0094BD] bg-[#0094BD]/10" style={f === "VERTICAL" ? { width: 28, height: 56 } : { width: 64, height: 11 }} />
+                </div>
+                <div className="min-w-0 text-xs text-gray-600 space-y-0.5">
+                  <p className="text-sm font-bold text-gray-900">{fmt.label}</p>
+                  <p><b className="text-gray-900">{sizeLabel(f)}</b> (ratio {fmt.ratio}) — JPG ou PNG, idéalement moins de 500 Ko</p>
+                  {fmt.safeZone && <p>Zone de sécurité : textes et logos dans les <b className="text-gray-900">{fmt.safeZone.width} × {fmt.safeZone.height} px centraux</b> (seule partie visible sur mobile et tablette)</p>}
+                  <p className="text-gray-400">Affiché : {fmt.displayed}</p>
+                  <p className="text-gray-400">Emplacements : {fmt.placements.map((id) => PLACEMENTS.find((p) => p.id === id)?.label).join(", ")}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
       ) : ads.length === 0 ? (
@@ -166,6 +201,9 @@ export default function AdminAdsPage() {
                   <p className="mt-1 text-xs text-gray-500 truncate">{label(PAGES, a.pages)}</p>
                   <p className="text-xs text-gray-500 truncate">Catégories : {a.categories ? label(CATEGORIES, a.categories) : "toutes"}</p>
                   <p className="text-xs text-gray-500 truncate">{label(PLACEMENTS, a.placements)}</p>
+                  {formatsOf(a.placements.split(",").filter(Boolean)).length > 1 && (
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-amber-700"><AlertTriangle className="h-3.5 w-3.5" /> Vise les 2 formats : le visuel est recadré — à scinder en 2 publicités</p>
+                  )}
                   {(a.startDate || a.endDate) && (
                     <p className="text-xs text-gray-400">{a.startDate ? new Date(a.startDate).toLocaleDateString("fr-FR") : "…"} → {a.endDate ? new Date(a.endDate).toLocaleDateString("fr-FR") : "…"}</p>
                   )}
@@ -213,7 +251,18 @@ export default function AdminAdsPage() {
                   <span className="text-sm text-gray-600">{file ? file.name : editing !== "new" ? "Remplacer l'image (facultatif)" : "Choisir une image"}</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                 </label>
-                <p className="mt-1 text-xs text-gray-400">Idéalement en portrait pour les colonnes (ex. 600×1000) ; elle est recadrée automatiquement pour les bandeaux.</p>
+                {formatsOf(draft.placements).length === 1 ? (() => {
+                  const f = formatsOf(draft.placements)[0]
+                  const safe = AD_FORMATS[f].safeZone
+                  return (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Format {f === "VERTICAL" ? "vertical" : "horizontal"} : <b>{sizeLabel(f)}</b> (ratio {AD_FORMATS[f].ratio})
+                      {safe && <> — textes et logos dans les {safe.width} × {safe.height} px centraux</>}.
+                    </p>
+                  )
+                })() : (
+                  <p className="mt-1 text-xs text-gray-400">Choisissez les emplacements ci-dessous pour voir les dimensions exactes du visuel.</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

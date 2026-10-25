@@ -10,6 +10,8 @@ import {
 } from "lucide-react"
 import { useLocalizedContent } from "@/lib/typeLabels"
 import { PurchaseConfirmStep, type PaymentMethod } from "@/components/PurchaseConfirmStep"
+import { MyOrders, useOrderErrorMessage } from "@/components/MyOrders"
+import { CenterToast } from "@/components/CenterToast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const DATE_LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', ar: 'ar-DZ' }
@@ -58,6 +60,7 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
 
   const [ordering, setOrdering] = useState<string | null>(null)
   const [error, setError] = useState("")
+  const orderErrorMessage = useOrderErrorMessage()
 
   // Même principe que /profile/points : une étape de confirmation (récapitulatif + moyen de
   // paiement + reçu facultatif) s'intercale avant l'envoi réel de la commande — demande client
@@ -77,7 +80,8 @@ function PackModal({ offerPacks, onClose, onSuccess }: { offerPacks: OfferPack[]
       onSuccess()
       onClose()
     } catch (e: any) {
-      setError(e?.response?.data?.message || t("orderError"))
+      // "Commande déjà en cours de validation (date, montant)" si une commande attend déjà.
+      setError(orderErrorMessage(e))
     } finally {
       setOrdering(null)
     }
@@ -176,11 +180,12 @@ export default function VitrineTypePage() {
   const [mySubs, setMySubs] = useState<any[]>([])
   const [offerPacks, setOfferPacks] = useState<OfferPack[]>([])
   const [showPackModal, setShowPackModal] = useState(false)
+  const [ordersReloadKey, setOrdersReloadKey] = useState(0)
   const [toast, setToast] = useState("")
   const [boutiqueSlug, setBoutiqueSlug] = useState<string | null>(null)
   const [userId, setUserId] = useState<number | null>(null)
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500) }
+  const showToast = (msg: string) => setToast(msg)
 
   const packLabel = (pack: string) => {
     const live = offerPacks.find((p) => p.kind === 'BOUTIQUE' && p.key === pack)
@@ -263,10 +268,9 @@ export default function VitrineTypePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent py-8 px-4">
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium">{toast}</div>
-      )}
-      {showPackModal && <PackModal offerPacks={offerPacks} onClose={() => setShowPackModal(false)} onSuccess={() => { showToast(t("subPurchaseSuccess")); load() }} />}
+      {/* Message de retour au centre de l'écran (CenterToast) — plus de toast en haut à droite. */}
+      <CenterToast message={toast} onClose={() => setToast("")} />
+      {showPackModal && <PackModal offerPacks={offerPacks} onClose={() => setShowPackModal(false)} onSuccess={() => { showToast(t("subPurchaseSuccess")); load(); setOrdersReloadKey((k) => k + 1) }} />}
 
       <div className="max-w-5xl mx-auto space-y-6">
 
@@ -362,32 +366,9 @@ export default function VitrineTypePage() {
           </div>
         </div>
 
-        {/* Historique abonnements boutique */}
-        {mySubs.length > 0 && (
-          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
-            <h2 className="font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2 text-base"><Clock className="h-5 w-5 text-amber-500" /> {t("subsHistoryTitle")}</h2>
-            <div className="space-y-3">
-              {mySubs.map(s => (
-                <div key={s.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/10 last:border-0">
-                  <div>
-                    <span className="font-bold text-gray-900 dark:text-white">{packLabel(s.pack)}</span>
-                    <span className="text-gray-500 dark:text-white/50 text-sm ml-2">— {s.price.toLocaleString()} {t("perMonthShort")}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 dark:text-white/40">{new Date(s.createdAt).toLocaleDateString(DATE_LOCALES[locale] || 'fr-FR')}</span>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                      s.status === 'VALIDATED' ? 'bg-green-100 text-green-700' :
-                      s.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {s.status === 'VALIDATED' ? t("validated") : s.status === 'REJECTED' ? t("rejected") : t("pending")}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Mes commandes (boutique + points) : statut, reçu à joindre/remplacer tant qu'en attente —
+            remplace l'ancien historique des abonnements, qui n'affichait que le statut. */}
+        <MyOrders offerPacks={offerPacks} includeBoutique reloadKey={ordersReloadKey} />
       </div>
     </div>
   )

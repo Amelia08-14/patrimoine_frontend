@@ -14,7 +14,7 @@ import {
   Warehouse, Snowflake, Wrench, Users, Thermometer,
   Shield, Utensils, Wallet, CreditCard, FileCheck, Truck, Tent, Palmtree, BedDouble,
   Sun, LifeBuoy, Dumbbell, Flame, Layers, Wind, Fan, Ban, Video, Lock, Wifi, Phone, Network, Droplet, Flower2, Cog,
-  LayoutGrid, CookingPot, Waves,
+  LayoutGrid, CookingPot, Waves, Siren, Navigation, Leaf, FileText, Info,
 } from 'lucide-react';
 import {
   RESEARCH_BRANCHES, RESEARCH_PROPERTY_TYPES, RESEARCH_INTERLOCUTORS,
@@ -44,6 +44,14 @@ import {
 } from '@/data/researchConfig';
 import { getCategoryColor } from '@/data/categoryColors';
 import { HEBERGEMENT_SEJOUR_TYPES } from '@/data/hebergementSejourTypes';
+import { isLockedCategory } from '@/data/lockedCategories';
+import {
+  INDUSTRIAL_SITUATIONS, INDUSTRIAL_ACCESS_TRANSPORT as DEP_INDUSTRIAL_ACCESS_TRANSPORT, INDUSTRIAL_SOCIAL_LOCALES, INDUSTRIAL_HEBERGEMENT,
+  INDUSTRIAL_SECURITY, INDUSTRIAL_WATER_SOURCES, INDUSTRIAL_FIRE_NETWORK, INDUSTRIAL_FIRE_EQUIPMENT,
+  CF_ZONE_DECHARGEMENT, CF_TECHNIQUE_FROID, CF_MODE_DIFFUSION, TERRAIN_RACCORDEMENTS, TERRAIN_AGRICOLE_RESSOURCES_EAU,
+  TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE, TERRAIN_AGRICOLE_ACCES, TERRAIN_AGRICOLE_ACCES_LOURDS, TERRAIN_AGRICOLE_CONSTRUCTIONS,
+  TERRAIN_AGRICOLE_CLOTURE, TERRAIN_TOURISTIQUE_PAT,
+} from '@/data/industrialTerrainOptions';
 import { useLocalizedPlaceName } from '@/lib/typeLabels';
 
 const BRANCH_ICONS: Record<string, any> = { Home, Factory, Briefcase, Trees, Hotel };
@@ -71,8 +79,11 @@ const formatThousands = (value: number | string | undefined) => {
 
 // Pastille ronde sélectionnable (charte du dépôt d'annonce) — pour choix uniques (branche, type, transaction).
 // `color` permute la teinte (hex + "R,G,B") pour les choix de catégorie — sinon bleu de marque par défaut.
-const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md', color }: { active: boolean; onClick: () => void; icon: any; label: string; size?: 'lg' | 'md' | 'sm'; color?: { hex: string; rgb: string } }) => {
-  const [hovered, setHovered] = useState(false);
+// `lockedBadge` : choix visible mais verrouillé (grisé, non cliquable, badge "Bientôt disponible"),
+// même rendu que les catégories en attente du dépôt d'annonce.
+const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md', color, lockedBadge }: { active: boolean; onClick: () => void; icon: any; label: string; size?: 'lg' | 'md' | 'sm'; color?: { hex: string; rgb: string }; lockedBadge?: string }) => {
+  const [hoveredRaw, setHovered] = useState(false);
+  const hovered = hoveredRaw && !lockedBadge;
   const outer = size === 'lg' ? 'w-28 h-28 md:w-40 md:h-40' : size === 'md' ? 'w-32 h-32' : 'w-24 h-24';
   const inner = size === 'lg' ? 'w-20 h-20 md:w-32 md:h-32' : size === 'md' ? 'w-24 h-24' : 'w-16 h-16';
   const iconSize = size === 'lg' ? 'h-10 w-10 md:h-16 md:w-16' : size === 'md' ? 'h-10 w-10' : 'h-8 w-8';
@@ -81,10 +92,11 @@ const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md', color }
   const lit = active || hovered;
   return (
     <div
-      onClick={onClick}
+      onClick={lockedBadge ? undefined : onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex flex-col items-center gap-3 cursor-pointer group w-full"
+      aria-disabled={!!lockedBadge}
+      className={cn('flex flex-col items-center gap-3 group w-full', lockedBadge ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')}
     >
       <div
         className={cn(
@@ -103,6 +115,7 @@ const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md', color }
       <span className={cn('font-bold text-center max-w-[160px] transition-colors', size === 'sm' ? 'text-sm' : 'text-base md:text-lg', !lit && 'text-gray-500')} style={lit ? { color: hex } : undefined}>
         {label}
       </span>
+      {lockedBadge && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">{lockedBadge}</span>}
     </div>
   );
 };
@@ -122,6 +135,37 @@ const PillOption = ({ checked, onChange, label, icon: Icon }: { checked: boolean
   </label>
 );
 
+// Carte de choix de même largeur que ses voisines (charte du dépôt : bloc "Type de cuisine") —
+// indicateur radio/case visible, libellé centré, info-bulle facultative. Pour les petits groupes de
+// 2 à 4 choix qui doivent remplir la ligne (type de cuisine, cadre de vie), là où les pastilles à
+// largeur de contenu paraissaient étriquées (retour client du 25/10/2026).
+const ChoiceCard = ({ checked, onChange, label, type = 'radio', info }: { checked: boolean; onChange: () => void; label: string; type?: 'radio' | 'checkbox'; info?: string }) => (
+  <label className="cursor-pointer flex-1 min-w-[140px] block">
+    <input type={type} checked={checked} onChange={onChange} className="peer sr-only" />
+    <div className={cn(
+      'h-full flex items-center justify-center gap-2 p-3 border-2 rounded-xl bg-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#0094BD] peer-focus-visible:ring-offset-2',
+      checked ? 'border-[#0094BD] bg-[#0094BD]/[0.06]' : 'border-gray-200 hover:border-[#0094BD]'
+    )}>
+      <span className={cn(
+        'h-4 w-4 shrink-0 border-2 flex items-center justify-center transition-colors',
+        type === 'radio' ? 'rounded-full' : 'rounded',
+        checked ? (type === 'radio' ? 'border-[#0094BD]' : 'border-[#0094BD] bg-[#0094BD]') : 'border-gray-400'
+      )}>
+        {checked && (type === 'radio' ? <span className="h-2 w-2 rounded-full bg-[#0094BD]" /> : <Check className="h-3 w-3 text-white" strokeWidth={3} />)}
+      </span>
+      <span className={cn('text-sm font-bold text-center', checked ? 'text-[#0094BD]' : 'text-gray-900')}>{label}</span>
+      {info && (
+        <span className="relative group/info ms-1">
+          <Info className="h-4 w-4 text-gray-400 hover:text-[#0094BD]" />
+          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 font-normal text-start">
+            {info}
+          </span>
+        </span>
+      )}
+    </div>
+  </label>
+);
+
 // Tuile à icône (charte du dépôt d'annonce : icône au-dessus, libellé centré, bordure qui s'active à
 // la coche) — pour les équipements, commodités, énergies… Remplace la pastille texte seule.
 const OPTION_ICONS: Record<string, any> = {
@@ -137,7 +181,7 @@ const OPTION_ICONS: Record<string, any> = {
   plates: LayoutGrid, oven: CookingPot, hood: Fan, dishwasher: Droplet, microwave: Zap, fridge: Snowflake, washing_machine: Waves, no_appliances: Ban,
 };
 
-const IconTile = ({ checked, onChange, label, optionId, type = 'checkbox' }: { checked: boolean; onChange: () => void; label: string; optionId: string; type?: 'checkbox' | 'radio' }) => {
+const IconTile = ({ checked, onChange, label, optionId, type = 'checkbox', size = 'md' }: { checked: boolean; onChange: () => void; label: string; optionId: string; type?: 'checkbox' | 'radio'; size?: 'sm' | 'md' }) => {
   const Icon = OPTION_ICONS[optionId] || Flower2;
   return (
     <label className="cursor-pointer block group">
@@ -146,10 +190,12 @@ const IconTile = ({ checked, onChange, label, optionId, type = 'checkbox' }: { c
         // min-h (pas h fixe) : un libellé un peu long ("Machine à laver", "Gardiennage 24/7"...)
         // ne doit jamais déborder d'une hauteur figée et casser l'alignement de la grille (retour
         // client du 17/10/2026 : "cuisine et équipement extérieurs non aligner").
-        'flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all min-h-24 h-full bg-white',
+        // 'sm' = gabarit des équipements de cuisine du dépôt (8 par ligne, h-20, icône h-5).
+        'flex flex-col items-center justify-center border-2 rounded-xl transition-all h-full bg-white',
+        size === 'sm' ? 'gap-1 p-2 min-h-20' : 'gap-2 p-3 min-h-24',
         checked ? 'border-[#0094BD] bg-[#0094BD]/[0.06] text-[#0094BD]' : 'border-gray-200 text-gray-700 hover:border-[#0094BD]'
       )}>
-        <Icon className={cn('h-6 w-6', checked ? 'text-[#0094BD]' : 'text-gray-400 group-hover:text-gray-600')} />
+        <Icon className={cn(size === 'sm' ? 'h-5 w-5' : 'h-6 w-6', checked ? 'text-[#0094BD]' : 'text-gray-400 group-hover:text-gray-600')} />
         <span className="text-xs font-bold text-center leading-tight">{label}</span>
       </div>
     </label>
@@ -285,6 +331,17 @@ export default function ResearchPage() {
   // en premier) ; `.has()` retombe sur le label français tant qu'une branche n'est pas encore migrée,
   // pour ne jamais casser l'affichage d'une branche pas encore traitée.
   const tOpt = useTranslations('ResearchOptions');
+  // Sections "cadre & commodités" clonées des fiches annonce Industriel/Terrain : mêmes intitulés
+  // (namespace Deposit, clés fXXX) et mêmes libellés d'options (DepositOptions) que le dépôt, déjà
+  // traduits en fr/en/ar — aucune traduction dupliquée.
+  const tDep = useTranslations('Deposit');
+  const tDepOpt = useTranslations('DepositOptions');
+  const depOpt = (group: string, item: { id: string; label: string }) => {
+    if (!group) return item.label;
+    const nested = `${group}.${item.id}.label`;
+    const flat = `${group}.${item.id}`;
+    return tDepOpt.has(nested) ? tDepOpt(nested) : tDepOpt.has(flat) ? tDepOpt(flat) : item.label;
+  };
   const place = useLocalizedPlaceName();
   const optLabel = (ns: string, item: { id: string; label: string }) => {
     const key = `${ns}.${item.id}`;
@@ -349,6 +406,46 @@ export default function ResearchPage() {
     cfTypeFroidChoices: z.array(z.string()).optional(),
     cfModeGestionChoices: z.array(z.string()).optional(),
     cfStructureType: z.enum(['CELLULE_UNIQUE', 'COMPLEXE_FRIGORIFIQUE']).optional(),
+
+    // Cadre & commodités clonés des fiches annonce Industriel (/deposit, 25/10/2026) — `ind*` est
+    // commun à Hangar / Usine / Chambre froide (une seule fiche active à la fois), `cf*` propre à la
+    // Chambre froide. Mêmes listes d'options que le dépôt (data/industrialTerrainOptions.ts).
+    indOffices: z.enum(['OUI', 'NON']).optional(),
+    indOfficesAreaMin: z.coerce.number().optional(),
+    indSocialLocales: z.array(z.string()).optional(),
+    indHebergement: z.array(z.string()).optional(),
+    indSecurity: z.array(z.string()).optional(),
+    indKvaMin: z.coerce.number().optional(),
+    indForceMotrice: z.boolean().optional(),
+    indGas: z.array(z.string()).optional(),
+    indWaterSources: z.array(z.string()).optional(),
+    indSanitation: z.array(z.string()).optional(),
+    indFireNetwork: z.array(z.string()).optional(),
+    indFireEquipment: z.array(z.string()).optional(),
+    indFireWaterReserveMin: z.coerce.number().optional(),
+    cfLocalisation: z.array(z.string()).optional(),
+    cfConfiguration: z.array(z.string()).optional(),
+    cfFloorsMin: z.coerce.number().optional(),
+    cfLogistiqueVerticale: z.array(z.string()).optional(),
+    cfMonteChargeCapacityMin: z.coerce.number().optional(),
+    cfAccessibilite: z.array(z.string()).optional(),
+    cfZoneDechargement: z.array(z.string()).optional(),
+    cfGenerateur: z.boolean().optional(),
+    cfGenerateurKvaMin: z.coerce.number().optional(),
+    cfTechniqueFroid: z.array(z.string()).optional(),
+    cfModeDiffusion: z.array(z.string()).optional(),
+
+    // Cadre & commodités clonés des fiches annonce Terrain (/deposit, 25/10/2026).
+    terViabilise: z.enum(['OUI', 'NON']).optional(),
+    terRaccordements: z.array(z.string()).optional(),
+    terAgriRessourcesEau: z.array(z.string()).optional(),
+    terAgriDebitForageMin: z.coerce.number().optional(),
+    terAgriEquipementHydro: z.array(z.string()).optional(),
+    terAgriAcces: z.array(z.string()).optional(),
+    terAgriAccesLourds: z.array(z.string()).optional(),
+    terAgriConstructions: z.array(z.string()).optional(),
+    terAgriCloture: z.array(z.string()).optional(),
+    terTouPat: z.array(z.string()).optional(),
 
     // Documents pour la vente — uniquement proposés quand transaction === SALE, communs aux 3
     // fiches Industriel (une seule est active à la fois via industrielSearchScope).
@@ -624,6 +721,12 @@ export default function ResearchPage() {
       cfTypeFroidChoices: [],
       cfModeGestionChoices: [],
       indLegalDocuments: [],
+      indSocialLocales: [], indHebergement: [], indSecurity: [], indGas: [], indWaterSources: [], indSanitation: [],
+      indFireNetwork: [], indFireEquipment: [],
+      cfLocalisation: [], cfConfiguration: [], cfLogistiqueVerticale: [], cfAccessibilite: [], cfZoneDechargement: [],
+      cfTechniqueFroid: [], cfModeDiffusion: [],
+      terRaccordements: [], terAgriRessourcesEau: [], terAgriEquipementHydro: [], terAgriAcces: [], terAgriAccesLourds: [],
+      terAgriConstructions: [], terAgriCloture: [], terTouPat: [],
       isDelegate: false,
       receiveAlert: false,
     },
@@ -673,6 +776,14 @@ export default function ResearchPage() {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
+      // Brouillon d'une catégorie verrouillée depuis (Hébergement & Séjour) : on garde la transaction
+      // et on renvoie au choix de catégorie (étape 2 dans tous les parcours).
+      if (isLockedCategory(parsed.values?.branch)) {
+        if (parsed.values?.transaction) setValue('transaction', parsed.values.transaction);
+        setCurrentStepIndex(parsed.values?.transaction ? 1 : 0);
+        setDraftAvailable(null);
+        return;
+      }
       reset(parsed.values);
       if (typeof parsed.step === 'number') setCurrentStepIndex(parsed.step);
     } catch { /* ignore */ }
@@ -838,6 +949,18 @@ export default function ResearchPage() {
       }
 
       const amenities: any = { interlocutors: data.interlocutors || [], currency: data.currency };
+      // Extérieur / chauffage / climatisation / sécurité / connectivité / cuisine / énergie-eau
+      // — mêmes champs que /deposit, communs à toutes les fiches de bâti (Résidentiel, Immeuble,
+      // Bureaux et Commerces).
+      const resEquipments = {
+        exterior: data.resExterior || [],
+        heating: data.resHeating,
+        ac: data.resAc,
+        security: data.resSecurity || [],
+        connectivity: data.resConnectivity || [],
+        kitchen: { type: data.resKitchenType, equipment: data.resKitchenEquipment || [] },
+        energy: { water: data.resWaterCounter, elec: data.resElecCounter, gas: data.resGasCounter },
+      };
       switch (data.branch) {
         case 'RESIDENTIEL':
           amenities.residentiel = { outdoorSpaces: data.outdoorSpaces, proximity: data.proximity, searchScope: data.searchScope || 'GROUPEE' };
@@ -860,20 +983,10 @@ export default function ResearchPage() {
               cityIds: data.cityIds || [],
               environment: data.environment,
               realisationStage: data.transaction === TransactionType.SALE ? data.realisationStage : undefined,
+              equipments: resEquipments,
             };
             break;
           }
-          // Extérieur / chauffage / climatisation / sécurité / connectivité / cuisine / énergie-eau
-          // — communs aux fiches Location et Achat (mêmes champs que /deposit).
-          const resEquipments = {
-            exterior: data.resExterior || [],
-            heating: data.resHeating,
-            ac: data.resAc,
-            security: data.resSecurity || [],
-            connectivity: data.resConnectivity || [],
-            kitchen: { type: data.resKitchenType, equipment: data.resKitchenEquipment || [] },
-            energy: { water: data.resWaterCounter, elec: data.resElecCounter, gas: data.resGasCounter },
-          };
           if (data.transaction === TransactionType.RENTAL) {
             amenities.residentiel.location = {
               propertyTypes: data.resPropertyTypes || [],
@@ -913,6 +1026,26 @@ export default function ResearchPage() {
         case 'INDUSTRIEL':
           if (data.transaction === TransactionType.RENTAL || data.transaction === TransactionType.SALE) {
             amenities.industriel = { searchScope: data.industrielSearchScope };
+            // Cadre & commodités clonés de la fiche annonce (communs aux 3 fiches pour les annexes).
+            const indAnnexes = {
+              offices: data.indOffices,
+              officesAreaMin: data.indOffices === 'OUI' ? data.indOfficesAreaMin : undefined,
+              socialLocales: data.indSocialLocales || [],
+              hebergement: data.indHebergement || [],
+              security: data.indSecurity || [],
+            };
+            const indEnergy = {
+              kvaMin: data.indKvaMin,
+              forceMotrice: !!data.indForceMotrice,
+              gas: data.indGas || [],
+              waterSources: data.indWaterSources || [],
+              sanitation: data.indSanitation || [],
+            };
+            const indFire = {
+              network: data.indFireNetwork || [],
+              equipment: data.indFireEquipment || [],
+              waterReserveMin: (data.indFireEquipment || []).includes('BACHE_EAU') ? data.indFireWaterReserveMin : undefined,
+            };
             // Documents attendus pour la vente — communs aux 3 fiches, seulement en Achat.
             if (data.transaction === TransactionType.SALE) {
               amenities.industriel.legalDocuments = data.indLegalDocuments || [];
@@ -927,8 +1060,10 @@ export default function ResearchPage() {
                 surfaceBatieMin: data.usSurfaceBatieMin,
                 surfaceBatieMax: data.usSurfaceBatieMax,
                 zone: data.usZone || [],
-                energie: data.usEnergie || [],
                 accesTransport: data.usAccesTransport || [],
+                annexes: indAnnexes,
+                energy: indEnergy,
+                fire: indFire,
                 cityIds: data.cityIds || [],
               };
             } else if (data.industrielSearchScope === 'CHAMBRE_FROIDE') {
@@ -940,6 +1075,22 @@ export default function ResearchPage() {
                 typeFroid: data.cfTypeFroidChoices || [],
                 modeGestion: data.cfModeGestionChoices || [],
                 structureType: data.cfStructureType,
+                annexes: indAnnexes,
+                configuration: {
+                  localisation: data.cfLocalisation || [],
+                  configuration: data.cfConfiguration || [],
+                  floorsMin: (data.cfConfiguration || []).includes('ETAGES') ? data.cfFloorsMin : undefined,
+                  logistiqueVerticale: data.cfLogistiqueVerticale || [],
+                  monteChargeCapacityMin: (data.cfLogistiqueVerticale || []).includes('MONTE_CHARGE') ? data.cfMonteChargeCapacityMin : undefined,
+                  accessibilite: data.cfAccessibilite || [],
+                  zoneDechargement: data.cfZoneDechargement || [],
+                },
+                equipment: {
+                  generateur: !!data.cfGenerateur,
+                  generateurKvaMin: data.cfGenerateur ? data.cfGenerateurKvaMin : undefined,
+                  techniqueFroid: data.cfTechniqueFroid || [],
+                  modeDiffusion: data.cfModeDiffusion || [],
+                },
                 cityIds: data.cityIds || [],
               };
             } else {
@@ -952,8 +1103,10 @@ export default function ResearchPage() {
                 hauteurMin: data.hgHauteurMin,
                 hauteurMax: data.hgHauteurMax,
                 zone: data.hgZone || [],
-                energie: data.hgEnergie || [],
                 accesTransport: data.hgAccesTransport || [],
+                annexes: indAnnexes,
+                energy: indEnergy,
+                fire: indFire,
                 cityIds: data.cityIds || [],
               };
             }
@@ -984,6 +1137,7 @@ export default function ResearchPage() {
               budgetUnit: data.budgetUnit,
               cityIds: data.cityIds || [],
               environment: data.environment,
+              equipments: resEquipments,
             };
           } else if (data.bureauxSearchScope === 'IMMEUBLE') {
             // Fiche "Recherche Immeuble" identique à celle du Résidentiel (mêmes champs, réutilisés
@@ -1005,6 +1159,7 @@ export default function ResearchPage() {
               floorsMax: data.buildingFloorsMax,
               cityIds: data.cityIds || [],
               environment: data.environment,
+              equipments: resEquipments,
             };
           } else if (data.bureauxSearchScope === 'BLOC_COMMERCIAL') {
             amenities.bureaux.blocCommercial = {
@@ -1014,6 +1169,8 @@ export default function ResearchPage() {
               zoneType: data.bcZoneType || [],
               visibilite: data.bcVisibilite || [],
               cityIds: data.cityIds || [],
+              environment: data.environment,
+              equipments: resEquipments,
             };
           } else if (data.bureauxSearchScope === 'LOCAL_COMMERCIAL') {
             amenities.bureaux.localCommercial = {
@@ -1027,6 +1184,8 @@ export default function ResearchPage() {
               usage: data.lcUsage || [],
               usageOther: (data.lcUsage || []).includes('AUTRE') ? data.lcUsageOther : undefined,
               cityIds: data.cityIds || [],
+              environment: data.environment,
+              equipments: resEquipments,
             };
           } else {
             amenities.bureaux.blocAdministratif = {
@@ -1038,20 +1197,30 @@ export default function ResearchPage() {
               spaceTypes: data.baSpaceTypes || [],
               energie: data.baEnergie || [],
               cityIds: data.cityIds || [],
+              environment: data.environment,
+              // Pas de compteurs eau/élec/gaz sur cette fiche (elle a sa section "Énergie et fluide").
+              equipments: { ...resEquipments, energy: undefined },
             };
           }
           break;
         case 'TERRAIN_FONCIER':
-          amenities.terrain = { searchScope: data.terrainSearchScope || 'AGRICOLE', surfaceUnit: data.surfaceUnit, facadesMin: data.facadesMin, facadesMax: data.facadesMax };
+          amenities.terrain = {
+            searchScope: data.terrainSearchScope || 'AGRICOLE', surfaceUnit: data.surfaceUnit, facadesMin: data.facadesMin, facadesMax: data.facadesMax,
+            // Viabilisation clonée de la fiche annonce (toutes les fiches Terrain) ; raccordements à
+            // proximité seulement pour Industriel / Résidentiel non viabilisé, comme au dépôt.
+            viabilise: data.terViabilise,
+          };
+          const terRaccordements = data.terViabilise === 'NON' ? (data.terRaccordements || []) : [];
           if (data.terrainSearchScope === 'INDUSTRIEL') {
-            amenities.terrain.industriel = { zone: data.terIndZone || [] };
+            amenities.terrain.industriel = { zone: data.terIndZone || [], raccordements: terRaccordements };
           } else if (data.terrainSearchScope === 'RESIDENTIEL') {
-            amenities.terrain.residentiel = { zone: data.terResZone || [] };
+            amenities.terrain.residentiel = { zone: data.terResZone || [], raccordements: terRaccordements };
           } else if (data.terrainSearchScope === 'TOURISTIQUE') {
             amenities.terrain.touristique = {
               zet: data.terTouZet,
               vocation: data.terTouVocation || [],
               vocationOther: (data.terTouVocation || []).includes('AUTRE') ? data.terTouVocationOther : undefined,
+              pat: data.terTouPat || [],
             };
           } else {
             amenities.terrain.agricole = {
@@ -1060,6 +1229,13 @@ export default function ResearchPage() {
               culture: data.terAgriCulture || [],
               cultureOther: (data.terAgriCulture || []).includes('AUTRE') ? data.terAgriCultureOther : undefined,
               etat: data.terAgriEtat || [],
+              ressourcesEau: data.terAgriRessourcesEau || [],
+              debitForageMin: (data.terAgriRessourcesEau || []).includes('FORAGE') ? data.terAgriDebitForageMin : undefined,
+              equipementHydro: data.terAgriEquipementHydro || [],
+              acces: data.terAgriAcces || [],
+              accesLourds: data.terAgriAccesLourds || [],
+              constructions: data.terAgriConstructions || [],
+              cloture: data.terAgriCloture || [],
             };
           }
           break;
@@ -1146,9 +1322,10 @@ export default function ResearchPage() {
       clearDraft();
       alert(t('alertSuccess'));
       router.push('/demandes');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert(t('alertGenericError'));
+      // Compte en attente de validation admin (nouveau compte ou profil modifié) : l'API refuse.
+      alert(err?.response?.data?.code === 'ACCOUNT_PENDING_VALIDATION' ? t('alertAccountPending') : t('alertGenericError'));
     } finally {
       setLoading(false);
     }
@@ -1531,9 +1708,19 @@ export default function ResearchPage() {
     </Section>
   );
 
+  // Cartes de même largeur à case visible (ChoiceCard), comme le "Type de cuisine" du dépôt — ni la
+  // grille de grosses pastilles d'origine, ni les pastilles étriquées à largeur de contenu (retours
+  // client du 25/10/2026).
   const renderEnvironmentSection = () => (
     <Section title={t('resLocEnvironmentTitle')} icon={Compass}>
-      <OptionGroup label={t('resLocEnvironment')} options={ENVIRONMENT_OPTIONS} field="environment" watch={watch} toggle={toggleArrayValue} translateNs="ENVIRONMENT_OPTIONS" />
+      <div>
+        <label className="block text-sm font-bold text-gray-900 mb-3">{t('resLocEnvironment')}</label>
+        <div className="flex flex-wrap gap-4">
+          {ENVIRONMENT_OPTIONS.map((opt) => (
+            <ChoiceCard key={opt.id} type="checkbox" checked={(watch('environment') || []).includes(opt.id)} label={optLabel('ENVIRONMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('environment', opt.id)} />
+          ))}
+        </div>
+      </div>
     </Section>
   );
 
@@ -1541,23 +1728,34 @@ export default function ResearchPage() {
   // identiquement depuis la fiche Résidentiel de /deposit (même ordre, mêmes champs, mêmes libellés
   // de section), demande client du 15/10/2026. Sécurité et Connectivité sont côte à côte (face à
   // face) comme dans l'affichage de la fiche annonce (/announces/[id]).
-  const renderResidentielEquipmentsSection = () => (
+  // Depuis le 25/10/2026, affiché sur toutes les fiches de bâti (Résidentiel, Immeuble, Bureaux et
+  // Commerces) et calé sur les dimensions du dépôt : équipements de cuisine en 8 tuiles compactes
+  // par ligne, extérieurs en 6, commodités séparées par un filet comme au dépôt.
+  // `withEnergy: false` pour les fiches qui ont déjà leur propre section "Énergie et fluide".
+  const renderResidentielEquipmentsSection = (opts?: { withEnergy?: boolean }) => (
     <>
       <Section title={t('resKitchenTitle')} icon={Utensils}>
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resKitchenTypeLabel')}</label>
-            <div className="flex flex-wrap gap-3">
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('resKitchenTypeLabel')}</label>
+            <div className="flex flex-wrap gap-4">
               {RES_KITCHEN_TYPES.map((opt) => (
-                <PillOption key={opt.id} checked={watch('resKitchenType') === opt.id} label={optLabel('RES_KITCHEN_TYPES', opt)} onChange={() => setValue('resKitchenType', opt.id as any)} />
+                <ChoiceCard
+                  key={opt.id}
+                  checked={watch('resKitchenType') === opt.id}
+                  label={optLabel('RES_KITCHEN_TYPES', opt)}
+                  // Même description que l'info-bulle du dépôt (mêmes ids, déjà traduite).
+                  info={tDepOpt.has(`KITCHEN_TYPES.${opt.id}.description`) ? tDepOpt(`KITCHEN_TYPES.${opt.id}.description`) : undefined}
+                  onChange={() => setValue('resKitchenType', opt.id as any)}
+                />
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resKitchenEquipmentLabel')}</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            <label className="block text-sm font-bold text-gray-900 mb-3">{t('resKitchenEquipmentLabel')}</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
               {RES_KITCHEN_EQUIPMENT_OPTIONS.map((opt) => (
-                <IconTile key={opt.id} optionId={opt.id} checked={(watch('resKitchenEquipment') || []).includes(opt.id)} label={optLabel('RES_KITCHEN_EQUIPMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('resKitchenEquipment', opt.id)} />
+                <IconTile key={opt.id} size="sm" optionId={opt.id} checked={(watch('resKitchenEquipment') || []).includes(opt.id)} label={optLabel('RES_KITCHEN_EQUIPMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('resKitchenEquipment', opt.id)} />
               ))}
             </div>
           </div>
@@ -1565,18 +1763,18 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('resExteriorCommoditiesTitle')} icon={Trees}>
-        <div className="space-y-5">
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">{t('resExteriorLabel')}</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {RES_EXTERIOR_OPTIONS.map((opt) => (
-                <IconTile key={opt.id} optionId={opt.id} checked={(watch('resExterior') || []).includes(opt.id)} label={optLabel('RES_EXTERIOR_OPTIONS', opt)} onChange={() => toggleArrayValue('resExterior', opt.id)} />
-              ))}
-            </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-3">{t('resExteriorLabel')}</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {RES_EXTERIOR_OPTIONS.map((opt) => (
+              <IconTile key={opt.id} optionId={opt.id} checked={(watch('resExterior') || []).includes(opt.id)} label={optLabel('RES_EXTERIOR_OPTIONS', opt)} onChange={() => toggleArrayValue('resExterior', opt.id)} />
+            ))}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        </div>
+        <div className="space-y-8 border-t border-gray-100 pt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resHeatingLabel')}</label>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('resHeatingLabel')}</label>
               <div className="grid grid-cols-3 gap-3">
                 {RES_HEATING_OPTIONS.map((opt) => (
                   <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resHeating') === opt.id} label={optLabel('RES_HEATING_OPTIONS', opt)} onChange={() => setValue('resHeating', opt.id as any)} />
@@ -1584,7 +1782,7 @@ export default function ResearchPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resAcLabel')}</label>
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('resAcLabel')}</label>
               <div className="grid grid-cols-3 gap-3">
                 {RES_AC_OPTIONS.map((opt) => (
                   <IconTile key={opt.id} optionId={opt.id} type="radio" checked={watch('resAc') === opt.id} label={optLabel('RES_AC_OPTIONS', opt)} onChange={() => setValue('resAc', opt.id as any)} />
@@ -1593,18 +1791,18 @@ export default function ResearchPage() {
             </div>
           </div>
           {/* Sécurité et Connectivité face à face — même disposition que /announces/[id] */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resSecurityLabel')}</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('resSecurityLabel')}</label>
+              <div className="grid grid-cols-3 gap-3">
                 {RES_SECURITY_OPTIONS.map((opt) => (
                   <IconTile key={opt.id} optionId={opt.id} checked={(watch('resSecurity') || []).includes(opt.id)} label={optLabel('RES_SECURITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resSecurity', opt.id)} />
                 ))}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">{t('resConnectivityLabel')}</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label className="block text-sm font-bold text-gray-900 mb-3">{t('resConnectivityLabel')}</label>
+              <div className="grid grid-cols-3 gap-3">
                 {RES_CONNECTIVITY_OPTIONS.map((opt) => (
                   <IconTile key={opt.id} optionId={opt.id} checked={(watch('resConnectivity') || []).includes(opt.id)} label={optLabel('RES_CONNECTIVITY_OPTIONS', opt)} onChange={() => toggleArrayValue('resConnectivity', opt.id)} />
                 ))}
@@ -1614,6 +1812,7 @@ export default function ResearchPage() {
         </div>
       </Section>
 
+      {opts?.withEnergy !== false && (
       <Section title={t('resEnergyTitle')} icon={Zap}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {([
@@ -1635,6 +1834,7 @@ export default function ResearchPage() {
           ))}
         </div>
       </Section>
+      )}
     </>
   );
 
@@ -1737,6 +1937,7 @@ export default function ResearchPage() {
             Résidentiel) — demande client du 15/10/2026. */}
         {renderLocalisationSection({ hideDate: true })}
         {renderEnvironmentSection()}
+        {renderResidentielEquipmentsSection()}
 
         {/* Stade de réalisation — uniquement pour l'achat d'un immeuble (une location d'immeuble
             entier ne se conçoit pas "sur plan"). */}
@@ -1801,6 +2002,8 @@ export default function ResearchPage() {
       </Section>
 
       {renderLocalisationSection()}
+      {renderEnvironmentSection()}
+      {renderResidentielEquipmentsSection({ withEnergy: false })}
       {renderSharedInterlocutorSection()}
       {renderCommentSection()}
     </>
@@ -1840,6 +2043,8 @@ export default function ResearchPage() {
       </Section>
 
       {renderLocalisationSection()}
+      {renderEnvironmentSection()}
+      {renderResidentielEquipmentsSection()}
       {renderSharedInterlocutorSection()}
       {renderCommentSection()}
     </>
@@ -1893,6 +2098,8 @@ export default function ResearchPage() {
       </Section>
 
       {renderLocalisationSection()}
+      {renderEnvironmentSection()}
+      {renderResidentielEquipmentsSection()}
       {renderSharedInterlocutorSection()}
       {renderCommentSection()}
     </>
@@ -1931,6 +2138,166 @@ export default function ResearchPage() {
     );
   };
 
+  // --- Cadre & commodités clonés des fiches annonce (/deposit) pour Industriel et Terrain — demande
+  // client du 25/10/2026 ("pas la cuisine : ce qu'ils ont eux dans la fiche d'annonce"). Mêmes groupes,
+  // mêmes options et mêmes intitulés que le dépôt, au format pastilles de ce formulaire ; tout est en
+  // choix multiple (on décrit des souhaits), sauf les Oui/Non. ---
+
+  // Groupe de pastilles à choix multiple. `group` = nom du groupe DepositOptions ('' si les libellés
+  // sont déjà traduits, ex. options construites à partir de clés Deposit).
+  const renderDepGroup = (label: string, group: string, options: readonly { id: string; label: string }[], field: any, extra?: React.ReactNode) => (
+    <div className="min-w-0">
+      {label && <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>}
+      <div className="flex flex-wrap gap-3">
+        {options.map((opt) => (
+          <PillOption key={opt.id} checked={((watch(field) as string[] | undefined) || []).includes(opt.id)} label={depOpt(group, opt)} onChange={() => toggleArrayValue(field, opt.id)} />
+        ))}
+      </div>
+      {extra}
+    </div>
+  );
+
+  // Oui / Non à choix unique (re-cliquer désélectionne).
+  const renderYesNo = (label: string, field: 'indOffices' | 'terViabilise', yesLabel: string, noLabel: string, extra?: React.ReactNode) => (
+    <div className="min-w-0">
+      <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
+      <div className="flex flex-wrap gap-3">
+        {([['OUI', yesLabel], ['NON', noLabel]] as const).map(([v, l]) => (
+          <PillOption key={v} checked={watch(field) === v} label={l} onChange={() => setValue(field, (watch(field) === v ? undefined : v) as any)} />
+        ))}
+      </div>
+      {extra}
+    </div>
+  );
+
+  const renderNestedNumber = (label: string, field: any, placeholder: string, unit?: string) => (
+    <div className="mt-3 max-w-xs">{renderHtlBoxedNumber(label, field, { unit, placeholder })}</div>
+  );
+
+  // Annexes & Commodités — Hangar, Usine et Chambre froide (même bloc au dépôt).
+  const renderIndustrielAnnexesSection = () => (
+    <Section title={tDep('f016')} icon={LayoutGrid}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {renderYesNo(tDep('f017'), 'indOffices', tDep('f018'), tDep('f019'),
+          watch('indOffices') === 'OUI' ? renderNestedNumber(tDep('f020'), 'indOfficesAreaMin', tDep('f352'), 'm²') : null)}
+        {renderDepGroup(tDep('f021'), 'INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES, 'indSocialLocales')}
+        {renderDepGroup(tDep('f022'), 'INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT, 'indHebergement')}
+        {renderDepGroup(tDep('f023'), 'INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY, 'indSecurity')}
+      </div>
+    </Section>
+  );
+
+  // Énergie & Fluides — Hangar et Usine (remplace l'ancienne liste simplifiée "Énergie et fluide").
+  const renderIndustrielEnergySection = () => (
+    <Section title={tDep('f024')} icon={Zap}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="min-w-0">
+          <label className="block text-sm font-bold text-gray-900 mb-3">{tDep('f025')}</label>
+          <div className="space-y-3">
+            <div className="max-w-xs">{renderHtlBoxedNumber(tDep('f026'), 'indKvaMin', { unit: 'KVA', placeholder: tDep('f353') })}</div>
+            <div className="flex">
+              <PillOption checked={!!watch('indForceMotrice')} label={tDep('f027')} icon={Zap} onChange={() => setValue('indForceMotrice', !watch('indForceMotrice'))} />
+            </div>
+          </div>
+        </div>
+        {renderDepGroup(tDep('f028'), '', [
+          { id: 'INDUSTRIEL', label: tDep('f029') }, { id: 'VILLE', label: tDep('f030') }, { id: 'AUCUN', label: tDep('f031') },
+        ], 'indGas')}
+        {renderDepGroup(tDep('f032'), 'INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES, 'indWaterSources')}
+        {renderDepGroup(tDep('f033'), '', [
+          { id: 'RESEAU_PUBLIC', label: tDep('f034') }, { id: 'FOSSE_INDUSTRIELLE', label: tDep('f035') },
+        ], 'indSanitation')}
+      </div>
+    </Section>
+  );
+
+  // Sécurité incendie & Protection — Hangar et Usine.
+  const renderIndustrielFireSection = () => (
+    <Section title={tDep('f036')} icon={Siren}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {renderDepGroup(tDep('f037'), 'INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK, 'indFireNetwork')}
+        {renderDepGroup(tDep('f038'), 'INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT, 'indFireEquipment',
+          (watch('indFireEquipment') || []).includes('BACHE_EAU') ? renderNestedNumber(tDep('f172'), 'indFireWaterReserveMin', tDep('f354'), 'L') : null)}
+      </div>
+    </Section>
+  );
+
+  // Configuration & Emplacement du site — Chambre froide.
+  const renderCfConfigSection = () => (
+    <Section title={tDep('f064')} icon={MapPin}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {renderDepGroup(tDep('f065'), 'INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS, 'cfLocalisation')}
+        {renderDepGroup(tDep('f067'), '', [{ id: 'PLAIN_PIED', label: tDep('f068') }, { id: 'ETAGES', label: tDep('f069') }], 'cfConfiguration',
+          (watch('cfConfiguration') || []).includes('ETAGES') ? renderNestedNumber(tDep('f139'), 'cfFloorsMin', t('exVal', { v: '2' })) : null)}
+        {renderDepGroup(tDep('f070'), '', [{ id: 'MONTE_CHARGE', label: tDep('f071') }, { id: 'AUCUN', label: tDep('f031') }], 'cfLogistiqueVerticale',
+          (watch('cfLogistiqueVerticale') || []).includes('MONTE_CHARGE') ? renderNestedNumber(tDep('f363'), 'cfMonteChargeCapacityMin', t('exVal', { v: '1000' }), 'kg') : null)}
+        {renderDepGroup(tDep('f072'), 'INDUSTRIAL_ACCESS_TRANSPORT', DEP_INDUSTRIAL_ACCESS_TRANSPORT, 'cfAccessibilite')}
+        {renderDepGroup(tDep('f073'), 'CF_ZONE_DECHARGEMENT', CF_ZONE_DECHARGEMENT, 'cfZoneDechargement')}
+      </div>
+    </Section>
+  );
+
+  // Équipements de sécurité & Performance — Chambre froide (le type de froid a déjà sa section).
+  const renderCfEquipmentSection = () => (
+    <Section title={tDep('f074')} icon={Shield}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="min-w-0">
+          <label className="block text-sm font-bold text-gray-900 mb-3">{tDep('f075')}</label>
+          <div className="flex">
+            <PillOption checked={!!watch('cfGenerateur')} label={tDep('f076')} icon={Zap} onChange={() => setValue('cfGenerateur', !watch('cfGenerateur'))} />
+          </div>
+          {watch('cfGenerateur') ? renderNestedNumber(tDep('f364'), 'cfGenerateurKvaMin', tDep('f353'), 'KVA') : null}
+        </div>
+        {renderDepGroup(tDep('f077'), 'CF_TECHNIQUE_FROID', CF_TECHNIQUE_FROID, 'cfTechniqueFroid')}
+        {renderDepGroup(tDep('f079'), 'CF_MODE_DIFFUSION', CF_MODE_DIFFUSION, 'cfModeDiffusion')}
+      </div>
+    </Section>
+  );
+
+  // Viabilisation (+ raccordements à proximité si non viabilisé) — toutes les fiches Terrain ; les
+  // raccordements ne sont proposés au dépôt que pour Terrain Industriel / Résidentiel.
+  const renderTerrainViabilisationSection = (withRaccordements: boolean) => (
+    <Section title={tDep('f091')} icon={FileText}>
+      {renderYesNo(tDep('f091'), 'terViabilise', tDep('f092'), tDep('f093'),
+        withRaccordements && watch('terViabilise') === 'NON' ? (
+          <div className="mt-4">{renderDepGroup(tDep('f097'), 'TERRAIN_RACCORDEMENTS', TERRAIN_RACCORDEMENTS, 'terRaccordements')}</div>
+        ) : null)}
+    </Section>
+  );
+
+  // Terrain Agricole : ressources en eau & équipements hydrauliques, accessibilité, bâtiments & clôture.
+  const renderTerrainAgricoleCommoditiesSections = () => (
+    <>
+      <Section title={tDep('f100')} icon={Droplet}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {renderDepGroup(tDep('f100'), 'TERRAIN_AGRICOLE_RESSOURCES_EAU', TERRAIN_AGRICOLE_RESSOURCES_EAU, 'terAgriRessourcesEau',
+            (watch('terAgriRessourcesEau') || []).includes('FORAGE') ? renderNestedNumber(tDep('f102'), 'terAgriDebitForageMin', tDep('f371'), 'm³/h') : null)}
+          {renderDepGroup(tDep('f108'), 'TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE', TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE, 'terAgriEquipementHydro')}
+        </div>
+      </Section>
+      <Section title={tDep('f112')} icon={Navigation}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {renderDepGroup(tDep('f113'), 'TERRAIN_AGRICOLE_ACCES', TERRAIN_AGRICOLE_ACCES, 'terAgriAcces')}
+          {renderDepGroup(tDep('f114'), 'TERRAIN_AGRICOLE_ACCES_LOURDS', TERRAIN_AGRICOLE_ACCES_LOURDS, 'terAgriAccesLourds')}
+        </div>
+      </Section>
+      <Section title={tDep('f115')} icon={Leaf}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {renderDepGroup(tDep('f116'), 'TERRAIN_AGRICOLE_CONSTRUCTIONS', TERRAIN_AGRICOLE_CONSTRUCTIONS, 'terAgriConstructions')}
+          {renderDepGroup(tDep('f117'), 'TERRAIN_AGRICOLE_CLOTURE', TERRAIN_AGRICOLE_CLOTURE, 'terAgriCloture')}
+        </div>
+      </Section>
+    </>
+  );
+
+  // Terrain Touristique : Plan d'Aménagement Touristique (la ZET et la vocation ont déjà leur section).
+  const renderTerrainTouristiquePatSection = () => (
+    <Section title={tDep('f121')} icon={Palmtree}>
+      <p className="text-sm text-gray-500">{tDep('f122')}</p>
+      {renderDepGroup('', 'TERRAIN_TOURISTIQUE_PAT', TERRAIN_TOURISTIQUE_PAT, 'terTouPat')}
+    </Section>
+  );
+
   const renderHangarLocationCriteria = () => (
     <>
       <Section title={t('hgUsageTitle')} icon={Warehouse}>
@@ -1960,9 +2327,7 @@ export default function ResearchPage() {
         </div>
       </Section>
 
-      <Section title={t('burEnergyTitle')} icon={Zap}>
-        <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="hgEnergie" watch={watch} toggle={toggleArrayValue} tiles translateNs="OFFICE_ENERGY_OPTIONS" />
-      </Section>
+      {renderIndustrielEnergySection()}
 
       <Section title={t('indAccessTransportTitle')} icon={Truck}>
         <div className="flex flex-wrap gap-3">
@@ -1971,6 +2336,9 @@ export default function ResearchPage() {
           ))}
         </div>
       </Section>
+
+      {renderIndustrielAnnexesSection()}
+      {renderIndustrielFireSection()}
 
       {renderIndustrielLegalDocumentsSection()}
       {renderLocalisationSection({ hideDate: true })}
@@ -2025,9 +2393,7 @@ export default function ResearchPage() {
           </div>
         </Section>
 
-        <Section title={t('burEnergyTitle')} icon={Zap}>
-          <OptionGroup label={t('burEnergyLabel')} options={OFFICE_ENERGY_OPTIONS} field="usEnergie" watch={watch} toggle={toggleArrayValue} tiles translateNs="OFFICE_ENERGY_OPTIONS" />
-        </Section>
+        {renderIndustrielEnergySection()}
 
         <Section title={t('indAccessTransportTitle')} icon={Truck}>
           <div className="flex flex-wrap gap-3">
@@ -2036,6 +2402,9 @@ export default function ResearchPage() {
             ))}
           </div>
         </Section>
+
+        {renderIndustrielAnnexesSection()}
+        {renderIndustrielFireSection()}
 
         {renderIndustrielLegalDocumentsSection()}
         {renderLocalisationSection({ hideDate: true })}
@@ -2097,6 +2466,10 @@ export default function ResearchPage() {
             ))}
           </div>
         </Section>
+
+        {renderCfConfigSection()}
+        {renderIndustrielAnnexesSection()}
+        {renderCfEquipmentSection()}
 
         {renderIndustrielLegalDocumentsSection()}
         {renderLocalisationSection({ hideDate: true })}
@@ -2446,6 +2819,9 @@ export default function ResearchPage() {
         </div>
       </Section>
 
+      {renderTerrainViabilisationSection(false)}
+      {renderTerrainAgricoleCommoditiesSections()}
+
       {renderIndustrielBudgetDateRow()}
       {renderLocalisationSection({ hideDate: true })}
       {renderSharedInterlocutorSection()}
@@ -2470,6 +2846,8 @@ export default function ResearchPage() {
         </div>
       </Section>
 
+      {renderTerrainViabilisationSection(true)}
+
       {renderIndustrielBudgetDateRow()}
       {renderLocalisationSection({ hideDate: true })}
       {renderSharedInterlocutorSection()}
@@ -2493,6 +2871,8 @@ export default function ResearchPage() {
           ))}
         </div>
       </Section>
+
+      {renderTerrainViabilisationSection(true)}
 
       {renderIndustrielBudgetDateRow()}
       {renderLocalisationSection({ hideDate: true })}
@@ -2532,6 +2912,9 @@ export default function ResearchPage() {
           )}
         </div>
       </Section>
+
+      {renderTerrainTouristiquePatSection()}
+      {renderTerrainViabilisationSection(false)}
 
       {renderIndustrielBudgetDateRow()}
       {renderLocalisationSection({ hideDate: true })}
@@ -2706,6 +3089,7 @@ export default function ResearchPage() {
                   icon={BRANCH_ICONS[b.iconName] || Home}
                   label={tc(b.id)}
                   color={getCategoryColor(b.id)}
+                  lockedBadge={isLockedCategory(b.id) ? t('standbyBadge') : undefined}
                   onClick={() => {
                     setValue('branch', b.id);
                     setValue('propertyType', '');

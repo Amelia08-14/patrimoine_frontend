@@ -58,8 +58,12 @@ function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { co
   const isSides = logoAlignment === 'sides' && config.logoUrl && config.secondLogoUrl
   const ff = config.fontFamily || undefined
 
+  // Même ordre que la vraie boutique : bannière entière (ratio 1920×400) PUIS le hero en dessous.
+  const banner = (config.bannerUrls && config.bannerUrls[0]) || config.bannerUrl
   return (
-    <div className="text-center" style={{ background: `linear-gradient(135deg, ${hc} 0%, ${hc}cc 100%)`, minHeight: 160, fontFamily: ff }}>
+    <div style={{ fontFamily: ff }}>
+    {banner && <img src={getImageUrl(banner)} alt="" className="block w-full aspect-[24/5] object-cover" />}
+    <div className="text-center" style={{ background: `linear-gradient(135deg, ${hc} 0%, ${hc}cc 100%)`, minHeight: 160 }}>
       <div className="px-4 py-5 flex flex-col items-center">
         {isSides ? (
           <div className="w-full flex items-center justify-between px-4 mb-2">
@@ -84,6 +88,7 @@ function HeroPreview({ config, logoShape, secondLogoShape, logoAlignment }: { co
           {config.linkedin && <span className="text-[10px] bg-white/20 border border-white/40 px-1.5 py-0.5 rounded-full" style={{ color: htc }}>in</span>}
         </div>
       </div>
+    </div>
     </div>
   )
 }
@@ -536,11 +541,21 @@ export default function BoutiqueConfigPage() {
                   <label className="block text-sm font-bold text-gray-700 dark:text-white/70 mb-2">
                     {t("bannerLabel")} <span className="text-gray-400 dark:text-white/40 font-normal text-xs">{t("bannerHint")}</span>
                   </label>
+                  {/* Taille exigée, en rouge et bien visible (demande client du 25/10/2026) : la bannière
+                      s'affiche désormais entière au ratio 1920×400 sur la boutique — un visuel d'un autre
+                      format sera recadré. */}
+                  <div role="note" className="mb-3 flex items-start gap-2.5 rounded-xl border-2 border-red-500 bg-red-50 p-3 text-red-700">
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div className="text-sm leading-snug">
+                      <p className="font-black">{t("bannerSizeWarningTitle")}</p>
+                      <p className="mt-0.5">{t("bannerSizeWarningText")}</p>
+                    </div>
+                  </div>
                   <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && addBannerSlide(e.target.files[0])} />
                   {config.bannerUrls.length > 0 ? (
                     <div className="space-y-2">
                       {config.bannerUrls.map((url, idx) => (
-                        <div key={idx} className="relative rounded-xl overflow-hidden h-16 bg-gray-100 dark:bg-white/10">
+                        <div key={idx} className="relative rounded-xl overflow-hidden aspect-[24/5] bg-gray-100 dark:bg-white/10">
                           <img src={getImageUrl(url)} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
                           <div className="absolute top-1.5 left-2 bg-black/50 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{idx + 1}</div>
                           <button onClick={() => removeBannerSlide(idx)} className="absolute top-1.5 right-1.5 p-1 bg-white/80 rounded-full hover:bg-white"><X className="h-3 w-3 text-gray-700 dark:text-white/70" /></button>

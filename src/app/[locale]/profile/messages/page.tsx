@@ -8,7 +8,7 @@ import { MessageSquare, Loader2, Send, ArrowLeft, User, Building2, Search } from
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
-interface RawUser { id: number; firstName?: string; lastName?: string; companyName?: string; imageUrl?: string }
+interface RawUser { id: number; firstName?: string; lastName?: string; companyName?: string; imageUrl?: string; userType?: string }
 interface RawMessage {
   id: number; content: string; createdAt: string; isRead: boolean
   senderId: number; sender: RawUser
@@ -72,12 +72,24 @@ export default function MessagesPage() {
 
   const activeConv = conversations.find((c) => c.partnerId === activeConvId) || null
 
+  // Ouvrir une conversation non lue la marque comme lue, en base (PATCH /messages/read/:id) et ici.
+  useEffect(() => {
+    if (!activeConv || activeConv.unread === 0 || !me) return
+    const partnerId = activeConv.partnerId
+    setMessages((prev) => (prev || []).map((m) => (m.senderId === partnerId && m.receiverId === me.id ? { ...m, isRead: true } : m)))
+    axios.patch(`${API_URL}/messages/read/${partnerId}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }).catch(() => {})
+  }, [activeConv?.partnerId, activeConv?.unread, me])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [activeConv?.messages.length])
 
+  // L'administration (ex. message au sujet d'une commande envoyé depuis /admin/points) apparaît sous
+  // le nom de la plateforme, jamais sous le nom technique du compte admin.
   const partnerLabel = (partner?: RawUser) =>
-    partner?.companyName || [partner?.firstName, partner?.lastName].filter(Boolean).join(" ") || t("unknownUser")
+    partner?.userType === "ADMIN"
+      ? t("adminSenderName")
+      : partner?.companyName || [partner?.firstName, partner?.lastName].filter(Boolean).join(" ") || t("unknownUser")
 
   const handleReply = async () => {
     if (!replyText.trim() || !activeConv || !me) return

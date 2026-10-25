@@ -590,11 +590,12 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         </div>
       )}
 
-      {/* ── HERO SECTION ── */}
-      <div className="relative overflow-hidden" style={{ minHeight: 180 }}>
-        {/* Banner: slider or gradient */}
-        {bannerImages.length > 0 ? (
-          <>
+      {/* ── BANNIÈRE ── bloc à part, APRÈS le menu et AVANT le hero (retour client du 25/10/2026) :
+          ratio fixe 1920×400 (= 24/5, la taille exigée dans l'éditeur) pour que l'image s'affiche
+          entière, sans voile ni texte par-dessus. Avant, elle servait de fond au hero : recadrée en
+          haut/bas selon la hauteur du texte et assombrie à 55 %. */}
+      {bannerImages.length > 0 && (
+        <div className="relative w-full aspect-[24/5] overflow-hidden" style={{ backgroundColor: color }}>
             {bannerImages.map((url, i) => (
               <img
                 key={i}
@@ -604,7 +605,6 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
                 style={{ opacity: i === bannerIndex ? 1 : 0 }}
               />
             ))}
-            <div className="absolute inset-0 bg-black/55" />
             {bannerImages.length > 1 && (
               <>
                 <button onClick={() => { setBannerIndex(i => (i - 1 + bannerImages.length) % bannerImages.length); clearInterval(bannerTimerRef.current) }} className="absolute start-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
@@ -620,16 +620,19 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
                 </div>
               </>
             )}
-          </>
-        ) : (
-          <div
-            className="absolute inset-0"
-            style={{ background: `linear-gradient(135deg, ${color} 0%, ${lighten(color, 0.1)} 50%, ${lighten(color, 0.25)} 100%)` }}
-          />
-        )}
+        </div>
+      )}
 
-        {/* Immeubles décoratifs SVG */}
-        {!config.bannerUrl && (
+      {/* ── HERO SECTION ── logos, nom, slogan, contacts — toujours sur la couleur d'en-tête,
+          sous la bannière s'il y en a une. */}
+      <div className="relative overflow-hidden" style={{ minHeight: 180 }}>
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(135deg, ${color} 0%, ${lighten(color, 0.1)} 50%, ${lighten(color, 0.25)} 100%)` }}
+        />
+
+        {/* Immeubles décoratifs SVG — seulement sans bannière (sinon le hero reste sobre) */}
+        {bannerImages.length === 0 && (
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
             xmlns="http://www.w3.org/2000/svg"
