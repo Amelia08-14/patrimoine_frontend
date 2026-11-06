@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { ArrowLeft, Send, Mail, UserCheck, Loader2, Lock } from "lucide-react"
 import { EntrustedResearchCard } from "@/components/EntrustedResearchCard"
+import { ResearchCriteriaDetails } from "@/components/ResearchCriteriaDetails"
 import { CenterToast } from "@/components/CenterToast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -100,8 +101,10 @@ export default function DemandeDetailPage() {
           <div className="text-center py-20 text-gray-500 dark:text-white/60 font-medium">{t("requestNotFound")}</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 space-y-6">
               <EntrustedResearchCard research={research} variant="detail" />
+              {/* Tous les critères saisis dans « Confier votre recherche », par section (06/11/2026). */}
+              <ResearchCriteriaDetails research={research} />
             </div>
 
             {/* Actions de contact */}

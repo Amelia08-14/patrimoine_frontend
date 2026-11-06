@@ -810,7 +810,8 @@
     "searchTitleLabel": "Titre de votre recherche",
     "searchTitlePlaceholder": "Ex : Studio équipé et sécurisé à Alger-Centre",
     "alertAccountPending": "Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas confier de recherche tant qu'il n'est pas validé.",
-    "standbyBadge": "Bientôt disponible"
+    "standbyBadge": "Bientôt disponible",
+    "detailCriteriaTitle": "Critères de la recherche"
   },
   "ProfileHome": {
     "pendingBanner": "Compte en attente de validation.",

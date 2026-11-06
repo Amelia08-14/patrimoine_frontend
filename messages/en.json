@@ -810,7 +810,8 @@
     "searchTitleLabel": "Title of your search",
     "searchTitlePlaceholder": "e.g. Furnished and secure studio in Algiers Centre",
     "alertAccountPending": "Your account is awaiting administrator approval. You cannot submit a search until it is approved.",
-    "standbyBadge": "Coming soon"
+    "standbyBadge": "Coming soon",
+    "detailCriteriaTitle": "Search criteria"
   },
   "ProfileHome": {
     "pendingBanner": "Account pending validation.",

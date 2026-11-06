@@ -810,7 +810,8 @@
     "searchTitleLabel": "عنوان بحثك",
     "searchTitlePlaceholder": "مثال: استوديو مجهز وآمن في وسط الجزائر",
     "alertAccountPending": "حسابك في انتظار مصادقة المسؤول. لا يمكنك إيداع طلب بحث قبل المصادقة عليه.",
-    "standbyBadge": "قريبًا"
+    "standbyBadge": "قريبًا",
+    "detailCriteriaTitle": "معايير البحث"
   },
   "ProfileHome": {
     "pendingBanner": "الحساب في انتظار التحقق.",

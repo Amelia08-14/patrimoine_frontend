@@ -8,6 +8,7 @@ import { usePropertyTypeLabel, useLocalizedPlaceName, useLocalizedContent } from
 import { PROPERTY_TYPES } from "@/data/propertyTypes";
 import { getCategoryColor } from "@/data/categoryColors";
 import { ScrollingTitle } from "@/components/ScrollingTitle";
+import { OwnerBadge } from "@/components/OwnerBadge";
 
 // Helper for Image URLs
 const getImageUrl = (url: string) => {
@@ -384,26 +385,9 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
                 <p dir="auto" className="text-sm rtl:text-[15px] leading-relaxed text-gray-500 dark:text-white/50 line-clamp-2 break-words">{listDescription}</p>
             )}
 
-            <div className="mt-auto flex items-center gap-2.5 border-t border-gray-100 pt-3 dark:border-white/10">
-                {isCompany ? (
-                    <>
-                        <div className="h-9 w-9 rounded-full border border-gray-100 dark:border-white/10 shrink-0 overflow-hidden flex items-center justify-center bg-white dark:bg-white/5">
-                            {announce.user?.agencyLogoUrl || announce.user?.imageUrl ? (
-                                <img src={getImageUrl(announce.user.agencyLogoUrl || announce.user.imageUrl) || ''} alt={companyDisplayName || t("professionalSeller")} className="h-full w-full object-contain" />
-                            ) : (
-                                <Building2 className="h-4 w-4 text-gray-300 dark:text-white/30" />
-                            )}
-                        </div>
-                        <ScrollingTitle text={companyDisplayName || t("professionalSeller")} className="flex-1 text-sm font-semibold text-gray-600 dark:text-white/60" />
-                    </>
-                ) : (
-                    <>
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-gray-50 dark:border-white/10 dark:bg-white/5">
-                            <UserRound className="h-4 w-4 text-gray-400 dark:text-white/40" />
-                        </div>
-                        <span className="truncate text-sm font-semibold text-gray-600 dark:text-white/60">{t("privateSeller")}</span>
-                    </>
-                )}
+            {/* Pied auteur partagé avec les cartes de /demandes (OwnerBadge) : logo du pro ou photo du particulier. */}
+            <div className="mt-auto border-t border-gray-100 pt-3 dark:border-white/10">
+                <OwnerBadge user={announce.user} size="md" />
             </div>
         </div>
         ) : (
@@ -450,37 +434,13 @@ export const PropertyCard = ({ announce, autoPlay = false, variant = "default", 
             </div>
 
             {/* L'identité du vendeur forme un pied stable ; les particuliers sont nommés sur l'accueil. */}
+            {/* Pied auteur partagé avec les cartes de /demandes (OwnerBadge) : logo du pro ou photo du
+                particulier. Grille par défaut : le particulier reste anonyme visuellement (comme avant). */}
             <div className={cn(
-                "mt-auto flex items-center gap-2",
+                "mt-auto",
                 isHomeVariant ? "border-t border-gray-100 pt-2 dark:border-white/10" : "h-8 pt-2"
             )}>
-                {isCompany ? (
-                    <>
-                        <div className={cn("rounded-full border border-gray-100 dark:border-white/10 shrink-0 overflow-hidden flex items-center justify-center bg-white dark:bg-white/5", isHomeVariant ? "h-9 w-9" : "h-7 w-7")}>
-                            {announce.user?.agencyLogoUrl || announce.user?.imageUrl ? (
-                                <img
-                                    src={getImageUrl(announce.user.agencyLogoUrl || announce.user.imageUrl) || ''}
-                                    alt={companyDisplayName || t("professionalSeller")}
-                                    className="h-full w-full object-contain"
-                                />
-                            ) : (
-                                <Building2 className="h-3.5 w-3.5 text-gray-300 dark:text-white/30" />
-                            )}
-                        </div>
-                        {/* Nom d'agence trop long : défile comme le titre plutôt que d'être coupé. */}
-                        <ScrollingTitle
-                            text={companyDisplayName || (isHomeVariant ? t("professionalSeller") : "")}
-                            className="flex-1 text-xs rtl:text-[13px] font-semibold text-gray-500 dark:text-white/50"
-                        />
-                    </>
-                ) : isHomeVariant ? (
-                    <>
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-gray-50 dark:border-white/10 dark:bg-white/5">
-                            <UserRound className="h-3.5 w-3.5 text-gray-400 dark:text-white/40" />
-                        </div>
-                        <span className="truncate text-xs rtl:text-[13px] font-semibold text-gray-500 dark:text-white/50">{t("privateSeller")}</span>
-                    </>
-                ) : null}
+                {(isCompany || isHomeVariant) && <OwnerBadge user={announce.user} size={isHomeVariant ? "md" : "sm"} />}
             </div>
         </div>
         )}

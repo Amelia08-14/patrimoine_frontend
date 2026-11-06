@@ -120,17 +120,26 @@ const CircleOption = ({ active, onClick, icon: Icon, label, size = 'md', color, 
   );
 };
 
-// Pastille rectangulaire à cocher (charte du dépôt d'annonce) — pour choix multiples (critères, équipements, interlocuteurs)
-const PillOption = ({ checked, onChange, label, icon: Icon }: { checked: boolean; onChange: () => void; label: string; icon?: any }) => (
-  <label className="cursor-pointer block">
+// Bouton de choix PLEINE LARGEUR (charte « Type de cuisine » du dépôt d'annonce) — utilisé pour TOUS
+// les choix du formulaire (demande client du 06/11/2026 : « boutons pleine largeur, exactement comme
+// créer une annonce ») : s'étire pour remplir sa ligne (flex-1) ou sa cellule de grille, rond visible
+// pour un choix unique (`type="radio"`), case pour un choix multiple, libellé centré, sans ombre.
+const PillOption = ({ checked, onChange, label, icon: Icon, type = 'checkbox' }: { checked: boolean; onChange: () => void; label: string; icon?: any; type?: 'radio' | 'checkbox' }) => (
+  <label className="cursor-pointer flex-1 min-w-[140px] block">
     <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
     <div className={cn(
-      'w-full min-h-[52px] flex items-center gap-3 px-4 py-3 border-2 rounded-xl font-bold transition-all bg-white shadow-sm',
-      checked ? 'border-[#0094BD] bg-[#0094BD]/[0.06] text-[#0094BD]' : 'border-gray-300 text-gray-900 hover:border-gray-400'
+      'h-full min-h-[52px] flex items-center justify-center gap-2.5 px-4 py-3 border-2 rounded-xl bg-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#0094BD] peer-focus-visible:ring-offset-2',
+      checked ? 'border-[#0094BD] bg-[#0094BD]/[0.06]' : 'border-gray-200 hover:border-[#0094BD]'
     )}>
-      {Icon && <Icon className="h-4 w-4 shrink-0" />}
-      <span className="text-sm leading-snug">{label}</span>
-      {checked && <Check className="h-4 w-4 ml-auto shrink-0" />}
+      <span className={cn(
+        'h-4 w-4 shrink-0 border-2 flex items-center justify-center transition-colors',
+        type === 'radio' ? 'rounded-full' : 'rounded',
+        checked ? (type === 'radio' ? 'border-[#0094BD]' : 'border-[#0094BD] bg-[#0094BD]') : 'border-gray-400'
+      )}>
+        {checked && (type === 'radio' ? <span className="h-2 w-2 rounded-full bg-[#0094BD]" /> : <Check className="h-3 w-3 text-white" strokeWidth={3} />)}
+      </span>
+      {Icon && <Icon className={cn('h-4 w-4 shrink-0', checked ? 'text-[#0094BD]' : 'text-gray-400')} />}
+      <span className={cn('text-sm font-bold leading-snug text-center', checked ? 'text-[#0094BD]' : 'text-gray-900')}>{label}</span>
     </div>
   </label>
 );
@@ -249,7 +258,7 @@ function OptionGroup({
   return (
     <div>
       <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
-      <div className={tiles ? 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3' : (gridClassName || 'grid grid-cols-2 md:grid-cols-3 gap-3')}>
+      <div className={tiles ? 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3' : (gridClassName || 'grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3')}>
         {options.map((opt) => tiles ? (
           <IconTile key={opt.id} optionId={opt.id} checked={selected.includes(opt.id)} label={resolveLabel(opt)} onChange={() => toggle(field, opt.id)} />
         ) : (
@@ -1383,9 +1392,9 @@ export default function ResearchPage() {
         {/* Seul ajout propre à l'achat par rapport à la fiche Location : l'état de réalisation,
             sur une seule ligne, sans texte de description. */}
         <Section title={t('sqRealisationStage')} icon={Sparkles}>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {REALISATION_STAGE_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={optLabel('REALISATION_STAGE_OPTIONS', opt)} onChange={() => setValue('realisationStage', opt.id as any)} />
+              <PillOption type="radio" key={opt.id} checked={watch('realisationStage') === opt.id} label={optLabel('REALISATION_STAGE_OPTIONS', opt)} onChange={() => setValue('realisationStage', opt.id as any)} />
             ))}
           </div>
         </Section>
@@ -1458,7 +1467,7 @@ export default function ResearchPage() {
             <label className="block text-sm font-bold text-gray-900 mb-3">{t('resLocVillaEntrance')}</label>
             <div className="grid grid-cols-2 gap-3 max-w-md">
               {VILLA_LEVEL_ENTRANCE_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('villaLevelEntrance') === opt.id} label={optLabel('VILLA_LEVEL_ENTRANCE_OPTIONS', opt)} onChange={() => setValue('villaLevelEntrance', opt.id as any)} />
+                <PillOption type="radio" key={opt.id} checked={watch('villaLevelEntrance') === opt.id} label={optLabel('VILLA_LEVEL_ENTRANCE_OPTIONS', opt)} onChange={() => setValue('villaLevelEntrance', opt.id as any)} />
               ))}
             </div>
           </div>
@@ -1560,14 +1569,14 @@ export default function ResearchPage() {
         <input
           type="number" inputMode="numeric" {...register(minField)}
           placeholder={opts?.placeholderMin}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
         <span className="text-xs font-bold text-gray-400 shrink-0">{t('resLocTypologyTo')}</span>
         <input
           type="number" inputMode="numeric" {...register(maxField)}
           placeholder={opts?.placeholderMax}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
       </div>
@@ -1587,7 +1596,7 @@ export default function ResearchPage() {
         <input
           type="number" inputMode="numeric" {...register(field)}
           placeholder={opts?.placeholder}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         {opts?.unit && opts.unitPosition === 'suffix' && <span className="font-bold text-gray-500 text-xs shrink-0">{opts.unit}</span>}
       </div>
@@ -1604,7 +1613,7 @@ export default function ResearchPage() {
   const renderBoxedBudgetField = (label: string, field: 'minBudget' | 'maxBudget', opts?: { withUnit?: boolean }) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
-      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all" dir="ltr">
+      <div className="flex items-center rounded-xl border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all" dir="ltr">
         <input
           type="text" inputMode="numeric"
           value={formatThousands(watch(field) as any)}
@@ -1651,7 +1660,7 @@ export default function ResearchPage() {
             <label className="block text-sm font-bold text-gray-900 mb-2">{t('resLocInstallationDateTitle')}</label>
             <input
               type="date" {...register('installationDate')}
-              className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
+              className="w-full p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
             />
           </div>
         </div>
@@ -1698,9 +1707,9 @@ export default function ResearchPage() {
       {opts?.showAirportProximity && (
         <div className="mt-6">
           <label className="block text-sm font-bold text-gray-900 mb-3">{t('budgetAirportProximity')}</label>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {AIRPORT_PROXIMITY_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={optLabel('AIRPORT_PROXIMITY_OPTIONS', opt)} onChange={() => setValue('airportProximity', opt.id)} />
+              <PillOption type="radio" key={opt.id} checked={watch('airportProximity') === opt.id} label={optLabel('AIRPORT_PROXIMITY_OPTIONS', opt)} onChange={() => setValue('airportProximity', opt.id)} />
             ))}
           </div>
         </div>
@@ -1715,7 +1724,7 @@ export default function ResearchPage() {
     <Section title={t('resLocEnvironmentTitle')} icon={Compass}>
       <div>
         <label className="block text-sm font-bold text-gray-900 mb-3">{t('resLocEnvironment')}</label>
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {ENVIRONMENT_OPTIONS.map((opt) => (
             <ChoiceCard key={opt.id} type="checkbox" checked={(watch('environment') || []).includes(opt.id)} label={optLabel('ENVIRONMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('environment', opt.id)} />
           ))}
@@ -1738,7 +1747,7 @@ export default function ResearchPage() {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-3">{t('resKitchenTypeLabel')}</label>
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
               {RES_KITCHEN_TYPES.map((opt) => (
                 <ChoiceCard
                   key={opt.id}
@@ -1863,7 +1872,7 @@ export default function ResearchPage() {
         <label className="block text-sm font-bold text-gray-900 mb-2">{t('resLocInstallationDateTitle')}</label>
         <input
           type="date" {...register('installationDate')}
-          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
+          className="w-full p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
         />
       </div>
     </div>
@@ -1943,9 +1952,9 @@ export default function ResearchPage() {
             entier ne se conçoit pas "sur plan"). */}
         {isResidentielAchat && (
           <Section title={t('sqRealisationStage')} icon={Sparkles}>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
               {REALISATION_STAGE_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('realisationStage') === opt.id} label={optLabel('REALISATION_STAGE_OPTIONS', opt)} onChange={() => setValue('realisationStage', opt.id as any)} />
+                <PillOption type="radio" key={opt.id} checked={watch('realisationStage') === opt.id} label={optLabel('REALISATION_STAGE_OPTIONS', opt)} onChange={() => setValue('realisationStage', opt.id as any)} />
               ))}
             </div>
           </Section>
@@ -2019,7 +2028,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burEtatGeneralTitle')} icon={Sparkles}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {GENERAL_STATE_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('bcEtatGeneral') || []).includes(opt.id)} label={optLabel('GENERAL_STATE_OPTIONS', opt)} onChange={() => toggleArrayValue('bcEtatGeneral', opt.id)} />
           ))}
@@ -2027,7 +2036,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burZoneTypeTitle')} icon={Compass}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {ZONE_TYPE_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('bcZoneType') || []).includes(opt.id)} label={optLabel('ZONE_TYPE_OPTIONS', opt)} onChange={() => toggleArrayValue('bcZoneType', opt.id)} />
           ))}
@@ -2035,7 +2044,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burVisibiliteTitle')} icon={Store}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {VISIBILITY_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('bcVisibilite') || []).includes(opt.id)} label={optLabel('VISIBILITY_OPTIONS', opt)} onChange={() => toggleArrayValue('bcVisibilite', opt.id)} />
           ))}
@@ -2066,7 +2075,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('burStyleEtatTitle')} icon={Sparkles}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {LOCAL_STYLE_ETAT_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('lcStyleEtat') || []).includes(opt.id)} label={optLabel('LOCAL_STYLE_ETAT_OPTIONS', opt)} onChange={() => toggleArrayValue('lcStyleEtat', opt.id)} />
           ))}
@@ -2117,7 +2126,7 @@ export default function ResearchPage() {
         <label className="block text-sm font-bold text-gray-900 mb-2">{watch('transaction') === TransactionType.SALE ? t('indAcqDateTitle') : t('indLocDateTitle')}</label>
         <input
           type="date" {...register('installationDate')}
-          className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
+          className="w-full p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base"
         />
       </div>
     </div>
@@ -2129,7 +2138,7 @@ export default function ResearchPage() {
     if (watch('transaction') !== TransactionType.SALE) return null;
     return (
       <Section title={t('indLegalDocumentsTitle')} icon={FileCheck}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {LEGAL_DOCUMENTS_SALE.map((opt) => (
             <PillOption key={opt.id} checked={(watch('indLegalDocuments') || []).includes(opt.id)} label={optLabel('LEGAL_DOCUMENTS_SALE', opt)} onChange={() => toggleArrayValue('indLegalDocuments', opt.id)} />
           ))}
@@ -2143,12 +2152,15 @@ export default function ResearchPage() {
   // mêmes options et mêmes intitulés que le dépôt, au format pastilles de ce formulaire ; tout est en
   // choix multiple (on décrit des souhaits), sauf les Oui/Non. ---
 
+  // Mise en page (retour client du 06/11/2026, « aligner sur les mêmes lignes ») : UN groupe par ligne,
+  // pleine largeur (conteneurs `space-y-5`) — jamais deux groupes côte à côte, sinon chacun n'a que la
+  // moitié de la largeur et ses options passent à la ligne de façon incohérente (2 + 1).
   // Groupe de pastilles à choix multiple. `group` = nom du groupe DepositOptions ('' si les libellés
   // sont déjà traduits, ex. options construites à partir de clés Deposit).
   const renderDepGroup = (label: string, group: string, options: readonly { id: string; label: string }[], field: any, extra?: React.ReactNode) => (
     <div className="min-w-0">
       {label && <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>}
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
         {options.map((opt) => (
           <PillOption key={opt.id} checked={((watch(field) as string[] | undefined) || []).includes(opt.id)} label={depOpt(group, opt)} onChange={() => toggleArrayValue(field, opt.id)} />
         ))}
@@ -2161,9 +2173,9 @@ export default function ResearchPage() {
   const renderYesNo = (label: string, field: 'indOffices' | 'terViabilise', yesLabel: string, noLabel: string, extra?: React.ReactNode) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
         {([['OUI', yesLabel], ['NON', noLabel]] as const).map(([v, l]) => (
-          <PillOption key={v} checked={watch(field) === v} label={l} onChange={() => setValue(field, (watch(field) === v ? undefined : v) as any)} />
+          <PillOption type="radio" key={v} checked={watch(field) === v} label={l} onChange={() => setValue(field, (watch(field) === v ? undefined : v) as any)} />
         ))}
       </div>
       {extra}
@@ -2177,7 +2189,7 @@ export default function ResearchPage() {
   // Annexes & Commodités — Hangar, Usine et Chambre froide (même bloc au dépôt).
   const renderIndustrielAnnexesSection = () => (
     <Section title={tDep('f016')} icon={LayoutGrid}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-5">
         {renderYesNo(tDep('f017'), 'indOffices', tDep('f018'), tDep('f019'),
           watch('indOffices') === 'OUI' ? renderNestedNumber(tDep('f020'), 'indOfficesAreaMin', tDep('f352'), 'm²') : null)}
         {renderDepGroup(tDep('f021'), 'INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES, 'indSocialLocales')}
@@ -2190,7 +2202,7 @@ export default function ResearchPage() {
   // Énergie & Fluides — Hangar et Usine (remplace l'ancienne liste simplifiée "Énergie et fluide").
   const renderIndustrielEnergySection = () => (
     <Section title={tDep('f024')} icon={Zap}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-5">
         <div className="min-w-0">
           <label className="block text-sm font-bold text-gray-900 mb-3">{tDep('f025')}</label>
           <div className="space-y-3">
@@ -2214,7 +2226,7 @@ export default function ResearchPage() {
   // Sécurité incendie & Protection — Hangar et Usine.
   const renderIndustrielFireSection = () => (
     <Section title={tDep('f036')} icon={Siren}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-5">
         {renderDepGroup(tDep('f037'), 'INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK, 'indFireNetwork')}
         {renderDepGroup(tDep('f038'), 'INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT, 'indFireEquipment',
           (watch('indFireEquipment') || []).includes('BACHE_EAU') ? renderNestedNumber(tDep('f172'), 'indFireWaterReserveMin', tDep('f354'), 'L') : null)}
@@ -2225,7 +2237,7 @@ export default function ResearchPage() {
   // Configuration & Emplacement du site — Chambre froide.
   const renderCfConfigSection = () => (
     <Section title={tDep('f064')} icon={MapPin}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-5">
         {renderDepGroup(tDep('f065'), 'INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS, 'cfLocalisation')}
         {renderDepGroup(tDep('f067'), '', [{ id: 'PLAIN_PIED', label: tDep('f068') }, { id: 'ETAGES', label: tDep('f069') }], 'cfConfiguration',
           (watch('cfConfiguration') || []).includes('ETAGES') ? renderNestedNumber(tDep('f139'), 'cfFloorsMin', t('exVal', { v: '2' })) : null)}
@@ -2240,7 +2252,7 @@ export default function ResearchPage() {
   // Équipements de sécurité & Performance — Chambre froide (le type de froid a déjà sa section).
   const renderCfEquipmentSection = () => (
     <Section title={tDep('f074')} icon={Shield}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-5">
         <div className="min-w-0">
           <label className="block text-sm font-bold text-gray-900 mb-3">{tDep('f075')}</label>
           <div className="flex">
@@ -2269,20 +2281,20 @@ export default function ResearchPage() {
   const renderTerrainAgricoleCommoditiesSections = () => (
     <>
       <Section title={tDep('f100')} icon={Droplet}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-5">
           {renderDepGroup(tDep('f100'), 'TERRAIN_AGRICOLE_RESSOURCES_EAU', TERRAIN_AGRICOLE_RESSOURCES_EAU, 'terAgriRessourcesEau',
             (watch('terAgriRessourcesEau') || []).includes('FORAGE') ? renderNestedNumber(tDep('f102'), 'terAgriDebitForageMin', tDep('f371'), 'm³/h') : null)}
           {renderDepGroup(tDep('f108'), 'TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE', TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE, 'terAgriEquipementHydro')}
         </div>
       </Section>
       <Section title={tDep('f112')} icon={Navigation}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-5">
           {renderDepGroup(tDep('f113'), 'TERRAIN_AGRICOLE_ACCES', TERRAIN_AGRICOLE_ACCES, 'terAgriAcces')}
           {renderDepGroup(tDep('f114'), 'TERRAIN_AGRICOLE_ACCES_LOURDS', TERRAIN_AGRICOLE_ACCES_LOURDS, 'terAgriAccesLourds')}
         </div>
       </Section>
       <Section title={tDep('f115')} icon={Leaf}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-5">
           {renderDepGroup(tDep('f116'), 'TERRAIN_AGRICOLE_CONSTRUCTIONS', TERRAIN_AGRICOLE_CONSTRUCTIONS, 'terAgriConstructions')}
           {renderDepGroup(tDep('f117'), 'TERRAIN_AGRICOLE_CLOTURE', TERRAIN_AGRICOLE_CLOTURE, 'terAgriCloture')}
         </div>
@@ -2301,7 +2313,7 @@ export default function ResearchPage() {
   const renderHangarLocationCriteria = () => (
     <>
       <Section title={t('hgUsageTitle')} icon={Warehouse}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {HANGAR_USAGE_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('hgUsageType') || []).includes(opt.id)} label={optLabel('HANGAR_USAGE_OPTIONS', opt)} onChange={() => toggleArrayValue('hgUsageType', opt.id)} />
           ))}
@@ -2320,7 +2332,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('indEmplacementTitle')} icon={Compass}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('hgZone') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('hgZone', opt.id)} />
           ))}
@@ -2330,7 +2342,7 @@ export default function ResearchPage() {
       {renderIndustrielEnergySection()}
 
       <Section title={t('indAccessTransportTitle')} icon={Truck}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {INDUSTRIAL_ACCESS_TRANSPORT.map((opt) => (
             <PillOption key={opt.id} checked={(watch('hgAccesTransport') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ACCESS_TRANSPORT', opt)} onChange={() => toggleArrayValue('hgAccesTransport', opt.id)} />
           ))}
@@ -2386,7 +2398,7 @@ export default function ResearchPage() {
         </Section>
 
         <Section title={t('indEmplacementTitle')} icon={Compass}>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
               <PillOption key={opt.id} checked={(watch('usZone') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('usZone', opt.id)} />
             ))}
@@ -2396,7 +2408,7 @@ export default function ResearchPage() {
         {renderIndustrielEnergySection()}
 
         <Section title={t('indAccessTransportTitle')} icon={Truck}>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {INDUSTRIAL_ACCESS_TRANSPORT.map((opt) => (
               <PillOption key={opt.id} checked={(watch('usAccesTransport') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ACCESS_TRANSPORT', opt)} onChange={() => toggleArrayValue('usAccesTransport', opt.id)} />
             ))}
@@ -2444,7 +2456,7 @@ export default function ResearchPage() {
         </Section>
 
         <Section title={t('cfTypeFroidTitle')} icon={Thermometer}>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {CF_TYPE_FROID_OPTIONS.map((opt) => (
               <PillOption key={opt.id} checked={(watch('cfTypeFroidChoices') || []).includes(opt.id)} label={optLabel('CF_TYPE_FROID_OPTIONS', opt)} onChange={() => toggleArrayValue('cfTypeFroidChoices', opt.id)} />
             ))}
@@ -2452,7 +2464,7 @@ export default function ResearchPage() {
         </Section>
 
         <Section title={t('cfModeGestionTitle')} icon={Users}>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {CF_MODE_GESTION_OPTIONS.map((opt) => (
               <PillOption key={opt.id} checked={(watch('cfModeGestionChoices') || []).includes(opt.id)} label={optLabel('CF_MODE_GESTION_OPTIONS', opt)} onChange={() => toggleArrayValue('cfModeGestionChoices', opt.id)} />
             ))}
@@ -2460,9 +2472,9 @@ export default function ResearchPage() {
         </Section>
 
         <Section title={t('cfStructureTitle')} icon={Snowflake}>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {CF_STRUCTURE_TYPES.map((opt) => (
-              <PillOption key={opt.id} checked={watch('cfStructureType') === opt.id} label={optLabel('CF_STRUCTURE_TYPES', opt)} onChange={() => setValue('cfStructureType', opt.id as any)} />
+              <PillOption type="radio" key={opt.id} checked={watch('cfStructureType') === opt.id} label={optLabel('CF_STRUCTURE_TYPES', opt)} onChange={() => setValue('cfStructureType', opt.id as any)} />
             ))}
           </div>
         </Section>
@@ -2485,7 +2497,7 @@ export default function ResearchPage() {
   const renderHtlBoxedNumber = (label: string, field: any, opts?: { unit?: string; placeholder?: string }) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>
-      <div className="flex items-center rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all">
+      <div className="flex items-center rounded-xl border-2 border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0094BD] focus-within:border-[#0094BD] transition-all">
         <input
           type="number" inputMode="numeric" {...register(field)}
           placeholder={opts?.placeholder}
@@ -2512,7 +2524,7 @@ export default function ResearchPage() {
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlProfilGroupeLabel')}</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {HTL_PROFIL_GROUPE_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={watch('htlProfilGroupe') === opt.id} label={optLabel('HTL_PROFIL_GROUPE_OPTIONS', opt)} onChange={() => setValue('htlProfilGroupe', opt.id as any)} />
+                  <PillOption type="radio" key={opt.id} checked={watch('htlProfilGroupe') === opt.id} label={optLabel('HTL_PROFIL_GROUPE_OPTIONS', opt)} onChange={() => setValue('htlProfilGroupe', opt.id as any)} />
                 ))}
               </div>
             </div>
@@ -2527,14 +2539,14 @@ export default function ResearchPage() {
         <Section title={t('htlStatutTitle')} icon={Shield}>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <PillOption checked={statutHebergeur === 'PARTICULIER'} label={t('htlStatutParticulierLabel')} onChange={() => setValue('htlStatutHebergeur', 'PARTICULIER')} />
-              <PillOption checked={statutHebergeur === 'PROFESSIONNEL'} label={t('htlStatutProLabel')} onChange={() => setValue('htlStatutHebergeur', 'PROFESSIONNEL')} />
+              <PillOption type="radio" checked={statutHebergeur === 'PARTICULIER'} label={t('htlStatutParticulierLabel')} onChange={() => setValue('htlStatutHebergeur', 'PARTICULIER')} />
+              <PillOption type="radio" checked={statutHebergeur === 'PROFESSIONNEL'} label={t('htlStatutProLabel')} onChange={() => setValue('htlStatutHebergeur', 'PROFESSIONNEL')} />
             </div>
             {statutHebergeur === 'PROFESSIONNEL' && (
               <>
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlClassementLabel')}</label>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                     {HTL_CLASSEMENT_OPTIONS.map((opt) => (
                       <PillOption key={opt.id} checked={(watch('htlClassement') || []).includes(opt.id)} label={optLabel('HTL_CLASSEMENT_OPTIONS', opt)} onChange={() => toggleArrayValue('htlClassement', opt.id)} />
                     ))}
@@ -2560,7 +2572,7 @@ export default function ResearchPage() {
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlFormuleLabel')}</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {HTL_FORMULE_OPTIONS.map((opt) => (
-                  <PillOption key={opt.id} checked={formule === opt.id} label={optLabel('HTL_FORMULE_OPTIONS', opt)} onChange={() => setValue('htlFormule', opt.id as any)} />
+                  <PillOption type="radio" key={opt.id} checked={formule === opt.id} label={optLabel('HTL_FORMULE_OPTIONS', opt)} onChange={() => setValue('htlFormule', opt.id as any)} />
                 ))}
               </div>
             </div>
@@ -2568,9 +2580,9 @@ export default function ResearchPage() {
             {formule === 'CHAMBRE_PRIVEE' && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlGammeChambreLabel')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_GAMME_CHAMBRE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('htlGammeChambre') === opt.id} label={optLabel('HTL_GAMME_CHAMBRE_OPTIONS', opt)} onChange={() => setValue('htlGammeChambre', opt.id as any)} />
+                    <PillOption type="radio" key={opt.id} checked={watch('htlGammeChambre') === opt.id} label={optLabel('HTL_GAMME_CHAMBRE_OPTIONS', opt)} onChange={() => setValue('htlGammeChambre', opt.id as any)} />
                   ))}
                 </div>
               </div>
@@ -2579,7 +2591,7 @@ export default function ResearchPage() {
             {formule === 'A_LA_PLACE' && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlTypeCouchageLabel')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_TYPE_COUCHAGE_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={(watch('htlTypeCouchage') || []).includes(opt.id)} label={optLabel('HTL_TYPE_COUCHAGE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlTypeCouchage', opt.id)} />
                   ))}
@@ -2606,16 +2618,16 @@ export default function ResearchPage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlSuiteParentaleLabel')}</label>
-                <div className="flex gap-3">
-                  <PillOption checked={watch('htlSuiteParentale') === 'OUI'} label={t('optYes')} onChange={() => setValue('htlSuiteParentale', 'OUI')} />
-                  <PillOption checked={watch('htlSuiteParentale') === 'NON'} label={t('optNo')} onChange={() => setValue('htlSuiteParentale', 'NON')} />
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+                  <PillOption type="radio" checked={watch('htlSuiteParentale') === 'OUI'} label={t('optYes')} onChange={() => setValue('htlSuiteParentale', 'OUI')} />
+                  <PillOption type="radio" checked={watch('htlSuiteParentale') === 'NON'} label={t('optNo')} onChange={() => setValue('htlSuiteParentale', 'NON')} />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAccessibiliteLabel')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_ACCESSIBILITE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('htlAccessibilite') === opt.id} label={optLabel('HTL_ACCESSIBILITE_OPTIONS', opt)} onChange={() => setValue('htlAccessibilite', opt.id as any)} />
+                    <PillOption type="radio" key={opt.id} checked={watch('htlAccessibilite') === opt.id} label={optLabel('HTL_ACCESSIBILITE_OPTIONS', opt)} onChange={() => setValue('htlAccessibilite', opt.id as any)} />
                   ))}
                 </div>
               </div>
@@ -2628,7 +2640,7 @@ export default function ResearchPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAmbianceLabel')}</label>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                 {HTL_AMBIANCE_OPTIONS.map((opt) => (
                   <PillOption key={opt.id} checked={ambiances.includes(opt.id)} label={optLabel('HTL_AMBIANCE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlAmbiances', opt.id)} />
                 ))}
@@ -2638,9 +2650,9 @@ export default function ResearchPage() {
             {ambiances.includes('BALNEAIRE') && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlBalneaireTitle')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_BALNEAIRE_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('htlBalneaire') === opt.id} label={optLabel('HTL_BALNEAIRE_OPTIONS', opt)} onChange={() => setValue('htlBalneaire', opt.id as any)} />
+                    <PillOption type="radio" key={opt.id} checked={watch('htlBalneaire') === opt.id} label={optLabel('HTL_BALNEAIRE_OPTIONS', opt)} onChange={() => setValue('htlBalneaire', opt.id as any)} />
                   ))}
                 </div>
               </div>
@@ -2648,7 +2660,7 @@ export default function ResearchPage() {
             {ambiances.includes('URBAIN') && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlUrbainTitle')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_URBAIN_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={(watch('htlUrbain') || []).includes(opt.id)} label={optLabel('HTL_URBAIN_OPTIONS', opt)} onChange={() => toggleArrayValue('htlUrbain', opt.id)} />
                   ))}
@@ -2658,7 +2670,7 @@ export default function ResearchPage() {
             {ambiances.includes('SAHARIEN') && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlSaharienTitle')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_SAHARIEN_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={(watch('htlSaharien') || []).includes(opt.id)} label={optLabel('HTL_SAHARIEN_OPTIONS', opt)} onChange={() => toggleArrayValue('htlSaharien', opt.id)} />
                   ))}
@@ -2668,7 +2680,7 @@ export default function ResearchPage() {
             {ambiances.includes('THERMAL') && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlThermalTitle')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_THERMAL_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={(watch('htlThermal') || []).includes(opt.id)} label={optLabel('HTL_THERMAL_OPTIONS', opt)} onChange={() => toggleArrayValue('htlThermal', opt.id)} />
                   ))}
@@ -2678,7 +2690,7 @@ export default function ResearchPage() {
             {ambiances.includes('CLIMATIQUE') && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlClimatiqueTitle')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_CLIMATIQUE_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={(watch('htlClimatique') || []).includes(opt.id)} label={optLabel('HTL_CLIMATIQUE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlClimatique', opt.id)} />
                   ))}
@@ -2688,7 +2700,7 @@ export default function ResearchPage() {
 
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlVueLabel')}</label>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                 {HTL_VUE_OPTIONS.map((opt) => (
                   <PillOption key={opt.id} checked={(watch('htlVue') || []).includes(opt.id)} label={optLabel('HTL_VUE_OPTIONS', opt)} onChange={() => toggleArrayValue('htlVue', opt.id)} />
                 ))}
@@ -2716,22 +2728,22 @@ export default function ResearchPage() {
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlDeviseLabel')}</label>
-              <div className="flex flex-wrap gap-3">
-                <PillOption checked={watch('htlDevise') === 'DZD'} label={t('htlDeviseDzd')} onChange={() => setValue('htlDevise', 'DZD')} />
-                <PillOption checked={watch('htlDevise') === 'ETRANGERE'} label={t('htlDeviseEtrangere')} onChange={() => setValue('htlDevise', 'ETRANGERE')} />
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+                <PillOption type="radio" checked={watch('htlDevise') === 'DZD'} label={t('htlDeviseDzd')} onChange={() => setValue('htlDevise', 'DZD')} />
+                <PillOption type="radio" checked={watch('htlDevise') === 'ETRANGERE'} label={t('htlDeviseEtrangere')} onChange={() => setValue('htlDevise', 'ETRANGERE')} />
               </div>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-3">{t('htlAnnulationLabel')}</label>
-              <div className="flex flex-wrap gap-3">
-                <PillOption checked={watch('htlAnnulation') === 'FLEXIBLE'} label={t('htlAnnulationFlexible')} onChange={() => setValue('htlAnnulation', 'FLEXIBLE')} />
-                <PillOption checked={watch('htlAnnulation') === 'NON_REMBOURSABLE'} label={t('htlAnnulationNonRemb')} onChange={() => setValue('htlAnnulation', 'NON_REMBOURSABLE')} />
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+                <PillOption type="radio" checked={watch('htlAnnulation') === 'FLEXIBLE'} label={t('htlAnnulationFlexible')} onChange={() => setValue('htlAnnulation', 'FLEXIBLE')} />
+                <PillOption type="radio" checked={watch('htlAnnulation') === 'NON_REMBOURSABLE'} label={t('htlAnnulationNonRemb')} onChange={() => setValue('htlAnnulation', 'NON_REMBOURSABLE')} />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#0094BD]" /> {t('htlPaiementsLocauxLabel')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_PAIEMENTS_LOCAUX_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={(watch('htlPaiementsLocaux') || []).includes(opt.id)} label={optLabel('HTL_PAIEMENTS_LOCAUX_OPTIONS', opt)} onChange={() => toggleArrayValue('htlPaiementsLocaux', opt.id)} />
                   ))}
@@ -2739,7 +2751,7 @@ export default function ResearchPage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#0094BD]" /> {t('htlPaiementsIntlLabel')}</label>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   {HTL_PAIEMENTS_INTL_OPTIONS.map((opt) => (
                     <PillOption key={opt.id} checked={(watch('htlPaiementsIntl') || []).includes(opt.id)} label={optLabel('HTL_PAIEMENTS_INTL_OPTIONS', opt)} onChange={() => toggleArrayValue('htlPaiementsIntl', opt.id)} />
                   ))}
@@ -2766,17 +2778,17 @@ export default function ResearchPage() {
         <input
           type="number" inputMode="numeric" {...register('minSurface')}
           placeholder={t('exVal', { v: '500' })}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         <span className="text-xs font-bold text-gray-400 shrink-0">{t('resLocTypologyTo')}</span>
         <input
           type="number" inputMode="numeric" {...register('maxSurface')}
           placeholder={t('exVal', { v: '2000' })}
-          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
+          className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
         <select
           {...register('surfaceUnit')}
-          className="h-[42px] shrink-0 px-2 border-2 border-gray-300 rounded-lg bg-gray-100 font-bold text-xs text-gray-700 outline-none cursor-pointer"
+          className="h-[42px] shrink-0 px-2 border-2 border-gray-300 rounded-xl bg-gray-100 font-bold text-xs text-gray-700 outline-none cursor-pointer"
         >
           <option value="M2">m²</option>
           <option value="HA">{t('optHectares')}</option>
@@ -2797,7 +2809,7 @@ export default function ResearchPage() {
 
       <Section title={t('terAgriCultureTitle')} icon={Trees}>
         <div className="space-y-3">
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {TER_AGRI_CULTURE_OPTIONS.map((opt) => (
               <PillOption key={opt.id} checked={(watch('terAgriCulture') || []).includes(opt.id)} label={optLabel('TER_AGRI_CULTURE_OPTIONS', opt)} onChange={() => toggleArrayValue('terAgriCulture', opt.id)} />
             ))}
@@ -2812,7 +2824,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('terAgriEtatTitle')} icon={Sparkles}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {TER_AGRI_ETAT_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('terAgriEtat') || []).includes(opt.id)} label={optLabel('TER_AGRI_ETAT_OPTIONS', opt)} onChange={() => toggleArrayValue('terAgriEtat', opt.id)} />
           ))}
@@ -2839,7 +2851,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('terIndZoneTitle')} icon={Compass}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {TER_IND_ZONE_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('terIndZone') || []).includes(opt.id)} label={optLabel('TER_IND_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('terIndZone', opt.id)} />
           ))}
@@ -2865,7 +2877,7 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('terResZoneTitle')} icon={Compass}>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
           {TER_RES_ZONE_OPTIONS.map((opt) => (
             <PillOption key={opt.id} checked={(watch('terResZone') || []).includes(opt.id)} label={optLabel('TER_RES_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('terResZone', opt.id)} />
           ))}
@@ -2891,15 +2903,15 @@ export default function ResearchPage() {
       </Section>
 
       <Section title={t('terTouZetTitle')} icon={Sparkles}>
-        <div className="flex gap-3">
-          <PillOption checked={watch('terTouZet') === 'OUI'} label={t('optYes')} onChange={() => setValue('terTouZet', 'OUI')} />
-          <PillOption checked={watch('terTouZet') === 'NON'} label={t('optNo')} onChange={() => setValue('terTouZet', 'NON')} />
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+          <PillOption type="radio" checked={watch('terTouZet') === 'OUI'} label={t('optYes')} onChange={() => setValue('terTouZet', 'OUI')} />
+          <PillOption type="radio" checked={watch('terTouZet') === 'NON'} label={t('optNo')} onChange={() => setValue('terTouZet', 'NON')} />
         </div>
       </Section>
 
       <Section title={t('terTouVocationTitle')} icon={Compass}>
         <div className="space-y-3">
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
             {TER_TOU_VOCATION_OPTIONS.map((opt) => (
               <PillOption key={opt.id} checked={(watch('terTouVocation') || []).includes(opt.id)} label={optLabel('TER_TOU_VOCATION_OPTIONS', opt)} onChange={() => toggleArrayValue('terTouVocation', opt.id)} />
             ))}
@@ -3023,7 +3035,7 @@ export default function ResearchPage() {
           <Field label={t('budgetAirportProximity')} full>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {AIRPORT_PROXIMITY_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('airportProximity') === opt.id} label={optLabel('AIRPORT_PROXIMITY_OPTIONS', opt)} onChange={() => setValue('airportProximity', opt.id)} />
+                <PillOption type="radio" key={opt.id} checked={watch('airportProximity') === opt.id} label={optLabel('AIRPORT_PROXIMITY_OPTIONS', opt)} onChange={() => setValue('airportProximity', opt.id)} />
               ))}
             </div>
           </Field>
@@ -3058,7 +3070,7 @@ export default function ResearchPage() {
           <Field label={t('budgetFinancingMode')}>
             <div className="grid grid-cols-1 gap-3">
               {FINANCING_OPTIONS.map((opt) => (
-                <PillOption key={opt.id} checked={watch('financingMode') === opt.id} label={optLabel('FINANCING_OPTIONS', opt)} onChange={() => setValue('financingMode', opt.id as any)} />
+                <PillOption type="radio" key={opt.id} checked={watch('financingMode') === opt.id} label={optLabel('FINANCING_OPTIONS', opt)} onChange={() => setValue('financingMode', opt.id as any)} />
               ))}
             </div>
           </Field>
@@ -3300,7 +3312,7 @@ export default function ResearchPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('interlocutorSituation')}</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {SITUATION_OPTIONS.map((opt) => (
-                    <PillOption key={opt.id} checked={watch('situation') === opt.id} label={optLabel('SITUATION_OPTIONS', opt)} onChange={() => setValue('situation', opt.id as any)} />
+                    <PillOption type="radio" key={opt.id} checked={watch('situation') === opt.id} label={optLabel('SITUATION_OPTIONS', opt)} onChange={() => setValue('situation', opt.id as any)} />
                   ))}
                 </div>
               </div>

@@ -9,6 +9,8 @@ import { getCategoryColor } from "@/data/categoryColors"
 import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
 import { RESEARCH_PROPERTY_TYPES, ENVIRONMENT_OPTIONS, VILLA_LEVEL_ENTRANCE_OPTIONS } from "@/data/researchConfig"
 import { CenterToast } from "@/components/CenterToast"
+import { OwnerBadge } from "@/components/OwnerBadge"
+import { ScrollingTitle } from "@/components/ScrollingTitle"
 
 // Tables de correspondance id -> libellé FRANÇAIS (repli), construites à partir de toutes les branches
 // (recherche + dépôt). La traduction se fait au rendu via les namespaces i18n (voir le composant).
@@ -180,73 +182,110 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
   const villaEntranceLabel = locationCriteria?.villaLevelEntrance ? resolveVillaEntrance(locationCriteria.villaLevelEntrance) : null
   const environmentLabels: string[] = (locationCriteria?.environment || []).map((id: string) => resolveEnvironment(id)).filter(Boolean)
 
-  // Carte publique (/demandes) — même échelle visuelle que PropertyCard (image généreuse, mêmes
-  // badges, même rythme typographique) mais SANS ligne "prix" en haut à côté du titre : une
-  // recherche confiée n'a pas de prix fixe, seulement une fourchette de budget, qui reste affichée
-  // plus bas avec les autres critères (surface, typologie) plutôt que forcée en haut comme sur une
-  // annonce. L'image gagne l'espace ainsi libéré (demande client du 15/10/2026).
+  // Carte publique (/demandes) — STRICTEMENT la même structure que PropertyCard (demande client du
+  // 06/11/2026 : « même affichage que les annonces ») : photo + badge transaction, catégorie en
+  // capitales vertes, titre qui défile + budget à la place du prix, localisation, puis le pied auteur
+  // partagé (OwnerBadge : photo du particulier ou logo du professionnel). Vue liste = vue liste des annonces.
   if (variant === "public") {
     const isList = display === "list"
     const isLarge = display === "large"
-    const shownTypes = propertyTypeLabels.slice(0, isList || isLarge ? 4 : 2)
-    const extraTypes = propertyTypeLabels.length - shownTypes.length
-    const specChips = [budgetLabel, surfaceLabel, typologyLabel].filter(Boolean) as string[]
+    const categoryText = propertyTypeLabels.length > 0 ? propertyTypeLabels.slice(0, 3).join(" · ") : (getCategoryLabel(r.realEstateType) || "")
+    const cardTitle = r.title || [getCategoryLabel(r.realEstateType), locationLabel].filter(Boolean).join(" — ")
+    const specChips = [surfaceLabel, typologyLabel, floorLabel].filter(Boolean) as string[]
+    const transactionBadge = (
+      <span className={`rounded-full font-bold uppercase tracking-wide text-white ${isList ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[10px] rtl:text-xs"} ${r.transaction === "SALE" ? "bg-[#00BFA6]" : r.transaction === "RENTAL" ? "bg-[#003B4A]" : "bg-gray-700"}`}>
+        {r.transaction === "SALE" ? t("sale") : r.transaction === "RENTAL" ? t("rental") : t("holiday")}
+      </span>
+    )
+    const budget = budgetLabel && (
+      <span dir="ltr" className={`shrink-0 whitespace-nowrap font-extrabold tabular-nums leading-none text-[#003B4A] dark:text-[#5EEAD4] ${isList ? "text-2xl" : "text-base"}`}>{budgetLabel}</span>
+    )
+    const footer = (
+      <div className={`mt-auto flex items-center justify-between gap-3 border-t border-gray-100 dark:border-white/10 ${isList ? "pt-3" : "pt-2"}`}>
+        <OwnerBadge user={r.user} size="md" className="flex-1" />
+        <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-white/40"><Calendar className="h-3 w-3" />{relativeTime}</span>
+      </div>
+    )
     return (
-      <Link
-        href={`/demandes/${r.id}`}
-        className={`group bg-white dark:bg-[#03303c] rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden flex ${isList ? "flex-row items-start" : "flex-col"}`}
-      >
-        <div
-          className={`relative overflow-hidden shrink-0 ${isList ? "w-52 sm:w-72 lg:w-[22rem] h-[230px] sm:h-[250px] self-start" : isLarge ? "h-[280px]" : "h-[240px] min-h-[240px]"}`}
-          style={{ backgroundColor: catColor.hex }}
-        >
-          {coverImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={encodeURI(coverImage)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-bottom transition-transform duration-500 group-hover:scale-105" />
-          ) : (
-            <CatIcon className="absolute -bottom-3 -end-1 h-24 w-24 text-white/20" />
-          )}
-          <span className={`absolute top-3.5 start-3.5 rounded-full font-bold uppercase tracking-wide text-white ${isList ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[10px] rtl:text-xs"} ${r.transaction === "SALE" ? "bg-[#00BFA6]" : r.transaction === "RENTAL" ? "bg-[#003B4A]" : "bg-gray-700"}`}>
-            {r.transaction === "SALE" ? t("sale") : r.transaction === "RENTAL" ? t("rental") : t("holiday")}
-          </span>
-          {wasRefreshed && (
-            <span className="absolute top-3 end-3 inline-flex items-center gap-1 h-8 px-2.5 rounded-full text-[11px] font-bold uppercase bg-amber-400 text-amber-950">
-              <Zap className="h-3 w-3" /> {t("refreshedBadge")}
-            </span>
-          )}
-        </div>
-        <div className={`flex flex-col gap-2.5 flex-1 min-w-0 ${isList ? "p-5 sm:p-6" : "p-4"}`}>
-          {shownTypes.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {shownTypes.map((label, i) => (
-                <span key={i} className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#00BFA6]/10 text-[#00908A] dark:text-[#5EEAD4]">{label}</span>
-              ))}
-              {extraTypes > 0 && <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/60">+{extraTypes}</span>}
-            </div>
-          )}
-          {r.title && (
-            <h3 className={`font-bold text-gray-900 dark:text-white leading-snug line-clamp-2 break-words [overflow-wrap:anywhere] ${isList ? "text-xl" : "text-[15px]"}`}>{r.title}</h3>
-          )}
-          {locationLabel && (
-            <div className="flex items-start gap-1.5 text-sm text-gray-500 dark:text-white/50 font-medium">
-              <MapPin className="h-4 w-4 text-[#00BFA6] shrink-0 mt-0.5" />
-              <span className="line-clamp-2 break-words">{locationLabel}</span>
-            </div>
-          )}
-          {specChips.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {specChips.map((label, i) => (
-                <span key={i} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-white/80">{label}</span>
-              ))}
-            </div>
-          )}
-          {(isList || isLarge) && r.comment && (
-            <p className={`text-sm text-gray-500 dark:text-white/50 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] ${isList ? "line-clamp-2" : "line-clamp-3"}`}>{r.comment}</p>
-          )}
-          <div className="mt-auto flex items-center justify-between gap-2 border-t border-gray-100 dark:border-white/10 pt-3 text-xs text-gray-400 dark:text-white/40 font-medium">
-            <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{relativeTime}</span>
-            <span className="inline-flex items-center gap-1 font-bold text-[#00BFA6]">{t("viewRequest")} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></span>
+      <Link href={`/demandes/${r.id}`} className="block h-full w-full">
+        <div className={`bg-white dark:bg-[#03303c] rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gray-100 dark:border-white/10 h-full w-full overflow-hidden ${isList ? "flex flex-row items-start" : "flex flex-col"}`}>
+          {/* Image — mêmes dimensions que la photo d'une annonce */}
+          <div
+            className={`relative overflow-hidden shrink-0 ${isList ? "w-52 sm:w-72 lg:w-[22rem] h-[230px] sm:h-[250px] self-start" : isLarge ? "h-[280px] min-h-[280px]" : "h-[240px] min-h-[240px]"}`}
+            style={{ backgroundColor: catColor.hex }}
+          >
+            {coverImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={encodeURI(coverImage)} alt="" loading="lazy" className="w-full h-full object-cover object-bottom group-hover:scale-[1.04] transition-transform duration-500" />
+            ) : (
+              <CatIcon className="absolute -bottom-3 -end-1 h-24 w-24 text-white/20" />
+            )}
+            <span className="absolute top-3.5 left-3.5">{transactionBadge}</span>
+            {wasRefreshed && (
+              <span className="absolute top-3 right-3 flex items-center gap-1 h-8 px-2.5 rounded-full bg-black/45 backdrop-blur-sm text-white text-[11px] font-bold">
+                <Zap className="h-3.5 w-3.5 text-amber-300" /> {t("refreshedBadge")}
+              </span>
+            )}
           </div>
+
+          {isList ? (
+            <div className="p-5 sm:p-6 flex flex-col flex-1 min-w-0 gap-3 self-stretch">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <span dir="auto" className="block text-start text-[#00BFA6] font-bold text-xs rtl:text-sm uppercase tracking-wide">{categoryText}</span>
+                  <ScrollingTitle text={cardTitle} className="mt-1 text-xl font-bold leading-snug text-gray-900 dark:text-white" />
+                  {locationLabel && (
+                    <div className="mt-1.5 flex min-w-0 items-center gap-1.5 text-sm text-gray-500 dark:text-white/50 font-medium">
+                      <MapPin className="h-4 w-4 text-[#00BFA6] shrink-0" />
+                      <span dir="auto" className="truncate">{locationLabel}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 text-end">
+                  {budget}
+                  <span className="mt-2 block">{transactionBadge}</span>
+                </div>
+              </div>
+              {specChips.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {specChips.map((item, i) => (
+                    <span key={i} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-3 py-1 text-xs rtl:text-[13px] font-semibold text-gray-700 dark:text-white/80">{item}</span>
+                  ))}
+                </div>
+              )}
+              {r.comment && (
+                <p dir="auto" className="text-sm rtl:text-[15px] leading-relaxed text-gray-500 dark:text-white/50 line-clamp-2 break-words">{r.comment}</p>
+              )}
+              {footer}
+            </div>
+          ) : (
+            <div className="p-4 flex flex-col flex-1 min-w-0 min-h-36">
+              <span dir="auto" className="block w-full truncate text-start text-[#00BFA6] font-bold text-[11px] rtl:text-xs leading-4 uppercase tracking-wide">
+                {categoryText}
+              </span>
+              <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
+                <ScrollingTitle text={cardTitle} className="text-[15px] font-semibold leading-5 text-gray-900 dark:text-white" />
+                {budget}
+              </div>
+              {locationLabel && (
+                <div className="mt-1.5 flex min-w-0 items-center text-gray-400 dark:text-white/40 text-xs rtl:text-[13px] font-medium gap-1">
+                  <MapPin className="h-3.5 w-3.5 text-gray-300 dark:text-white/30 shrink-0" />
+                  <span dir="auto" className="truncate">{locationLabel}</span>
+                </div>
+              )}
+              {isLarge && specChips.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {specChips.map((item, i) => (
+                    <span key={i} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-gray-700 dark:text-white/80">{item}</span>
+                  ))}
+                </div>
+              )}
+              {isLarge && r.comment && (
+                <p className="mt-2 text-sm text-gray-500 dark:text-white/50 leading-relaxed line-clamp-3 whitespace-pre-line break-words [overflow-wrap:anywhere]">{r.comment}</p>
+              )}
+              <div className="mt-3 flex flex-1 flex-col justify-end">{footer}</div>
+            </div>
+          )}
         </div>
       </Link>
     )
