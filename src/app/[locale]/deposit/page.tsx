@@ -8,6 +8,7 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, en
 import { fr } from "date-fns/locale"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { FitText } from "@/components/FitText"
 import { 
   Check, Upload, Building2, Warehouse, Home, Key, Building, Store, Hotel, 
   Briefcase, BedDouble, PartyPopper, Factory, Tent, X, Flower2, Sun, Plus, Trash2, Minus, Globe2,
@@ -4356,7 +4357,7 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Sun className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionAmbiance')}
                                 </h2>
-                                <div className="flex flex-wrap gap-3">
+                                <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                     {tGroup('HTL_AMBIANCE', HTL_AMBIANCE).map((opt) => {
                                         const Icon = IconMap[(opt as any).iconName] || Sun
                                         const active = htlAmbianceSelected.includes(opt.id)
@@ -4441,17 +4442,17 @@ function DepositPageComponent() {
                                                     </div>
 
                                                     {/* Chiffres clés — compteurs pour les petits entiers, saisie libre pour la surface */}
-                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-5">
                                                         <div>
-                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlRoomCountLabel')}</label>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-1 md:mb-2"><FitText>{t('htlRoomCountLabel')}</FitText></label>
                                                             <HotelCounterField value={room.roomCount} onChange={(v) => updateHotelRoom(room.id, { roomCount: v })} min={0} />
                                                         </div>
                                                         <div>
-                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlCapacityLabel')}</label>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-1 md:mb-2"><FitText>{t('htlCapacityLabel')}</FitText></label>
                                                             <HotelCounterField value={room.capacity} onChange={(v) => updateHotelRoom(room.id, { capacity: v })} min={0} />
                                                         </div>
                                                         <div>
-                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlRoomSurfaceLabel')}</label>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-1 md:mb-2"><FitText>{t('htlRoomSurfaceLabel')}</FitText></label>
                                                             <div className="flex items-center h-9 rounded-xl border-2 border-gray-200 bg-white px-3 focus-within:border-[#00BFA6] transition-colors">
                                                                 <input
                                                                     type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
@@ -4464,7 +4465,7 @@ function DepositPageComponent() {
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <label className="block text-xs font-bold text-gray-500 mb-2">{t('htlBathroomTypeLabel')}</label>
+                                                            <label className="block text-xs font-bold text-gray-500 mb-1 md:mb-2"><FitText>{t('htlBathroomTypeLabel')}</FitText></label>
                                                             <div className="flex h-9 rounded-xl border-2 border-gray-200 p-0.5 gap-0.5">
                                                                 {tGroup('HTL_BATHROOM_TYPES', HTL_BATHROOM_TYPES).map((bt) => (
                                                                     <button
@@ -4486,7 +4487,7 @@ function DepositPageComponent() {
                                                     {/* Lits présents — bascule + quantité intégrée */}
                                                     <div>
                                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">{t('htlBedsLabel')}</label>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
+                                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
                                                             {tGroup('HTL_BED_TYPES', HTL_BED_TYPES).map((bed) => {
                                                                 const active = room.beds.find(b => b.bedType === bed.id)
                                                                 return (
@@ -4642,9 +4643,9 @@ function DepositPageComponent() {
 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f002')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f002')}</FitText></label>
                                         <input type="hidden" {...register("industrialSector")} />
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-3">
                                             {tGroup('INDUSTRIAL_SECTORS', INDUSTRIAL_SECTORS).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
@@ -4668,7 +4669,7 @@ function DepositPageComponent() {
 
                                     {industrialSectorList.includes("AUTRE_ACTIVITE") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f003')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f003')}</FitText></label>
                                             <input
                                                 {...register("industrialSectorOther")}
                                                 type="text"
@@ -4680,7 +4681,7 @@ function DepositPageComponent() {
                                     )}
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f004')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f004')}</FitText></label>
                                         <input
                                             {...register("industrialProductDetail")}
                                             type="text"
@@ -4729,7 +4730,7 @@ function DepositPageComponent() {
 
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">{t('f007')}</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-3 md:grid-cols-3 gap-3">
                                             {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((t) => (
                                                 <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white min-w-0">
                                                     <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
@@ -4748,10 +4749,10 @@ function DepositPageComponent() {
 
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f009')}</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f009')}</FitText></label>
+                                        <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f010')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f010')}</FitText></label>
                                                 <input
                                                     {...register("landArea")}
                                                     type="number"
@@ -4763,7 +4764,7 @@ function DepositPageComponent() {
                                                 {errors.landArea && <p className="text-red-500 text-sm mt-1">{errors.landArea.message as any}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f011')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f011')}</FitText></label>
                                                 <input
                                                     {...register("builtArea")}
                                                     type="number"
@@ -4775,7 +4776,7 @@ function DepositPageComponent() {
                                                 {errors.builtArea && <p className="text-red-500 text-sm mt-1">{errors.builtArea.message as any}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f012')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f012')}</FitText></label>
                                                 <input
                                                     {...register("industrialSurfaceFree")}
                                                     type="number"
@@ -4838,7 +4839,7 @@ function DepositPageComponent() {
                                                 <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />{t('f019')}</label>
                                             {!!industrialOffices && (
                                                 <div className="w-full mt-2">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
+                                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f020')}</FitText></label>
                                                     <input
                                                         {...register("industrialOfficesArea")}
                                                         type="number"
@@ -4901,7 +4902,7 @@ function DepositPageComponent() {
                                         <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f026')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f026')}</FitText></label>
                                                 <input
                                                     {...register("industrialElectricityTransformerKva")}
                                                     type="number"
@@ -4989,7 +4990,7 @@ function DepositPageComponent() {
 
                                         {industrialFireEquipmentList.includes("BACHE_EAU") && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f172')} <span className="text-red-500">*</span></label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f172')} <span className="text-red-500">*</span></FitText></label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
                                                     type="text"
@@ -5022,9 +5023,9 @@ function DepositPageComponent() {
 
                                 <div className="space-y-5">
                                     {/* Ligne 1 : Surface terrain | Surface couverte | État global */}
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                    <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f040')}</FitText></label>
                                             <input
                                                 {...register("hangarSurfaceTerrain")}
                                                 type="number"
@@ -5036,7 +5037,7 @@ function DepositPageComponent() {
                                             {errors.hangarSurfaceTerrain && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceTerrain.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f041')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f041')}</FitText></label>
                                             <input
                                                 {...register("hangarSurfaceCovered")}
                                                 type="number"
@@ -5048,7 +5049,7 @@ function DepositPageComponent() {
                                             {errors.hangarSurfaceCovered && <p className="text-red-500 text-sm mt-1">{errors.hangarSurfaceCovered.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f007')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f007')}</FitText></label>
                                             <select
                                                 {...register("industrialGlobalState")}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-900"
@@ -5062,9 +5063,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     {/* Ligne 2 : Longueur | Largeur | Hauteur sous crochet */}
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                    <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f043')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f043')}</FitText></label>
                                             <input
                                                 {...register("hangarLength")}
                                                 type="number"
@@ -5076,7 +5077,7 @@ function DepositPageComponent() {
                                             {errors.hangarLength && <p className="text-red-500 text-sm mt-1">{errors.hangarLength.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f044')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f044')}</FitText></label>
                                             <input
                                                 {...register("hangarWidth")}
                                                 type="number"
@@ -5088,7 +5089,7 @@ function DepositPageComponent() {
                                             {errors.hangarWidth && <p className="text-red-500 text-sm mt-1">{errors.hangarWidth.message as any}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f045')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f045')}</FitText></label>
                                             <input
                                                 {...register("hangarHeight")}
                                                 type="number"
@@ -5188,7 +5189,7 @@ function DepositPageComponent() {
                                                 <input type="radio" name="industrialOffices_choice" checked={!industrialOffices} onChange={() => { setValue("industrialOffices", false as any, { shouldValidate: true }); setValue("industrialOfficesArea", "", { shouldValidate: false }); clearErrors(["industrialOfficesArea"]); }} className="accent-[#00BFA6] w-4 h-4" />{t('f019')}</label>
                                             {!!industrialOffices && (
                                                 <div className="w-full mt-2">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
+                                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f020')}</FitText></label>
                                                     <input
                                                         {...register("industrialOfficesArea")}
                                                         type="number"
@@ -5250,7 +5251,7 @@ function DepositPageComponent() {
                                         <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f026')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f026')}</FitText></label>
                                                 <input
                                                     {...register("industrialElectricityTransformerKva")}
                                                     type="number"
@@ -5337,7 +5338,7 @@ function DepositPageComponent() {
 
                                         {industrialFireEquipmentList.includes("BACHE_EAU") && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f172')} <span className="text-red-500">*</span></label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f172')} <span className="text-red-500">*</span></FitText></label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
                                                     type="text"
@@ -5370,9 +5371,9 @@ function DepositPageComponent() {
                                     <Snowflake className="h-5 w-5 text-[#00BFA6]" />{t('f059')}</h2>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f060')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f060')}</FitText></label>
                                         <input type="hidden" {...register("cfSector")} />
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-3">
                                             {tGroup('CF_SECTORS', CF_SECTORS).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
@@ -5392,7 +5393,7 @@ function DepositPageComponent() {
                                     </div>
                                     {cfSectorList.includes("AUTRE_CF") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f061')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f061')}</FitText></label>
                                             <input {...register("cfSectorOther")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none bg-white" placeholder={t('f347')} />
                                         </div>
                                     )}
@@ -5403,25 +5404,25 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f008')}</h2>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f043')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f043')}</FitText></label>
                                         <input {...register("cfLength")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f044')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f044')}</FitText></label>
                                         <input {...register("cfWidth")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f360')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f062')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f062')}</FitText></label>
                                         <input {...register("cfHeight")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f361')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f063')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f063')}</FitText></label>
                                         <input {...register("cfCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f362')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f007')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f007')}</FitText></label>
                                         <select {...register("cfEtatGlobal")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
                                             <option value="">{t('f042')}</option>
                                             {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((s) => (
@@ -5700,7 +5701,7 @@ function DepositPageComponent() {
                                 <div className={`grid grid-cols-1 gap-5 ${isTerrainAgricole ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
                                     {/* Surface terrain */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{isTerrainAgricole ? t('adSuperficie') : t('adLandArea')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{isTerrainAgricole ? t('adSuperficie') : t('adLandArea')}</FitText></label>
                                         {isTerrainAgricole ? (
                                             <div className="relative">
                                                 <input
@@ -5724,13 +5725,13 @@ function DepositPageComponent() {
                                     {/* Altitude — uniquement terrain agricole */}
                                     {isTerrainAgricole && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f086')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f086')}</FitText></label>
                                             <input {...register("terrainAgricoleAltitude")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f367')} />
                                         </div>
                                     )}
                                     {/* Nombre de façades */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f087')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f087')}</FitText></label>
                                         <div className="flex gap-3">
                                             {[1, 2, 3, 4].map((n) => (
                                                 <label key={n} className="cursor-pointer">
@@ -5742,15 +5743,15 @@ function DepositPageComponent() {
                                     </div>
                                 </div>
                                 {/* Reste des champs en 2 colonnes */}
-                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                     {/* Longueur façade principale */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f088')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f088')}</FitText></label>
                                         <input {...register("terrainFacadeLength")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f368')} />
                                     </div>
                                     {/* Profondeur terrain */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f089')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f089')}</FitText></label>
                                         <input {...register("terrainDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f369')} />
                                     </div>
                                     {/* Topographie */}
@@ -5888,7 +5889,7 @@ function DepositPageComponent() {
                                         </div>
                                         {terrainAgricoleRessourcesEauList.includes("FORAGE") && (
                                             <div className="mt-3">
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f102')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f102')}</FitText></label>
                                                 <input {...register("terrainAgricoleDebitForage")} type="number" min="0" step="0.1" className="w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] text-sm font-medium" placeholder={t('f371')} onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} />
                                             </div>
                                         )}
@@ -5896,7 +5897,7 @@ function DepositPageComponent() {
                                     {/* Exposition */}
                                     <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f103')}</div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
                                             {tGroup('TERRAIN_AGRICOLE_EXPOSITION', TERRAIN_AGRICOLE_EXPOSITION).map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={e.id} {...register("terrainAgricoleExposition")} className="accent-[#00BFA6] w-4 h-4" />
@@ -6082,7 +6083,7 @@ function DepositPageComponent() {
                                     <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f123')}</div>
                                         <div className="text-xs text-gray-500 mb-3">{t('f124')}</div>
-                                        <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-3 md:grid-cols-2 gap-2">
                                             {tGroup('TERRAIN_TOURISTIQUE_ZONE', TERRAIN_TOURISTIQUE_ZONE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainTouristiqueZone")} className="accent-[#00BFA6] w-4 h-4" />
@@ -6106,39 +6107,39 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f125')}</h2>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f020')}</FitText></label>
                                         <input {...register("immeubleSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f373')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f126')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f126')}</FitText></label>
                                         <input {...register("immeubleSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f374')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f127')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f127')}</FitText></label>
                                         <input {...register("immeubleLargeur")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f128')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f128')}</FitText></label>
                                         <input {...register("immeubleNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f375')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f129')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f129')}</FitText></label>
                                         <input {...register("immeubleHsp")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f376')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f130')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f130')}</FitText></label>
                                         <input {...register("immeubleNbRideaux")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f377')} />
                                     </div>
                                     <div className="md:col-span-3">
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f131')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f131')}</FitText></label>
                                         <input {...register("immeubleFacadeLineaire")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f378')} />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">{t('f132')}</label>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f132')}</FitText></label>
+                                    <div className="grid grid-cols-3 md:grid-cols-3 gap-3">
                                         {tGroup('IMMEUBLE_ETAT_GLOBAL', IMMEUBLE_ETAT_GLOBAL).map((eg) => (
                                             <label key={eg.id} className="flex items-start gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6]/40 bg-white">
                                                 <input type="radio" value={eg.id} {...register("immeubleEtatGlobal")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
@@ -6211,32 +6212,32 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f137')}</h2>
                                 {/* Ligne 1 : 3 colonnes */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f040')}</FitText></label>
                                         <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f373')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f138')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f138')}</FitText></label>
                                         <input {...register("showroomSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f379')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f139')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f139')}</FitText></label>
                                         <input {...register("showroomNiveaux")} type="number" min="1" max="10" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f380')} />
                                     </div>
                                 </div>
                                 {/* Ligne 2 : 3 colonnes */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f126')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f126')}</FitText></label>
                                         <input {...register("showroomFacadeWidth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f127')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f127')}</FitText></label>
                                         <input {...register("showroomFacadeDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f378')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f129')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f129')}</FitText></label>
                                         <input {...register("showroomHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f361')} />
                                     </div>
                                 </div>
@@ -6291,7 +6292,7 @@ function DepositPageComponent() {
                                     </div>
                                     {showroomVisibiliteAutoroute === true && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f145')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f145')}</FitText></label>
                                             <input {...register("showroomAxeRoutier")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f382')} />
                                         </div>
                                     )}
@@ -6310,28 +6311,28 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f137')}</h2>
                                 {/* Ligne 1 : 3 colonnes */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f020')}</FitText></label>
                                         <input {...register("localSurfaceTotal")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f383')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f126')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f126')}</FitText></label>
                                         <input {...register("localVitrineLongueur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f384')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f127')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f127')}</FitText></label>
                                         <input {...register("localLargeur")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f360')} />
                                     </div>
                                 </div>
                                 {/* Ligne 2 : 2 colonnes */}
-                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f129')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f129')}</FitText></label>
                                         <input {...register("localHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f376')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f139')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f139')}</FitText></label>
                                         <input {...register("localNbEtages")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f385')} />
                                     </div>
                                 </div>
@@ -6343,7 +6344,7 @@ function DepositPageComponent() {
                                     <Paintbrush className="h-5 w-5 text-[#00BFA6]" />{t('f146')}</h2>
                                 <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f147')}</div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                         {tGroup('LOCAL_STYLE', LOCAL_STYLE).map((s) => (
                                             <label key={s.id} className="cursor-pointer">
                                                 <input type="radio" value={s.id} {...register("localStyle")} className="peer sr-only" />
@@ -6444,42 +6445,42 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Building2 className="h-5 w-5 text-[#00BFA6]" />{t('f154')}</h2>
                                 {/* Ligne 1 : surfaces + étages */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f040')}</FitText></label>
                                         <input {...register("blocSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f387')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f138')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f138')}</FitText></label>
                                         <input {...register("blocSurfaceBatie")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f367')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f155')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f155')}</FitText></label>
                                         <input {...register("blocEtages")} type="number" min="0" max="20" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f377')} />
                                     </div>
                                 </div>
                                 {/* Ligne 2 : état général + garage + stationnement */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f156')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f156')}</FitText></label>
                                         <select {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
                                             <option value="">{t('f042')}</option>
                                             {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR" && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f157')}</FitText></label>
                                         <input {...register("parkingCount")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f360')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f158')}</FitText></label>
                                         <input {...register("outdoorParking")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
                                     </div>
                                 </div>
                                 {/* Ligne 3 : façades + sous-sol */}
-                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f087')}</FitText></label>
                                         <div className="flex gap-3">
                                             {[1,2,3,4].map((n) => (
                                                 <label key={n} className="cursor-pointer">
@@ -6536,8 +6537,8 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Trees className="text-[#00BFA6]" />{t('f163')}</h2>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">{t('f164')}</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f164')}</FitText></label>
+                                    <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter(item => item.id !== 'barbecue').map((item) => {
                                             const Icon = IconMap[item.icon] || Trees
                                             return (
@@ -6554,8 +6555,8 @@ function DepositPageComponent() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 border-t border-gray-100 pt-6">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f023')}</label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f023')}</FitText></label>
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.security.map(s => {
                                                 const Icon = IconMap[s.icon] || Shield
                                                 return (
@@ -6571,8 +6572,8 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f165')}</label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f165')}</FitText></label>
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                 const Icon = IconMap[c.icon] || Wifi
                                                 return (
@@ -6594,7 +6595,7 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Utensils className="h-5 w-5 text-[#00BFA6]" />{t('f166')}</h2>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                     {tGroup('BLOC_CUISINE', BLOC_CUISINE).map((c) => (
                                         <label key={c.id} className="cursor-pointer">
                                             <input type="radio" value={c.id} {...register("blocCuisine")} className="peer sr-only" />
@@ -6660,7 +6661,7 @@ function DepositPageComponent() {
                                         <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f026')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f026')}</FitText></label>
                                                 <input {...register("industrialElectricityTransformerKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f353')} />
                                             </div>
                                             <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
@@ -6733,7 +6734,7 @@ function DepositPageComponent() {
                                         </div>
                                         {industrialFireEquipmentList.includes("BACHE_EAU") && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f172')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f172')}</FitText></label>
                                                 <input
                                                     {...register("industrialFireWaterReserveLiters")}
                                                     type="text"
@@ -6779,11 +6780,11 @@ function DepositPageComponent() {
                                         <div className="flex flex-col gap-5">
                                             {isSaleBuilding && (
                                                 <div className={cn(
-                                                    "grid grid-cols-2 gap-3 md:gap-5 items-end",
+                                                    "grid grid-cols-3 gap-3 md:gap-5 items-end",
                                                     isBuildingDemolition ? "md:grid-cols-2" : "md:grid-cols-1"
                                                 )}>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')} <span className="text-red-500">*</span></label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f177')} <span className="text-red-500">*</span></FitText></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">{t('f042')}</option>
                                                             {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
@@ -6793,7 +6794,7 @@ function DepositPageComponent() {
 
                                                     {isBuildingDemolition && (
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f040')} <span className="text-red-500">*</span></FitText></label>
                                                             <input
                                                                 {...register("landArea")}
                                                                 type="number"
@@ -6811,7 +6812,7 @@ function DepositPageComponent() {
                                             {!isBuildingDemolition && (
                                             <>
                                             <div className="min-w-0">
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f196')} <span className="text-red-500">*</span></label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f196')} <span className="text-red-500">*</span></FitText></label>
                                                 <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4">
                                                     {BUILDING_TYPOLOGY_MODES.map((m) => (
                                                         <label key={m.id} className="cursor-pointer">
@@ -6827,9 +6828,9 @@ function DepositPageComponent() {
 
                                             {buildingTypologyMode === "SIMILAIRES" && (
                                                 <div className="flex flex-col gap-5">
-                                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_1.1fr_1.4fr] gap-3 items-end">
+                                                    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-[1.1fr_1.1fr_1.1fr_1.4fr] gap-3 items-end">
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adImmFloorsCount')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{t('adImmFloorsCount')} <span className="text-red-500">*</span></FitText></label>
                                                             <input 
                                                                 {...register("floorCount")} 
                                                                 type="number" 
@@ -6841,7 +6842,7 @@ function DepositPageComponent() {
                                                             {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adAptTypology')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{t('adAptTypology')} <span className="text-red-500">*</span></FitText></label>
                                                             <div className="flex items-center gap-2" dir="ltr">
                                                                 <span className="font-bold text-gray-700 text-lg">F</span>
                                                                 <input
@@ -6862,7 +6863,7 @@ function DepositPageComponent() {
                                                             {errors.buildingApartmentTypologyCustom && <p className="text-red-500 text-xs mt-1">{errors.buildingApartmentTypologyCustom.message as any}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adAptCount')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{t('adAptCount')} <span className="text-red-500">*</span></FitText></label>
                                                             <input 
                                                                 {...register("buildingTotalApartments")} 
                                                                 type="number" 
@@ -6874,7 +6875,7 @@ function DepositPageComponent() {
                                                             {errors.buildingTotalApartments && <p className="text-red-500 text-xs mt-1">{errors.buildingTotalApartments.message as any}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adSurface')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{t('adSurface')} <span className="text-red-500">*</span></FitText></label>
                                                             <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 p-1 border-2 border-gray-200 rounded-lg bg-white">
                                                                 {BUILDING_SURFACE_MODES.map((m) => (
                                                                     <label key={m.id} className="cursor-pointer">
@@ -6890,9 +6891,9 @@ function DepositPageComponent() {
                                                     </div>
 
                                                     {buildingSurfaceMode === "UNIQUE" && (
-                                                        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
+                                                        <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                                             <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')} <span className="text-red-500">*</span></label>
+                                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f020')} <span className="text-red-500">*</span></FitText></label>
                                                                 <input 
                                                                     {...register("area")} 
                                                                     type="number" 
@@ -6910,9 +6911,9 @@ function DepositPageComponent() {
 
                                             {buildingTypologyMode === "DIFFERENTES" && (
                                                 <div className="flex flex-col gap-5">
-                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                                    <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adImmFloorsCount')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('adImmFloorsCount')} <span className="text-red-500">*</span></FitText></label>
                                                             <input 
                                                                 {...register("floorCount")} 
                                                                 type="number" 
@@ -6924,7 +6925,7 @@ function DepositPageComponent() {
                                                             {errors.floorCount && <p className="text-red-500 text-xs mt-1">{errors.floorCount.message}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adAptCount')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('adAptCount')} <span className="text-red-500">*</span></FitText></label>
                                                             <input 
                                                                 {...register("buildingTotalApartments")} 
                                                                 type="number" 
@@ -6936,8 +6937,8 @@ function DepositPageComponent() {
                                                             {errors.buildingTotalApartments && <p className="text-red-500 text-xs mt-1">{errors.buildingTotalApartments.message as any}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adAptStyle')} <span className="text-red-500">*</span></label>
-                                                            <div className="flex flex-wrap gap-3">
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('adAptStyle')} <span className="text-red-500">*</span></FitText></label>
+                                                            <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                                 {BUILDING_APARTMENT_STYLES.map((s) => (
                                                                     <label key={s.id} className="cursor-pointer">
                                                                         <input type="checkbox" value={s.id} {...register("buildingApartmentStyle")} className="peer sr-only" />
@@ -6952,7 +6953,7 @@ function DepositPageComponent() {
                                                     </div>
 
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('adTypologies')} <span className="text-red-500">*</span></label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('adTypologies')} <span className="text-red-500">*</span></FitText></label>
                                                         <div className="flex gap-3 flex-wrap">
                                                             {BUILDING_APARTMENT_TYPOLOGIES.map((t) => (
                                                                 <label key={t.id} className="cursor-pointer">
@@ -6968,7 +6969,7 @@ function DepositPageComponent() {
 
                                                     {Array.isArray(buildingApartmentTypologies) && buildingApartmentTypologies.includes("F10_PLUS") && (
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('adTypologiesBeyondF10')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('adTypologiesBeyondF10')} <span className="text-red-500">*</span></FitText></label>
                                                             <div className="flex gap-3 flex-wrap mb-2">
                                                                 {["F11","F12","F13","F14","F15","F16","F17","F18","F19","F20+"].map((f) => {
                                                                     const currentOther = typeof buildingApartmentTypologyOther === "string" ? buildingApartmentTypologyOther : ""
@@ -6999,9 +7000,9 @@ function DepositPageComponent() {
                                             )}
 
                                             {isSaleBuilding ? (
-                                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
+                                                <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f157')}</FitText></label>
                                                         <input
                                                             {...register("parkingCount")}
                                                             type="number"
@@ -7013,7 +7014,7 @@ function DepositPageComponent() {
                                                         {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f158')}</FitText></label>
                                                         <input
                                                             {...register("outdoorParking")}
                                                             type="number"
@@ -7026,9 +7027,9 @@ function DepositPageComponent() {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
+                                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')} <span className="text-red-500">*</span></label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f177')} <span className="text-red-500">*</span></FitText></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">{t('f042')}</option>
                                                             {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
@@ -7036,7 +7037,7 @@ function DepositPageComponent() {
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f157')}</FitText></label>
                                                         <input
                                                             {...register("parkingCount")}
                                                             type="number"
@@ -7048,7 +7049,7 @@ function DepositPageComponent() {
                                                         {errors.parkingCount && <p className="text-red-500 text-xs mt-1">{errors.parkingCount.message}</p>}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f158')}</FitText></label>
                                                         <input
                                                             {...register("outdoorParking")}
                                                             type="number"
@@ -7068,12 +7069,12 @@ function DepositPageComponent() {
                                         <>
                                             {/* Row 1 */}
                                             <div className={cn(
-                                                "grid grid-cols-2 gap-3 md:gap-5 items-end",
+                                                "grid grid-cols-3 gap-3 md:gap-5 items-end",
                                                 (propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE" || isSaleParticulierApartment || isSaleParticulierNiveauVilla) ? "md:grid-cols-4" : "md:grid-cols-3"
                                             )}>
                                                 {!(propertyType === "VILLA" && isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f196')} <span className="text-red-500">*</span></label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f196')} <span className="text-red-500">*</span></FitText></label>
                                                         <div className="flex items-center gap-2" dir="ltr">
                                                             <span className="font-bold text-gray-700 text-lg">F</span>
                                                             <input
@@ -7094,7 +7095,7 @@ function DepositPageComponent() {
                                                 )}
 
                                                 <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? t('f139') : t('adFloor')} <span className="text-red-500">*</span></label>
+                                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? t('f139') : t('adFloor')} <span className="text-red-500">*</span></FitText></label>
                                                     <div className="flex items-center gap-2">
                                                         {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && (
                                                             <span className="font-bold text-gray-700 text-lg whitespace-nowrap">{t('f174')}</span>
@@ -7125,7 +7126,7 @@ function DepositPageComponent() {
                                                 {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? (
                                                     <>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f040')} <span className="text-red-500">*</span></FitText></label>
                                                             <input 
                                                                 {...register("landArea")} 
                                                                 type="number" 
@@ -7137,7 +7138,7 @@ function DepositPageComponent() {
                                                             {errors.landArea && <p className="text-red-500 text-xs mt-1">{errors.landArea.message}</p>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f138')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f138')} <span className="text-red-500">*</span></FitText></label>
                                                             <input 
                                                                 {...register("builtArea")} 
                                                                 type="number" 
@@ -7150,7 +7151,7 @@ function DepositPageComponent() {
                                                         </div>
                                                         {isSaleVillaDemolition && (
                                                             <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
+                                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f087')}</FitText></label>
                                                                 <input
                                                                     {...register("facadesCount")}
                                                                     type="number"
@@ -7166,7 +7167,7 @@ function DepositPageComponent() {
                                                 ) : (
                                                     <>
                                                         <div className="min-w-0">
-                                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')} <span className="text-red-500">*</span></label>
+                                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f020')} <span className="text-red-500">*</span></FitText></label>
                                                             <input 
                                                                 {...register("area")} 
                                                                 type="number" 
@@ -7179,7 +7180,7 @@ function DepositPageComponent() {
                                                         </div>
                                                         {(isSaleParticulierApartment || isSaleParticulierNiveauVilla) && (
                                                             <div className="min-w-0">
-                                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
+                                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f087')}</FitText></label>
                                                                 <input
                                                                     {...register("facadesCount")}
                                                                     type="number"
@@ -7197,11 +7198,11 @@ function DepositPageComponent() {
 
                                             {/* Row 2: État Général, Garage, Stationnement */}
                                             <div className={cn(
-                                                "grid grid-cols-2 gap-3 md:gap-5 items-end",
+                                                "grid grid-cols-3 gap-3 md:gap-5 items-end",
                                                 (propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? (isSaleVillaDemolition ? "md:grid-cols-1" : "md:grid-cols-4") : "md:grid-cols-3"
                                             )}>
                                                 <div className="min-w-0">
-                                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')}</label>
+                                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f177')}</FitText></label>
                                                     <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                         <option value="">{t('f042')}</option>
                                                         {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
@@ -7210,7 +7211,7 @@ function DepositPageComponent() {
                                                 </div>
                                                 {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && !isSaleVillaDemolition && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f087')}</FitText></label>
                                                         <input
                                                             {...register("facadesCount")}
                                                             type="number"
@@ -7224,7 +7225,7 @@ function DepositPageComponent() {
                                                 )}
                                                 {(!["VILLA", "VILLA_COMMERCIALE"].includes(propertyType) || !isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f157')}</FitText></label>
                                                         <input
                                                             {...register("parkingCount")}
                                                             type="number"
@@ -7238,7 +7239,7 @@ function DepositPageComponent() {
                                                 )}
                                                 {(!["VILLA", "VILLA_COMMERCIALE"].includes(propertyType) || !isSaleVillaDemolition) && (
                                                     <div className="min-w-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f158')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f158')}</FitText></label>
                                                         <input 
                                                             {...register("outdoorParking")} 
                                                             type="number" 
@@ -7264,8 +7265,8 @@ function DepositPageComponent() {
 
                                     {/* Environnement — choix multiple, commun à tous les types de biens d'habitation */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f179')}</label>
-                                        <div className="flex flex-wrap gap-4">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f179')}</FitText></label>
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-4 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {APARTMENT_LIFESTYLE_TYPES.map((u) => (
                                                 <label key={u.id} className="cursor-pointer">
                                                     <input type="checkbox" value={u.id} {...register("buildingUsageTypes")} className="peer sr-only" />
@@ -7280,8 +7281,8 @@ function DepositPageComponent() {
                                     {/* Usage — choix unique, villa uniquement */}
                                     {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f180')}</label>
-                                            <div className="flex flex-wrap gap-4">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f180')}</FitText></label>
+                                            <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-4 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                 {USAGE_TYPES.map((u) => (
                                                     <label key={u.id} className="cursor-pointer group relative">
                                                         <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
@@ -7305,8 +7306,8 @@ function DepositPageComponent() {
                                     {/* Type d'accès — choix unique, niveau de villa uniquement */}
                                     {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL") && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f181')}</label>
-                                            <div className="flex flex-wrap gap-4">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f181')}</FitText></label>
+                                            <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-4 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                 {ENTRY_ACCESS_TYPES.map((u) => (
                                                     <label key={u.id} className="cursor-pointer group relative">
                                                         <input type="radio" value={u.id} {...register("usageType")} className="peer sr-only" />
@@ -7336,11 +7337,13 @@ function DepositPageComponent() {
                                     <BedDouble className="text-[#00BFA6]" /> {isCommercialPropertyType ? t('adSpaceExploited') : t('adLivingSpaces')}
                                 </h2>
                                 
-                                <div className="flex flex-col gap-5">
+                                {/* Mobile : les deux lignes ne forment qu'une grille de 3 colonnes (Chambres, Suites, Salons /
+                                    WC, Salles de bain / Type de salle de bain sur toute la largeur) ; dès md : 2 lignes d'origine. */}
+                                <div className="grid grid-cols-3 gap-3 items-end md:flex md:flex-col md:gap-5">
                                     {/* Ligne 1: Chambres, Suites, Salons, Toilettes */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 items-end">
+                                    <div className="contents md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-4 md:items-end">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? t('adOfficesRooms') : t('adBedrooms')} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{isCommercialPropertyType ? t('adOfficesRooms') : t('adBedrooms')} <span className="text-red-500">*</span></FitText></label>
                                             <input 
                                                 {...register("bedrooms")} 
                                                 type="number" 
@@ -7351,7 +7354,7 @@ function DepositPageComponent() {
                                             {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? t('adOfficeSuites') : t('adMasterSuites')}</label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{isCommercialPropertyType ? t('adOfficeSuites') : t('adMasterSuites')}</FitText></label>
                                             <input 
                                                 {...register("nbSuites")} 
                                                 type="number" 
@@ -7361,7 +7364,7 @@ function DepositPageComponent() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? t('adBigRoomSalons') : t('adSalons')} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{isCommercialPropertyType ? t('adBigRoomSalons') : t('adSalons')} <span className="text-red-500">*</span></FitText></label>
                                             <input 
                                                 {...register("livingRooms")} 
                                                 type="number" 
@@ -7372,7 +7375,7 @@ function DepositPageComponent() {
                                             {errors.livingRooms && <p className="text-red-500 text-sm mt-1">{errors.livingRooms.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adWC')} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{t('adWC')} <span className="text-red-500">*</span></FitText></label>
                                             <input 
                                                 {...register("wc")} 
                                                 type="number" 
@@ -7385,9 +7388,9 @@ function DepositPageComponent() {
                                     </div>
 
                                     {/* Ligne 2: SDB, Type SDB */}
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 items-end">
+                                    <div className="contents md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:items-end">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('adBathrooms')} <span className="text-red-500">*</span></label>
+                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{t('adBathrooms')} <span className="text-red-500">*</span></FitText></label>
                                             <input 
                                                 {...register("bathrooms")} 
                                                 type="number" 
@@ -7398,20 +7401,20 @@ function DepositPageComponent() {
                                             {errors.bathrooms && <p className="text-red-500 text-sm mt-1">{errors.bathrooms.message}</p>}
                                         </div>
 
-                                        <div className="md:col-span-2">
-                                            <label className="block text-xs font-bold text-gray-900 mb-1">{t('f182')}</label>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
+                                        <div className="col-span-3 md:col-span-2">
+                                            <label className="block text-xs font-bold text-gray-900 mb-1"><FitText>{t('f182')}</FitText></label>
+                                            <div className="grid grid-cols-3 gap-2 md:gap-3">
+                                                <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer bg-white p-2 md:p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center min-w-0">
                                                     <input type="radio" value="italian_shower" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-xs font-bold text-gray-900">{t('f183')}</span>
+                                                    <FitText className="text-xs font-bold text-gray-900">{t('f183')}</FitText>
                                                 </label>
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
+                                                <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer bg-white p-2 md:p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center min-w-0">
                                                     <input type="radio" value="bathtub" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-xs font-bold text-gray-900">{t('f184')}</span>
+                                                    <FitText className="text-xs font-bold text-gray-900">{t('f184')}</FitText>
                                                 </label>
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
+                                                <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer bg-white p-2 md:p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center min-w-0">
                                                     <input type="radio" value="both" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-xs font-bold text-gray-900">{t('f185')}</span>
+                                                    <FitText className="text-xs font-bold text-gray-900">{t('f185')}</FitText>
                                                 </label>
                                             </div>
                                         </div>
@@ -7429,10 +7432,10 @@ function DepositPageComponent() {
                                 <div className="space-y-6">
                                     {/* Type de Cuisine */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f187')}</label>
-                                        <div className="flex flex-wrap gap-4">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f187')}</FitText></label>
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-4 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {KITCHEN_TYPES.map(k => (
-                                                <label key={k.id} className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center relative group min-w-[140px]">
+                                                <label key={k.id} className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center relative group md:min-w-[140px]">
                                                     <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-4 h-4" /> 
                                                     <span className="text-sm font-bold text-gray-900">{optLabel('KITCHEN_TYPES', k)}</span>
                                                     <div className="relative group/info ms-1">
@@ -7450,8 +7453,8 @@ function DepositPageComponent() {
 
                                     {/* Équipements de la cuisine */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-3">{t('f188')}</label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f188')}</FitText></label>
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 const kitchenRegister = register("kitchenEquipment")
@@ -7501,7 +7504,7 @@ function DepositPageComponent() {
                                 
                                 {/* Extérieur Checkboxes */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-3">{t('f164')}</label>
+                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f164')}</FitText></label>
                                     <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                             if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
@@ -7537,8 +7540,8 @@ function DepositPageComponent() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                                         {/* Chauffage */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f189')}</label>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f189')}</FitText></label>
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                                 {HEATING_TYPES.map(h => {
                                                     const Icon = IconMap[h.icon] || Flame
                                                     return (
@@ -7557,8 +7560,8 @@ function DepositPageComponent() {
 
                                         {/* Climatisation */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f190')}</label>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f190')}</FitText></label>
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                                 {AC_TYPES.map(a => {
                                                     const Icon = IconMap[a.icon] || Fan
                                                     return (
@@ -7579,8 +7582,8 @@ function DepositPageComponent() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                                         {/* Sécurité */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f023')}</label>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f023')}</FitText></label>
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.security.map(s => {
                                                     const Icon = IconMap[s.icon] || Shield
                                                     return (
@@ -7602,8 +7605,8 @@ function DepositPageComponent() {
 
                                         {/* Connectivité */}
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-3">{t('f165')}</label>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f165')}</FitText></label>
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                     const Icon = IconMap[c.icon] || Wifi
                                                     return (
@@ -7631,31 +7634,31 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Zap className="text-[#00BFA6]" />{t('f191')}</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-3 gap-2 md:gap-6">
                                     {/* Eau */}
                                     <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
-                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Droplet className="w-4 h-4 text-blue-500"/>{t('f032')}</h4>
+                                        <h4 className="text-sm md:text-base font-bold mb-2 md:mb-3 flex items-center gap-1.5 md:gap-2 text-gray-900 min-w-0"><Droplet className="w-4 h-4 shrink-0 text-blue-500"/><FitText>{t('f032')}</FitText></h4>
                                         <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f193')}</label>
+                                            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer font-medium text-xs md:text-base text-gray-700 hover:text-gray-900 min-w-0"><input type="radio" value="INDIVIDUEL" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4 shrink-0"/><FitText>{t('f192')}</FitText></label>
+                                            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer font-medium text-xs md:text-base text-gray-700 hover:text-gray-900 min-w-0"><input type="radio" value="COMMUN" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4 shrink-0"/><FitText>{t('f193')}</FitText></label>
                                         </div>
                                         {errors.waterCounter && <p className="text-red-500 text-sm mt-1">{errors.waterCounter.message}</p>}
                                     </div>
                                     {/* Électricité */}
                                     <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
-                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Zap className="w-4 h-4 text-yellow-500"/>{t('f025')}</h4>
+                                        <h4 className="text-sm md:text-base font-bold mb-2 md:mb-3 flex items-center gap-1.5 md:gap-2 text-gray-900 min-w-0"><Zap className="w-4 h-4 shrink-0 text-yellow-500"/><FitText>{t('f025')}</FitText></h4>
                                         <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f193')}</label>
+                                            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer font-medium text-xs md:text-base text-gray-700 hover:text-gray-900 min-w-0"><input type="radio" value="INDIVIDUEL" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4 shrink-0"/><FitText>{t('f192')}</FitText></label>
+                                            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer font-medium text-xs md:text-base text-gray-700 hover:text-gray-900 min-w-0"><input type="radio" value="COMMUN" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4 shrink-0"/><FitText>{t('f193')}</FitText></label>
                                         </div>
                                         {errors.elecCounter && <p className="text-red-500 text-sm mt-1">{errors.elecCounter.message}</p>}
                                     </div>
                                     {/* Gaz */}
                                     <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
-                                        <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Flame className="w-4 h-4 text-orange-500"/>{t('f028')}</h4>
+                                        <h4 className="text-sm md:text-base font-bold mb-2 md:mb-3 flex items-center gap-1.5 md:gap-2 text-gray-900 min-w-0"><Flame className="w-4 h-4 shrink-0 text-orange-500"/><FitText>{t('f028')}</FitText></h4>
                                         <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
-                                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="COMMUN" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f193')}</label>
+                                            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer font-medium text-xs md:text-base text-gray-700 hover:text-gray-900 min-w-0"><input type="radio" value="INDIVIDUEL" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4 shrink-0"/><FitText>{t('f192')}</FitText></label>
+                                            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer font-medium text-xs md:text-base text-gray-700 hover:text-gray-900 min-w-0"><input type="radio" value="COMMUN" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4 shrink-0"/><FitText>{t('f193')}</FitText></label>
                                         </div>
                                         {errors.gasCounter && <p className="text-red-500 text-sm mt-1">{errors.gasCounter.message}</p>}
                                     </div>
@@ -7689,7 +7692,7 @@ function DepositPageComponent() {
                             <div className="space-y-5 md:space-y-8">
                                 {/* Nombre d'étages - Limité à R+5 */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f194')}</label>
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f194')}</FitText></label>
                                     <div className="flex gap-2 flex-wrap">
                                         {[0,1,2,3,4,5].map((num) => (
                                             <label key={num} className="cursor-pointer">
@@ -7710,7 +7713,7 @@ function DepositPageComponent() {
 
                                 {/* Niveaux supplémentaires */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f195')}</label>
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f195')}</FitText></label>
                                     <div className="flex gap-4 flex-wrap">
                                         {EXTRA_FLOOR_TYPES.map((floor) => (
                                             <label key={floor.id} className="cursor-pointer">
@@ -7739,8 +7742,8 @@ function DepositPageComponent() {
 
                                 {/* Typologie - Sans chiffres prédéfinis */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f196')}</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f196')}</FitText></label>
+                                    <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4">
                                         {TYPOLOGIES.map((t) => (
                                             <label key={t.id} className="cursor-pointer">
                                                 <input 
@@ -7759,9 +7762,9 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Pièces */}
-                                <div className="grid grid-cols-2 gap-3 md:gap-6 items-end">
+                                <div className="grid grid-cols-3 gap-3 md:gap-6 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? t('adOfficeCount') : t('adBedroomCount')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{isCommercialPropertyType ? t('adOfficeCount') : t('adBedroomCount')}</FitText></label>
                                         <input 
                                             {...register("bedrooms")} 
                                             type="number" 
@@ -7773,7 +7776,7 @@ function DepositPageComponent() {
                                         {errors.bedrooms && <p className="text-red-500 text-sm mt-1">{errors.bedrooms.message}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? t('adMeetingRoomCount') : t('adSalonCount')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{isCommercialPropertyType ? t('adMeetingRoomCount') : t('adSalonCount')}</FitText></label>
                                         <input 
                                             {...register("livingRooms")} 
                                             type="number" 
@@ -7787,9 +7790,9 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Salles de bain et WC */}
-                                <div className="grid grid-cols-2 gap-3 md:gap-6 items-end">
+                                <div className="grid grid-cols-3 gap-3 md:gap-6 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f197')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f197')}</FitText></label>
                                         <input 
                                             {...register("bathrooms")} 
                                             type="number" 
@@ -7801,7 +7804,7 @@ function DepositPageComponent() {
                                         {errors.bathrooms && <p className="text-red-500 text-sm mt-1">{errors.bathrooms.message}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f198')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f198')}</FitText></label>
                                         <input 
                                             {...register("wc")} 
                                             type="number" 
@@ -7816,8 +7819,8 @@ function DepositPageComponent() {
 
                                 {/* Type de salle de bain */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f199')}</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f199')}</FitText></label>
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 md:gap-4">
                                         {BATHROOM_TYPES.map((type) => {
                                             const Icon = IconMap[type.icon] || Bath
                                             return (
@@ -7863,9 +7866,9 @@ function DepositPageComponent() {
                                 {/* Mesures & Capacité */}
                                 <div className="border-t pt-6">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">{t('f201')}</h3>
-                                    <div className="grid grid-cols-2 gap-3 md:gap-6 items-end">
+                                    <div className="grid grid-cols-3 gap-3 md:gap-6 items-end">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f202')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f202')}</FitText></label>
                                             <input 
                                                 {...register("landArea")} 
                                                 type="number" 
@@ -7877,7 +7880,7 @@ function DepositPageComponent() {
                                             {errors.landArea && <p className="text-red-500 text-sm mt-1">{errors.landArea.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f203')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f203')}</FitText></label>
                                             <input 
                                                 {...register("builtArea")} 
                                                 type="number" 
@@ -7898,8 +7901,8 @@ function DepositPageComponent() {
                                     {/* Cuisine */}
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f166')}</label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f166')}</FitText></label>
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 const kitchenRegister = register("kitchenEquipment")
@@ -7942,7 +7945,7 @@ function DepositPageComponent() {
                                     {/* Extérieur */}
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f205')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f205')}</FitText></label>
                                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                                 if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
@@ -7985,8 +7988,8 @@ function DepositPageComponent() {
 
                                     {/* Eau/Énergie */}
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f206')}</label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f206')}</FitText></label>
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.utilities.map((item) => {
                                                 const Icon = IconMap[item.icon] || Droplet
                                                 return (
@@ -8013,7 +8016,7 @@ function DepositPageComponent() {
 
                                     {/* Stationnement */}
                                     <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('f207')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f207')}</FitText></label>
                                         <div className="space-y-4">
                                             <label className="flex items-center gap-4 cursor-pointer p-4 border-2 rounded-xl hover:border-gray-400 bg-gray-50 peer-checked:border-[#00BFA6]">
                                                 <input 
@@ -8075,7 +8078,7 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <BedDouble className="h-5 w-5 text-[#00BFA6]" />{t('f211')}</h2>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4">
                                     {tGroup('HAB_FORMULES', HAB_FORMULES).map((f) => (
                                         <label key={f.id} className="cursor-pointer">
                                             <input type="radio" value={f.id} {...register("habFormule")} className="peer sr-only" />
@@ -8092,17 +8095,17 @@ function DepositPageComponent() {
                                 {habFormule === "LOGEMENT_ENTIER" && (
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
                                         <div className="font-bold text-gray-800 text-sm">{t('f212')}</div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-end">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 items-end">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f213')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f213')}</FitText></label>
                                                 <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f377')} />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f214')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f214')}</FitText></label>
                                                 <input {...register("habNbSalons")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f385')} />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f215')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f215')}</FitText></label>
                                                 <input {...register("habNbSdb")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f380')} />
                                             </div>
                                             <div className="flex flex-col justify-end">
@@ -8119,7 +8122,7 @@ function DepositPageComponent() {
                                 {(habFormule === "CHAMBRE_PRIVEE" || habFormule === "LIT_SEUL") && (
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
                                         <div className="font-bold text-gray-800 text-sm">{t('f217')}</div>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {[
                                                 { id: "STANDARD", label: "Standard" },
                                                 { id: "SUITE", label: "Suite" },
@@ -8140,7 +8143,7 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Home className="h-5 w-5 text-[#00BFA6]" />{t('f218')}</h2>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                     {tGroup('HAB_UNIT_TYPES', HAB_UNIT_TYPES).map((u) => (
                                         <label key={u.id} className="cursor-pointer">
                                             <input type="radio" value={u.id} {...register("habUnitType")} className="peer sr-only" />
@@ -8152,7 +8155,7 @@ function DepositPageComponent() {
                                 </div>
                                 {habUnitType === "INSOLITE" && (
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f219')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f219')}</FitText></label>
                                         <input {...register("habUnitTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f398')} />
                                     </div>
                                 )}
@@ -8163,17 +8166,17 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f220')}</h2>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 items-end">
+                                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-3 md:gap-4 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f221')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f221')}</FitText></label>
                                         <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">Étage (0 = RDC)</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>Étage (0 = RDC)</FitText></label>
                                         <input {...register("habFloor")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder="0" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f222')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f222')}</FitText></label>
                                         <input {...register("habNbNiveaux")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f385')} />
                                     </div>
                                 </div>
@@ -8216,8 +8219,8 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f224')}</h2>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f225')}</label>
-                                    <div className="flex flex-wrap gap-3">
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f225')}</FitText></label>
+                                    <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                         {tGroup('HAB_AMBIANCES', HAB_AMBIANCES).map((a) => (
                                             <label key={a.id} className="cursor-pointer">
                                                 <input type="checkbox" value={a.id} {...register("habAmbiances")} className="peer sr-only" />
@@ -8231,7 +8234,7 @@ function DepositPageComponent() {
                                 {habAmbiancesList.includes("BALNEAIRE") && (
                                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 space-y-3">
                                         <div className="font-bold text-blue-900 text-sm flex items-center gap-2"><Waves className="h-4 w-4" />{t('f226')}</div>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {tGroup('HAB_PLAGE_ACCES', HAB_PLAGE_ACCES).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="radio" value={p.id} {...register("habPlageAcces")} className="peer sr-only" />
@@ -8277,7 +8280,7 @@ function DepositPageComponent() {
                                     <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 space-y-4">
                                         <div className="font-bold text-teal-900 text-sm flex items-center gap-2"><Droplet className="h-4 w-4" />{t('f229')}</div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 mb-2">{t('f230')}</label>
+                                            <label className="block text-xs font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f230')}</FitText></label>
                                             <div className="flex flex-wrap gap-3">
                                                 <label className="cursor-pointer">
                                                     <input type="radio" value="INTEGRE" {...register("habThermalLocalisation")} className="peer sr-only" />
@@ -8290,11 +8293,11 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f233')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f233')}</FitText></label>
                                             <input {...register("habThermalDistance")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f399')} />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 mb-2">{t('f234')}</label>
+                                            <label className="block text-xs font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f234')}</FitText></label>
                                             <div className="flex flex-wrap gap-3">
                                                 <label className="cursor-pointer">
                                                     <input type="radio" value="GRATUIT" {...register("habThermalAcces")} className="peer sr-only" />
@@ -8314,8 +8317,8 @@ function DepositPageComponent() {
                                     <div className="bg-green-50 border border-green-200 rounded-xl p-5 space-y-4">
                                         <div className="font-bold text-green-900 text-sm flex items-center gap-2"><Trees className="h-4 w-4" />{t('f237')}</div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-700 mb-2">{t('f238')}</label>
-                                            <div className="flex flex-wrap gap-3">
+                                            <label className="block text-xs font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f238')}</FitText></label>
+                                            <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                 {[
                                                     { id: "INTEGRE", label: "Intégré (domaine arboré / forêt privée)" },
                                                     { id: "A_PIED", label: "À pied (directement depuis l'établissement)" },
@@ -8330,7 +8333,7 @@ function DepositPageComponent() {
                                         </div>
                                         {habClimatAcces === "EN_VOITURE" && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('f239')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f239')}</FitText></label>
                                                 <input {...register("habClimatTempsVoiture")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f378')} />
                                             </div>
                                         )}
@@ -8345,8 +8348,8 @@ function DepositPageComponent() {
 
                                 {/* Étape 2.2 – Vue */}
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f242')}</label>
-                                    <div className="flex flex-wrap gap-3">
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f242')}</FitText></label>
+                                    <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                         {tGroup('HAB_VUES', HAB_VUES).map((v) => (
                                             <label key={v.id} className="cursor-pointer">
                                                 <input type="checkbox" value={v.id} {...register("habVues")} className="peer sr-only" />
@@ -8361,23 +8364,23 @@ function DepositPageComponent() {
                             <section className="space-y-4 md:space-y-6">
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Navigation className="h-5 w-5 text-[#00BFA6]" />{t('f243')}</h2>
-                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-4 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f244')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f244')}</FitText></label>
                                         <input {...register("habAirport")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f400')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f245')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f245')}</FitText></label>
                                         <input {...register("habAirportKm")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f371')} />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('f246')}</label>
+                                    <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f246')}</FitText></label>
                                     <input {...register("habTransportCommuns")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f401')} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('f247')}</label>
-                                    <div className="flex flex-wrap gap-3">
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('f247')}</FitText></label>
+                                    <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                         {tGroup('HAB_ATTRACTIONS', HAB_ATTRACTIONS).map((a) => (
                                             <label key={a.id} className="cursor-pointer">
                                                 <input type="checkbox" value={a.id} {...register("habAttractions")} className="peer sr-only" />
@@ -8396,7 +8399,7 @@ function DepositPageComponent() {
                                 {/* Services et Repas */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
                                     <div className="font-bold text-gray-900">{t('f249')}</div>
-                                    <div className="flex flex-wrap gap-3">
+                                    <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                         {tGroup('HAB_REPAS', HAB_REPAS).map((r) => (
                                             <label key={r.id} className="cursor-pointer">
                                                 <input type="checkbox" value={r.id} {...register("habRepas")} className="peer sr-only" />
@@ -8431,7 +8434,7 @@ function DepositPageComponent() {
                                 {/* Cuisine */}
                                 <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f254')}</div>
-                                    <div className="flex flex-wrap gap-3">
+                                    <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                         {tGroup('HAB_EQUIPEMENTS_CUISINE', HAB_EQUIPEMENTS_CUISINE).map((e) => (
                                             <label key={e.id} className="cursor-pointer">
                                                 <input type="checkbox" value={e.id} {...register("habCuisineEquipements")} className="peer sr-only" />
@@ -8444,7 +8447,7 @@ function DepositPageComponent() {
                                 {/* Confort & Multimédia */}
                                 <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f255')}</div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                         {tGroup('HAB_CONFORT', HAB_CONFORT).map((c) => (
                                             <label key={c.id} className="cursor-pointer">
                                                 <input type="checkbox" value={c.id} {...register("habConfort")} className="peer sr-only" />
@@ -8457,7 +8460,7 @@ function DepositPageComponent() {
                                 {/* Loisirs & Bien-être */}
                                 <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f256')}</div>
-                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-3 md:grid-cols-2 gap-2">
                                         {tGroup('HAB_LOISIRS', HAB_LOISIRS).map((l) => (
                                             <label key={l.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="checkbox" value={l.id} {...register("habLoisirs")} className="accent-[#00BFA6] w-4 h-4" />
@@ -8546,19 +8549,19 @@ function DepositPageComponent() {
                                 {/* Check-in / Check-out */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
                                     <div className="font-bold text-gray-900">{t('f267')}</div>
-                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 items-end">
+                                    <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-4 items-end">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f268')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f268')}</FitText></label>
                                             <input {...register("habCheckIn")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f269')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f269')}</FitText></label>
                                             <input {...register("habCheckOut")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f270')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f270')}</FitText></label>
                                         <div className="flex gap-4">
                                             {[
                                                 { id: "24H", label: "Réception ouverte 24h/24" },
@@ -8572,21 +8575,21 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {habReceptionMode === "HORAIRES" && (
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 ml-0 items-end">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 ml-0 items-end">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f271')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f271')}</FitText></label>
                                                 <input {...register("habReceptionStart")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f272')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f272')}</FitText></label>
                                                 <input {...register("habReceptionEnd")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 items-end">
+                                    <div className="grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-4 items-end">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f273')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f273')}</FitText></label>
                                             <div className="flex flex-col gap-2">
                                                 {[
                                                     { id: "EN_MAIN_PROPRE", label: "En main propre à l'accueil / par l'hôte" },
@@ -8600,7 +8603,7 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f274')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f274')}</FitText></label>
                                             <div className="flex flex-col gap-2">
                                                 {[
                                                     { id: "RETENTION", label: "Rétention de la pièce d'identité originale durant le séjour" },
@@ -8629,8 +8632,8 @@ function DepositPageComponent() {
                                     <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                         <Star className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionClassification')}</h2>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsClassificationLabel')}</label>
-                                        <div className="flex flex-wrap gap-3">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsClassificationLabel')}</FitText></label>
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {[
                                                 { id: "ETOILE", label: t('hsClassifieEtoile') },
                                                 { id: "NON_ETOILE", label: t('hsClassifieNonEtoile') },
@@ -8646,7 +8649,7 @@ function DepositPageComponent() {
 
                                     {hsClassification === "ETOILE" && (
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsNbEtoiles')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsNbEtoiles')}</FitText></label>
                                             <div className="flex gap-2 flex-wrap">
                                                 {[1, 2, 3, 4, 5].map((n) => (
                                                     <label key={n} className="cursor-pointer">
@@ -8661,8 +8664,8 @@ function DepositPageComponent() {
                                     )}
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeEtablissementLabel')}</label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsTypeEtablissementLabel')}</FitText></label>
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-3">
                                             {tGroup('HS_TYPE_ETABLISSEMENT', HS_TYPE_ETABLISSEMENT).map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer">
                                                     <input type="radio" value={opt.id} {...register("hsTypeEtablissement")} className="peer sr-only" />
@@ -8675,7 +8678,7 @@ function DepositPageComponent() {
                                         {errors.hsTypeEtablissement && <p className="text-red-500 text-sm mt-1">{errors.hsTypeEtablissement.message as any}</p>}
                                         {hsTypeEtablissement === "AUTRE" && (
                                             <div className="mt-3">
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsTypeEtablissementAutrePrecise')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsTypeEtablissementAutrePrecise')}</FitText></label>
                                                 <input {...register("hsTypeEtablissementAutre")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('hsPlaceholderAutreEtablissement')} />
                                             </div>
                                         )}
@@ -8688,7 +8691,7 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Home className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionTypeBien')}</h2>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeBienLabel')}</label>
+                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsTypeBienLabel')}</FitText></label>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         {[
                                             { id: "MAISON_COMPLETE", label: t('hsMaisonComplete'), desc: t('hsMaisonCompleteDesc'), icon: Home },
@@ -8718,7 +8721,7 @@ function DepositPageComponent() {
                                     <section className="space-y-4 md:space-y-6">
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Building className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionStructure')}</h2>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                             {tGroup('HS_STRUCTURE_TYPES', HS_STRUCTURE_TYPES).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input type="radio" value={s.id} {...register("hsStructureType")} className="peer sr-only" />
@@ -8730,7 +8733,7 @@ function DepositPageComponent() {
                                         </div>
                                         {watch("hsStructureType") === "INSOLITE" && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsInsolitePrecise')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsInsolitePrecise')}</FitText></label>
                                                 <input {...register("hsStructureTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f398')} />
                                             </div>
                                         )}
@@ -8740,13 +8743,13 @@ function DepositPageComponent() {
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionCaracteristiques')}</h2>
 
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 items-end">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSurfaceHabitable')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsSurfaceHabitable')}</FitText></label>
                                                 <input {...register("hsMcSurface")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSituationBatiment')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsSituationBatiment')}</FitText></label>
                                                 <div className="flex gap-3 flex-wrap mt-2">
                                                     {[
                                                         { id: "RDC", label: t('hsRdc') },
@@ -8763,7 +8766,7 @@ function DepositPageComponent() {
 
                                         {hsMcEtage === "ETAGE_SUP" && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('hsAscenseurQuestion')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('hsAscenseurQuestion')}</FitText></label>
                                                 <div className="flex gap-3">
                                                     {[
                                                         { id: "OUI", label: t('hsOui') },
@@ -8780,21 +8783,21 @@ function DepositPageComponent() {
 
                                         <div>
                                             <h3 className="text-base font-bold text-gray-800 mb-4">{t('hsCompositionPieces')}</h3>
-                                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 items-end">
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-3 md:gap-4 items-end">
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbChambres')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbChambres')}</FitText></label>
                                                     <input {...register("hsMcNbChambres")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f377')} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbSalons')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbSalons')}</FitText></label>
                                                     <input {...register("hsMcNbSalons")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f385')} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbSdb')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbSdb')}</FitText></label>
                                                     <input {...register("hsMcNbSdb")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f380')} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbWc')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbWc')}</FitText></label>
                                                     <input {...register("hsMcNbWc")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f394')} />
                                                 </div>
                                                 <div className="flex items-end">
@@ -8811,7 +8814,7 @@ function DepositPageComponent() {
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Bed className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionLits')}</h2>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsLitsTotal')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsLitsTotal')}</FitText></label>
                                             <input {...register("hsMcLitsTotal")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
                                         </div>
                                         <div>
@@ -8844,7 +8847,7 @@ function DepositPageComponent() {
                                     <section className="space-y-4 md:space-y-6">
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Sofa className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionSalon')}</h2>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4">
                                             {tGroup('HS_TYPE_SALON', HS_TYPE_SALON).map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer">
                                                     <input type="radio" value={opt.id} {...register("hsMcTypeSalon")} className="peer sr-only" />
@@ -8856,13 +8859,13 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                         {hsMcTypeSalon === "CANAPE_CONVERTIBLE" && (
-                                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbCanapesConvertibles')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbCanapesConvertibles')}</FitText></label>
                                                     <input {...register("hsMcNbCanapesConvertibles")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbCouchagesAppoint')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbCouchagesAppoint')}</FitText></label>
                                                     <input {...register("hsMcNbCouchagesAppoint")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
                                                 </div>
                                             </div>
@@ -8872,7 +8875,7 @@ function DepositPageComponent() {
                                     <section className="space-y-4 md:space-y-6">
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                                        <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4">
                                             {tGroup('HS_PROFIL_ADAPTATION', HS_PROFIL_ADAPTATION).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("hsMcProfilAdaptation")} className="peer sr-only" />
@@ -8883,13 +8886,13 @@ function DepositPageComponent() {
                                                 </label>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 items-end">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsVoyageursMax')}</FitText></label>
                                                 <input {...register("hsMcVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsPolitiqueEnfants')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsPolitiqueEnfants')}</FitText></label>
                                                 <div className="flex flex-col gap-2 mt-2">
                                                     {[
                                                         { id: "ADULTES_ENFANTS", label: t('hsAdultesEnfants') },
@@ -8936,7 +8939,7 @@ function DepositPageComponent() {
                                     <section className="space-y-4 md:space-y-6">
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Building className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionStructure')}</h2>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                             {tGroup('HS_STRUCTURE_TYPES', HS_STRUCTURE_TYPES).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input type="radio" value={s.id} {...register("hsStructureType")} className="peer sr-only" />
@@ -8948,7 +8951,7 @@ function DepositPageComponent() {
                                         </div>
                                         {watch("hsStructureType") === "INSOLITE" && (
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsInsolitePrecise')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsInsolitePrecise')}</FitText></label>
                                                 <input {...register("hsStructureTypeInsolite")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f398')} />
                                             </div>
                                         )}
@@ -8958,12 +8961,12 @@ function DepositPageComponent() {
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionCaracteristiques')}</h2>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSurfaceChambre')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsSurfaceChambre')}</FitText></label>
                                             <input {...register("hsChSurface")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsLitsTotal')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsLitsTotal')}</FitText></label>
                                             <input {...register("hsChLitsTotal")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
                                         </div>
                                         <div>
@@ -8996,8 +8999,8 @@ function DepositPageComponent() {
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Key className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionEspacesCommuns')}</h2>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsAccesPartiesCommunes')}</label>
-                                            <div className="flex flex-wrap gap-3">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsAccesPartiesCommunes')}</FitText></label>
+                                            <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                 {tGroup('HS_ESPACES_COMMUNS', HS_ESPACES_COMMUNS).map((c) => (
                                                     <label key={c.id} className="cursor-pointer">
                                                         <input type="checkbox" value={c.id} {...register("hsChEspacesCommuns")} className="peer sr-only" />
@@ -9007,13 +9010,13 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         {hsChEspacesCommunsList.includes("SDB_PARTAGEE") && (
-                                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbDouches')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbDouches')}</FitText></label>
                                                     <input {...register("hsChNbDouches")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbWc')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbWc')}</FitText></label>
                                                     <input {...register("hsChNbWc")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
                                                 </div>
                                             </div>
@@ -9023,7 +9026,7 @@ function DepositPageComponent() {
                                     <section className="space-y-4 md:space-y-6">
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                                        <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4">
                                             {tGroup('HS_PROFIL_ADAPTATION', HS_PROFIL_ADAPTATION).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("hsChProfilAdaptation")} className="peer sr-only" />
@@ -9034,13 +9037,13 @@ function DepositPageComponent() {
                                                 </label>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 items-end">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsVoyageursMax')}</FitText></label>
                                                 <input {...register("hsChVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsPolitiqueEnfants')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsPolitiqueEnfants')}</FitText></label>
                                                 <div className="flex flex-col gap-2 mt-2">
                                                     {[
                                                         { id: "ADULTES_ENFANTS", label: t('hsAdultesEnfants') },
@@ -9065,7 +9068,7 @@ function DepositPageComponent() {
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Bed className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionPlaceLit')}</h2>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeCouchage')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsTypeCouchage')}</FitText></label>
                                             <div className="flex flex-wrap gap-3">
                                                 <label className="cursor-pointer">
                                                     <input type="radio" value="LIT_SIMPLE" {...register("hsPlTypeCouchage")} className="peer sr-only" />
@@ -9092,14 +9095,14 @@ function DepositPageComponent() {
                                         )}
 
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsConfigEspacePartage')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsConfigEspacePartage')}</FitText></label>
                                             <label className="block text-xs font-medium text-gray-500 mb-1">{t('hsNbLitsPiecePartagee')}</label>
                                             <input {...register("hsPlNbLitsPiece")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full sm:w-48 p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsEquipementsInclus')}</label>
-                                            <div className="flex flex-wrap gap-3">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsEquipementsInclus')}</FitText></label>
+                                            <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                 {tGroup('HS_EQUIPEMENTS_PLACE_LIT', HS_EQUIPEMENTS_PLACE_LIT).map((e) => (
                                                     <label key={e.id} className="cursor-pointer">
                                                         <input type="checkbox" value={e.id} {...register("hsPlEquipements")} className="peer sr-only" />
@@ -9114,8 +9117,8 @@ function DepositPageComponent() {
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Key className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionEspacesCommuns')}</h2>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsAccesPartiesCommunes')}</label>
-                                            <div className="flex flex-wrap gap-3">
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-3"><FitText>{t('hsAccesPartiesCommunes')}</FitText></label>
+                                            <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                 {tGroup('HS_ESPACES_COMMUNS', HS_ESPACES_COMMUNS).map((c) => (
                                                     <label key={c.id} className="cursor-pointer">
                                                         <input type="checkbox" value={c.id} {...register("hsPlEspacesCommuns")} className="peer sr-only" />
@@ -9125,13 +9128,13 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         {hsPlEspacesCommunsList.includes("SDB_PARTAGEE") && (
-                                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbDouches')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbDouches')}</FitText></label>
                                                     <input {...register("hsPlNbDouches")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbWc')}</label>
+                                                    <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('hsNbWc')}</FitText></label>
                                                     <input {...register("hsPlNbWc")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
                                                 </div>
                                             </div>
@@ -9141,7 +9144,7 @@ function DepositPageComponent() {
                                     <section className="space-y-4 md:space-y-6">
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                                        <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4">
                                             {tGroup('HS_PROFIL_ADAPTATION_PLACE_LIT', HS_PROFIL_ADAPTATION_PLACE_LIT).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("hsPlProfilAdaptation")} className="peer sr-only" />
@@ -9152,13 +9155,13 @@ function DepositPageComponent() {
                                                 </label>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 items-end">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsVoyageursMax')}</FitText></label>
                                                 <input {...register("hsPlVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsPolitiqueEnfants')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('hsPolitiqueEnfants')}</FitText></label>
                                                 <div className="flex flex-col gap-2 mt-2">
                                                     {[
                                                         { id: "ADULTES_ENFANTS", label: t('hsAdultesEnfants') },
@@ -9264,7 +9267,7 @@ function DepositPageComponent() {
                                         <div className="space-y-4">
                                             <div>
                                                 <div className="text-sm font-bold text-gray-700 mb-2">{t('f284')}</div>
-                                                <div className="flex flex-wrap gap-3">
+                                                <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                     {tGroup('HAB_DELAI_ANNULATION', HAB_DELAI_ANNULATION).map((d) => (
                                                         <label key={d.id} className="cursor-pointer">
                                                             <input type="radio" value={d.id} {...register("habDelaiAnnulation")} className="peer sr-only" />
@@ -9275,7 +9278,7 @@ function DepositPageComponent() {
                                             </div>
                                             <div>
                                                 <div className="text-sm font-bold text-gray-700 mb-2">{t('f285')}</div>
-                                                <div className="flex flex-wrap gap-3">
+                                                <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                                     {tGroup('HAB_NON_RESPECT', HAB_NON_RESPECT).map((n) => (
                                                         <label key={n.id} className="cursor-pointer">
                                                             <input type="radio" value={n.id} {...register("habNonRespect")} className="peer sr-only" />
@@ -9304,7 +9307,7 @@ function DepositPageComponent() {
                                         </div>
                                         {habCaution && (
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f287')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f287')}</FitText></label>
                                                 <input {...register("habCautionMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f403')} />
                                             </div>
                                         )}
@@ -9323,7 +9326,7 @@ function DepositPageComponent() {
                                         </div>
                                         {habFraisMenage === "SUPPLEMENT" && (
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-700 mb-1">{t('f287')}</label>
+                                                <label className="block text-xs font-bold text-gray-700 mb-1"><FitText>{t('f287')}</FitText></label>
                                                 <input {...register("habFraisMenageMontant")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f404')} />
                                             </div>
                                         )}
@@ -9335,7 +9338,7 @@ function DepositPageComponent() {
                                     <div className="font-bold text-gray-900">{t('f291')}</div>
                                     <div>
                                         <div className="text-sm font-bold text-gray-600 mb-2">{t('f292')}</div>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {tGroup('HAB_PAIEMENTS_LOCAUX', HAB_PAIEMENTS_LOCAUX).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("habPaiements")} className="peer sr-only" />
@@ -9346,7 +9349,7 @@ function DepositPageComponent() {
                                     </div>
                                     <div>
                                         <div className="text-sm font-bold text-gray-600 mb-2">{t('f293')}</div>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {tGroup('HAB_PAIEMENTS_INTL', HAB_PAIEMENTS_INTL).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("habPaiements")} className="peer sr-only" />
@@ -9363,13 +9366,13 @@ function DepositPageComponent() {
                                 <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <CalendarIcon className="h-5 w-5 text-[#00BFA6]" />{t('f294')}</h2>
 
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 items-end">
+                                <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4 items-end">
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f295')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f295')}</FitText></label>
                                         <input {...register("habDureeMin")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f380')} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f296')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f296')}</FitText></label>
                                         <div className="flex gap-2">
                                             {[{ id: "AUCUN", label: t('f031') }, { id: "1_NUIT", label: t('depBuffer1Night') }].map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer flex-1">
@@ -9380,7 +9383,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">{t('f297')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f297')}</FitText></label>
                                         <div className="flex gap-2">
                                             {[{ id: "TOUTE_ANNEE", label: t('depAllYear') }, { id: "SAISONNIER", label: t('depSeasonal') }].map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer flex-1">
@@ -9393,13 +9396,13 @@ function DepositPageComponent() {
                                 </div>
 
                                 {habPeriodeOuverture === "SAISONNIER" && (
-                                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
+                                    <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 items-end">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f298')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f298')}</FitText></label>
                                             <input {...register("habDebutSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f405')} />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('f299')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f299')}</FitText></label>
                                             <input {...register("habFinSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f406')} />
                                         </div>
                                     </div>
@@ -9426,7 +9429,7 @@ function DepositPageComponent() {
                                 <section className="space-y-4 md:space-y-6">
                                     <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2">{t('f305')}</h2>
                                     <div className="relative">
-                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f305')}</label>
+                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f305')}</FitText></label>
                                         <div className="flex gap-4">
                                             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
                                                 <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => { setAvailabilityMode('IMMEDIATE'); setIsCalendarOpen(false); }} className="accent-[#00BFA6] w-4 h-4" />
@@ -9489,7 +9492,7 @@ function DepositPageComponent() {
                                         {usineShowPrice && (
                                             <div className="space-y-4">
                                                 <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">{t('f308')}</label>
+                                                    <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f308')}</FitText></label>
                                                     <div className="flex flex-col md:flex-row gap-4">
                                                         <div className="relative flex-1">
                                                             <input 
@@ -9633,7 +9636,7 @@ function DepositPageComponent() {
                                                 <div className="flex items-end gap-4 flex-wrap md:flex-nowrap">
                                                     {/* Caution */}
                                                     <div className="w-32 flex-shrink-0">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f321')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f321')}</FitText></label>
                                                         <input 
                                                             {...register("depositMonths")} 
                                                             type="number" 
@@ -9657,7 +9660,7 @@ function DepositPageComponent() {
 
                                                     {/* Disponibilité */}
                                                     <div className="flex-1 relative">
-                                                        <label className="block text-sm font-bold text-gray-900 mb-2">{t('f305')}</label>
+                                                        <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f305')}</FitText></label>
                                                         <div className="flex gap-4">
                                                             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 border-gray-200 p-3 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center group h-[52px]">
                                                                 <input type="radio" name="availabilityMode" value="IMMEDIATE" checked={availabilityMode === 'IMMEDIATE'} onChange={() => { setAvailabilityMode('IMMEDIATE'); setIsCalendarOpen(false); }} className="accent-[#00BFA6] w-4 h-4" />
@@ -9707,8 +9710,8 @@ function DepositPageComponent() {
                                             <FileText className="text-[#00BFA6]" />{t('f323')}</h2>
                                         <div className="bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200 space-y-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-900 mb-3">{t('f324')}</label>
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                                <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f324')}</FitText></label>
+                                                <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
                                                     <label className="cursor-pointer">
                                                         <input type="radio" value="YES" {...register("acceptsBankCredit")} className="peer sr-only" />
                                                         <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">{t('f018')}</div>
@@ -9732,7 +9735,7 @@ function DepositPageComponent() {
                                     <section className="space-y-6 pt-2">
                                         <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <FileText className="text-[#00BFA6]" />{t('f326')}</h2>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
                                             {tGroup('LEGAL_DOCUMENTS_SALE', LEGAL_DOCUMENTS_SALE).map((d) => (
                                                 <label key={d.id} className="cursor-pointer">
                                                     <input type="checkbox" value={d.id} {...register("legalDocuments")} className="peer sr-only" />
@@ -9917,7 +9920,7 @@ function DepositPageComponent() {
                                         {/* Wilaya, Commune, Quartier - Inline */}
                                         <div className="flex flex-col md:flex-row gap-4">
                                             <div className="flex-1">
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('f336')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f336')}</FitText></label>
                                                 <select {...register("city")} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white">
                                                     <option value="">{t('f337')}</option>
                                                     {WILAYAS.map((wilaya) => (
@@ -9928,7 +9931,7 @@ function DepositPageComponent() {
                                             </div>
 
                                             <div className="flex-1">
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('f338')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f338')}</FitText></label>
                                                 <select {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100 disabled:text-gray-400">
                                                     <option value="">{t('f337')}</option>
                                                     {filteredCommunes.map((commune) => (
@@ -9939,14 +9942,14 @@ function DepositPageComponent() {
                                             </div>
 
                                             <div className="flex-[2]">
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">{t('f339')}</label>
+                                                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f339')}</FitText></label>
                                                 <input {...register("address")} type="text" className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white" placeholder={t('f409')} />
                                                 {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>}
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('f340')}</label>
+                                            <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f340')}</FitText></label>
                                             <input 
                                                 {...register("mapsLink")} 
                                                 type="url" 
@@ -9990,7 +9993,7 @@ function DepositPageComponent() {
                                         </div>
 
                                         {selectedFiles.length > 0 && (
-                                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                                            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                                                 {selectedFiles.map((file, idx) => (
                                                     <div key={idx} className={cn(
                                                         "relative aspect-square bg-gray-100 rounded-lg overflow-hidden group border-2 transition-all",

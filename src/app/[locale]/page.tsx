@@ -310,7 +310,7 @@ function CategorySelect({ value, onChange, placeholder }: { value: string; onCha
   )
 
   return (
-    <div ref={ref} className="relative w-full min-w-0">
+    <div ref={ref} className="lg:relative w-full min-w-0">
       <button
         type="button"
         aria-haspopup="listbox"
@@ -324,7 +324,7 @@ function CategorySelect({ value, onChange, placeholder }: { value: string; onCha
       </button>
 
       {open && (
-        <div role="listbox" className="absolute start-0 top-full z-30 mt-[11px] w-64 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] p-[6px] shadow-xl shadow-black/10">
+        <div role="listbox" className="absolute inset-x-0 lg:inset-x-auto lg:start-0 top-full z-30 mt-[8px] lg:mt-[11px] lg:w-64 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] p-[6px] shadow-xl shadow-black/10">
           <button
             type="button"
             role="option"
@@ -393,7 +393,7 @@ function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, 
   )
 
   return (
-    <div ref={ref} className="relative w-full min-w-0">
+    <div ref={ref} className="lg:relative w-full min-w-0">
       <button
         type="button"
         disabled={disabled}
@@ -409,7 +409,7 @@ function ListSelect({ value, onChange, options, placeholder, searchPlaceholder, 
       </button>
 
       {open && (
-        <div className="absolute start-0 top-full z-30 mt-[11px] w-72 max-w-[85vw] rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] shadow-xl shadow-black/10">
+        <div className="absolute inset-x-0 lg:inset-x-auto lg:start-0 top-full z-30 mt-[8px] lg:mt-[11px] lg:w-72 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#03303c] shadow-xl shadow-black/10">
           <div className="p-[8px] border-b border-gray-100 dark:border-white/10">
             <div className="flex items-center gap-[8px] rounded-xl bg-gray-50 dark:bg-white/5 px-[11px]">
               <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
@@ -503,7 +503,7 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
     // [Wilaya] [Commune] [loupe]. Les deux groupes sont en `lg:contents` : sur grand écran leurs enfants
     // reprennent leur place dans la barre horizontale d'origine, inchangée.
     <div className="w-full bg-white dark:bg-[#03303c] rounded-[26px] shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-[8px] sm:p-[9px] flex flex-col lg:flex-row items-stretch gap-[8px]">
-      <div className="flex items-stretch gap-[8px] lg:contents">
+      <div className="relative flex items-stretch gap-[8px] lg:contents">
       <div className="flex bg-gray-50 dark:bg-white/5 rounded-2xl p-[4px] shrink-0">
         {([{ id: "SALE", label: t("searchBuy") }, { id: "RENTAL", label: t("searchRent") }] as const).map((o) => (
           <button
@@ -525,7 +525,7 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
       </div>
       </div>
 
-      <div className="flex items-stretch gap-[8px] lg:contents">
+      <div className="relative flex items-stretch gap-[8px] lg:contents">
 
       <div className="flex-1 flex items-center gap-[8px] px-[11px] py-[9px] lg:py-0 rounded-2xl bg-gray-50 dark:bg-white/5 lg:rounded-none lg:bg-transparent lg:dark:bg-transparent lg:border-r border-gray-100 dark:border-white/10 min-w-0">
         <ListSelect
