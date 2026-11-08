@@ -39,11 +39,12 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { HEBERGEMENT_SEJOUR_TYPES, isHebergementSejourType, isHebergementSejourConstructionType } from "@/data/hebergementSejourTypes"
-import { isLockedCategory } from "@/data/lockedCategories"
+import { isLockedCategory, isLockedPropertyType } from "@/data/lockedCategories"
 import {
   INDUSTRIAL_SITUATIONS, INDUSTRIAL_ACCESS_TRANSPORT, INDUSTRIAL_SOCIAL_LOCALES, INDUSTRIAL_HEBERGEMENT, INDUSTRIAL_SECURITY, INDUSTRIAL_WATER_SOURCES, INDUSTRIAL_FIRE_NETWORK, INDUSTRIAL_FIRE_EQUIPMENT,
   CF_ZONE_DECHARGEMENT, CF_TECHNIQUE_FROID, CF_MODE_DIFFUSION, TERRAIN_RACCORDEMENTS, TERRAIN_AGRICOLE_RESSOURCES_EAU, TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE,
   TERRAIN_AGRICOLE_ACCES, TERRAIN_AGRICOLE_ACCES_LOURDS, TERRAIN_AGRICOLE_CONSTRUCTIONS, TERRAIN_AGRICOLE_CLOTURE, TERRAIN_TOURISTIQUE_ZONE, TERRAIN_TOURISTIQUE_PAT,
+  SHOWROOM_STYLE, SHOWROOM_STRUCTURE,
 } from "@/data/industrialTerrainOptions"
 import {
   HTL_CLASSEMENT, HTL_CIBLE_CLIENTELE, HTL_AMBIANCE, HTL_ROOM_TYPES, HTL_BATHROOM_TYPES,
@@ -221,8 +222,10 @@ const BASE_PROPERTY_TYPES = [
   // par ETABLISSEMENT_HEBERGEMENT, qui ouvre le bloc Classification puis la fiche Type de bien
   // (Maison complète / Chambre / Place de lit), partagée avec HEBERGEMENT_SEJOUR côté particulier.
   { id: "ETABLISSEMENT_HEBERGEMENT", label: "Établissement d'hébergement", categoryId: "HOTELIER", iconName: "StructureHoteliere" },
-  // Ordre volontaire : L01 (4) tronc commun résidentiel-pro, L02 (4) locaux commerciaux, L03 (3) réservé pro
-  // (Centre d'affaires, Espace co-working, Bureau flexible filtrés pour les particuliers dans getFilteredPropertyTypes).
+  // Ordre volontaire (grille de 4) : L01 (4) tronc commun résidentiel-pro, L02 (4) blocs/locaux + Showroom,
+  // L03 (3) Centre d'affaires, Espace co-working, Bureau flexible — VERROUILLÉS « Bientôt disponible »
+  // (LOCKED_PROPERTY_TYPES, demande client du 08/11/2026) et toujours filtrés pour les particuliers dans
+  // getFilteredPropertyTypes.
   { id: "APPARTEMENT_COMMERCIAL", label: "Appartement", categoryId: "BUREAUX_COMMERCES", iconName: "AppartementBureau" },
   { id: "VILLA_COMMERCIALE", label: "Villa", categoryId: "BUREAUX_COMMERCES", iconName: "VillaBureau" },
   { id: "NIVEAU_VILLA_COMMERCIAL", label: "Niveau de villa", categoryId: "BUREAUX_COMMERCES", iconName: "NiveauVillaBureau" },
@@ -230,8 +233,8 @@ const BASE_PROPERTY_TYPES = [
   { id: "BLOC_ADMINISTRATIF", label: "Bloc administratif", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "IMMEUBLE_COMMERCIAL", label: "Bloc commercial", categoryId: "BUREAUX_COMMERCES", iconName: "ImmeubleBureaux" },
   { id: "LOCAL_COMMERCIAL", label: "Local commercial", categoryId: "BUREAUX_COMMERCES", iconName: "LocalCommercial" },
-  { id: "CENTRE_AFFAIRES", label: "Centre d'affaires", categoryId: "BUREAUX_COMMERCES", iconName: "CentreAffaires" },
   { id: "SHOWROOM", label: "Showroom", categoryId: "BUREAUX_COMMERCES", iconName: "Showroom" },
+  { id: "CENTRE_AFFAIRES", label: "Centre d'affaires", categoryId: "BUREAUX_COMMERCES", iconName: "CentreAffaires" },
   { id: "COWORKING", label: "Espace co-working", categoryId: "BUREAUX_COMMERCES", iconName: "Coworking" },
   { id: "BUREAU_FLEXIBLE", label: "Bureau flexible", categoryId: "BUREAUX_COMMERCES", iconName: "BureauFlexible" },
   { id: "HEBERGEMENT_HOTELIER", label: "Hébergement hôtelier étoilé", categoryId: "HEBERGEMENT", iconName: "HebergementEtoile" },
@@ -483,16 +486,6 @@ const IMMEUBLE_ETAT_GLOBAL = [
     { id: "A_RENOVER", label: "À rénover / À aménager", desc: "Travaux lourds ou aménagement intérieur complet à prévoir" },
 ]
 // ===== SHOWROOM =====
-const SHOWROOM_STYLE = [
-    { id: "MODERNE", label: "Moderne" },
-    { id: "CLASSIQUE", label: "Classique" },
-    { id: "INDUSTRIEL", label: "Industriel" },
-]
-const SHOWROOM_STRUCTURE = [
-    { id: "BETON_ARME", label: "Béton armé" },
-    { id: "STRUCTURE_METALLIQUE", label: "Structure métallique" },
-    { id: "AUTRE", label: "Autre" },
-]
 // ===== LOCAL COMMERCIAL =====
 const LOCAL_ENVIRONNEMENT = [
     { id: "GALERIE_MARCHANDE", label: "Galerie marchande" },
@@ -2115,6 +2108,12 @@ function DepositPageComponent() {
       const parsed = JSON.parse(raw)
       // Brouillon d'une catégorie verrouillée depuis (Hébergement & Séjour) : on garde la transaction
       // mais on renvoie au choix de catégorie, sans rouvrir la fiche verrouillée.
+      if (isLockedPropertyType(parsed.values?.propertyType)) {
+        reset({ ...initialDefaultValues, transactionType: parsed.values?.transactionType, realEstateType: parsed.values?.realEstateType } as any, { keepDefaultValues: true })
+        setCurrentStep(3)
+        setDepositDraftAvailable(null)
+        return
+      }
       if (isLockedCategory(parsed.values?.realEstateType)) {
         reset({ ...initialDefaultValues, transactionType: parsed.values?.transactionType } as any, { keepDefaultValues: true })
         setCurrentStep(parsed.values?.transactionType ? 2 : 1)
@@ -4010,8 +4009,8 @@ function DepositPageComponent() {
             </div>
 
             {/* Main Card */}
-            <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible min-h-[500px] flex flex-col">
-                <div className="p-4 md:p-8 border-b border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-5xl overflow-visible md:min-h-[500px] flex flex-col">
+                <div className="px-4 py-3 md:p-8 border-b border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1">
                     {currentStep > (editId ? 4 : 1) && (
                         <button
                             onClick={prevStep}
@@ -4046,7 +4045,7 @@ function DepositPageComponent() {
                     </div>
                 )}
 
-                <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-start">
+                <div className="p-4 md:p-10 flex-1 flex flex-col items-center justify-center text-start">
                     {!isFormAvailable && currentStep > 3 ? (
                         <div className="w-full max-w-2xl text-center space-y-6 py-12">
                             <div className="bg-orange-50 text-orange-600 p-8 rounded-2xl border border-orange-200">
@@ -4073,28 +4072,28 @@ function DepositPageComponent() {
                         <>
                             {/* Step 1: Transaction Type */}
                     {currentStep === 1 && (
-                        <div className="w-full max-w-4xl animate-fade-in py-6 md:py-10">
-                            <div className="flex justify-center gap-8 md:gap-32">
+                        <div className="w-full max-w-4xl animate-fade-in py-2 md:py-10">
+                            <div className="flex justify-center gap-10 md:gap-32">
                                 {/* Location */}
                                 <div 
                                     onClick={() => handleTransactionTypeClick("RENTAL")}
-                                    className="flex flex-col items-center gap-6 cursor-pointer group"
+                                    className="flex flex-col items-center gap-3 md:gap-6 cursor-pointer group"
                                 >
                                     <div className={cn(
-                                        "w-28 h-28 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                        "w-24 h-24 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
                                         transactionType === "RENTAL" 
                                             ? "bg-white border-[#00BFA6] shadow-[0_10px_20px_rgba(0,191,166,0.3)] transform -translate-y-2" 
                                             : "bg-white border-gray-100 shadow-[0_10px_20px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
                                     )}>
                                         <div className={cn(
-                                            "w-20 h-20 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-colors duration-300",
+                                            "w-16 h-16 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-colors duration-300",
                                             transactionType === "RENTAL" ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                                         )}>
-                                            <Home className="h-10 w-10 md:h-16 md:w-16" />
+                                            <Home className="h-8 w-8 md:h-16 md:w-16" />
                                         </div>
                                     </div>
                                     <span className={cn(
-                                        "text-lg md:text-2xl font-bold transition-colors",
+                                        "text-base md:text-2xl font-bold transition-colors",
                                         transactionType === "RENTAL" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                     )}>
                                         {t("rentalOption")}
@@ -4104,23 +4103,23 @@ function DepositPageComponent() {
                                 {/* Vente */}
                                 <div 
                                     onClick={() => handleTransactionTypeClick("SALE")}
-                                    className="flex flex-col items-center gap-6 cursor-pointer group"
+                                    className="flex flex-col items-center gap-3 md:gap-6 cursor-pointer group"
                                 >
                                     <div className={cn(
-                                        "w-28 h-28 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                        "w-24 h-24 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
                                         transactionType === "SALE" 
                                             ? "bg-white border-[#00BFA6] shadow-[0_10px_20px_rgba(0,191,166,0.3)] transform -translate-y-2" 
                                             : "bg-white border-gray-100 shadow-[0_10px_20px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
                                     )}>
                                         <div className={cn(
-                                            "w-20 h-20 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-colors duration-300",
+                                            "w-16 h-16 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-colors duration-300",
                                             transactionType === "SALE" ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                                         )}>
-                                            <Key className="h-10 w-10 md:h-16 md:w-16" />
+                                            <Key className="h-8 w-8 md:h-16 md:w-16" />
                                         </div>
                                     </div>
                                     <span className={cn(
-                                        "text-lg md:text-2xl font-bold transition-colors",
+                                        "text-base md:text-2xl font-bold transition-colors",
                                         transactionType === "SALE" ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                     )}>
                                         {t("saleOption")}
@@ -4132,8 +4131,8 @@ function DepositPageComponent() {
 
                     {/* Step 2: Real Estate Type */}
                     {currentStep === 2 && (
-                        <div className="w-full max-w-7xl animate-fade-in py-8">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-6 justify-items-center">
+                        <div className="w-full max-w-7xl animate-fade-in py-1 md:py-8">
+                            <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-y-5 md:gap-y-12 gap-x-2 md:gap-x-6 justify-items-center">
                                 {filteredCategories.map((cat) => {
                                     const Icon = IconMap[cat.iconName] || Home
                                     const isSelected = realEstateType === cat.id
@@ -4146,32 +4145,32 @@ function DepositPageComponent() {
                                             key={cat.id}
                                             onClick={() => { if (!standby) handleCategoryClick(cat.id) }}
                                             aria-disabled={standby}
-                                            className={cn("flex flex-col items-center gap-4 group w-full relative", standby ? "cursor-not-allowed opacity-50" : "cursor-pointer")}
+                                            className={cn("flex flex-col items-center gap-2 md:gap-4 group w-full relative", standby ? "cursor-not-allowed opacity-50" : "cursor-pointer")}
                                         >
                                             <div
                                                 className={cn(
-                                                    "w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative bg-white",
+                                                    "w-[72px] h-[72px] md:w-32 md:h-32 rounded-full flex items-center justify-center transition-all duration-300 border-[3px] md:border-4 relative bg-white",
                                                     isSelected ? "transform -translate-y-2" : "border-gray-100 shadow-[0_8px_16px_rgba(0,0,0,0.05)] group-hover:-translate-y-1"
                                                 )}
                                                 style={isSelected ? { borderColor: catColor.hex, boxShadow: `0 8px 16px rgba(${catColor.rgb},0.3)` } : undefined}
                                             >
                                                 <div
                                                     className={cn(
-                                                        "w-24 h-24 rounded-full flex items-center justify-center transition-colors duration-300",
+                                                        "w-[54px] h-[54px] md:w-24 md:h-24 rounded-full flex items-center justify-center transition-colors duration-300",
                                                         isSelected ? "text-white" : "bg-gray-50 text-gray-400 group-hover:bg-gray-100"
                                                     )}
                                                     style={isSelected ? { backgroundColor: catColor.hex } : undefined}
                                                 >
-                                                    <Icon className="h-10 w-10" />
+                                                    <Icon className="h-6 w-6 md:h-10 md:w-10" />
                                                 </div>
                                             </div>
                                             <span
-                                                className={cn("text-lg font-bold text-center max-w-[180px] transition-colors", !isSelected && "text-gray-500")}
+                                                className={cn("text-xs md:text-lg font-bold text-center leading-tight max-w-[180px] transition-colors", !isSelected && "text-gray-500")}
                                                 style={isSelected ? { color: catColor.hex } : undefined}
                                             >
                                                 {catLabel(cat.id)}
                                             </span>
-                                            {standby && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">{t('standbyBadge')}</span>}
+                                            {standby && <span className="rounded-full bg-amber-100 px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-amber-800 text-center leading-tight">{t('standbyBadge')}</span>}
                                         </div>
                                     )
                                 })}
@@ -4182,8 +4181,8 @@ function DepositPageComponent() {
                     {/* Step 3: Property Type */}
                     {currentStep === 3 && isHsCategoryRental && !hsMode && (
                         <div className="w-full max-w-3xl animate-fade-in py-8">
-                            <h2 className="text-center text-xl font-bold text-gray-800 mb-8">{t('hsModeTitle')}</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <h2 className="text-center text-base md:text-xl font-bold text-gray-800 mb-4 md:mb-8">{t('hsModeTitle')}</h2>
+                            <div className="grid grid-cols-2 gap-3 md:gap-5">
                                 {([
                                     { id: "NIGHTLY", Icon: Home, label: t('hsModeNightly'), desc: t('hsModeNightlyDesc') },
                                     { id: "FULL", Icon: HotelIcon, label: t('hsModeFull'), desc: t('hsModeFullDesc') },
@@ -4192,7 +4191,7 @@ function DepositPageComponent() {
                                         key={id}
                                         type="button"
                                         onClick={() => setHsMode(id)}
-                                        className="group flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-100 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-[#00BFA6] hover:shadow-md"
+                                        className="group flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-100 bg-white p-4 md:p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-[#00BFA6] hover:shadow-md"
                                     >
                                         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-colors group-hover:bg-[#00BFA6] group-hover:text-white">
                                             <Icon className="h-8 w-8" />
@@ -4206,36 +4205,40 @@ function DepositPageComponent() {
                     )}
 
                     {currentStep === 3 && !(isHsCategoryRental && !hsMode) && (
-                        <div className="w-full max-w-5xl animate-fade-in py-8">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 justify-items-center">
+                        <div className="w-full max-w-5xl animate-fade-in py-1 md:py-8">
+                            <div className="grid grid-cols-3 md:grid-cols-4 gap-y-5 md:gap-y-10 gap-x-2 md:gap-x-6 justify-items-center">
                                 {filteredPropertyTypes.map((type) => {
                                     const Icon = IconMap[type.iconName] || Home
                                     const isSelected = propertyType === type.id
+                                    // Centre d'affaires / Co-working / Bureau flexible : visibles mais verrouillés.
+                                    const locked = isLockedPropertyType(type.id)
                                     return (
-                                        <div 
+                                        <div
                                             key={type.id}
-                                            onClick={() => handlePropertyTypeClick(type.id)}
-                                            className="flex flex-col items-center gap-3 cursor-pointer group w-full"
+                                            onClick={() => { if (!locked) handlePropertyTypeClick(type.id) }}
+                                            aria-disabled={locked}
+                                            className={cn("flex flex-col items-center gap-2 md:gap-3 group w-full", locked ? "cursor-not-allowed opacity-50" : "cursor-pointer")}
                                         >
                                             <div className={cn(
-                                                "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 border-4 relative",
+                                                "w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 border-[3px] md:border-4 relative",
                                                 isSelected 
                                                     ? "bg-white border-[#00BFA6] shadow-[0_6px_12px_rgba(0,191,166,0.3)] transform -translate-y-1" 
                                                     : "bg-white border-gray-100 shadow-[0_6px_12px_rgba(0,0,0,0.05)] group-hover:border-[#00BFA6]/30 group-hover:-translate-y-1"
                                             )}>
                                                 <div className={cn(
-                                                    "w-16 h-16 rounded-full flex items-center justify-center transition-colors duration-300",
+                                                    "w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-colors duration-300",
                                                     isSelected ? "bg-[#00BFA6] text-white" : "bg-gray-50 text-gray-400 group-hover:bg-[#00BFA6]/10 group-hover:text-[#00BFA6]"
                                                 )}>
-                                                    <Icon className="h-8 w-8" />
+                                                    <Icon className="h-6 w-6 md:h-8 md:w-8" />
                                                 </div>
                                             </div>
                                             <span className={cn(
-                                                "text-sm font-bold text-center max-w-[140px] transition-colors",
+                                                "text-xs md:text-sm font-bold text-center leading-tight max-w-[140px] transition-colors",
                                                 isSelected ? "text-[#00BFA6]" : "text-gray-500 group-hover:text-[#00BFA6]"
                                             )}>
                                                 {ptLabel(type.id, type.label)}
                                             </span>
+                                            {locked && <span className="rounded-full bg-amber-100 px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-amber-800 text-center leading-tight">{t('standbyBadge')}</span>}
                                         </div>
                                     )
                                 })}
@@ -4260,7 +4263,7 @@ function DepositPageComponent() {
                         #00BFA6, navy #003B4A), poussés plus loin que le reste du wizard sur cette seule
                         fiche — périmètre du redesign volontairement limité à isHotelFiche. */}
                     {currentStep === 4 && isHotelFiche && (
-                        <div className="w-full max-w-5xl animate-fade-in space-y-10">
+                        <div className="w-full max-w-5xl animate-fade-in space-y-6 md:space-y-10">
 
                             {/* Bandeau d'ouverture — signe distinctif de cette fiche dans le wizard */}
                             <div className="relative overflow-hidden rounded-3xl bg-[#003B4A] px-6 sm:px-10 py-8 sm:py-9">
@@ -4279,7 +4282,7 @@ function DepositPageComponent() {
 
                             {/* 1. Classement */}
                             <section className="space-y-4">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Star className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionClassement')}
                                 </h2>
                                 <div
@@ -4317,7 +4320,7 @@ function DepositPageComponent() {
                             {/* 2. Cible et profil de clientèle — ligne d'icônes ; la description ne s'affiche
                                 que pour le choix actif, pas répétée sous les 4 options. */}
                             <section className="space-y-4">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Users className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionCible')}
                                 </h2>
                                 <div className="flex flex-wrap gap-2.5">
@@ -4350,7 +4353,7 @@ function DepositPageComponent() {
 
                             {/* 3. Ambiance / vocation du lieu */}
                             <section className="space-y-4">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Sun className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionAmbiance')}
                                 </h2>
                                 <div className="flex flex-wrap gap-3">
@@ -4382,7 +4385,7 @@ function DepositPageComponent() {
                             {/* 4. Chambres et suites — configurateur par carte, façon extranet hôtelier :
                                 compteurs +/- pour les petits entiers, lits à bascule avec quantité intégrée. */}
                             <section className="space-y-4">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <BedDouble className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionRooms')}
                                 </h2>
                                 <p className="text-gray-500 text-sm -mt-2">{t('htlSectionRoomsHint')}</p>
@@ -4483,7 +4486,7 @@ function DepositPageComponent() {
                                                     {/* Lits présents — bascule + quantité intégrée */}
                                                     <div>
                                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">{t('htlBedsLabel')}</label>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
                                                             {tGroup('HTL_BED_TYPES', HTL_BED_TYPES).map((bed) => {
                                                                 const active = room.beds.find(b => b.bedType === bed.id)
                                                                 return (
@@ -4563,7 +4566,7 @@ function DepositPageComponent() {
 
                             {/* 5. Services inclus — liste de préférences, comme une fiche de prestations */}
                             <section className="space-y-5">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Sparkles className="h-5 w-5 text-[#00BFA6]" />{t('htlSectionServices')}
                                 </h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -4633,15 +4636,15 @@ function DepositPageComponent() {
 
                     {currentStep === 4 && isUsineFiche && (
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Factory className="h-5 w-5 text-[#00BFA6]" />{t('f001')}</h2>
 
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">{t('f002')}</label>
                                         <input type="hidden" {...register("industrialSector")} />
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                             {tGroup('INDUSTRIAL_SECTORS', INDUSTRIAL_SECTORS).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
@@ -4689,8 +4692,8 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Key className="h-5 w-5 text-[#00BFA6]" />{t('f005')}</h2>
 
                                 <div className="space-y-6">
@@ -4726,7 +4729,7 @@ function DepositPageComponent() {
 
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3 whitespace-nowrap">{t('f007')}</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                             {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((t) => (
                                                 <label key={t.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white min-w-0">
                                                     <input type="radio" value={t.id} {...register("industrialGlobalState")} className="accent-[#00BFA6] w-4 h-4" />
@@ -4739,14 +4742,14 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f008')}</h2>
 
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">{t('f009')}</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">{t('f010')}</label>
                                                 <input
@@ -4788,12 +4791,12 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f013')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f014')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS).map((x) => (
@@ -4806,7 +4809,7 @@ function DepositPageComponent() {
                                         {errors.industrialSituation && <p className="text-red-500 text-sm mt-1">{errors.industrialSituation.message as any}</p>}
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f015')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_ACCESS_TRANSPORT', INDUSTRIAL_ACCESS_TRANSPORT).map((x) => (
@@ -4821,12 +4824,12 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f016')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f017')}</div>
                                         <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -4841,7 +4844,7 @@ function DepositPageComponent() {
                                                         type="number"
                                                         min="0"
                                                         onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                        className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
                                                         placeholder={t('f352')}
                                                     />
                                                     {errors.industrialOfficesArea && <p className="text-red-500 text-sm mt-1">{errors.industrialOfficesArea.message as any}</p>}
@@ -4850,7 +4853,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f021')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES).map((x) => (
@@ -4862,7 +4865,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f022')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT).map((x) => (
@@ -4875,7 +4878,7 @@ function DepositPageComponent() {
 
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f023')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY).map((x) => (
@@ -4889,12 +4892,12 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Zap className="h-5 w-5 text-[#00BFA6]" />{t('f024')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
@@ -4904,7 +4907,7 @@ function DepositPageComponent() {
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
                                                     placeholder={t('f353')}
                                                 />
                                                 {errors.industrialElectricityTransformerKva && <p className="text-red-500 text-sm mt-1">{errors.industrialElectricityTransformerKva.message as any}</p>}
@@ -4916,7 +4919,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f028')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -4929,7 +4932,7 @@ function DepositPageComponent() {
                                         {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f032')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES).map((x) => (
@@ -4943,7 +4946,7 @@ function DepositPageComponent() {
 
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f033')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -4956,12 +4959,12 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Siren className="h-5 w-5 text-[#00BFA6]" />{t('f036')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f037')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK).map((x) => (
@@ -4973,7 +4976,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f038')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT).map((x) => (
@@ -4996,7 +4999,7 @@ function DepositPageComponent() {
                                                         const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
                                                         setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
                                                     }}
-                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
                                                     placeholder={t('f354')}
                                                 />
                                                 {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
@@ -5013,13 +5016,13 @@ function DepositPageComponent() {
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
 
                             {/* Section 1 : Dimensions & Surface */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f039')}</h2>
 
                                 <div className="space-y-5">
                                     {/* Ligne 1 : Surface terrain | Surface couverte | État global */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
                                             <input
@@ -5059,7 +5062,7 @@ function DepositPageComponent() {
                                     </div>
 
                                     {/* Ligne 2 : Longueur | Largeur | Hauteur sous crochet */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">{t('f043')}</label>
                                             <input
@@ -5101,12 +5104,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Section 2 : Infrastructure */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Warehouse className="h-5 w-5 text-[#00BFA6]" />{t('f046')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f047')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                             <input type="checkbox" value="STOCKAGE_LOGISTIQUE" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />{t('f048')}</label>
@@ -5114,7 +5117,7 @@ function DepositPageComponent() {
                                             <input type="checkbox" value="PRODUCTION_INDUSTRIEL" {...register("hangarUsage")} className="accent-[#00BFA6] w-4 h-4" />{t('f049')}</label>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f050')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                             <input type="checkbox" {...register("hangarStructureToleTH40")} className="accent-[#00BFA6] w-4 h-4" />{t('f051')}</label>
@@ -5124,7 +5127,7 @@ function DepositPageComponent() {
                                             <input type="checkbox" {...register("hangarToitureAutre")} className="accent-[#00BFA6] w-4 h-4" />{t('f053')}</label>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f054')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                             <input type="checkbox" {...register("hangarSolBetonQuartz")} className="accent-[#00BFA6] w-4 h-4" />{t('f055')}</label>
@@ -5137,12 +5140,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Section 3 : Emplacement */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f057')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f014')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS).map((x) => (
@@ -5155,7 +5158,7 @@ function DepositPageComponent() {
                                         {errors.industrialSituation && <p className="text-red-500 text-sm mt-1">{errors.industrialSituation.message as any}</p>}
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f058')}</div>
                                         <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('f015')}</div>
                                         <div className="space-y-2">
@@ -5171,12 +5174,12 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f016')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f017')}</div>
                                         <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5191,7 +5194,7 @@ function DepositPageComponent() {
                                                         type="number"
                                                         min="0"
                                                         onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                        className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                        className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
                                                         placeholder={t('f352')}
                                                     />
                                                     {errors.industrialOfficesArea && <p className="text-red-500 text-sm mt-1">{errors.industrialOfficesArea.message as any}</p>}
@@ -5200,7 +5203,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f021')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES).map((x) => (
@@ -5212,7 +5215,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f022')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT).map((x) => (
@@ -5224,7 +5227,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl h-full">
                                         <div className="font-bold text-gray-900 mb-3">{t('f023')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY).map((x) => (
@@ -5238,12 +5241,12 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Zap className="h-5 w-5 text-[#00BFA6]" />{t('f024')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
@@ -5253,7 +5256,7 @@ function DepositPageComponent() {
                                                     type="number"
                                                     min="0"
                                                     onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()}
-                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
                                                     placeholder={t('f353')}
                                                 />
                                                 {errors.industrialElectricityTransformerKva && <p className="text-red-500 text-sm mt-1">{errors.industrialElectricityTransformerKva.message as any}</p>}
@@ -5265,7 +5268,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f028')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5278,7 +5281,7 @@ function DepositPageComponent() {
                                         {errors.industrialGas && <p className="text-red-500 text-sm mt-1">{errors.industrialGas.message as any}</p>}
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f032')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES).map((x) => (
@@ -5291,7 +5294,7 @@ function DepositPageComponent() {
                                         {errors.industrialWaterSources && <p className="text-red-500 text-sm mt-1">{errors.industrialWaterSources.message as any}</p>}
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4 h-full">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4 h-full">
                                         <div className="font-bold text-gray-900">{t('f033')}</div>
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5304,12 +5307,12 @@ function DepositPageComponent() {
                                 </div>
                             </section>
 
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Siren className="h-5 w-5 text-[#00BFA6]" />{t('f036')}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f037')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK).map((x) => (
@@ -5321,7 +5324,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f038')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT).map((x) => (
@@ -5344,7 +5347,7 @@ function DepositPageComponent() {
                                                         const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
                                                         setValue("industrialFireWaterReserveLiters", formatted, { shouldValidate: true })
                                                     }}
-                                                    className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
+                                                    className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900"
                                                     placeholder={t('f354')}
                                                 />
                                                 {errors.industrialFireWaterReserveLiters && <p className="text-red-500 text-sm mt-1">{errors.industrialFireWaterReserveLiters.message as any}</p>}
@@ -5362,14 +5365,14 @@ function DepositPageComponent() {
                         <div className="w-full max-w-7xl animate-fade-in space-y-10">
 
                             {/* Section 1 : Activités & Usages autorisés */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Snowflake className="h-5 w-5 text-[#00BFA6]" />{t('f059')}</h2>
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">{t('f060')}</label>
                                         <input type="hidden" {...register("cfSector")} />
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                             {tGroup('CF_SECTORS', CF_SECTORS).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input
@@ -5397,10 +5400,10 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Section 1b : Infrastructure & Surfaces */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f008')}</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f043')}</label>
                                         <input {...register("cfLength")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
@@ -5430,12 +5433,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Annexes & Commodités */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f016')}</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
                                     {/* Bureaux */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f017')}</div>
                                         <div className="flex gap-4">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
@@ -5445,7 +5448,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Locaux sociaux */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f021')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES).map((x) => (
@@ -5457,7 +5460,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Hébergement */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f022')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT).map((x) => (
@@ -5469,7 +5472,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Sécurité */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f023')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY).map((x) => (
@@ -5484,12 +5487,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Section 2 : Configuration & Emplacement du site */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f064')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
                                     {/* Localisation */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f065')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS).map((x) => (
@@ -5501,7 +5504,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Type de structure */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f066')}</div>
                                         <div className="space-y-2">
                                             {tGroup('CF_STRUCTURE_TYPES', CF_STRUCTURE_TYPES).map((x) => (
@@ -5513,7 +5516,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Configuration */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f067')}</div>
                                         <div className="flex gap-4 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5523,12 +5526,12 @@ function DepositPageComponent() {
                                         </div>
                                         {cfConfiguration === "ETAGES" && (
                                             <div className="w-full mt-3">
-                                                <input {...register("cfFloorsCount")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f139')} />
+                                                <input {...register("cfFloorsCount")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f139')} />
                                             </div>
                                         )}
                                     </div>
                                     {/* Logistique verticale */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f070')}</div>
                                         <div className="flex gap-4 flex-wrap items-end">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5537,13 +5540,13 @@ function DepositPageComponent() {
                                                 <input type="radio" value="AUCUN" {...register("cfLogistiqueVerticale")} className="accent-[#00BFA6] w-4 h-4" />{t('f031')}</label>
                                             {cfLogistiqueVerticale === "MONTE_CHARGE" && (
                                                 <div className="w-full">
-                                                    <input {...register("cfMonteChargeCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f363')} />
+                                                    <input {...register("cfMonteChargeCapacity")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f363')} />
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     {/* Accessibilité camions */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f072')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_ACCESS_TRANSPORT', INDUSTRIAL_ACCESS_TRANSPORT).map((x) => (
@@ -5555,7 +5558,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Zone de déchargement */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f073')}</div>
                                         <div className="space-y-2">
                                             {tGroup('CF_ZONE_DECHARGEMENT', CF_ZONE_DECHARGEMENT).map((x) => (
@@ -5570,14 +5573,14 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Section 3 : Équipements de sécurité & Performance */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Shield className="h-5 w-5 text-[#00BFA6]" />{t('f074')}</h2>
                                 <div className="space-y-5">
                                     {/* Ligne 1 : Énergie de secours + Technique Froid */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         {/* Énergie de secours */}
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-3">{t('f075')}</div>
                                             <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
                                                 <input type="checkbox" {...register("cfGenerateur")} className="accent-[#00BFA6] w-5 h-5" />
@@ -5585,12 +5588,12 @@ function DepositPageComponent() {
                                             </label>
                                             {cfGenerateur && (
                                                 <div className="mt-3">
-                                                    <input {...register("cfGenerateurKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f364')} />
+                                                    <input {...register("cfGenerateurKva")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f364')} />
                                                 </div>
                                             )}
                                         </div>
                                         {/* Technique Froid */}
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-3">{t('f077')}</div>
                                             <div className="space-y-2">
                                                 {tGroup('CF_TECHNIQUE_FROID', CF_TECHNIQUE_FROID).map((x) => (
@@ -5605,7 +5608,7 @@ function DepositPageComponent() {
                                     {/* Ligne 2 : Type de froid + Mode de diffusion */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         {/* Type de froid */}
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-3">{t('f078')}</div>
                                             <div className="space-y-2">
                                                 {tGroup('CF_TYPE_FROID', CF_TYPE_FROID).map((x) => (
@@ -5617,7 +5620,7 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         {/* Mode de diffusion */}
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-3">{t('f079')}</div>
                                             <div className="space-y-2">
                                                 {tGroup('CF_MODE_DIFFUSION', CF_MODE_DIFFUSION).map((x) => (
@@ -5633,12 +5636,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Section 4 : Modalités de location & Flexibilité */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Key className="h-5 w-5 text-[#00BFA6]" />{t('f080')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     {/* Mode de gestion */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f081')}</div>
                                         <div className="space-y-3">
                                             {tGroup('CF_MODE_GESTION', CF_MODE_GESTION).map((x) => (
@@ -5653,7 +5656,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Flexibilité d'espace */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f082')}</div>
                                         <div className="space-y-3">
                                             {tGroup('CF_FLEXIBILITE', CF_FLEXIBILITE).map((x) => (
@@ -5668,7 +5671,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Durée d'engagement */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f083')}</div>
                                         <div className="space-y-2">
                                             {tGroup('CF_DUREE_ENGAGEMENT', CF_DUREE_ENGAGEMENT).map((x) => (
@@ -5691,7 +5694,7 @@ function DepositPageComponent() {
 
                             {/* Section B : Caractéristiques Physiques */}
                             <section className="space-y-6 order-1">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f084')}</h2>
                                 {/* Ligne 1 : Superficie / Altitude / Nb façades */}
                                 <div className={`grid grid-cols-1 gap-5 ${isTerrainAgricole ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
@@ -5739,7 +5742,7 @@ function DepositPageComponent() {
                                     </div>
                                 </div>
                                 {/* Reste des champs en 2 colonnes */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                     {/* Longueur façade principale */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f088')}</label>
@@ -5751,7 +5754,7 @@ function DepositPageComponent() {
                                         <input {...register("terrainDepth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f369')} />
                                     </div>
                                     {/* Topographie */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f090')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_TOPOGRAPHIE', TERRAIN_TOPOGRAPHIE).map((x) => (
@@ -5764,9 +5767,9 @@ function DepositPageComponent() {
                                     </div>
                                     {/* Statut de la zone / Viabilité selon le type de terrain */}
                                     {isTerrainAgricole ? (
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f091')}</div>
-                                        <div className="flex gap-6 flex-wrap">
+                                        <div className="flex gap-x-4 gap-y-2 md:gap-6 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />{t('f092')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5774,9 +5777,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     ) : isTerrainTouristique ? (
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f091')}</div>
-                                        <div className="flex gap-6 flex-wrap">
+                                        <div className="flex gap-x-4 gap-y-2 md:gap-6 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="radio" value={"true" as any} {...register("terrainViabilise")} className="accent-[#00BFA6] w-4 h-4" onChange={() => setValue("terrainViabilise", true as any)} checked={terrainViabilise === true} />{t('f092')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5784,7 +5787,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     ) : (
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f094')}</div>
                                         <div className="space-y-2">
                                             {(propertyType === "TERRAIN_INDUSTRIEL" ? tGroup('TERRAIN_INDUSTRIEL_ZONE', TERRAIN_INDUSTRIEL_ZONE) : tGroup('TERRAIN_STATUT_ZONE', TERRAIN_STATUT_ZONE)).map((x) => (
@@ -5802,12 +5805,12 @@ function DepositPageComponent() {
                             {/* Section C : État Juridique & Urbanisme (en location : seulement la viabilisation, sans documents) */}
                             {(transactionType === "SALE" || (!isTerrainAgricole && !isTerrainTouristique)) && (
                             <section className={`space-y-6 ${isTerrainAgricole ? "order-3" : "order-2"}`}>
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <FileText className="h-5 w-5 text-[#00BFA6]" />{transactionType === "SALE" ? t('f095') : t('f091')}</h2>
                                 <div className="space-y-5">
                                     {/* Documents juridiques : uniquement pour la VENTE (retirés de la location de terrains) */}
                                     {transactionType === "SALE" && (
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f096')}</div>
                                         <div className="flex flex-wrap gap-x-6 gap-y-2">
                                             {tGroup('TERRAIN_DOCUMENTS', TERRAIN_DOCUMENTS).map((doc) => (
@@ -5820,7 +5823,7 @@ function DepositPageComponent() {
                                     </div>
                                     )}
                                     {/* Viabilisation & Raccordements — masqué pour agricole et touristique (viabilité déjà dans Caractéristiques Physiques) */}
-                                    {!isTerrainAgricole && !isTerrainTouristique && <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    {!isTerrainAgricole && !isTerrainTouristique && <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f091')}</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5850,11 +5853,11 @@ function DepositPageComponent() {
                             {isTerrainAgricole && (
                             <>
                             <section className="space-y-6 order-2">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Leaf className="h-5 w-5 text-[#00BFA6]" />{t('f098')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Vocation agricole */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f099')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_VOCATION', TERRAIN_AGRICOLE_VOCATION).map((v) => (
@@ -5871,7 +5874,7 @@ function DepositPageComponent() {
                                         )}
                                     </div>
                                     {/* Ressources en eau */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f100')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_RESSOURCES_EAU', TERRAIN_AGRICOLE_RESSOURCES_EAU).filter(r => r.id !== "FORAGE").map((r) => (
@@ -5891,9 +5894,9 @@ function DepositPageComponent() {
                                         )}
                                     </div>
                                     {/* Exposition */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f103')}</div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
                                             {tGroup('TERRAIN_AGRICOLE_EXPOSITION', TERRAIN_AGRICOLE_EXPOSITION).map((e) => (
                                                 <label key={e.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="checkbox" value={e.id} {...register("terrainAgricoleExposition")} className="accent-[#00BFA6] w-4 h-4" />
@@ -5903,7 +5906,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Ensoleillement */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f104')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_ENSOLEILLEMENT', TERRAIN_AGRICOLE_ENSOLEILLEMENT).map((e) => (
@@ -5915,7 +5918,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Nature du sol */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f105')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_NATURE_SOL', TERRAIN_AGRICOLE_NATURE_SOL).map((x) => (
@@ -5927,7 +5930,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Zone d'implantation — déplacée depuis Bâtiments */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f106')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_ZONE', TERRAIN_AGRICOLE_ZONE).map((x) => (
@@ -5939,7 +5942,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Qualité de l'eau — juste avant Équipements hydrauliques */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f107')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_QUALITE_EAU', TERRAIN_AGRICOLE_QUALITE_EAU).map((x) => (
@@ -5951,7 +5954,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Équipements hydrauliques */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f108')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE', TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE).map((x) => (
@@ -5963,9 +5966,9 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* État actuel du terrain */}
-                                    <div className="md:col-span-2 bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="md:col-span-2 bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f109')}</div>
-                                        <div className="flex gap-6 flex-wrap">
+                                        <div className="flex gap-x-4 gap-y-2 md:gap-6 flex-wrap">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="radio" value="VIDE" {...register("terrainAgricoleEtatCulture")} className="accent-[#00BFA6] w-4 h-4" />{t('f110')}</label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
@@ -5977,10 +5980,10 @@ function DepositPageComponent() {
 
                             {/* Section Accessibilité & Logistique — uniquement pour Terrain Agricole */}
                             <section className="space-y-6 order-4">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Navigation className="h-5 w-5 text-[#00BFA6]" />{t('f112')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f113')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_ACCES', TERRAIN_AGRICOLE_ACCES).map((x) => (
@@ -5991,7 +5994,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f114')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_ACCES_LOURDS', TERRAIN_AGRICOLE_ACCES_LOURDS).map((x) => (
@@ -6007,10 +6010,10 @@ function DepositPageComponent() {
 
                             {/* Section Bâtiments & Clôture — uniquement pour Terrain Agricole */}
                             <section className="space-y-6 order-5">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Home className="h-5 w-5 text-[#00BFA6]" />{t('f115')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f116')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_CONSTRUCTIONS', TERRAIN_AGRICOLE_CONSTRUCTIONS).map((x) => (
@@ -6021,7 +6024,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f117')}</div>
                                         <div className="space-y-2">
                                             {tGroup('TERRAIN_AGRICOLE_CLOTURE', TERRAIN_AGRICOLE_CLOTURE).map((x) => (
@@ -6040,12 +6043,12 @@ function DepositPageComponent() {
                             {/* Section Touristique — uniquement pour Terrain Touristique */}
                             {isTerrainTouristique && (
                             <section className="space-y-6 order-2">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Palmtree className="h-5 w-5 text-[#00BFA6]" />{t('f118')}</h2>
                                 <div className="space-y-5">
                                     {/* ZET + PAT */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-1">{t('f119')}</div>
                                             <div className="text-xs text-gray-500 mb-3">{t('f120')}</div>
                                             <div className="space-y-2">
@@ -6062,7 +6065,7 @@ function DepositPageComponent() {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                        <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                             <div className="font-bold text-gray-900 mb-1">{t('f121')}</div>
                                             <div className="text-xs text-gray-500 mb-3">{t('f122')}</div>
                                             <div className="space-y-2">
@@ -6076,10 +6079,10 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Classification de la zone */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f123')}</div>
                                         <div className="text-xs text-gray-500 mb-3">{t('f124')}</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
                                             {tGroup('TERRAIN_TOURISTIQUE_ZONE', TERRAIN_TOURISTIQUE_ZONE).map((x) => (
                                                 <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                     <input type="radio" value={x.id} {...register("terrainTouristiqueZone")} className="accent-[#00BFA6] w-4 h-4" />
@@ -6100,10 +6103,10 @@ function DepositPageComponent() {
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
 
                             {/* Section 1 : Informations Générales & Superficies */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f125')}</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
                                         <input {...register("immeubleSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f373')} />
@@ -6135,7 +6138,7 @@ function DepositPageComponent() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">{t('f132')}</label>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {tGroup('IMMEUBLE_ETAT_GLOBAL', IMMEUBLE_ETAT_GLOBAL).map((eg) => (
                                             <label key={eg.id} className="flex items-start gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6]/40 bg-white">
                                                 <input type="radio" value={eg.id} {...register("immeubleEtatGlobal")} className="accent-[#00BFA6] w-4 h-4 mt-1 shrink-0" />
@@ -6150,11 +6153,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Section 2 : Emplacement, Visibilité & Accès — 3 colonnes */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f133')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f134')}</div>
                                         <div className="space-y-2">
                                             {tGroup('IMMEUBLE_TYPE_ZONE', IMMEUBLE_TYPE_ZONE).map((z) => (
@@ -6165,7 +6168,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f135')}</div>
                                         <div className="space-y-2">
                                             {tGroup('IMMEUBLE_VISIBILITE', IMMEUBLE_VISIBILITE).map((v) => (
@@ -6176,7 +6179,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f136')}</div>
                                         <div className="space-y-2">
                                             {tGroup('IMMEUBLE_TYPE_ACCES', IMMEUBLE_TYPE_ACCES).map((a) => (
@@ -6204,11 +6207,11 @@ function DepositPageComponent() {
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
 
                             {/* Superficies & Dimensions */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f137')}</h2>
                                 {/* Ligne 1 : 3 colonnes */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
                                         <input {...register("showroomSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f373')} />
@@ -6223,7 +6226,7 @@ function DepositPageComponent() {
                                     </div>
                                 </div>
                                 {/* Ligne 2 : 3 colonnes */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f126')}</label>
                                         <input {...register("showroomFacadeWidth")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f359')} />
@@ -6240,11 +6243,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* État & Style Architectural */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Paintbrush className="h-5 w-5 text-[#00BFA6]" />{t('f140')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f141')}</div>
                                         <div className="space-y-2">
                                             {tGroup('SHOWROOM_STYLE', SHOWROOM_STYLE).map((s) => (
@@ -6255,7 +6258,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f142')}</div>
                                         <div className="space-y-2">
                                             {tGroup('SHOWROOM_STRUCTURE', SHOWROOM_STRUCTURE).map((s) => (
@@ -6273,8 +6276,8 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Visibilité & Accessibilité */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Eye className="h-5 w-5 text-[#00BFA6]" />{t('f143')}</h2>
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
                                     <div>
@@ -6303,11 +6306,11 @@ function DepositPageComponent() {
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
 
                             {/* Superficies & Dimensions — PREMIÈRE SECTION */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f137')}</h2>
                                 {/* Ligne 1 : 3 colonnes */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')}</label>
                                         <input {...register("localSurfaceTotal")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f383')} />
@@ -6322,7 +6325,7 @@ function DepositPageComponent() {
                                     </div>
                                 </div>
                                 {/* Ligne 2 : 2 colonnes */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f129')}</label>
                                         <input {...register("localHauteurPlafond")} type="number" min="0" step="0.1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f376')} />
@@ -6335,12 +6338,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* État & Style */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Paintbrush className="h-5 w-5 text-[#00BFA6]" />{t('f146')}</h2>
-                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f147')}</div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {tGroup('LOCAL_STYLE', LOCAL_STYLE).map((s) => (
                                             <label key={s.id} className="cursor-pointer">
                                                 <input type="radio" value={s.id} {...register("localStyle")} className="peer sr-only" />
@@ -6354,11 +6357,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Emplacement & Flux */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f148')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f134')}</div>
                                         <div className="space-y-2">
                                             {tGroup('LOCAL_ZONE_TYPE', LOCAL_ZONE_TYPE).map((z) => (
@@ -6369,7 +6372,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f149')}</div>
                                         <div className="space-y-2">
                                             {tGroup('LOCAL_FLUX', LOCAL_FLUX).map((f) => (
@@ -6380,7 +6383,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f150')}</div>
                                         <div className="space-y-2">
                                             {tGroup('LOCAL_FLUX', LOCAL_FLUX).map((f) => (
@@ -6395,12 +6398,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Environnement & Usage — DERNIÈRE SECTION (fusionnée) */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Store className="h-5 w-5 text-[#00BFA6]" />{t('f151')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     {/* Environnement */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f152')}</div>
                                         <div className="space-y-2">
                                             {tGroup('LOCAL_ENVIRONNEMENT', LOCAL_ENVIRONNEMENT).map((e) => (
@@ -6415,7 +6418,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {/* Usage */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f153')}</div>
                                         <div className="space-y-2">
                                             {tGroup('LOCAL_USAGE', LOCAL_USAGE).map((u) => (
@@ -6437,11 +6440,11 @@ function DepositPageComponent() {
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
 
                             {/* Caractéristiques Extérieures — redesignée */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Building2 className="h-5 w-5 text-[#00BFA6]" />{t('f154')}</h2>
                                 {/* Ligne 1 : surfaces + étages */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f040')}</label>
                                         <input {...register("blocSurfaceTerrain")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium" placeholder={t('f387')} />
@@ -6456,7 +6459,7 @@ function DepositPageComponent() {
                                     </div>
                                 </div>
                                 {/* Ligne 2 : état général + garage + stationnement */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f156')}</label>
                                         <select {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
@@ -6474,7 +6477,7 @@ function DepositPageComponent() {
                                     </div>
                                 </div>
                                 {/* Ligne 3 : façades + sous-sol */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f087')}</label>
                                         <div className="flex gap-3">
@@ -6486,7 +6489,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f159')}</div>
                                         <div className="flex gap-6">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
@@ -6499,11 +6502,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Type d'Espace (multi-choix) */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <LayoutGrid className="h-5 w-5 text-[#00BFA6]" />{t('f160')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f161')}</div>
                                         <div className="space-y-2">
                                             {tGroup('BLOC_TYPE_ESPACE', BLOC_TYPE_ESPACE).map((e) => (
@@ -6514,7 +6517,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f162')}</div>
                                         <div className="space-y-2">
                                             {tGroup('BLOC_CLOISONNEMENT', BLOC_CLOISONNEMENT).map((c) => (
@@ -6529,12 +6532,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Extérieurs & Commodités — comme appartement résidentiel */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Trees className="text-[#00BFA6]" />{t('f163')}</h2>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">{t('f164')}</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter(item => item.id !== 'barbecue').map((item) => {
                                             const Icon = IconMap[item.icon] || Trees
                                             return (
@@ -6549,10 +6552,10 @@ function DepositPageComponent() {
                                         })}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 border-t border-gray-100 pt-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">{t('f023')}</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.security.map(s => {
                                                 const Icon = IconMap[s.icon] || Shield
                                                 return (
@@ -6569,7 +6572,7 @@ function DepositPageComponent() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">{t('f165')}</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                             {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                 const Icon = IconMap[c.icon] || Wifi
                                                 return (
@@ -6588,10 +6591,10 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Cuisine */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Utensils className="h-5 w-5 text-[#00BFA6]" />{t('f166')}</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {tGroup('BLOC_CUISINE', BLOC_CUISINE).map((c) => (
                                         <label key={c.id} className="cursor-pointer">
                                             <input type="radio" value={c.id} {...register("blocCuisine")} className="peer sr-only" />
@@ -6604,10 +6607,10 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Logement de fonction */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Home className="h-5 w-5 text-[#00BFA6]" />{t('f167')}</h2>
-                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                     <div className="font-bold text-gray-900">{t('f168')}</div>
                                     <div className="flex gap-6">
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
@@ -6619,11 +6622,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Connectivité & Réseau */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Wifi className="h-5 w-5 text-[#00BFA6]" />{t('f169')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f170')}</div>
                                         <div className="space-y-2">
                                             {tGroup('BLOC_CONNEXION', BLOC_CONNEXION).map((c) => (
@@ -6634,7 +6637,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f171')}</div>
                                         <div className="space-y-2">
                                             {tGroup('BLOC_EQUIPEMENT_SERVEUR', BLOC_EQUIPEMENT_SERVEUR).map((e) => (
@@ -6649,11 +6652,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Énergie & Fluides */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Zap className="h-5 w-5 text-[#00BFA6]" />{t('f024')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f025')}</div>
                                         <div className="space-y-4">
                                             <div>
@@ -6666,7 +6669,7 @@ function DepositPageComponent() {
                                             </label>
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f028')}</div>
                                         <div className="space-y-2">
                                             {[{ id: "INDUSTRIEL", label: t('f029') }, { id: "VILLE", label: t('depGasCity') }, { id: "AUCUN", label: t('f031') }].map(g => (
@@ -6677,7 +6680,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f032')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES).map((x) => (
@@ -6688,7 +6691,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f033')}</div>
                                         <div className="space-y-2">
                                             {[{ id: "RESEAU_PUBLIC", label: t('f034') }, { id: "FOSSE_INDUSTRIELLE", label: t('f035') }].map(a => (
@@ -6703,11 +6706,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Sécurité incendie & Protection */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Siren className="h-5 w-5 text-[#00BFA6]" />{t('f036')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f037')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK).map((x) => (
@@ -6718,7 +6721,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-4">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-4">
                                         <div className="font-bold text-gray-900">{t('f038')}</div>
                                         <div className="space-y-2">
                                             {tGroup('INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT).map((x) => (
@@ -6764,11 +6767,11 @@ function DepositPageComponent() {
                             ((propertyType === "APPARTEMENT_COMMERCIAL" || propertyType === "IMMEUBLE_BUREAU") && (transactionType === "RENTAL" || transactionType === "SALE"))
                         )
                     ) && (
-                        <div className="w-full max-w-5xl animate-fade-in space-y-10">
+                        <div className="w-full max-w-5xl animate-fade-in space-y-6 md:space-y-10">
                             
                             {/* 1. Caractéristiques Générales & Structure */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Building2 className="text-[#00BFA6]" />{t('f173')}</h2>
                                 
                                 <div className="flex flex-col gap-5">
@@ -6776,7 +6779,7 @@ function DepositPageComponent() {
                                         <div className="flex flex-col gap-5">
                                             {isSaleBuilding && (
                                                 <div className={cn(
-                                                    "grid grid-cols-1 gap-5 items-end",
+                                                    "grid grid-cols-2 gap-3 md:gap-5 items-end",
                                                     isBuildingDemolition ? "md:grid-cols-2" : "md:grid-cols-1"
                                                 )}>
                                                     <div className="min-w-0">
@@ -6809,7 +6812,7 @@ function DepositPageComponent() {
                                             <>
                                             <div className="min-w-0">
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">{t('f196')} <span className="text-red-500">*</span></label>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4">
                                                     {BUILDING_TYPOLOGY_MODES.map((m) => (
                                                         <label key={m.id} className="cursor-pointer">
                                                             <input type="radio" value={m.id} {...register("buildingTypologyMode")} className="peer sr-only" />
@@ -6824,7 +6827,7 @@ function DepositPageComponent() {
 
                                             {buildingTypologyMode === "SIMILAIRES" && (
                                                 <div className="flex flex-col gap-5">
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_1.1fr_1.4fr] gap-3 items-end">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_1.1fr_1.4fr] gap-3 items-end">
                                                         <div className="min-w-0">
                                                             <label className="block text-xs font-bold text-gray-900 mb-1">{t('adImmFloorsCount')} <span className="text-red-500">*</span></label>
                                                             <input 
@@ -6872,11 +6875,11 @@ function DepositPageComponent() {
                                                         </div>
                                                         <div className="min-w-0">
                                                             <label className="block text-xs font-bold text-gray-900 mb-1">{t('adSurface')} <span className="text-red-500">*</span></label>
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 border-2 border-gray-200 rounded-lg bg-white">
+                                                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 p-1 border-2 border-gray-200 rounded-lg bg-white">
                                                                 {BUILDING_SURFACE_MODES.map((m) => (
                                                                     <label key={m.id} className="cursor-pointer">
                                                                         <input type="radio" value={m.id} {...register("buildingSurfaceMode")} className="peer sr-only" />
-                                                                        <div className="w-full px-2 py-2 rounded-md text-[11px] font-bold text-gray-700 peer-checked:bg-[#00BFA6] peer-checked:text-white transition-colors text-center whitespace-nowrap">
+                                                                        <div className="w-full px-2 py-2 rounded-md text-[11px] font-bold text-gray-700 peer-checked:bg-[#00BFA6] peer-checked:text-white transition-colors text-center leading-tight">
                                                                             {optLabel('BUILDING_SURFACE_MODES', m)}
                                                                         </div>
                                                                     </label>
@@ -6887,7 +6890,7 @@ function DepositPageComponent() {
                                                     </div>
 
                                                     {buildingSurfaceMode === "UNIQUE" && (
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                                                        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                                             <div className="min-w-0">
                                                                 <label className="block text-sm font-bold text-gray-900 mb-2">{t('f020')} <span className="text-red-500">*</span></label>
                                                                 <input 
@@ -6907,7 +6910,7 @@ function DepositPageComponent() {
 
                                             {buildingTypologyMode === "DIFFERENTES" && (
                                                 <div className="flex flex-col gap-5">
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                                         <div className="min-w-0">
                                                             <label className="block text-sm font-bold text-gray-900 mb-2">{t('adImmFloorsCount')} <span className="text-red-500">*</span></label>
                                                             <input 
@@ -6996,7 +6999,7 @@ function DepositPageComponent() {
                                             )}
 
                                             {isSaleBuilding ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-5 items-end">
                                                     <div className="min-w-0">
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f157')}</label>
                                                         <input
@@ -7023,7 +7026,7 @@ function DepositPageComponent() {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                                     <div className="min-w-0">
                                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f177')} <span className="text-red-500">*</span></label>
                                                         <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
@@ -7065,7 +7068,7 @@ function DepositPageComponent() {
                                         <>
                                             {/* Row 1 */}
                                             <div className={cn(
-                                                "grid grid-cols-1 gap-5 items-end",
+                                                "grid grid-cols-2 gap-3 md:gap-5 items-end",
                                                 (propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE" || isSaleParticulierApartment || isSaleParticulierNiveauVilla) ? "md:grid-cols-4" : "md:grid-cols-3"
                                             )}>
                                                 {!(propertyType === "VILLA" && isSaleVillaDemolition) && (
@@ -7194,7 +7197,7 @@ function DepositPageComponent() {
 
                                             {/* Row 2: État Général, Garage, Stationnement */}
                                             <div className={cn(
-                                                "grid grid-cols-1 gap-5 items-end",
+                                                "grid grid-cols-2 gap-3 md:gap-5 items-end",
                                                 (propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") ? (isSaleVillaDemolition ? "md:grid-cols-1" : "md:grid-cols-4") : "md:grid-cols-3"
                                             )}>
                                                 <div className="min-w-0">
@@ -7255,8 +7258,8 @@ function DepositPageComponent() {
 
                             {/* Cadre et mode de vie — un seul bloc, plus de doublon avec l'ancienne section "Promotion immobilière" */}
                             {!isVillaDemolition && !isBuildingDemolition && (
-                                <section className="space-y-6">
-                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <section className="space-y-4 md:space-y-6">
+                                    <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                         <MapPin className="text-[#00BFA6]" />{t('f178')}</h2>
 
                                     {/* Environnement — choix multiple, commun à tous les types de biens d'habitation */}
@@ -7328,14 +7331,14 @@ function DepositPageComponent() {
 
                             {/* 3. Espaces de Vie */}
                             {!isVillaDemolition && !isBuildingDemolition && (
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <BedDouble className="text-[#00BFA6]" /> {isCommercialPropertyType ? t('adSpaceExploited') : t('adLivingSpaces')}
                                 </h2>
                                 
                                 <div className="flex flex-col gap-5">
                                     {/* Ligne 1: Chambres, Suites, Salons, Toilettes */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 items-end">
                                         <div>
                                             <label className="block text-xs font-bold text-gray-900 mb-1">{isCommercialPropertyType ? t('adOfficesRooms') : t('adBedrooms')} <span className="text-red-500">*</span></label>
                                             <input 
@@ -7382,7 +7385,7 @@ function DepositPageComponent() {
                                     </div>
 
                                     {/* Ligne 2: SDB, Type SDB */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 items-end">
                                         <div>
                                             <label className="block text-xs font-bold text-gray-900 mb-1">{t('adBathrooms')} <span className="text-red-500">*</span></label>
                                             <input 
@@ -7397,7 +7400,7 @@ function DepositPageComponent() {
 
                                         <div className="md:col-span-2">
                                             <label className="block text-xs font-bold text-gray-900 mb-1">{t('f182')}</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 <label className="flex items-center gap-2 cursor-pointer bg-white p-2.5 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors justify-center">
                                                     <input type="radio" value="italian_shower" {...register("bathroomType")} className="accent-[#00BFA6] w-4 h-4" /> 
                                                     <span className="text-xs font-bold text-gray-900">{t('f183')}</span>
@@ -7419,8 +7422,8 @@ function DepositPageComponent() {
 
                             {/* 4. Cuisine et équipements */}
                             {!isVillaDemolition && !isBuildingDemolition && (
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Utensils className="text-[#00BFA6]" />{t('f186')}</h2>
                                 
                                 <div className="space-y-6">
@@ -7448,7 +7451,7 @@ function DepositPageComponent() {
                                     {/* Équipements de la cuisine */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-3">{t('f188')}</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-8 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 const kitchenRegister = register("kitchenEquipment")
@@ -7492,14 +7495,14 @@ function DepositPageComponent() {
 
                             {/* 5. Extérieurs & Commodités */}
                             {!isVillaDemolition && !isBuildingDemolition && (
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Trees className="text-[#00BFA6]" />{t('f163')}</h2>
                                 
                                 {/* Extérieur Checkboxes */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 mb-3">{t('f164')}</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                                         {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                             if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
                                                 return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
@@ -7530,12 +7533,12 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Commodités, Sécurité & Connectivité */}
-                                <div className="space-y-8 border-t border-gray-100 pt-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-5 md:space-y-8 border-t border-gray-100 pt-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                                         {/* Chauffage */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">{t('f189')}</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 {HEATING_TYPES.map(h => {
                                                     const Icon = IconMap[h.icon] || Flame
                                                     return (
@@ -7555,7 +7558,7 @@ function DepositPageComponent() {
                                         {/* Climatisation */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">{t('f190')}</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 {AC_TYPES.map(a => {
                                                     const Icon = IconMap[a.icon] || Fan
                                                     return (
@@ -7573,11 +7576,11 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                                         {/* Sécurité */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">{t('f023')}</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.security.map(s => {
                                                     const Icon = IconMap[s.icon] || Shield
                                                     return (
@@ -7600,7 +7603,7 @@ function DepositPageComponent() {
                                         {/* Connectivité */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-3">{t('f165')}</label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 {VILLA_EQUIPMENTS.connectivity.map(c => {
                                                     const Icon = IconMap[c.icon] || Wifi
                                                     return (
@@ -7625,12 +7628,12 @@ function DepositPageComponent() {
                             )}
 
                             {/* 6. Énergie, Eau & Technique */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Zap className="text-[#00BFA6]" />{t('f191')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {/* Eau */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Droplet className="w-4 h-4 text-blue-500"/>{t('f032')}</h4>
                                         <div className="flex flex-col gap-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("waterCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
@@ -7639,7 +7642,7 @@ function DepositPageComponent() {
                                         {errors.waterCounter && <p className="text-red-500 text-sm mt-1">{errors.waterCounter.message}</p>}
                                     </div>
                                     {/* Électricité */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Zap className="w-4 h-4 text-yellow-500"/>{t('f025')}</h4>
                                         <div className="flex flex-col gap-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("elecCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
@@ -7648,7 +7651,7 @@ function DepositPageComponent() {
                                         {errors.elecCounter && <p className="text-red-500 text-sm mt-1">{errors.elecCounter.message}</p>}
                                     </div>
                                     {/* Gaz */}
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <h4 className="font-bold mb-3 flex items-center gap-2 text-gray-900"><Flame className="w-4 h-4 text-orange-500"/>{t('f028')}</h4>
                                         <div className="flex flex-col gap-2">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900"><input type="radio" value="INDIVIDUEL" {...register("gasCounter")} className="accent-[#00BFA6] w-4 h-4"/>{t('f192')}</label>
@@ -7683,7 +7686,7 @@ function DepositPageComponent() {
                         isHotelFiche
                     ) && (
                         <div className="w-full max-w-3xl animate-fade-in">
-                            <div className="space-y-8">
+                            <div className="space-y-5 md:space-y-8">
                                 {/* Nombre d'étages - Limité à R+5 */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">{t('f194')}</label>
@@ -7737,7 +7740,7 @@ function DepositPageComponent() {
                                 {/* Typologie - Sans chiffres prédéfinis */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">{t('f196')}</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                                         {TYPOLOGIES.map((t) => (
                                             <label key={t.id} className="cursor-pointer">
                                                 <input 
@@ -7756,7 +7759,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Pièces */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-3 md:gap-6 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">{isCommercialPropertyType ? t('adOfficeCount') : t('adBedroomCount')}</label>
                                         <input 
@@ -7784,7 +7787,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Salles de bain et WC */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-3 md:gap-6 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">{t('f197')}</label>
                                         <input 
@@ -7814,7 +7817,7 @@ function DepositPageComponent() {
                                 {/* Type de salle de bain */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">{t('f199')}</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
                                         {BATHROOM_TYPES.map((type) => {
                                             const Icon = IconMap[type.icon] || Bath
                                             return (
@@ -7860,7 +7863,7 @@ function DepositPageComponent() {
                                 {/* Mesures & Capacité */}
                                 <div className="border-t pt-6">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">{t('f201')}</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-2 gap-3 md:gap-6 items-end">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">{t('f202')}</label>
                                             <input 
@@ -7896,7 +7899,7 @@ function DepositPageComponent() {
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">{t('f166')}</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
                                             {VILLA_EQUIPMENTS.kitchen.map((item) => {
                                                 const Icon = IconMap[item.icon] || Utensils
                                                 const kitchenRegister = register("kitchenEquipment")
@@ -7940,7 +7943,7 @@ function DepositPageComponent() {
                                     {!isVillaDemolition && !isBuildingDemolition && (
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">{t('f205')}</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.exterior.filter((item) => {
                                                 if (propertyType === 'VILLA' || propertyType === 'VILLA_COMMERCIALE' || propertyType === 'NIVEAU_VILLA' || propertyType === 'NIVEAU_VILLA_COMMERCIAL') {
                                                     return ['garden', 'terrace', 'balcony', 'pool', 'playground', 'barbecue'].includes(item.id)
@@ -7983,7 +7986,7 @@ function DepositPageComponent() {
                                     {/* Eau/Énergie */}
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-gray-700 mb-3">{t('f206')}</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                             {VILLA_EQUIPMENTS.utilities.map((item) => {
                                                 const Icon = IconMap[item.icon] || Droplet
                                                 return (
@@ -8051,10 +8054,10 @@ function DepositPageComponent() {
                         <div className="w-full max-w-4xl animate-fade-in space-y-10">
 
                             {/* Étape 1.1 – Cible clientèle */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Users className="h-5 w-5 text-[#00BFA6]" />{t('f210')}</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
                                     {tGroup('HAB_CLIENT_PROFILES', HAB_CLIENT_PROFILES).map((p) => (
                                         <label key={p.id} className="cursor-pointer">
                                             <input type="radio" value={p.id} {...register("habClientProfile")} className="peer sr-only" />
@@ -8069,10 +8072,10 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 1.2 – Formule de location */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <BedDouble className="h-5 w-5 text-[#00BFA6]" />{t('f211')}</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                                     {tGroup('HAB_FORMULES', HAB_FORMULES).map((f) => (
                                         <label key={f.id} className="cursor-pointer">
                                             <input type="radio" value={f.id} {...register("habFormule")} className="peer sr-only" />
@@ -8089,7 +8092,7 @@ function DepositPageComponent() {
                                 {habFormule === "LOGEMENT_ENTIER" && (
                                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
                                         <div className="font-bold text-gray-800 text-sm">{t('f212')}</div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-end">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">{t('f213')}</label>
                                                 <input {...register("habNbChambres")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f377')} />
@@ -8134,10 +8137,10 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 1.3 – Type de propriété */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Home className="h-5 w-5 text-[#00BFA6]" />{t('f218')}</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                     {tGroup('HAB_UNIT_TYPES', HAB_UNIT_TYPES).map((u) => (
                                         <label key={u.id} className="cursor-pointer">
                                             <input type="radio" value={u.id} {...register("habUnitType")} className="peer sr-only" />
@@ -8157,10 +8160,10 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 1.4 – Caractéristiques physiques */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('f220')}</h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f221')}</label>
                                         <input {...register("habArea")} type="number" min="0" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
@@ -8209,8 +8212,8 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 2.1 – Ambiance / Vocation */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-[#00BFA6]" />{t('f224')}</h2>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">{t('f225')}</label>
@@ -8355,10 +8358,10 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 3 – Transports & Attractions */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Navigation className="h-5 w-5 text-[#00BFA6]" />{t('f243')}</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f244')}</label>
                                         <input {...register("habAirport")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f400')} />
@@ -8386,8 +8389,8 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 4 – Équipements & Services */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Utensils className="h-5 w-5 text-[#00BFA6]" />{t('f248')}</h2>
 
                                 {/* Services et Repas */}
@@ -8405,7 +8408,7 @@ function DepositPageComponent() {
 
                                 {/* Linge & Hygiène */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f250')}</div>
                                         <div className="space-y-2">
                                             {tGroup('HAB_LINGE', HAB_LINGE).map((l) => (
@@ -8416,7 +8419,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-2">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-2">
                                         <div className="font-bold text-gray-900 mb-3">{t('f251')}</div>
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                             <input type="checkbox" {...register("habHygiene")} className="accent-[#00BFA6] w-4 h-4" />{t('f252')}</label>
@@ -8426,7 +8429,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Cuisine */}
-                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f254')}</div>
                                     <div className="flex flex-wrap gap-3">
                                         {tGroup('HAB_EQUIPEMENTS_CUISINE', HAB_EQUIPEMENTS_CUISINE).map((e) => (
@@ -8439,9 +8442,9 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Confort & Multimédia */}
-                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f255')}</div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
                                         {tGroup('HAB_CONFORT', HAB_CONFORT).map((c) => (
                                             <label key={c.id} className="cursor-pointer">
                                                 <input type="checkbox" value={c.id} {...register("habConfort")} className="peer sr-only" />
@@ -8452,9 +8455,9 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Loisirs & Bien-être */}
-                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f256')}</div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
                                         {tGroup('HAB_LOISIRS', HAB_LOISIRS).map((l) => (
                                             <label key={l.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
                                                 <input type="checkbox" value={l.id} {...register("habLoisirs")} className="accent-[#00BFA6] w-4 h-4" />
@@ -8480,11 +8483,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 5 – Stationnement & Accessibilité */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <ParkingCircle className="h-5 w-5 text-[#00BFA6]" />{t('f258')}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f259')}</div>
                                         <div className="space-y-2">
                                             {tGroup('HAB_PARKING', HAB_PARKING).map((p) => (
@@ -8495,7 +8498,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                         <div className="font-bold text-gray-900 mb-3">{t('f260')}</div>
                                         <div className="space-y-2">
                                             {tGroup('HAB_ACCESSIBILITE', HAB_ACCESSIBILITE).map((a) => (
@@ -8510,12 +8513,12 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Étape 6 – Règlement intérieur & Logistique */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <FileText className="h-5 w-5 text-[#00BFA6]" />{t('f261')}</h2>
 
                                 {/* Âge minimal */}
-                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f262')}</div>
                                     <div className="flex gap-4">
                                         {[{ id: "18", label: "18 ans révolus" }, { id: "21", label: "21 ans révolus" }].map((opt) => (
@@ -8528,7 +8531,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {/* Autorisations */}
-                                <div className="bg-white border-2 border-gray-200 p-4 rounded-xl">
+                                <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl">
                                     <div className="font-bold text-gray-900 mb-3">{t('f263')}</div>
                                     <div className="flex flex-wrap gap-4">
                                         <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
@@ -8543,7 +8546,7 @@ function DepositPageComponent() {
                                 {/* Check-in / Check-out */}
                                 <div className="bg-white border-2 border-gray-200 p-5 rounded-xl space-y-4">
                                     <div className="font-bold text-gray-900">{t('f267')}</div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 items-end">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">{t('f268')}</label>
                                             <input {...register("habCheckIn")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
@@ -8569,7 +8572,7 @@ function DepositPageComponent() {
                                         </div>
                                     </div>
                                     {habReceptionMode === "HORAIRES" && (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-0">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 ml-0 items-end">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-700 mb-1">{t('f271')}</label>
                                                 <input {...register("habReceptionStart")} type="time" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" />
@@ -8581,7 +8584,7 @@ function DepositPageComponent() {
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 items-end">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">{t('f273')}</label>
                                             <div className="flex flex-col gap-2">
@@ -8622,8 +8625,8 @@ function DepositPageComponent() {
 
                             {/* Classification (Professionnel uniquement) */}
                             {isEtablissementHebergement && (
-                                <section className="space-y-6">
-                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <section className="space-y-4 md:space-y-6">
+                                    <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                         <Star className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionClassification')}</h2>
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsClassificationLabel')}</label>
@@ -8659,7 +8662,7 @@ function DepositPageComponent() {
 
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeEtablissementLabel')}</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                             {tGroup('HS_TYPE_ETABLISSEMENT', HS_TYPE_ETABLISSEMENT).map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer">
                                                     <input type="radio" value={opt.id} {...register("hsTypeEtablissement")} className="peer sr-only" />
@@ -8681,8 +8684,8 @@ function DepositPageComponent() {
                             )}
 
                             {/* Type de bien proposé */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Home className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionTypeBien')}</h2>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeBienLabel')}</label>
@@ -8712,10 +8715,10 @@ function DepositPageComponent() {
                             {/* ===== MAISON COMPLETE ===== */}
                             {hsTypeBien === "MAISON_COMPLETE" && (
                                 <>
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Building className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionStructure')}</h2>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                             {tGroup('HS_STRUCTURE_TYPES', HS_STRUCTURE_TYPES).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input type="radio" value={s.id} {...register("hsStructureType")} className="peer sr-only" />
@@ -8733,11 +8736,11 @@ function DepositPageComponent() {
                                         )}
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionCaracteristiques')}</h2>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSurfaceHabitable')}</label>
                                                 <input {...register("hsMcSurface")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f362')} />
@@ -8777,7 +8780,7 @@ function DepositPageComponent() {
 
                                         <div>
                                             <h3 className="text-base font-bold text-gray-800 mb-4">{t('hsCompositionPieces')}</h3>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 items-end">
                                                 <div>
                                                     <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbChambres')}</label>
                                                     <input {...register("hsMcNbChambres")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder={t('f377')} />
@@ -8804,8 +8807,8 @@ function DepositPageComponent() {
                                         </div>
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Bed className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionLits')}</h2>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsLitsTotal')}</label>
@@ -8838,10 +8841,10 @@ function DepositPageComponent() {
                                         </div>
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Sofa className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionSalon')}</h2>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4">
                                             {tGroup('HS_TYPE_SALON', HS_TYPE_SALON).map((opt) => (
                                                 <label key={opt.id} className="cursor-pointer">
                                                     <input type="radio" value={opt.id} {...register("hsMcTypeSalon")} className="peer sr-only" />
@@ -8853,7 +8856,7 @@ function DepositPageComponent() {
                                             ))}
                                         </div>
                                         {hsMcTypeSalon === "CANAPE_CONVERTIBLE" && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
                                                 <div>
                                                     <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbCanapesConvertibles')}</label>
                                                     <input {...register("hsMcNbCanapesConvertibles")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
@@ -8866,10 +8869,10 @@ function DepositPageComponent() {
                                         )}
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                                             {tGroup('HS_PROFIL_ADAPTATION', HS_PROFIL_ADAPTATION).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("hsMcProfilAdaptation")} className="peer sr-only" />
@@ -8880,7 +8883,7 @@ function DepositPageComponent() {
                                                 </label>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
                                                 <input {...register("hsMcVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
@@ -8907,8 +8910,8 @@ function DepositPageComponent() {
                             {/* ===== CHAMBRE ===== */}
                             {hsTypeBien === "CHAMBRE" && (
                                 <>
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <DoorOpen className="h-5 w-5 text-[#00BFA6]" />{t('hsPrecisionChambre')}</h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {[
@@ -8930,10 +8933,10 @@ function DepositPageComponent() {
                                         </label>
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Building className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionStructure')}</h2>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                             {tGroup('HS_STRUCTURE_TYPES', HS_STRUCTURE_TYPES).map((s) => (
                                                 <label key={s.id} className="cursor-pointer">
                                                     <input type="radio" value={s.id} {...register("hsStructureType")} className="peer sr-only" />
@@ -8951,8 +8954,8 @@ function DepositPageComponent() {
                                         )}
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Ruler className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionCaracteristiques')}</h2>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsSurfaceChambre')}</label>
@@ -8989,8 +8992,8 @@ function DepositPageComponent() {
                                         </div>
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Key className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionEspacesCommuns')}</h2>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsAccesPartiesCommunes')}</label>
@@ -9004,7 +9007,7 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         {hsChEspacesCommunsList.includes("SDB_PARTAGEE") && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
                                                 <div>
                                                     <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbDouches')}</label>
                                                     <input {...register("hsChNbDouches")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
@@ -9017,10 +9020,10 @@ function DepositPageComponent() {
                                         )}
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                                             {tGroup('HS_PROFIL_ADAPTATION', HS_PROFIL_ADAPTATION).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("hsChProfilAdaptation")} className="peer sr-only" />
@@ -9031,7 +9034,7 @@ function DepositPageComponent() {
                                                 </label>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
                                                 <input {...register("hsChVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
@@ -9058,8 +9061,8 @@ function DepositPageComponent() {
                             {/* ===== PLACE DE LIT ===== */}
                             {hsTypeBien === "PLACE_DE_LIT" && (
                                 <>
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Bed className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionPlaceLit')}</h2>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsTypeCouchage')}</label>
@@ -9107,8 +9110,8 @@ function DepositPageComponent() {
                                         </div>
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Key className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionEspacesCommuns')}</h2>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-3">{t('hsAccesPartiesCommunes')}</label>
@@ -9122,7 +9125,7 @@ function DepositPageComponent() {
                                             </div>
                                         </div>
                                         {hsPlEspacesCommunsList.includes("SDB_PARTAGEE") && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 items-end">
                                                 <div>
                                                     <label className="block text-xs font-bold text-gray-700 mb-1">{t('hsNbDouches')}</label>
                                                     <input {...register("hsPlNbDouches")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-sm" placeholder="0" />
@@ -9135,10 +9138,10 @@ function DepositPageComponent() {
                                         )}
                                     </section>
 
-                                    <section className="space-y-6">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <section className="space-y-4 md:space-y-6">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <Users className="h-5 w-5 text-[#00BFA6]" />{t('hsSectionProfil')}</h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                                             {tGroup('HS_PROFIL_ADAPTATION_PLACE_LIT', HS_PROFIL_ADAPTATION_PLACE_LIT).map((p) => (
                                                 <label key={p.id} className="cursor-pointer">
                                                     <input type="checkbox" value={p.id} {...register("hsPlProfilAdaptation")} className="peer sr-only" />
@@ -9149,7 +9152,7 @@ function DepositPageComponent() {
                                                 </label>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-2">{t('hsVoyageursMax')}</label>
                                                 <input {...register("hsPlVoyageursMax")} type="number" min="0" onKeyDown={(e) => ["-", "e", "E", "+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f394')} />
@@ -9180,8 +9183,8 @@ function DepositPageComponent() {
                         <div className="w-full max-w-3xl animate-fade-in space-y-10">
 
                             {/* Prix par nuitée */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <Star className="h-5 w-5 text-[#00BFA6]" />{t('f275')}</h2>
                                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
                                     <div className="font-bold text-gray-900">{t('f276')}</div>
@@ -9287,7 +9290,7 @@ function DepositPageComponent() {
 
                                 {/* Frais annexes */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f286')}</div>
                                         <div className="flex gap-3">
                                             <label className="cursor-pointer flex-1">
@@ -9306,7 +9309,7 @@ function DepositPageComponent() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl space-y-3">
+                                    <div className="bg-white border-2 border-gray-200 p-3 md:p-4 rounded-xl space-y-3">
                                         <div className="font-bold text-gray-900">{t('f288')}</div>
                                         <div className="flex gap-3">
                                             <label className="cursor-pointer flex-1">
@@ -9356,11 +9359,11 @@ function DepositPageComponent() {
                             </section>
 
                             {/* Disponibilités */}
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                            <section className="space-y-4 md:space-y-6">
+                                <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                     <CalendarIcon className="h-5 w-5 text-[#00BFA6]" />{t('f294')}</h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 items-end">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f295')}</label>
                                         <input {...register("habDureeMin")} type="number" min="1" onKeyDown={(e) => ["-","e","E","+"].includes(e.key) && e.preventDefault()} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f380')} />
@@ -9390,7 +9393,7 @@ function DepositPageComponent() {
                                 </div>
 
                                 {habPeriodeOuverture === "SAISONNIER" && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4 items-end">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-900 mb-2">{t('f298')}</label>
                                             <input {...register("habDebutSaison")} type="text" className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base" placeholder={t('f405')} />
@@ -9419,9 +9422,9 @@ function DepositPageComponent() {
                     {currentStep === 5 && !isHebergementHabitant && (
                         (isIndustrialRentalParticulier || isTerrainRentalParticulier) ? (
                         <div className="w-full max-w-2xl animate-fade-in">
-                            <div className="space-y-8">
-                                <section className="space-y-6">
-                                    <h2 className="text-xl font-bold text-gray-900 border-b pb-2">{t('f305')}</h2>
+                            <div className="space-y-5 md:space-y-8">
+                                <section className="space-y-4 md:space-y-6">
+                                    <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2">{t('f305')}</h2>
                                     <div className="relative">
                                         <label className="block text-sm font-bold text-gray-900 mb-2">{t('f305')}</label>
                                         <div className="flex gap-4">
@@ -9540,11 +9543,11 @@ function DepositPageComponent() {
                         </div>
                         ) : (
                         <div className="w-full max-w-2xl animate-fade-in">
-                            <div className="space-y-8">
+                            <div className="space-y-5 md:space-y-8">
                                 {/* Prix & Unité */}
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">{t('f315')}</h3>
-                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
+                                    <div className="bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200 space-y-4">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">
                                                 {transactionType === 'RENTAL' ? (propertyType === "IMMEUBLE_RESIDENTIEL" ? t('adBuildingRent') : t('adMonthlyRent')) : t('adSalePrice')}
@@ -9602,7 +9605,7 @@ function DepositPageComponent() {
                                 {/* Conditions de Location (Moved from Step 4) */}
                                 {transactionType === 'RENTAL' && (
                                     <section className="space-y-6 pt-6 border-t">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <FileText className="text-[#00BFA6]" />{t('f316')}</h2>
 
                                         {/* Usage croisé résidentiel <-> bureaux et commerces, sans créer ni gérer de doublon */}
@@ -9700,12 +9703,12 @@ function DepositPageComponent() {
 
                                 {transactionType === "SALE" && (
                                     <section className="space-y-6 pt-6 border-t">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <FileText className="text-[#00BFA6]" />{t('f323')}</h2>
-                                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
+                                        <div className="bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200 space-y-4">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('f324')}</label>
-                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                     <label className="cursor-pointer">
                                                         <input type="radio" value="YES" {...register("acceptsBankCredit")} className="peer sr-only" />
                                                         <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 peer-checked:border-[#00BFA6] peer-checked:bg-[#00BFA6]/10 peer-checked:text-[#00BFA6] transition-all bg-white text-center">{t('f018')}</div>
@@ -9727,7 +9730,7 @@ function DepositPageComponent() {
 
                                 {transactionType === "SALE" && (
                                     <section className="space-y-6 pt-2">
-                                        <h2 className="text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                        <h2 className="text-base md:text-xl font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
                                             <FileText className="text-[#00BFA6]" />{t('f326')}</h2>
                                         <div className="flex flex-wrap gap-3">
                                             {tGroup('LEGAL_DOCUMENTS_SALE', LEGAL_DOCUMENTS_SALE).map((d) => (
@@ -9750,13 +9753,13 @@ function DepositPageComponent() {
                     {/* Step 6: Informations et Contact */}
                     {currentStep === 6 && (
                         <div className="w-full max-w-4xl animate-fade-in">
-                            <div className="space-y-8">
+                            <div className="space-y-5 md:space-y-8">
                                 {/* Informations de l'annonce */}
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <FileText className="text-[#00BFA6]" />{t('f327')}</h3>
                                     
-                                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                                    <div className="bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200 space-y-6">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">
                                                 {t('depCatchTitle')} <span className="text-gray-400 font-normal">{t('f328')}</span>
@@ -9815,7 +9818,7 @@ function DepositPageComponent() {
                                     
                                     <div className="space-y-4">
                                         {contacts.map((contact, index) => (
-                                            <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative flex flex-col md:flex-row gap-6 items-start">
+                                            <div key={index} className="bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200 relative flex flex-col md:flex-row gap-4 md:gap-6 items-start">
                                                 {contacts.length > 1 && (
                                                     <button 
                                                         onClick={() => removeContact(index)}
@@ -9910,7 +9913,7 @@ function DepositPageComponent() {
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <MapPin className="text-[#00BFA6]" />{t('f065')}</h3>
-                                    <div className="space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
+                                    <div className="space-y-6 bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200">
                                         {/* Wilaya, Commune, Quartier - Inline */}
                                         <div className="flex flex-col md:flex-row gap-4">
                                             <div className="flex-1">
@@ -9963,13 +9966,13 @@ function DepositPageComponent() {
                         <div className="w-full max-w-4xl animate-fade-in">
                             {photoOrganizationStep === "upload" ? (
                                 /* Étape 1: Upload brut */
-                                <div className="space-y-8">
+                                <div className="space-y-5 md:space-y-8">
                                     
                                     {/* SECTION PHOTOS */}
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                             <ImageIcon className="text-[#00BFA6]" />{t('f341')}</h3>
-                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
+                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-5 md:p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
                                             <input 
                                                 type="file" 
                                                 multiple 
@@ -9987,7 +9990,7 @@ function DepositPageComponent() {
                                         </div>
 
                                         {selectedFiles.length > 0 && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                                                 {selectedFiles.map((file, idx) => (
                                                     <div key={idx} className={cn(
                                                         "relative aspect-square bg-gray-100 rounded-lg overflow-hidden group border-2 transition-all",
@@ -10000,7 +10003,7 @@ function DepositPageComponent() {
                                                         />
                                                         
                                                         {/* Actions Overlay */}
-                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 [@media(hover:none)]:bg-gradient-to-t [@media(hover:none)]:from-black/60 [@media(hover:none)]:to-transparent [@media(hover:none)]:justify-end transition-opacity flex flex-col items-center justify-center gap-1.5 md:gap-2 p-1.5 md:p-2">
                                                             <button
                                                                 onClick={() => { setMainPhoto(file); setMainVideo(null) }}
                                                                 className={cn(
@@ -10044,7 +10047,7 @@ function DepositPageComponent() {
                                     <div className="pt-6 border-t border-gray-100">
                                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                             <VideoIcon className="text-[#00BFA6]" />{t('f343')}</h3>
-                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
+                                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-5 md:p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative bg-gray-50 mb-6">
                                             <input 
                                                 type="file" 
                                                 multiple 
@@ -10062,7 +10065,7 @@ function DepositPageComponent() {
                                         </div>
 
                                         {selectedVideos.length > 0 && (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
                                                 {selectedVideos.map((file, idx) => (
                                                     <div key={idx} className={cn(
                                                         "relative bg-black rounded-lg overflow-hidden border-2 aspect-video group",
@@ -10075,7 +10078,7 @@ function DepositPageComponent() {
                                                         />
                                                         <button
                                                             onClick={() => removeVideo(idx)}
-                                                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                                                         >
                                                             <X className="h-4 w-4" />
                                                         </button>
@@ -10083,7 +10086,7 @@ function DepositPageComponent() {
                                                             onClick={() => { setMainVideo(file); setMainPhoto(null) }}
                                                             className={cn(
                                                                 "absolute top-2 left-2 px-2 py-1 rounded-md text-[10px] font-bold transition-colors",
-                                                                mainVideo === file ? "bg-[#00BFA6] text-white" : "bg-white/90 text-gray-900 opacity-0 group-hover:opacity-100 hover:bg-white"
+                                                                mainVideo === file ? "bg-[#00BFA6] text-white" : "bg-white/90 text-gray-900 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:bg-white"
                                                             )}
                                                         >
                                                             {mainVideo === file ? t('adCover') : t('adSetCover')}
@@ -10097,11 +10100,11 @@ function DepositPageComponent() {
                                         )}
                                     </div>
 
-                                    <div className="pt-8">
+                                    <div className="pt-2 md:pt-8">
                                         <Button 
                                             onClick={proceedToPhotoOrganization}
                                             disabled={selectedFiles.length < 3}
-                                            className="w-full bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-xl py-3 md:py-4 text-base md:text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {t('depOrganizePhotos')}
                                         </Button>
@@ -10109,24 +10112,24 @@ function DepositPageComponent() {
                                 </div>
                             ) : (
                                 /* Étape 2: Organisation par catégorie */
-                                <div className="space-y-8">
-                                    <p className="text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-200">{t('f345')}</p>
+                                <div className="space-y-5 md:space-y-8">
+                                    <p className="text-sm md:text-base text-gray-600 bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-200">{t('f345')}</p>
 
                                     <DragDropContext onDragEnd={handleDragEnd}>
                                         {photoCategories.map((category) => (
-                                            <div key={category.id} className={cn("border rounded-xl p-6", category.id === "non_classees" ? "bg-blue-50 border-blue-200" : "bg-gray-50")}>
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <category.icon className="h-6 w-6 text-[#00BFA6]" />
-                                                    <h3 className="text-lg font-bold text-gray-700">{photoCatLabel(category.id, category.label)}</h3>
-                                                    <span className="text-sm text-gray-500 ml-auto bg-white px-3 py-1 rounded-full border border-gray-200">
+                                            <div key={category.id} className={cn("border rounded-xl p-3 md:p-6", category.id === "non_classees" ? "bg-blue-50 border-blue-200" : "bg-gray-50")}>
+                                                <div className="flex items-center gap-2 md:gap-3 mb-2.5 md:mb-4">
+                                                    <category.icon className="h-5 w-5 md:h-6 md:w-6 text-[#00BFA6] shrink-0" />
+                                                    <h3 className="min-w-0 text-sm md:text-lg font-bold leading-tight text-gray-700">{photoCatLabel(category.id, category.label)}</h3>
+                                                    <span className="shrink-0 whitespace-nowrap text-xs md:text-sm text-gray-500 ms-auto bg-white px-2.5 md:px-3 py-1 rounded-full border border-gray-200">
                                                         {t('depPhotoCountSuffix', { count: category.photos.length })}
                                                     </span>
                                                 </div>
 
                                                 {/* Menu pour déplacer vers d'autres catégories — au-dessus des photos pour rester visible même avec beaucoup de photos */}
                                                 {category.photos.length > 0 && selectedPhotos.some(p => category.photos.includes(p)) && (
-                                                    <div className="mb-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                                        <p className="text-sm font-bold text-gray-700 mb-3">{t('f346')}</p>
+                                                    <div className="mb-3 md:mb-4 p-3 md:p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                                        <p className="text-sm font-bold text-gray-700 mb-2 md:mb-3">{t('f346')}</p>
                                                         <div className="flex gap-2 flex-wrap">
                                                             {photoCategories
                                                                 .filter(c => c.id !== category.id)
@@ -10134,7 +10137,7 @@ function DepositPageComponent() {
                                                                     <button
                                                                         key={targetCat.id}
                                                                         onClick={() => moveSelectedPhotos(targetCat.id)}
-                                                                        className="text-sm px-4 py-2 bg-gray-50 border border-gray-300 rounded-full text-gray-800 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] transition-all font-bold"
+                                                                        className="text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 bg-gray-50 border border-gray-300 rounded-full text-gray-800 hover:bg-[#00BFA6] hover:text-white hover:border-[#00BFA6] transition-all font-bold"
                                                                     >
                                                                         {photoCatLabel(targetCat.id, targetCat.label)}
                                                                     </button>
@@ -10148,7 +10151,7 @@ function DepositPageComponent() {
                                                         <div 
                                                             ref={provided.innerRef}
                                                             {...provided.droppableProps}
-                                                            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 min-h-[120px]"
+                                                            className={cn("grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-4 rounded-lg", category.photos.length === 0 ? "min-h-[56px] md:min-h-[120px] border-2 border-dashed border-gray-200" : "md:min-h-[120px]")}
                                                         >
                                                             {category.photos.map((photo, index) => {
                                                                 const isSelected = selectedPhotos.includes(photo);
@@ -10197,11 +10200,11 @@ function DepositPageComponent() {
                                         ))}
                                     </DragDropContext>
 
-                                    <div className="flex justify-between pt-4">
+                                    <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-2 md:pt-4">
                                         <Button 
                                             onClick={() => setPhotoOrganizationStep("upload")}
                                             variant="outline"
-                                            className="px-8 py-3 border-gray-300 text-gray-600 hover:bg-gray-50"
+                                            className="w-full sm:w-auto px-8 py-3 border-gray-300 text-gray-600 hover:bg-gray-50"
                                         >
                                             {t("backToUpload")}
                                         </Button>
@@ -10221,7 +10224,7 @@ function DepositPageComponent() {
                                                 alert(`${t("fixErrorsPrefix")}\n${lines.join('\n')}`);
                                             })}
                                             disabled={isSubmitting}
-                                            className="bg-[#00BFA6] hover:bg-[#00908A] text-white px-8 py-3 text-lg font-bold"
+                                            className="w-full sm:w-auto bg-[#00BFA6] hover:bg-[#00908A] text-white px-8 py-3 text-base md:text-lg font-bold"
                                         >
                                             {isSubmitting ? t("publishing") : t("publishListing")}
                                         </Button>
@@ -10236,19 +10239,19 @@ function DepositPageComponent() {
 
                 {/* Footer Actions */}
                 {isFormAvailable && currentStep >= 4 && currentStep <= 7 && (
-                    <div className="p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50">
+                    <div className="p-4 md:p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50">
                         {currentStep === 4 && (
-                        <Button onClick={handleDescriptiveSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                        <Button onClick={handleDescriptiveSubmit} className="w-full sm:w-auto bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-5 md:py-6 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             {t("continueBtn")}
                         </Button>
                     )}
                     {currentStep === 5 && (
-                        <Button onClick={handlePriceSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                        <Button onClick={handlePriceSubmit} className="w-full sm:w-auto bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-5 md:py-6 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             {t("continueBtn")}
                         </Button>
                     )}
                     {currentStep === 6 && (
-                        <Button onClick={handleLocationAndContactsSubmit} className="bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
+                        <Button onClick={handleLocationAndContactsSubmit} className="w-full sm:w-auto bg-[#00BFA6] hover:bg-[#00908A] text-white rounded-full px-8 py-5 md:py-6 text-base md:text-lg font-bold shadow-lg shadow-[#00BFA6]/20 transition-all">
                             {t("continueBtn")}
                         </Button>
                     )}

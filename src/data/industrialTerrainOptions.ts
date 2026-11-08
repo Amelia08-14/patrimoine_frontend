@@ -126,3 +126,16 @@ export const TERRAIN_TOURISTIQUE_PAT = [
     { id: "EN_COURS", label: "En cours d'étude / En cours d'approbation" },
     { id: "NON", label: "Non / Aucun plan d'aménagement disponible" },
 ]
+
+// Fiche Showroom (Bureaux & Commerces) — partagée avec « Confier votre recherche » depuis le 08/11/2026.
+export const SHOWROOM_STYLE = [
+    { id: "MODERNE", label: "Moderne" },
+    { id: "CLASSIQUE", label: "Classique" },
+    { id: "INDUSTRIEL", label: "Industriel" },
+]
+
+export const SHOWROOM_STRUCTURE = [
+    { id: "BETON_ARME", label: "Béton armé" },
+    { id: "STRUCTURE_METALLIQUE", label: "Structure métallique" },
+    { id: "AUTRE", label: "Autre" },
+]

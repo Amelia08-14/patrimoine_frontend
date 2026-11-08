@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 interface RawNotification {
   id: number
-  type: "MESSAGE" | "RESEARCH_MATCH" | "ANNOUNCE_VALIDATED" | "ANNOUNCE_REJECTED" | "POINTS_EXPIRING" | "POINTS_EXPIRED" | "BOUTIQUE_EXPIRING" | "BOUTIQUE_EXPIRED"
+  type: "MESSAGE" | "RESEARCH_MATCH" | "ANNOUNCE_VALIDATED" | "ANNOUNCE_REJECTED" | "POINTS_EXPIRING" | "POINTS_EXPIRED" | "BOUTIQUE_EXPIRING" | "BOUTIQUE_EXPIRED" | "RESEARCH_PENDING" | "RESEARCH_VALIDATED" | "RESEARCH_REJECTED"
   title: string
   body: string | null
   link: string | null
@@ -27,6 +27,9 @@ const TYPE_ICON: Record<string, any> = {
   POINTS_EXPIRED: AlertTriangle,
   BOUTIQUE_EXPIRING: Store,
   BOUTIQUE_EXPIRED: Store,
+  RESEARCH_PENDING: Search,
+  RESEARCH_VALIDATED: CheckCircle2,
+  RESEARCH_REJECTED: XCircle,
 }
 
 const TYPE_COLOR: Record<string, string> = {
@@ -38,6 +41,9 @@ const TYPE_COLOR: Record<string, string> = {
   POINTS_EXPIRED: "#EF4444",
   BOUTIQUE_EXPIRING: "#F59E0B",
   BOUTIQUE_EXPIRED: "#EF4444",
+  RESEARCH_PENDING: "#F59E0B",
+  RESEARCH_VALIDATED: "#22C55E",
+  RESEARCH_REJECTED: "#EF4444",
 }
 
 export default function NotificationsPage() {

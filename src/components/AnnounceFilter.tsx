@@ -45,12 +45,21 @@ interface FilterState {
 interface AnnounceFilterProps {
   filters: FilterState
   onFilterChange: (key: string, value: any) => void
-  onSearch: () => void
-  /** Couleur de la catégorie active (hex) — repeint le bouton "Rechercher" et les états actifs ; par défaut le bleu de marque. */
+  /** Couleur de la catégorie active (hex) — repeint les états actifs ; par défaut le bleu de marque. */
   accentColor?: string
+  /** Libellés de la bascule de transaction (ex. « Achat / Location » sur /demandes) ; défaut « Vente / Location ». */
+  transactionLabels?: { SALE: string; RENTAL: string }
+  /** Critères supplémentaires ajoutés en bas de « Plus de critères » (ex. période sur /demandes). */
+  moreExtra?: React.ReactNode
+  /** Nombre de critères supplémentaires actifs (badge de « Plus de critères »). */
+  moreExtraActiveCount?: number
+  /** Remise à zéro des critères supplémentaires (appelée par « Réinitialiser »). */
+  onResetExtra?: () => void
 }
 
-export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor }: AnnounceFilterProps) {
+// Filtre DYNAMIQUE : les résultats se mettent à jour à chaque changement (pas de bouton
+// « Rechercher », retiré le 08/11/2026). Partagé par /announces et /demandes pour un rendu identique.
+export function AnnounceFilter({ filters, onFilterChange, accentColor, transactionLabels, moreExtra, moreExtraActiveCount = 0, onResetExtra }: AnnounceFilterProps) {
   const t = useTranslations("AnnounceFilter")
   const ptLabel = usePropertyTypeLabel()
   const catLabel = useCategoryLabel()
@@ -175,8 +184,8 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
 
   // Comme sur l'accueil : deux boutons seulement ; recliquer sur le bouton actif revient à « tout ».
   const TRANSACTION_OPTIONS = [
-    { id: "SALE", label: t("transactionSale"), active: "bg-[#00BFA6] text-white shadow-sm" },
-    { id: "RENTAL", label: t("transactionRental"), active: "bg-[#003B4A] text-white shadow-sm" },
+    { id: "SALE", label: transactionLabels?.SALE || t("transactionSale"), active: "bg-[#00BFA6] text-white shadow-sm" },
+    { id: "RENTAL", label: transactionLabels?.RENTAL || t("transactionRental"), active: "bg-[#003B4A] text-white shadow-sm" },
   ]
 
   // Critères secondaires (repliés sous "Plus de critères") — comptés pour afficher un badge.
@@ -185,11 +194,12 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
     !!filters.maxArea,
     !!filters.minPrice,
     !!filters.maxPrice,
-  ].filter(Boolean).length
+  ].filter(Boolean).length + moreExtraActiveCount
 
   const hasAnyFilter = !!(
     filters.transactionType || filters.realEstateCategory || filters.propertyType ||
-    filters.wilaya || filters.commune || filters.minPrice || filters.maxPrice || filters.minArea || filters.maxArea
+    filters.wilaya || filters.commune || filters.minPrice || filters.maxPrice || filters.minArea || filters.maxArea ||
+    moreExtraActiveCount > 0
   )
 
   const resetAll = () => {
@@ -203,52 +213,100 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
     onFilterChange("minArea", "")
     onFilterChange("maxArea", "")
     onFilterChange("sortBy", "LAST_MODIFIED_DATE_DESC")
+    onResetExtra?.()
     setOpenDropdown(null)
   }
 
+  // Bascule d'unité compacte (une par ligne de « Plus de critères »).
+  const unitToggle = (options: { id: string; label: string }[], value: string, onChange: (v: string) => void) => (
+    <div className="inline-flex rounded-lg bg-gray-100 dark:bg-white/10 p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          onClick={() => onChange(o.id)}
+          className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${value === o.id ? "bg-white dark:bg-white/20 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/80"}`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+  const areaSuffix = isCapacityUnit ? "m³" : areaUnit === "HECTARE" ? "ha" : "m²"
+  const priceSuffix = priceUnit === "MILLION" ? t("curMillions") : priceUnit === "MILLIARD" ? t("curMilliards") : t("curDA")
+  // Champ numérique + unité en texte fixe à droite (même rendu que « m³ » de la Chambre Froide).
+  const numberBox = (label: string, ref: React.RefObject<HTMLDivElement | null>, value: string, placeholder: string, suffix: string, onDigits: (raw: string) => void) => (
+    <div className="min-w-0">
+      <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{label}</label>
+      <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={ref}>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => onDigits(e.target.value.replace(/[^\d]/g, ""))}
+          className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
+          placeholder={placeholder}
+          onFocus={() => setBoxFocus(ref, true)}
+          onBlur={() => setBoxFocus(ref, false)}
+        />
+        <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">{suffix}</span>
+      </div>
+    </div>
+  )
+
   // Cellule "sélecteur" homogène : icône + libellé sur une ligne, pas de cadre visible au repos —
   // seul un léger fond apparaît au survol / à l'ouverture, comme sur la barre de recherche d'accueil.
-  const cellBase = "w-full h-full flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors text-start"
+  // Valeur « vide » d'une cellule : sur mobile le libellé en capitales est masqué, on affiche donc le nom
+  // du champ (« Wilaya ») ; dès lg, « Tout / Toutes » sous le libellé comme avant.
+  const emptyValue = (fieldLabel: string, allLabel: string) => (
+    <>
+      <span className="lg:hidden font-semibold text-gray-500 dark:text-white/50">{fieldLabel}</span>
+      <span className="hidden lg:inline">{allLabel}</span>
+    </>
+  )
+  const cellBase = "w-full h-full flex items-center gap-1.5 lg:gap-2.5 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl lg:rounded-none bg-gray-50 dark:bg-white/5 lg:bg-transparent lg:dark:bg-transparent cursor-pointer transition-colors text-start"
 
   return (
     <div className="w-full" ref={dropdownRef}>
+      {/* Mobile (retour client du 08/11/2026) : DEUX lignes — [Vente|Location] [Immobilier] [Type de bien]
+          puis [Wilaya] [Commune] [Plus de critères]. Chaque ligne est `relative` pour que les menus
+          déroulants s'ouvrent sur toute sa largeur ; dès lg les lignes passent en `contents` et l'on
+          retrouve la barre horizontale d'origine (cellules égales séparées par un filet). */}
       <div className="bg-white dark:bg-[#03303c] rounded-2xl lg:rounded-full shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-1.5 flex flex-col lg:flex-row items-stretch gap-1.5">
 
+        <div className="relative flex items-stretch gap-1.5 lg:contents">
         {/* Transaction — bascule segmentée, même langage que la barre d'accueil */}
-        <div className="flex bg-gray-50 dark:bg-white/5 rounded-full p-1 shrink-0 overflow-x-auto">
+        <div className="flex bg-gray-50 dark:bg-white/5 rounded-xl lg:rounded-full p-1 shrink-0">
           {TRANSACTION_OPTIONS.map((o) => (
             <button
               key={o.id}
               type="button"
               onClick={() => onFilterChange("transactionType", filters.transactionType === o.id ? "" : o.id)}
-              className={`px-4 py-3 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${filters.transactionType === o.id ? o.active : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"}`}
+              className={`px-2.5 sm:px-4 py-2 lg:py-2.5 rounded-lg lg:rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${filters.transactionType === o.id ? o.active : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"}`}
             >
               {o.label}
             </button>
           ))}
         </div>
 
-        {/* Cellules qui s'enchaînent, séparées par de fins traits — pas de cases encadrées */}
-        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 rounded-xl lg:rounded-none border border-gray-100 dark:border-white/10 lg:border-0 divide-x divide-y lg:divide-y-0 divide-gray-100 dark:divide-white/10 overflow-hidden lg:overflow-visible min-w-0">
-
           {/* Catégorie */}
-          <div className="relative min-w-0">
+          <div className="min-w-0 flex-1 lg:basis-0 lg:relative">
             <button
               type="button"
               onClick={() => toggleDropdown("realEstateCategory")}
               className={cellBase + " hover:bg-gray-50 dark:hover:bg-white/5"}
               style={openDropdown === "realEstateCategory" ? { boxShadow: `inset 0 0 0 2px ${accent}` } : undefined}
             >
-              {selectedCatColor ? chip(selectedCatColor, SelectedCatIcon) : <Building2 className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />}
+              <span className="hidden lg:contents">{selectedCatColor ? chip(selectedCatColor, SelectedCatIcon) : <Building2 className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />}</span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("realEstateCategory")}</span>
-                <span className="block font-bold text-sm text-gray-800 dark:text-white truncate">{selectedCategoryLabel}</span>
+                <span className="hidden lg:block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("realEstateCategory")}</span>
+                <span className="block font-bold text-[13px] lg:text-sm text-gray-800 dark:text-white truncate">{filters.realEstateCategory ? selectedCategoryLabel : emptyValue(t("realEstateCategory"), t("all"))}</span>
               </span>
               <ChevronDown className={`h-3.5 w-3.5 text-gray-400 dark:text-white/40 shrink-0 transition-transform ${openDropdown === "realEstateCategory" ? "rotate-180" : ""}`} />
             </button>
 
             {openDropdown === "realEstateCategory" && (
-              <div className="absolute top-full start-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-1.5">
+              <div className="absolute top-full inset-x-0 lg:inset-x-auto lg:start-0 mt-2 lg:w-64 bg-white dark:bg-[#03303c] rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -289,25 +347,25 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
           </div>
 
           {/* Type de bien */}
-          <div className="relative min-w-0">
+          <div className="min-w-0 flex-1 lg:basis-0 lg:relative lg:border-s lg:border-gray-100 lg:dark:border-white/10">
             <button
               type="button"
               onClick={() => toggleDropdown("propertyType")}
               className={cellBase + " hover:bg-gray-50 dark:hover:bg-white/5"}
               style={openDropdown === "propertyType" ? { boxShadow: `inset 0 0 0 2px ${accent}` } : undefined}
             >
-              <Home className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
+              <Home className="hidden lg:block h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
               <span className="min-w-0 flex-1">
-                <span className="block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("propertyType")}</span>
-                <span className={`block font-bold text-sm truncate ${!filters.realEstateCategory ? "text-gray-400 dark:text-white/30" : "text-gray-800 dark:text-white"}`}>
-                  {selectedPropertyTypeLabel}
+                <span className="hidden lg:block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("propertyType")}</span>
+                <span className={`block font-bold text-[13px] lg:text-sm truncate ${!filters.realEstateCategory ? "text-gray-400 dark:text-white/30" : "text-gray-800 dark:text-white"}`}>
+                  {filters.propertyType ? selectedPropertyTypeLabel : emptyValue(t("propertyType"), t("all"))}
                 </span>
               </span>
               <ChevronDown className={`h-3.5 w-3.5 text-gray-400 dark:text-white/40 shrink-0 transition-transform ${openDropdown === "propertyType" ? "rotate-180" : ""}`} />
             </button>
 
             {openDropdown === "propertyType" && (
-              <div className="absolute top-full start-0 mt-2 w-72 bg-white dark:bg-[#03303c] rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-1.5">
+              <div className="absolute top-full inset-x-0 lg:inset-x-auto lg:start-0 mt-2 lg:w-72 bg-white dark:bg-[#03303c] rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden p-1.5">
                 {!filters.realEstateCategory ? (
                   <div className="text-center py-4 px-3 text-gray-500 dark:text-white/50 text-sm">
                     {t("chooseCategoryFirst")}
@@ -354,25 +412,28 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
           </div>
 
           {/* Wilaya */}
-          <div className="relative min-w-0">
+        </div>
+
+        <div className="relative flex items-stretch gap-1.5 lg:contents">
+          <div className="min-w-0 flex-1 lg:basis-0 lg:relative lg:border-s lg:border-gray-100 lg:dark:border-white/10">
             <button
               type="button"
               onClick={() => toggleDropdown("wilaya")}
               className={cellBase + " hover:bg-gray-50 dark:hover:bg-white/5"}
               style={openDropdown === "wilaya" ? { boxShadow: `inset 0 0 0 2px ${accent}` } : undefined}
             >
-              <MapPin className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
+              <MapPin className="hidden lg:block h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
               <span className="min-w-0 flex-1">
-                <span className="block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("wilaya")}</span>
-                <span className="block font-bold text-sm text-gray-800 dark:text-white truncate">
-                  {filters.wilaya ? `${filters.wilaya} - ${selectedWilayaName}` : t("allFeminine")}
+                <span className="hidden lg:block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("wilaya")}</span>
+                <span className="block font-bold text-[13px] lg:text-sm text-gray-800 dark:text-white truncate">
+                  {filters.wilaya ? `${filters.wilaya} - ${selectedWilayaName}` : emptyValue(t("wilaya"), t("allFeminine"))}
                 </span>
               </span>
               <ChevronDown className={`h-3.5 w-3.5 text-gray-400 dark:text-white/40 shrink-0 transition-transform ${openDropdown === "wilaya" ? "rotate-180" : ""}`} />
             </button>
 
             {openDropdown === "wilaya" && (
-              <div className="absolute top-full start-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
+              <div className="absolute top-full inset-x-0 lg:inset-x-auto lg:start-0 mt-2 lg:w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
                 <div className="p-2 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#03303c]">
                   <input
                     type="text"
@@ -421,25 +482,25 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
           </div>
 
           {/* Commune */}
-          <div className="relative min-w-0">
+          <div className="min-w-0 flex-1 lg:basis-0 lg:relative lg:border-s lg:border-gray-100 lg:dark:border-white/10">
             <button
               type="button"
               onClick={() => toggleDropdown("commune")}
               className={cellBase + " hover:bg-gray-50 dark:hover:bg-white/5"}
               style={openDropdown === "commune" ? { boxShadow: `inset 0 0 0 2px ${accent}` } : undefined}
             >
-              <MapPin className="h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
+              <MapPin className="hidden lg:block h-4 w-4 text-gray-400 dark:text-white/40 shrink-0" />
               <span className="min-w-0 flex-1">
-                <span className="block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("commune")}</span>
-                <span className={`block font-bold text-sm truncate ${!filters.wilaya ? "text-gray-400 dark:text-white/30" : "text-gray-800 dark:text-white"}`}>
-                  {selectedCommuneName || t("allFeminine")}
+                <span className="hidden lg:block text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-wider leading-none mb-0.5 whitespace-nowrap truncate">{t("commune")}</span>
+                <span className={`block font-bold text-[13px] lg:text-sm truncate ${!filters.wilaya ? "text-gray-400 dark:text-white/30" : "text-gray-800 dark:text-white"}`}>
+                  {selectedCommuneName || emptyValue(t("commune"), t("allFeminine"))}
                 </span>
               </span>
               <ChevronDown className={`h-3.5 w-3.5 text-gray-400 dark:text-white/40 shrink-0 transition-transform ${openDropdown === "commune" ? "rotate-180" : ""}`} />
             </button>
 
             {openDropdown === "commune" && (
-              <div className="absolute top-full end-0 lg:end-auto lg:start-0 mt-2 w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
+              <div className="absolute top-full inset-x-0 lg:inset-x-auto lg:start-0 mt-2 lg:w-64 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-80">
                 {!filters.wilaya ? (
                   <div className="p-4 text-center text-gray-500 dark:text-white/50 text-sm">{t("chooseWilayaFirst")}</div>
                 ) : (
@@ -489,18 +550,19 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
               </div>
             )}
           </div>
-        </div>
 
         {/* Plus de critères — Surface et Budget (min / max), repliés pour garder la barre principale épurée */}
-        <div className="relative shrink-0">
+        <div className="shrink-0 lg:relative">
           <button
             type="button"
             onClick={() => toggleDropdown("more")}
-            className="w-full lg:w-auto h-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-bold text-gray-600 dark:text-white/70 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
+            aria-label={t("moreFilters")}
+            title={t("moreFilters")}
+            className="h-full flex items-center justify-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl lg:rounded-full text-sm font-bold text-gray-600 dark:text-white/70 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
             style={openDropdown === "more" ? { boxShadow: `inset 0 0 0 2px ${accent}`, color: accent } : undefined}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            <span>{t("moreFilters")}</span>
+            <span className="hidden lg:inline">{t("moreFilters")}</span>
             {secondaryActiveCount > 0 && (
               <span
                 className="h-4.5 min-w-[18px] px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center"
@@ -512,117 +574,41 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
           </button>
 
           {openDropdown === "more" && (
-            <div className="absolute top-full end-0 mt-2 w-80 max-w-[90vw] bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 p-4 space-y-4">
-              {/* Surface / Capacité — unité choisie par un vrai sélecteur (m² / hectare), sauf pour
-                  une Chambre Froide où l'unité reste m³ fixe (capacité, pas une surface qui se
-                  convertit en hectares). Retour client du 17/10/2026 : "manque sur plus de critère
-                  les unités sur m2 m3 hectare et autre" — la pastille fixe du 15/10/2026 ne
-                  suffisait pas, il fallait un vrai choix. */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{isCapacityUnit ? t("capacityMinLabel") : t("surfaceMinLabel")}</label>
-                  <div
-                    className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all"
-                    ref={minAreaBoxRef}
-                  >
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={displayMinArea}
-                      onChange={(e) => onFilterChange("minArea", e.target.value.replace(/[^\d]/g, "") ? String(Number(e.target.value.replace(/[^\d]/g, "")) * areaFactor) : "")}
-                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
-                      placeholder="Ex: 50"
-                      onFocus={() => setBoxFocus(minAreaBoxRef, true)}
-                      onBlur={() => setBoxFocus(minAreaBoxRef, false)}
-                    />
-                    {isCapacityUnit ? (
-                      <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">m³</span>
-                    ) : (
-                      <select value={areaUnit} onChange={(e) => onAreaUnitChange(e.target.value as 'M2' | 'HECTARE')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
-                        <option value="M2">m²</option>
-                        <option value="HECTARE">{t("unitHectare")}</option>
-                      </select>
-                    )}
+            <div className="absolute top-full inset-x-0 lg:inset-x-auto lg:end-0 mt-2 lg:w-96 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-50 p-4 space-y-4">
+              {/* Valeurs toujours lisibles (retour client du 08/11/2026) : l'unité se choisit UNE fois par
+                  ligne (bascule au-dessus des deux champs) et s'affiche en texte fixe dans le champ, comme
+                  « m³ » pour une Chambre Froide — au lieu d'un menu déroulant dans chaque champ qui
+                  mangeait la moitié de la largeur et coupait la valeur saisie. Les filtres restent en
+                  valeur brute (m² / DA), seule la saisie est convertie (cf. areaFactor / priceFactor). */}
+              <div>
+                {!isCapacityUnit && (
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white/40">{t("unitLabel")}</span>
+                    {unitToggle([{ id: "M2", label: "m²" }, { id: "HECTARE", label: t("unitHectare") }], areaUnit, (v) => onAreaUnitChange(v as 'M2' | 'HECTARE'))}
                   </div>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{isCapacityUnit ? t("capacityMaxLabel") : t("surfaceMaxLabel")}</label>
-                  <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={maxAreaBoxRef}>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={displayMaxArea}
-                      onChange={(e) => onFilterChange("maxArea", e.target.value.replace(/[^\d]/g, "") ? String(Number(e.target.value.replace(/[^\d]/g, "")) * areaFactor) : "")}
-                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
-                      placeholder="Ex: 300"
-                      onFocus={() => setBoxFocus(maxAreaBoxRef, true)}
-                      onBlur={() => setBoxFocus(maxAreaBoxRef, false)}
-                    />
-                    {isCapacityUnit ? (
-                      <span className="shrink-0 pe-3 text-xs font-semibold text-gray-400 dark:text-white/40">m³</span>
-                    ) : (
-                      <select value={areaUnit} onChange={(e) => onAreaUnitChange(e.target.value as 'M2' | 'HECTARE')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
-                        <option value="M2">m²</option>
-                        <option value="HECTARE">{t("unitHectare")}</option>
-                      </select>
-                    )}
-                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  {numberBox(isCapacityUnit ? t("capacityMinLabel") : t("surfaceMinLabel"), minAreaBoxRef, displayMinArea, "Ex: 50", areaSuffix,
+                    (raw) => onFilterChange("minArea", raw ? String(Number(raw) * areaFactor) : ""))}
+                  {numberBox(isCapacityUnit ? t("capacityMaxLabel") : t("surfaceMaxLabel"), maxAreaBoxRef, displayMaxArea, "Ex: 300", areaSuffix,
+                    (raw) => onFilterChange("maxArea", raw ? String(Number(raw) * areaFactor) : ""))}
                 </div>
               </div>
 
-              {/* Budget : minimum / maximum — vrai sélecteur d'unité (DA / Millions / Milliards),
-                  restauré après le retour client du 17/10/2026 ("manque unité ... million milliards
-                  dinars"). La valeur tapée est convertie en DA brut avant d'être poussée dans le
-                  filtre (ex. "25" + Millions -> 25000000), donc la comparaison avec le prix réel
-                  des annonces reste exacte quelle que soit l'unité choisie à l'écran. */}
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-white/10">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("budgetMinLabel")}</label>
-                  <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={minPriceBoxRef}>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={formatThousands(displayMinPrice)}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/[^\d]/g, "")
-                        onFilterChange("minPrice", digits ? String(Math.round(Number(digits) * priceFactor)) : "")
-                      }}
-                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
-                      placeholder="Ex: 10 000"
-                      onFocus={() => setBoxFocus(minPriceBoxRef, true)}
-                      onBlur={() => setBoxFocus(minPriceBoxRef, false)}
-                    />
-                    <select value={priceUnit} onChange={(e) => onPriceUnitChange(e.target.value as 'DA' | 'MILLION' | 'MILLIARD')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
-                      <option value="DA">{t("curDA")}</option>
-                      <option value="MILLION">{t("curMillions")}</option>
-                      <option value="MILLIARD">{t("curMilliards")}</option>
-                    </select>
-                  </div>
+              <div className="pt-3 border-t border-gray-100 dark:border-white/10">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white/40">{t("unitLabel")}</span>
+                  {unitToggle([{ id: "DA", label: t("curDA") }, { id: "MILLION", label: t("curMillions") }, { id: "MILLIARD", label: t("curMilliards") }], priceUnit, (v) => onPriceUnitChange(v as 'DA' | 'MILLION' | 'MILLIARD'))}
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-white/50 mb-1.5 block whitespace-nowrap truncate">{t("budgetMaxLabel")}</label>
-                  <div className="flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-transparent overflow-hidden transition-all" ref={maxPriceBoxRef}>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={formatThousands(displayMaxPrice)}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/[^\d]/g, "")
-                        onFilterChange("maxPrice", digits ? String(Math.round(Number(digits) * priceFactor)) : "")
-                      }}
-                      className="w-full min-w-0 px-3 py-2 bg-transparent text-gray-800 dark:text-white outline-none"
-                      placeholder="Ex: 50 000"
-                      onFocus={() => setBoxFocus(maxPriceBoxRef, true)}
-                      onBlur={() => setBoxFocus(maxPriceBoxRef, false)}
-                    />
-                    <select value={priceUnit} onChange={(e) => onPriceUnitChange(e.target.value as 'DA' | 'MILLION' | 'MILLIARD')} className="shrink-0 h-full ps-1.5 pe-1 border-s-2 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-600 dark:text-white/60 outline-none cursor-pointer">
-                      <option value="DA">{t("curDA")}</option>
-                      <option value="MILLION">{t("curMillions")}</option>
-                      <option value="MILLIARD">{t("curMilliards")}</option>
-                    </select>
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {numberBox(t("budgetMinLabel"), minPriceBoxRef, formatThousands(displayMinPrice), "Ex: 10 000", priceSuffix,
+                    (raw) => onFilterChange("minPrice", raw ? String(Math.round(Number(raw) * priceFactor)) : ""))}
+                  {numberBox(t("budgetMaxLabel"), maxPriceBoxRef, formatThousands(displayMaxPrice), "Ex: 50 000", priceSuffix,
+                    (raw) => onFilterChange("maxPrice", raw ? String(Math.round(Number(raw) * priceFactor)) : ""))}
                 </div>
               </div>
+
+              {moreExtra && <div className="pt-3 border-t border-gray-100 dark:border-white/10">{moreExtra}</div>}
 
               {hasAnyFilter && (
                 <button
@@ -636,18 +622,8 @@ export function AnnounceFilter({ filters, onFilterChange, onSearch, accentColor 
             </div>
           )}
         </div>
-
-        {/* Rechercher — les résultats se filtrent déjà en direct ; ce bouton confirme / partage l'URL */}
-        <div className="shrink-0">
-          <Button
-            className="w-full lg:w-auto text-white rounded-full px-6 h-[46px] lg:h-full font-bold text-sm shadow-md transition-all active:scale-95"
-            style={{ backgroundColor: accent }}
-            onClick={onSearch}
-          >
-            <Search className="h-4 w-4 me-2" />
-            {t("search")}
-          </Button>
         </div>
+
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
+import { TikTokIcon } from "@/components/icons/TikTokIcon";
 import { cn } from "@/lib/utils";
 import { useLocalizedContent } from "@/lib/typeLabels";
 
@@ -32,6 +33,7 @@ export function Footer() {
     { key: "SOCIAL_INSTAGRAM", icon: Instagram, label: "Instagram" },
     { key: "SOCIAL_LINKEDIN", icon: Linkedin, label: "LinkedIn" },
     { key: "SOCIAL_YOUTUBE", icon: Youtube, label: "YouTube" },
+    { key: "SOCIAL_TIKTOK", icon: TikTokIcon, label: "TikTok" },
   ].filter((s) => settings[s.key]);
 
   return (

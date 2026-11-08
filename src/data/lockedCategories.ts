@@ -7,3 +7,10 @@
 export const LOCKED_CATEGORIES: readonly string[] = ["HOTELIER", "HEBERGEMENT"]
 
 export const isLockedCategory = (id?: string | null) => !!id && LOCKED_CATEGORIES.includes(id)
+
+// Types de biens Bureaux & Commerces visibles mais verrouillés (« Bientôt disponible »), placés en
+// dernière ligne — au dépôt d'annonce comme dans « Confier votre recherche » (demande client du
+// 08/11/2026). Retirer un id d'ici le rouvre dans les deux parcours.
+export const LOCKED_PROPERTY_TYPES: readonly string[] = ["CENTRE_AFFAIRES", "COWORKING", "BUREAU_FLEXIBLE"]
+
+export const isLockedPropertyType = (id?: string | null) => !!id && LOCKED_PROPERTY_TYPES.includes(id)

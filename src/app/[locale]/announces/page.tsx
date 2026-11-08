@@ -41,7 +41,7 @@ function AnnouncesContent() {
 
   useEffect(() => {
     // Update filters when URL params change (e.g. navigation)
-    setFilters({
+    const fromUrl = {
       sortBy: searchParams.get('sortBy') || 'LAST_MODIFIED_DATE_DESC',
       transactionType: searchParams.get('transactionType') || '',
       realEstateCategory: searchParams.get('realEstateCategory') || '',
@@ -53,15 +53,17 @@ function AnnouncesContent() {
       minArea: searchParams.get('minArea') || '',
       maxArea: searchParams.get('maxArea') || '',
       nbPieces: searchParams.get('nbPieces') || ''
-    })
+    }
+    setFilters((prev) => (JSON.stringify(prev) === JSON.stringify(fromUrl) ? prev : fromUrl))
   }, [searchParams])
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
-  // Synchronise l'URL avec les filtres actuels (permet de partager/mettre en favori une recherche) —
-  // le filtrage lui-même n'attend plus ce clic, il se déclenche déjà en direct (cf. useEffect ci-dessous).
+  // Synchronise l'URL avec les filtres actuels (permet de partager/mettre en favori une recherche).
+  // Depuis le 08/11/2026 le filtre n'a plus de bouton « Rechercher » : cette synchro est faite
+  // automatiquement (useEffect ci-dessous, avec debounce), et seulement si l'URL change vraiment.
   const handleSearch = () => {
     const params = new URLSearchParams()
     if (filters.transactionType) params.append('transactionType', filters.transactionType)
@@ -76,8 +78,16 @@ function AnnouncesContent() {
     if (filters.nbPieces) params.append('nbPieces', filters.nbPieces)
     if (filters.sortBy) params.append('sortBy', filters.sortBy)
 
-    router.push(`/announces?${params.toString()}`)
+    const qs = params.toString()
+    if (qs === window.location.search.replace(/^\?/, '')) return
+    router.replace(`/announces${qs ? `?${qs}` : ''}` as any, { scroll: false })
   }
+
+  useEffect(() => {
+    const id = setTimeout(handleSearch, 500)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters])
 
   // Filtrage "intelligent" : on refait tourner la recherche à chaque changement de filtre, sans
   // attendre le clic sur "Rechercher". Un léger debounce évite de relancer un fetch à chaque
@@ -254,7 +264,6 @@ function AnnouncesContent() {
           <AnnounceFilter
               filters={filters}
               onFilterChange={handleFilterChange}
-              onSearch={handleSearch}
               accentColor={filters.realEstateCategory ? catColor.hex : undefined}
           />
         </div>

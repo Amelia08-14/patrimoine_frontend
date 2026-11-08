@@ -16,6 +16,69 @@ import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { getCategoryColor } from "@/data/categoryColors"
 
+// « Explorer par type de bien » — sous lg : UNE ligne défilante (retour client du 08/11/2026), avec deux
+// petites flèches et un défilement automatique d'une carte toutes les 3,5 s qui repart au début en fin
+// de ligne. Pause au survol, au toucher (8 s), onglet masqué ou `prefers-reduced-motion`. Dès lg : la
+// grille de 5 colonnes d'origine (les flèches disparaissent, rien ne défile).
+function ExploreTypesRow({ title, children }: { title: string; children: React.ReactNode }) {
+  const t = useTranslations("HomePage")
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const pausedUntil = useRef(0)
+  const hovered = useRef(false)
+  const reduceMotion = useReducedMotion()
+
+  const step = (dir: 1 | -1) => {
+    const el = scrollerRef.current
+    if (!el) return
+    const card = el.firstElementChild as HTMLElement | null
+    const amount = (card?.offsetWidth || el.clientWidth / 2) + 12
+    const rtl = getComputedStyle(el).direction === "rtl"
+    const atEnd = Math.abs(el.scrollLeft) + el.clientWidth >= el.scrollWidth - 4
+    const atStart = Math.abs(el.scrollLeft) <= 4
+    if (dir === 1 && atEnd) { el.scrollTo({ left: 0, behavior: "smooth" }); return }
+    if (dir === -1 && atStart) { el.scrollTo({ left: (rtl ? -1 : 1) * el.scrollWidth, behavior: "smooth" }); return }
+    el.scrollBy({ left: dir * amount * (rtl ? -1 : 1), behavior: "smooth" })
+  }
+  const nudge = (dir: 1 | -1) => { pausedUntil.current = Date.now() + 8000; step(dir) }
+
+  useEffect(() => {
+    if (reduceMotion) return
+    const id = setInterval(() => {
+      const el = scrollerRef.current
+      if (!el || document.hidden || hovered.current || Date.now() < pausedUntil.current) return
+      if (el.scrollWidth <= el.clientWidth + 4) return // grille lg : rien à faire défiler
+      step(1)
+    }, 3500)
+    return () => clearInterval(id)
+  }, [reduceMotion])
+
+  const arrow = "h-7 w-7 rounded-full border border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-[#00BFA6] hover:border-[#00BFA6] transition-colors"
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h2 className="font-brand text-xl text-[#003B4A] dark:text-white">{title}</h2>
+        <div className="flex gap-1.5 lg:hidden">
+          <button type="button" onClick={() => nudge(-1)} aria-label={t("exploreTypesPrev")} className={arrow}>
+            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+          </button>
+          <button type="button" onClick={() => nudge(1)} aria-label={t("exploreTypesNext")} className={arrow}>
+            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+          </button>
+        </div>
+      </div>
+      <div
+        ref={scrollerRef}
+        onMouseEnter={() => { hovered.current = true }}
+        onMouseLeave={() => { hovered.current = false }}
+        onTouchStart={() => { pausedUntil.current = Date.now() + 8000 }}
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 sm:-mx-6 sm:px-6 scroll-px-4 sm:scroll-px-6 pt-1 pb-2 lg:mx-0 lg:px-0 lg:py-0lg:grid lg:grid-cols-5 lg:overflow-visible"
+      >
+        {children}
+      </div>
+    </>
+  )
+}
+
 // Entrée du hero — le seul moment chorégraphié de la page (le reste reste calme), chaque ligne
 // arrive légèrement après la précédente. `prefers-reduced-motion` désactive le mouvement en
 // gardant le contenu visible d'emblée (cf. usage de useReducedMotion plus bas).
@@ -436,7 +499,11 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
     // minimale calée sur le français (le mot le plus long des 3 langues), pour que des libellés
     // anglais/arabes plus courts ("Buy"/"Rent"/"Search") ne rétrécissent pas ces segments et ne
     // déséquilibrent pas les proportions de la barre (demande client du 15/10/2026).
+    // Mobile (retour client du 08/11/2026) : DEUX lignes — [Acheter|Louer] [Type de bien] puis
+    // [Wilaya] [Commune] [loupe]. Les deux groupes sont en `lg:contents` : sur grand écran leurs enfants
+    // reprennent leur place dans la barre horizontale d'origine, inchangée.
     <div className="w-full bg-white dark:bg-[#03303c] rounded-[26px] shadow-xl shadow-black/[0.06] border border-gray-100 dark:border-white/10 p-[8px] sm:p-[9px] flex flex-col lg:flex-row items-stretch gap-[8px]">
+      <div className="flex items-stretch gap-[8px] lg:contents">
       <div className="flex bg-gray-50 dark:bg-white/5 rounded-2xl p-[4px] shrink-0">
         {([{ id: "SALE", label: t("searchBuy") }, { id: "RENTAL", label: t("searchRent") }] as const).map((o) => (
           <button
@@ -444,7 +511,7 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
             type="button"
             onClick={() => setTransactionType(transactionType === o.id ? "" : (o.id as "SALE" | "RENTAL"))}
             className={cn(
-              "min-w-[92px] px-[15px] py-[9px] rounded-xl text-sm font-bold transition-all whitespace-nowrap",
+              "min-w-0 sm:min-w-[92px] px-[12px] sm:px-[15px] py-[9px] rounded-xl text-[13px] sm:text-sm font-bold transition-all whitespace-nowrap",
               transactionType === o.id ? (o.id === "SALE" ? "bg-[#00BFA6] text-white shadow-sm" : "bg-[#003B4A] text-white shadow-sm") : "text-gray-500 dark:text-white/60 hover:text-[#003B4A] dark:hover:text-white"
             )}
           >
@@ -453,11 +520,14 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
         ))}
       </div>
 
-      <div className="flex-1 flex items-center gap-[8px] px-[11px] border-y lg:border-y-0 lg:border-x border-gray-100 dark:border-white/10 min-w-0">
+      <div className="flex-1 flex items-center gap-[8px] px-[11px] rounded-2xl bg-gray-50 dark:bg-white/5 lg:rounded-none lg:bg-transparent lg:dark:bg-transparent lg:border-x border-gray-100 dark:border-white/10 min-w-0">
         <CategorySelect value={category} onChange={setCategory} placeholder={t("searchCategoryPlaceholder")} />
       </div>
+      </div>
 
-      <div className="flex-1 flex items-center gap-[8px] px-[11px] border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-white/10 min-w-0">
+      <div className="flex items-stretch gap-[8px] lg:contents">
+
+      <div className="flex-1 flex items-center gap-[8px] px-[11px] py-[9px] lg:py-0 rounded-2xl bg-gray-50 dark:bg-white/5 lg:rounded-none lg:bg-transparent lg:dark:bg-transparent lg:border-r border-gray-100 dark:border-white/10 min-w-0">
         <ListSelect
           value={wilaya}
           onChange={(v) => onChange({ wilaya: v, commune: "" })}
@@ -467,7 +537,7 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
         />
       </div>
 
-      <div className="flex-1 flex items-center gap-[8px] px-[11px] min-w-0">
+      <div className="flex-1 flex items-center gap-[8px] px-[11px] py-[9px] lg:py-0 rounded-2xl bg-gray-50 dark:bg-white/5 lg:rounded-none lg:bg-transparent lg:dark:bg-transparent min-w-0">
         <ListSelect
           value={commune}
           onChange={setCommune}
@@ -478,9 +548,11 @@ function HeroSearchBar({ filters, onChange }: { filters: SearchFilters; onChange
         />
       </div>
 
-      <Button onClick={submit} className="min-w-[150px] bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-2xl px-[22px] py-[22px] lg:py-0 text-sm font-extrabold shrink-0">
-        <Search className="h-4 w-4 me-[8px]" /> {t("searchButton")}
+      {/* Mobile : simple loupe (le libellé reviendrait sur une 3e ligne) ; ordinateur : bouton complet. */}
+      <Button onClick={submit} aria-label={t("searchButton")} className="min-w-[46px] lg:min-w-[150px] bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-2xl px-[12px] lg:px-[22px] py-[10px] lg:py-0 h-auto text-sm font-extrabold shrink-0">
+        <Search className="h-4 w-4 lg:me-[8px]" /> <span className="hidden lg:inline">{t("searchButton")}</span>
       </Button>
+      </div>
     </div>
   )
 }
@@ -652,7 +724,8 @@ export default function HomePage() {
 
       {/* HERO SECTION — plein écran, photo edge-to-edge avec fondu texte/image */}
       <div className="bg-white dark:bg-transparent">
-        <div className="relative min-h-[560px] sm:min-h-[440px] lg:min-h-[480px] flex items-center group">
+        {/* Mobile : hero compact (min 340 px au lieu de 560, retour client du 08/11/2026) — sm+ inchangé. */}
+        <div className="relative min-h-[340px] sm:min-h-[440px] lg:min-h-[480px] flex items-center group">
           {/* Calque photo — couvre toute la hauteur réelle de la section (variable sur mobile
               selon la longueur du texte traduit), jamais la hauteur fixe d'avant qui rognait le
               contenu en overflow-hidden dès que le texte dépassait 400px sur un petit écran. */}
@@ -714,7 +787,7 @@ export default function HomePage() {
 
           {/* Contenu texte — posé sur le fondu, aligné à gauche ; ne fixe plus sa propre hauteur,
               c'est lui qui détermine celle de la section (au moins min-h-*, plus si besoin). */}
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-0 pointer-events-none">
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-12 sm:py-0 pointer-events-none">
             {/* heroTextShadow : ombre portée héritée par tout le texte du hero — remplace l'ancien
                 voile sur la photo pour garder le blanc lisible sur une image claire. */}
             <motion.div
@@ -723,21 +796,21 @@ export default function HomePage() {
               animate="visible"
               variants={heroStagger}
             >
-              <motion.div variants={heroItem} className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] rtl:text-xs font-bold uppercase tracking-[0.22em] mb-5">
+              <motion.div variants={heroItem} className="inline-flex items-center gap-2 text-[#00BFA6] text-[11px] rtl:text-xs font-bold uppercase tracking-[0.22em] mb-3 sm:mb-5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#00BFA6]" />
                 {t("heroEyebrow")}
               </motion.div>
               {lc(activeSlide?.title, activeSlide?.titleAr, activeSlide?.titleEn) ? (
-                <motion.h1 variants={heroItem} className="font-brand text-[1.9rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
+                <motion.h1 variants={heroItem} className="font-brand text-[1.6rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
                   {lc(activeSlide?.title, activeSlide?.titleAr, activeSlide?.titleEn)}
                 </motion.h1>
               ) : (
-                <motion.h1 variants={heroItem} className="font-brand text-[1.9rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
+                <motion.h1 variants={heroItem} className="font-brand text-[1.6rem] sm:text-5xl lg:text-[3.4rem] leading-[1.15] sm:leading-[1.08] tracking-tight text-white">
                   {t("heroTitle")}<br />
                   <span className="text-[#00BFA6]">{t("heroTitleAccent")}</span>
                 </motion.h1>
               )}
-              <motion.p variants={heroItem} className="mt-4 sm:mt-5 text-white text-sm sm:text-lg leading-relaxed max-w-lg">
+              <motion.p variants={heroItem} className="mt-2.5 sm:mt-5 text-white text-sm sm:text-lg leading-relaxed max-w-lg line-clamp-2 sm:line-clamp-none">
                 {lc(activeSlide?.subtitle, activeSlide?.subtitleAr, activeSlide?.subtitleEn) || t("heroSubtitle")}
               </motion.p>
 
@@ -745,14 +818,14 @@ export default function HomePage() {
                   un seul, les deux, ou aucun. Valeurs par défaut : « Voir les annonces » → /announces et
                   « Comment ça marche » → /faq. */}
               {(showHeroButton1 || showHeroButton2) && (
-                <motion.div variants={heroItem} className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
+                <motion.div variants={heroItem} className="mt-4 sm:mt-8 flex flex-wrap items-center gap-2 sm:gap-3">
                   {showHeroButton1 && renderHeroLink(activeSlide?.link || "/announces",
-                    <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-7 py-6 text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
+                    <Button className="bg-[#00BFA6] hover:bg-[#00A896] text-white rounded-full px-5 py-4 sm:px-7 sm:py-6 text-xs sm:text-sm font-extrabold shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-[#00BFA6]/20 hover:-translate-y-0.5 transition-all">
                       {heroButtonLabel} <ArrowRight className="h-4 w-4 ml-2 rtl:rotate-180" />
                     </Button>
                   )}
                   {showHeroButton2 && renderHeroLink(activeSlide?.button2Link || "/faq",
-                    <Button variant="outline" className="rounded-full px-7 py-6 text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:-translate-y-0.5 transition-all">
+                    <Button variant="outline" className="rounded-full px-5 py-4 sm:px-7 sm:py-6 text-xs sm:text-sm font-extrabold border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:-translate-y-0.5 transition-all">
                       {heroButton2Label}
                     </Button>
                   )}
@@ -788,8 +861,7 @@ export default function HomePage() {
           {/* EXPLORER PAR TYPE DE BIEN — comptes réels, rangées compactes pour libérer de la hauteur */}
           <div className="bg-gray-50 dark:bg-transparent pt-6 lg:pt-8 pb-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
-              <h2 className="font-brand text-xl text-[#003B4A] dark:text-white mb-4">{t("exploreTypesTitle")}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <ExploreTypesRow title={t("exploreTypesTitle")}>
                 {orderedCategoryIds.map(catId => {
                   const catDef = REAL_ESTATE_CATEGORIES.find(c => c.id === catId)
                   if (!catDef) return null
@@ -799,7 +871,7 @@ export default function HomePage() {
                     <Link
                       key={catId}
                       href={`/announces?realEstateCategory=${catId}`}
-                      className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
+                      className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-3.5 py-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group shrink-0 snap-start w-[46%] sm:w-[31%] lg:w-auto"
                       style={searchFilters.category === catId ? { borderColor: catColor.hex } : undefined}
                       onMouseEnter={(e) => { e.currentTarget.style.borderColor = catColor.hex }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = searchFilters.category === catId ? catColor.hex : '' }}
@@ -808,13 +880,13 @@ export default function HomePage() {
                         <Icon className="h-4.5 w-4.5" style={{ color: catColor.hex }} />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-sm font-bold text-gray-800 dark:text-white/90 truncate">{tc(catId)}</span>
+                        <span className="block text-[13px] sm:text-sm font-bold leading-tight text-gray-800 dark:text-white/90 line-clamp-2 lg:line-clamp-none lg:truncate">{tc(catId)}</span>
                         <span className="block text-[11px] rtl:text-xs text-gray-400 dark:text-white/40 font-medium">{countsByCategory[catId] || 0} {t("listingsCount")}</span>
                       </span>
                     </Link>
                   )
                 })}
-              </div>
+              </ExploreTypesRow>
             </div>
           </div>
 

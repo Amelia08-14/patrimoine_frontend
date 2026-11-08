@@ -342,7 +342,7 @@ export default function ProfileInfoPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("inapiDocLabel")} <span className="text-gray-400 dark:text-white/40 font-normal">{t("inapiDocHint")}</span></label>
+                                <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("inapiDocLabel")}</label>
                                 <label className={`flex items-center justify-center w-full h-[42px] border-2 rounded-xl cursor-pointer transition-all font-bold text-sm ${files.inapiDocument || user.inapiDocumentUrl ? "bg-[#E6F8F6] border-[#00BFA6] text-[#003B4A]" : "bg-gray-50 dark:bg-transparent border-gray-200 dark:border-white/10 hover:border-[#00BFA6] text-gray-600 dark:text-white/60"}`}>
                                     <span className="flex items-center gap-2">
                                         {files.inapiDocument || user.inapiDocumentUrl ? (

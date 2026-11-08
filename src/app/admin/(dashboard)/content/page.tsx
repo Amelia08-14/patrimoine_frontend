@@ -8,6 +8,7 @@ import {
   Mail, MapPin, MessageCircle, Send, Briefcase, Scale, Wrench, Globe, Link2, ExternalLink, Users, Images,
   X, Clock, ChevronDown, Facebook, Instagram, Linkedin, Youtube,
 } from "lucide-react"
+import { TikTokIcon } from "@/components/icons/TikTokIcon"
 import { LegalRichEditor } from "@/components/admin/LegalRichEditor"
 import { SUB_CATEGORY_LABELS, subCategoriesForPole, type ActivityPole } from "@/data/activityPoles"
 import { REAL_ESTATE_CATEGORIES, PUBLIC_CATEGORIES } from "@/data/propertyTypes"
@@ -1365,6 +1366,10 @@ function ContactTab() {
           <div>
             <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Youtube className="h-3.5 w-3.5 text-gray-400" /> YouTube</label>
             <input value={settings.SOCIAL_YOUTUBE || ''} onChange={(e) => set('SOCIAL_YOUTUBE', e.target.value)} placeholder="https://youtube.com/@..." className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><TikTokIcon className="h-3.5 w-3.5 text-gray-400" /> TikTok</label>
+            <input value={settings.SOCIAL_TIKTOK || ''} onChange={(e) => set('SOCIAL_TIKTOK', e.target.value)} placeholder="https://tiktok.com/@..." className="w-full text-sm outline-none border border-gray-200 rounded-xl p-2.5 focus:border-[#00BFA6]" />
           </div>
         </div>
       </div>

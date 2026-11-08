@@ -9,7 +9,7 @@ import {
   Phone, Mail, User, Check, Building2, Car, Wind, Sun,
   Warehouse, Archive, ParkingCircle, DoorOpen, Flower2, Cctv, Waves, X, Layers, Users, FileText, Handshake,
   Factory, Key, Zap, Truck, Shield, Ruler, LayoutGrid, Store, Search, Play, Images,
-  Star, Mountain, Droplet
+  Star, Mountain, Droplet, ChevronDown
 } from "lucide-react"
 import { AMENITIES_DATA } from "@/data/amenities"
 import { PROPERTY_TYPES } from "@/data/propertyTypes"
@@ -17,6 +17,7 @@ import { usePropertyTypeLabel, useLocalizedPlaceName, useLocalizedContent } from
 import { Link, useRouter } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { ScrollingTitle } from "@/components/ScrollingTitle"
+import { CenterToast } from "@/components/CenterToast"
 
   // Helper for Image URLs
   const getImageUrl = (url: string) => {
@@ -288,6 +289,63 @@ export default function AnnounceDetailsPage() {
   const [activeImage, setActiveImage] = useState(0)
   const [showGallery, setShowGallery] = useState(false)
   const [selectedContactIndex, setSelectedContactIndex] = useState(0)
+  // Menu des canaux (appel, e-mail, WhatsApp, Viber, Telegram) d'un numéro : s'ouvre au CLIC sur le
+  // numéro avec une petite animation (retour client du 08/11/2026 — avant : au survol, inaccessible
+  // sur mobile). Fermé au clic extérieur ou sur Échap.
+  const [openContactMenu, setOpenContactMenu] = useState<number | null>(null)
+  useEffect(() => {
+    if (openContactMenu === null) return
+    const onPointer = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement)?.closest?.('[data-contact-menu]')) setOpenContactMenu(null)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenContactMenu(null) }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [openContactMenu])
+
+  // Favori / partage — posés SUR la photo (retour client du 08/11/2026) pour laisser toute la ligne au
+  // titre. Le favori réutilise l'API des cartes (POST /favorites/:id bascule) ; l'état initial vient
+  // de /favorites/me. Partage : feuille native du téléphone, sinon copie du lien.
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [pageToast, setPageToast] = useState<string | null>(null)
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (!token || !params?.id) return
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/favorites/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: any[]) => setIsFavorite(Array.isArray(list) && list.some((f) => String(f.announceId) === String(params.id))))
+      .catch(() => {})
+  }, [params?.id])
+  const toggleFavorite = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) { setPageToast(t('loginToFavorite')); return }
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/favorites/${params.id}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json().catch(() => null)
+      setIsFavorite((v) => (data?.status ? data.status === 'added' : !v))
+    } catch {
+      setPageToast(t('favError'))
+    }
+  }
+  const shareAnnounce = async () => {
+    const url = window.location.href
+    try {
+      if (navigator.share) { await navigator.share({ title: document.title, url }); return }
+    } catch (e: any) {
+      if (e?.name === 'AbortError') return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setPageToast(t('linkCopied'))
+    } catch {
+      setPageToast(url)
+    }
+  }
 
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
@@ -787,6 +845,7 @@ export default function AnnounceDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent pb-12">
+      <CenterToast message={pageToast} onClose={() => setPageToast(null)} durationMs={3000} />
       {/* Header / Nav Removed */}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -800,22 +859,35 @@ export default function AnnounceDetailsPage() {
                 </button>
                 {/* Titre de l'annonce, juste après la flèche de retour (titre saisi par le déposant,
                     à défaut le type de bien), tronqué proprement sur une ligne. */}
-                {/* Le titre occupe la moitié de la ligne et défile s'il est plus long que cet espace. */}
-                <h1 className="w-1/2 min-w-0 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                {/* Le titre prend toute la ligne (favori/partage sont sur la photo) et défile s'il est plus long. */}
+                <h1 className="flex-1 min-w-0 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                     <ScrollingTitle text={lcName(announce.title, announce.titleAr, announce.titleEn) || propertyTypeLabel} />
                 </h1>
-                <div className="flex-1" />
-                <div className="flex gap-2 shrink-0">
-                    <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
-                        <Heart className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" className="text-gray-500 dark:text-white/50 border-gray-200 dark:border-white/10 hover:text-gray-900 hover:bg-gray-50 shadow-sm h-9 w-9">
-                        <Share2 className="h-4 w-4" />
-                    </Button>
-                </div>
             </div>
 
             <div className="h-[280px] sm:h-[320px] lg:h-[360px] rounded-2xl overflow-hidden relative bg-gray-50 dark:bg-transparent">
+                {/* Favori + partage sur la photo, en haut à droite (à gauche en arabe) */}
+                <div className="absolute top-3 end-3 z-10 flex gap-2">
+                    <button
+                        type="button"
+                        onClick={toggleFavorite}
+                        aria-pressed={isFavorite}
+                        aria-label={isFavorite ? t('favRemove') : t('favAdd')}
+                        title={isFavorite ? t('favRemove') : t('favAdd')}
+                        className="h-9 w-9 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-600 hover:text-[#00BFA6] hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <Heart className={cn("h-4 w-4 transition-colors", isFavorite && "fill-[#00BFA6] text-[#00BFA6]")} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={shareAnnounce}
+                        aria-label={t('shareAction')}
+                        title={t('shareAction')}
+                        className="h-9 w-9 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-600 hover:text-[#00BFA6] hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <Share2 className="h-4 w-4" />
+                    </button>
+                </div>
                 {mediaList.length === 0 && displayImages.length === 0 ? (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-white/40 font-medium">{t("noImageAvailable")}</div>
                 ) : (
@@ -1048,7 +1120,7 @@ export default function AnnounceDetailsPage() {
             
             {/* Header Information */}
             <div className="bg-white dark:bg-white/5 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/10">
-              <div className="flex justify-between items-start mb-2 gap-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-3 sm:gap-4">
                 <div className="flex flex-col gap-2 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-3 min-w-0">
                       {/* Type de bien puis étiquettes d'état sur la même ligne */}
@@ -1074,11 +1146,13 @@ export default function AnnounceDetailsPage() {
                           </span>
                       )}
                   </div>
-                  <div className="flex items-center text-gray-500 dark:text-white/50 text-lg">
-                    <MapPin className="h-5 w-5 mr-2 text-[#00BFA6]" />
-                    {place.town(property.address?.town) || property.address?.street}, {place.city(property.address?.town?.city)}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-500 dark:text-white/50 text-base sm:text-lg">
+                    <span className="flex items-center min-w-0">
+                      <MapPin className="h-5 w-5 me-2 shrink-0 text-[#00BFA6]" />
+                      {place.town(property.address?.town) || property.address?.street}, {place.city(property.address?.town?.city)}
+                    </span>
                     {property.mapsLink && (
-                      <a href={property.mapsLink} target="_blank" rel="noopener noreferrer" className="ml-3 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-700 font-medium">
+                      <a href={property.mapsLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-700 font-medium whitespace-nowrap">
                         <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         {t("viewOnMaps")}
                       </a>
@@ -1100,8 +1174,8 @@ export default function AnnounceDetailsPage() {
                     return null
                   })()}
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="text-3xl font-bold text-[#00BFA6]">
+                <div className="text-start sm:text-right shrink-0">
+                  <div className="text-2xl sm:text-3xl font-bold text-[#00BFA6]">
                       {isSpecialRental
                           ? (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0
                               ? `${Number(announce.price).toLocaleString()} DZD`
@@ -1110,7 +1184,7 @@ export default function AnnounceDetailsPage() {
                               ? `${announce.price.toLocaleString()} DZD`
                               : t("priceNotSpecified"))}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-white/50 font-semibold mt-1 tracking-wide flex items-center justify-end gap-2">
+                  <div className="text-sm text-gray-500 dark:text-white/50 font-semibold mt-1 tracking-wide flex items-center justify-start sm:justify-end gap-2">
                       <span className="uppercase">{isRental ? t("rentalLabel") : isSale ? t("saleLabel") : announce.type}</span>
                       {(!isSpecialRental || (announce.price !== undefined && announce.price !== null && Number(announce.price) > 0)) && announce.priceType && (
                           <>
@@ -1122,9 +1196,12 @@ export default function AnnounceDetailsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-between items-center gap-6 py-5 border-t border-b border-gray-100 dark:border-white/10 mt-5">
+              {/* Mobile (retour client du 08/11/2026) : grille 2 colonnes, chaque caractéristique alignée à
+                  gauche dans sa colonne ; les blocs propres à chaque type passent en `contents` pour que leurs
+                  éléments deviennent des cases de cette grille, séparateurs masqués. Dès sm : rangée d'origine. */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:flex sm:flex-wrap sm:justify-between sm:items-center sm:gap-6 py-5 border-t border-b border-gray-100 dark:border-white/10 mt-5">
                 {isFactoryRental ? (
-                  <div className="w-full flex items-center justify-between gap-3">
+                  <div className="contents sm:flex sm:w-full sm:items-center sm:justify-between sm:gap-3">
                     {/* Secteur d'activité */}
                     {industrialFactory?.sector?.[0] && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 min-w-0">
@@ -1139,7 +1216,7 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {/* Surface Terrain */}
                     {industrialFactory?.surfaces?.landArea != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
@@ -1150,7 +1227,7 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {/* Surface Bâtie */}
                     {industrialFactory?.surfaces?.builtArea != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
@@ -1161,7 +1238,7 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {/* Surface Libre */}
                     {industrialFactory?.surfaces?.freeArea != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
@@ -1174,7 +1251,7 @@ export default function AnnounceDetailsPage() {
                     )}
                   </div>
                 ) : isColdRoomRental ? (
-                  <div className="w-full flex flex-wrap items-center justify-between gap-x-3 gap-y-4">
+                  <div className="contents sm:flex sm:w-full sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-3 sm:gap-y-4">
                     {/* Ordre : structure, capacité, longueur, largeur, hauteur. Un champ non renseigné disparaît
                         avec son séparateur (pas de trou) ; les séparateurs n'apparaissent qu'ENTRE deux blocs. */}
                     {[
@@ -1185,7 +1262,7 @@ export default function AnnounceDetailsPage() {
                       { show: coldRoom?.dimensions?.height != null, Icon: Layers, value: `${coldRoom?.dimensions?.height} ml`, label: t('f008') },
                     ].filter((it) => it.show).map((it, i) => (
                       <Fragment key={it.label}>
-                        {i > 0 && <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
+                        {i > 0 && <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
                         <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                           <it.Icon className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
@@ -1197,7 +1274,7 @@ export default function AnnounceDetailsPage() {
                     ))}
                   </div>
                 ) : isHangarRental ? (
-                  <div className="w-full flex items-center justify-between gap-3">
+                  <div className="contents sm:flex sm:w-full sm:items-center sm:justify-between sm:gap-3">
                     {hangar?.surfaces?.terrain != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                         <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
@@ -1207,7 +1284,7 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.surfaces?.covered != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                         <Ruler className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
@@ -1217,7 +1294,7 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.dimensions?.length != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                         <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
@@ -1227,7 +1304,7 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.dimensions?.width != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                         <Square className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
@@ -1237,7 +1314,7 @@ export default function AnnounceDetailsPage() {
                         </div>
                       </div>
                     )}
-                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />
                     {hangar?.dimensions?.height != null && (
                       <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                         <Layers className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
@@ -1249,7 +1326,7 @@ export default function AnnounceDetailsPage() {
                     )}
                   </div>
                 ) : isHotelRental ? (
-                  <div className="w-full flex flex-wrap items-center gap-x-4 gap-y-4">
+                  <div className="contents sm:flex sm:w-full sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-4">
                     {/* Classement, cible clientèle, puis totaux chambres/capacité — champs vides
                         supprimés avec leur séparateur (même pattern que la chambre froide / le terrain). */}
                     {[
@@ -1259,7 +1336,7 @@ export default function AnnounceDetailsPage() {
                       { show: (hotel?.rooms || []).some((r: any) => r.capacity), Icon: Users, value: `${(hotel?.rooms || []).reduce((s: number, r: any) => s + (r.capacity || 0) * (r.roomCount || 1), 0)}`, label: t('htlTotalCapacity') },
                     ].filter((it) => it.show).map((it, i) => (
                       <Fragment key={it.label}>
-                        {i > 0 && <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
+                        {i > 0 && <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
                         <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                           <it.Icon className="h-6 w-6 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
@@ -1271,7 +1348,7 @@ export default function AnnounceDetailsPage() {
                     ))}
                   </div>
                 ) : (isTerrainRental || isTerrainTouristiqueProperty || isTerrainAgricoleProperty) ? (
-                  <div className="w-full flex flex-wrap items-center gap-x-4 gap-y-4">
+                  <div className="contents sm:flex sm:w-full sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-4">
                     {/* Ordre : topographie, façades, viabilisation, puis surface / longueur / largeur. Un champ
                         non renseigné disparaît avec son séparateur ; le tout tient sur une ligne quand la largeur
                         le permet (flex-wrap en secours pour ne jamais déborder). */}
@@ -1284,7 +1361,7 @@ export default function AnnounceDetailsPage() {
                       { show: terrain?.depth != null, Icon: Ruler, value: `${terrain?.depth} m`, label: t('f007') },
                     ].filter((it) => it.show).map((it, i) => (
                       <Fragment key={it.label}>
-                        {i > 0 && <div className="h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
+                        {i > 0 && <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-white/10 shrink-0" />}
                         <div className="flex items-center gap-2 text-gray-700 dark:text-white/70 shrink-0">
                           <it.Icon className="h-5 w-5 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                           <div>
@@ -1296,77 +1373,77 @@ export default function AnnounceDetailsPage() {
                     ))}
                   </div>
                 ) : isSaleBuildingDemolition ? (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Ruler className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             {property.landArea !== undefined && property.landArea !== null && Number(property.landArea) > 0 ? (
-                                <div className="font-bold text-xl">{property.landArea} m²</div>
+                                <div className="font-bold text-base sm:text-xl leading-tight">{property.landArea} m²</div>
                             ) : (
-                                <div className="font-bold text-xl text-gray-400 dark:text-white/40">{t('f014')}</div>
+                                <div className="font-bold text-base sm:text-xl leading-tight text-gray-400 dark:text-white/40">{t('f014')}</div>
                             )}
-                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f015')}</div>
+                            <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f015')}</div>
                         </div>
                     </div>
                 ) : (
                 <>
                 {normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && property.typology && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{property.typology}</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f016')}</div>
+                            <div className="font-bold text-base sm:text-xl leading-tight">{property.typology}</div>
+                            <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f016')}</div>
                         </div>
                     </div>
                 )}
 
                 {normalizedPropertyType === "VILLA" && property.landArea !== undefined && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Ruler className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{property.landArea} m²</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f015')}</div>
+                            <div className="font-bold text-base sm:text-xl leading-tight">{property.landArea} m²</div>
+                            <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f015')}</div>
                         </div>
                     </div>
                 )}
 
                 {normalizedPropertyType === "VILLA" && property.builtArea !== undefined && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Ruler className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{property.builtArea} m²</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f017')}</div>
+                            <div className="font-bold text-base sm:text-xl leading-tight">{property.builtArea} m²</div>
+                            <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f017')}</div>
                         </div>
                     </div>
                 )}
 
                 {/* Surface — shown before étage for appartement types */}
                 {normalizedPropertyType !== "VILLA" && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && displayArea !== undefined && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Ruler className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{displayArea} m²</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f018')}</div>
+                            <div className="font-bold text-base sm:text-xl leading-tight">{displayArea} m²</div>
+                            <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f018')}</div>
                         </div>
                     </div>
                 )}
 
                 {property.nbFloors !== undefined && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
                             {isVillaLevel ? (
                                 <>
                                     {/* Niveau de villa : le déposant choisit "Rez-de-chaussée" ou "Étage supérieur"
                                         (deposit : floorCount 0/1) — affiché tel quel, pas en "RDC"/"1er". */}
-                                    <div className="font-bold text-xl">{Number(property.nbFloors) === 0 ? t('adLevelGround') : t('adLevelUpper')}</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('adLevelLabel')}</div>
+                                    <div className="font-bold text-base sm:text-xl leading-tight">{Number(property.nbFloors) === 0 ? t('adLevelGround') : t('adLevelUpper')}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('adLevelLabel')}</div>
                                 </>
                             ) : (
                                 <>
-                                    <div className="font-bold text-xl">
+                                    <div className="font-bold text-base sm:text-xl leading-tight">
                                         {normalizedPropertyType === "VILLA" ? property.nbFloors : formatUnitFloor(property.nbFloors)}
                                     </div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{normalizedPropertyType === "VILLA" ? formatFloorsLabel(property.nbFloors) : "Étage"}</div>
                                 </>
                             )}
                         </div>
@@ -1374,21 +1451,21 @@ export default function AnnounceDetailsPage() {
                 )}
 
                 {normalizedPropertyType === "VILLA" && property.facadesCount !== undefined && property.facadesCount !== null && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{property.facadesCount}</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f012')}</div>
+                            <div className="font-bold text-base sm:text-xl leading-tight">{property.facadesCount}</div>
+                            <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f012')}</div>
                         </div>
                     </div>
                 )}
 
                 {normalizedPropertyType !== "VILLA" && normalizedPropertyType !== "IMMEUBLE_RESIDENTIEL" && hasElevator && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div>
-                            <div className="font-bold text-xl">{t('f019')}</div>
-                            <div className="text-sm text-gray-500 dark:text-white/50">{t('f020')}</div>
+                            <div className="font-bold text-base sm:text-xl leading-tight">{t('f019')}</div>
+                            <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f020')}</div>
                         </div>
                     </div>
                 )}
@@ -1396,57 +1473,57 @@ export default function AnnounceDetailsPage() {
                 {normalizedPropertyType === "IMMEUBLE_RESIDENTIEL" && (
                     <>
                         {buildingTypology?.mode && (
-                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">
+                                    <div className="font-bold text-base sm:text-xl leading-tight">
                                         {buildingTypology.mode === "SIMILAIRES" ? t('adTypoSimilar') : buildingTypology.mode === "DIFFERENTES" ? t('adTypoDifferent') : buildingTypology.mode}
                                     </div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f016')}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f016')}</div>
                                 </div>
                             </div>
                         )}
                         {buildingTypology?.totalApartments !== undefined && (
-                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Building2 className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">{buildingTypology.totalApartments}</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f021')}</div>
+                                    <div className="font-bold text-base sm:text-xl leading-tight">{buildingTypology.totalApartments}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f021')}</div>
                                 </div>
                             </div>
                         )}
                         {property.nbFloors !== undefined && (
-                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                                <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">{property.nbFloors}</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{formatFloorsLabel(property.nbFloors)}</div>
+                                    <div className="font-bold text-base sm:text-xl leading-tight">{property.nbFloors}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{formatFloorsLabel(property.nbFloors)}</div>
                                 </div>
                             </div>
                         )}
                         {hasElevator && (
-                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Layers className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                                <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">{t('f019')}</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f020')}</div>
+                                    <div className="font-bold text-base sm:text-xl leading-tight">{t('f019')}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f020')}</div>
                                 </div>
                             </div>
                         )}
                         {buildingTypology?.mode === "SIMILAIRES" && property.area !== undefined && property.area !== null && Number(property.area) > 0 ? (
-                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                                <Ruler className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">{property.area} m²</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f022')}</div>
+                                    <div className="font-bold text-base sm:text-xl leading-tight">{property.area} m²</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f022')}</div>
                                 </div>
                             </div>
                         ) : buildingTypology?.mode === "DIFFERENTES" ? (
-                            <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                                <Square className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                            <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                                <Ruler className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                                 <div>
-                                    <div className="font-bold text-xl">{t('f023')}</div>
-                                    <div className="text-sm text-gray-500 dark:text-white/50">{t('f024')}</div>
+                                    <div className="font-bold text-base sm:text-xl leading-tight">{t('f023')}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-white/50">{t('f024')}</div>
                                 </div>
                             </div>
                         ) : null}
@@ -1454,8 +1531,8 @@ export default function AnnounceDetailsPage() {
                 )}
 
                 {(property.parkingCount > 0 || property.outdoorParking > 0) && (
-                    <div className="flex items-center gap-4 text-gray-700 dark:text-white/70 min-w-max flex-1 sm:flex-none justify-center sm:justify-start">
-                        <Car className="h-8 w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
+                    <div className="flex items-center gap-2.5 sm:gap-4 text-gray-700 dark:text-white/70 min-w-0 sm:min-w-max">
+                        <Car className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 dark:text-white/40 stroke-1 shrink-0" />
                         <div className="flex flex-col gap-1.5">
                             <div className="font-bold text-gray-900 dark:text-white leading-none">{t('f025')}</div>
                             <div className="flex flex-col gap-1">
@@ -1536,22 +1613,46 @@ export default function AnnounceDetailsPage() {
                           email: c.email || announce.user?.email
                       }));
 
-                      return contactsList.map((contact: any, index: number) => (
-                          <div key={index} className="relative group">
-                              {/* Phone Button */}
-                              <a
-                                  href={`tel:+${toIntlDigits(contact.phone)}`}
-                                  onClick={() => trackContact('CALL')}
-                                  className="flex items-center gap-2 px-5 py-3 bg-gray-50 dark:bg-transparent hover:bg-gray-100 border border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900 dark:text-white"
-                              >
-                                  <Phone className="h-4 w-4 text-[#00BFA6]" />
-                                  {formatDisplayPhone(contact.phone)}
-                              </a>
+                      return contactsList.map((contact: any, index: number) => {
+                          const hasMenu = !!(contact.hasWhatsapp || contact.hasViber || contact.hasTelegram || contact.email)
+                          const isOpen = openContactMenu === index
+                          const phoneClass = "flex items-center gap-2 px-5 py-3 bg-gray-50 dark:bg-transparent hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer transition-colors font-bold text-gray-900 dark:text-white"
+                          return (
+                          <div key={index} className="relative" data-contact-menu>
+                              {/* Numéro : ouvre le menu des canaux au clic (appel direct s'il n'y a aucun autre canal) */}
+                              {hasMenu ? (
+                                  <button
+                                      type="button"
+                                      onClick={() => setOpenContactMenu(isOpen ? null : index)}
+                                      aria-expanded={isOpen}
+                                      aria-haspopup="menu"
+                                      className={cn(phoneClass, isOpen && "border-[#00BFA6] bg-[#00BFA6]/5")}
+                                  >
+                                      <Phone className="h-4 w-4 text-[#00BFA6]" />
+                                      {formatDisplayPhone(contact.phone)}
+                                      <ChevronDown className={cn("h-4 w-4 text-gray-400 transition-transform duration-200", isOpen && "rotate-180")} />
+                                  </button>
+                              ) : (
+                                  <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('CALL')} className={phoneClass}>
+                                      <Phone className="h-4 w-4 text-[#00BFA6]" />
+                                      {formatDisplayPhone(contact.phone)}
+                                  </a>
+                              )}
 
-                              {/* Hover Icons Dropdown */}
-                              {(contact.hasWhatsapp || contact.hasViber || contact.hasTelegram) && (
-                                  <div className="absolute top-full left-0 mt-2 p-2 bg-white dark:bg-white/5 rounded-xl shadow-xl border border-gray-100 dark:border-white/10 flex gap-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 w-max">
-                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('CALL')} className="p-2 hover:bg-gray-50 rounded-lg text-gray-600 dark:text-white/60 transition-colors" title={t("callTitle")}>
+                              {/* Canaux : le panneau glisse/grossit légèrement, puis les icônes apparaissent l'une après l'autre */}
+                              {hasMenu && (
+                                  <div
+                                      role="menu"
+                                      onClick={() => setOpenContactMenu(null)}
+                                      className={cn(
+                                          "absolute top-full start-0 mt-2 p-2 bg-white dark:bg-[#03303c] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 flex gap-1 z-20 w-max origin-top-left rtl:origin-top-right transition-all duration-200 ease-out motion-reduce:transition-none",
+                                          isOpen ? "opacity-100 visible translate-y-0 scale-100" : "opacity-0 invisible -translate-y-1 scale-95 pointer-events-none",
+                                          "[&>a]:transition-all [&>a]:duration-300 [&>a]:ease-out motion-reduce:[&>a]:transition-none",
+                                          isOpen ? "[&>a]:opacity-100 [&>a]:translate-y-0" : "[&>a]:opacity-0 [&>a]:translate-y-1.5",
+                                          "[&>a:nth-child(2)]:delay-[50ms] [&>a:nth-child(3)]:delay-[100ms] [&>a:nth-child(4)]:delay-[150ms] [&>a:nth-child(5)]:delay-[200ms]"
+                                      )}
+                                  >
+                                      <a href={`tel:+${toIntlDigits(contact.phone)}`} onClick={() => trackContact('CALL')} className="p-2 hover:bg-gray-50 dark:hover:bg-white/10 rounded-lg text-gray-600 dark:text-white/60 transition-colors" title={t("callTitle")}>
                                           <Phone className="h-5 w-5" />
                                       </a>
                                       {contact.email && (
@@ -1577,7 +1678,8 @@ export default function AnnounceDetailsPage() {
                                   </div>
                               )}
                           </div>
-                      ));
+                          )
+                      });
                   })()}
             </div>
         </div>
@@ -3095,113 +3197,60 @@ export default function AnnounceDetailsPage() {
                           <Check className="h-5 w-5 text-[#00BFA6] mt-0.5" />
                           <h3 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{t('f157')}</h3>
                       </div>
-                      <div className="space-y-6 flex-1">
-                          
-                          {/* Espaces Extérieurs */}
-                          {(exteriorFeatures.length > 0) && (
-                              <div className="space-y-2">
-                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f158')}</h4>
-                                  <div className="flex flex-wrap gap-2">
-                                      {exteriorFeatures.map((item, idx) => (
-                                          <span key={`ext-${idx}`} className={tagNeutralClass}>
-                                              {getEquipmentLabel(item)}
-                                          </span>
-                                      ))}
-                                  </div>
-                              </div>
-                          )}
+                      {/* Mise en page revue le 08/11/2026 (retour client, mobile) : une ligne par famille —
+                          intitulé à gauche dans une colonne fixe, étiquettes à droite — au lieu de titres
+                          empilés de tailles inégales ; compteurs en trois tuiles sur une seule ligne. */}
+                      {(() => {
+                          const otherAmenities = [...conveniences, ...heaters, ...otherPieces, ...advantages].slice(0, 10)
+                          const rows = [
+                              { key: 'ext', label: t('f158'), items: (exteriorFeatures || []).map((item: any) => getEquipmentLabel(item)) },
+                              { key: 'heat', label: t('f159'), items: property.heatingType ? [L(property.heatingType)] : [] },
+                              { key: 'ac', label: t('f160'), items: property.acType ? [L(property.acType)] : [] },
+                              { key: 'sec', label: t('f041'), items: (securityFeatures || []).map((item: any) => getEquipmentLabel(item)) },
+                              { key: 'con', label: t('f118'), items: (connectivityFeatures || []).map((item: any) => getEquipmentLabel(item)) },
+                              { key: 'oth', label: t('f161'), items: otherAmenities.map((item: any) => item.label) },
+                          ].filter((r) => r.items.length > 0)
+                          const counterValue = (v: string) => (v === 'INDIVIDUAL' || v === 'INDIVIDUEL' ? 'Individuel' : 'Collectif')
+                          const counters = [
+                              { key: 'water', v: property.waterCounter, label: t('f046'), cls: 'bg-blue-50/60 border-blue-100 text-blue-700 dark:bg-blue-500/10 dark:border-blue-400/20 dark:text-blue-300', strong: 'text-blue-900 dark:text-blue-200' },
+                              { key: 'elec', v: property.elecCounter, label: t('f043'), cls: 'bg-yellow-50/60 border-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:border-yellow-400/20 dark:text-yellow-300', strong: 'text-yellow-900 dark:text-yellow-200' },
+                              { key: 'gas', v: property.gasCounter, label: t('f045'), cls: 'bg-orange-50/60 border-orange-100 text-orange-700 dark:bg-orange-500/10 dark:border-orange-400/20 dark:text-orange-300', strong: 'text-orange-900 dark:text-orange-200' },
+                          ].filter((c) => !!c.v)
+                          return (
+                              <div className="flex-1 flex flex-col">
+                                  {rows.length > 0 ? (
+                                      <dl className="divide-y divide-gray-100 dark:divide-white/10">
+                                          {rows.map((r) => (
+                                              <div key={r.key} className="grid grid-cols-[minmax(0,6.5rem)_minmax(0,1fr)] gap-3 py-3 first:pt-0 items-start">
+                                                  <dt className="text-xs font-bold text-gray-500 dark:text-white/50 leading-snug pt-1.5 break-words">{r.label}</dt>
+                                                  <dd className="flex flex-wrap gap-1.5 min-w-0">
+                                                      {r.items.map((label: string, idx: number) => (
+                                                          <span key={`${r.key}-${idx}`} className={tagNeutralClass}>{label}</span>
+                                                      ))}
+                                                  </dd>
+                                              </div>
+                                          ))}
+                                      </dl>
+                                  ) : (
+                                      <span className="text-gray-400 dark:text-white/40 text-xs italic">{t('f014')}</span>
+                                  )}
 
-                          {/* Chauffage et Climatisation */}
-                          {(property.heatingType || property.acType) && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  {property.heatingType && (
-                                      <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f159')}</h4>
-                                          <span className={tagNeutralClass}>
-                                              {L(property.heatingType)}
-                                          </span>
-                                      </div>
-                                  )}
-                                  {property.acType && (
-                                      <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f160')}</h4>
-                                          <span className={tagNeutralClass}>
-                                              {L(property.acType)}
-                                          </span>
-                                      </div>
-                                  )}
-                              </div>
-                          )}
-
-                          {/* Sécurité et Connectivité */}
-                          {(securityFeatures.length > 0 || connectivityFeatures.length > 0) && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  {securityFeatures.length > 0 && (
-                                      <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f041')}</h4>
-                                          <div className="flex flex-wrap gap-2">
-                                              {securityFeatures.map((item, idx) => (
-                                                  <span key={`sec-${idx}`} className={tagNeutralClass}>
-                                                      {getEquipmentLabel(item)}
-                                                  </span>
-                                              ))}
-                                          </div>
-                                      </div>
-                                  )}
-                                  {connectivityFeatures.length > 0 && (
-                                      <div className="space-y-2">
-                                          <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f118')}</h4>
-                                          <div className="flex flex-wrap gap-2">
-                                              {connectivityFeatures.map((item, idx) => (
-                                                  <span key={`con-${idx}`} className={tagNeutralClass}>
-                                                      {getEquipmentLabel(item)}
-                                                  </span>
+                                  {counters.length > 0 && (
+                                      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                                          <h4 className="text-xs font-bold text-gray-500 dark:text-white/50 uppercase tracking-wider mb-2.5">{t('f162')}</h4>
+                                          <div className="grid grid-cols-3 gap-2">
+                                              {counters.map((c) => (
+                                                  <div key={c.key} className={cn('rounded-lg border px-2 py-2 text-center min-w-0', c.cls)}>
+                                                      <div className="text-[10px] font-bold uppercase truncate">{c.label}</div>
+                                                      <div className={cn('text-[11px] font-black mt-0.5 truncate', c.strong)}>{counterValue(c.v)}</div>
+                                                  </div>
                                               ))}
                                           </div>
                                       </div>
                                   )}
                               </div>
-                          )}
-
-                          {/* Other active amenities fallback */}
-                          {[...conveniences, ...heaters, ...otherPieces, ...advantages].length > 0 && (
-                              <div className="space-y-2">
-                                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">{t('f161')}</h4>
-                                  <div className="flex flex-wrap gap-2">
-                                      {[...conveniences, ...heaters, ...otherPieces, ...advantages].slice(0, 10).map((item, idx) => (
-                                          <span key={idx} className={tagNeutralClass}>
-                                              {item.label}
-                                          </span>
-                                      ))}
-                                  </div>
-                              </div>
-                          )}
-
-                          {/* Counters Section */}
-                          <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-white/10">
-                              <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">{t('f162')}</h4>
-                              <div className="flex flex-col gap-2">
-                                  {property.waterCounter && (
-                                      <div className="flex justify-between items-center px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100">
-                                          <span className="text-blue-700 text-[10px] font-bold uppercase">{t('f046')}</span>
-                                          <span className="text-blue-900 text-[10px] font-black uppercase">{property.waterCounter === 'INDIVIDUAL' || property.waterCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
-                                      </div>
-                                  )}
-                                  {property.elecCounter && (
-                                      <div className="flex justify-between items-center px-3 py-2 bg-yellow-50/50 rounded-lg border border-yellow-100">
-                                          <span className="text-yellow-700 text-[10px] font-bold uppercase">{t('f043')}</span>
-                                          <span className="text-yellow-900 text-[10px] font-black uppercase">{property.elecCounter === 'INDIVIDUAL' || property.elecCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
-                                      </div>
-                                  )}
-                                  {property.gasCounter && (
-                                      <div className="flex justify-between items-center px-3 py-2 bg-orange-50/50 rounded-lg border border-orange-100">
-                                          <span className="text-orange-700 text-[10px] font-bold uppercase">{t('f045')}</span>
-                                          <span className="text-orange-900 text-[10px] font-black uppercase">{property.gasCounter === 'INDIVIDUAL' || property.gasCounter === 'INDIVIDUEL' ? 'Individuel' : 'Collectif'}</span>
-                                      </div>
-                                  )}
-                              </div>
-                          </div>
-                      </div>
+                          )
+                      })()}
                   </div>
 
                   {isSaleDemolition && (

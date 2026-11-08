@@ -180,6 +180,21 @@ function sectionsFor(a: any): Section[] {
         { k: "opts", label: ["R", "burVisibiliteTitle"], path: "visibilite", group: "VISIBILITY_OPTIONS" },
       ] },
     ])
+    if (b.showroom) return bureauxSpecificSections("bureaux.showroom", [
+      { title: ["D", "f137"], icon: Ruler, base: "bureaux.showroom", fields: [
+        { k: "range", label: ["D", "f040"], min: "surfaceTerrainMin", max: "surfaceTerrainMax", unit: "m²" },
+        { k: "range", label: ["D", "f138"], min: "surfaceBatieMin", max: "surfaceBatieMax", unit: "m²" },
+        { k: "range", label: ["D", "f139"], min: "niveauxMin", max: "niveauxMax" },
+      ] },
+      { title: ["D", "f140"], icon: Sparkles, base: "bureaux.showroom", fields: [
+        { k: "opts", label: ["D", "f141"], path: "style", group: "SHOWROOM_STYLE" },
+        { k: "opts", label: ["D", "f142"], path: "structure", group: "SHOWROOM_STRUCTURE" },
+        { k: "text", label: ["R", "autrePrecisezLabel"], path: "structureOther" },
+      ] },
+      { title: ["D", "f143"], icon: Store, base: "bureaux.showroom", fields: [
+        { k: "yesno", label: ["D", "f144"], path: "visibiliteAutoroute" },
+      ] },
+    ])
     if (b.localCommercial) return bureauxSpecificSections("bureaux.localCommercial", [
       { title: ["R", "burLocalCommSectionTitle"], icon: Store, base: "bureaux.localCommercial", fields: [
         { k: "range", label: ["R", "burSurfaceRange"], min: "minSurface", max: "maxSurface", unit: "m²" },

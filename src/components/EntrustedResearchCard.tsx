@@ -4,7 +4,7 @@ import { useState } from "react"
 import axios from "axios"
 import { useLocale, useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
-import { MapPin, Calendar, Wallet, Ruler, ArrowRight, Home, User, Store, Factory, Briefcase, Trees, Hotel, PartyPopper, Zap, Loader2, RefreshCw } from "lucide-react"
+import { MapPin, Calendar, Wallet, Ruler, ArrowRight, Home, User, Store, Factory, Briefcase, Trees, Hotel, PartyPopper, Zap, Loader2, RefreshCw, Share2 } from "lucide-react"
 import { getCategoryColor } from "@/data/categoryColors"
 import { REAL_ESTATE_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
 import { RESEARCH_PROPERTY_TYPES, ENVIRONMENT_OPTIONS, VILLA_LEVEL_ENTRANCE_OPTIONS } from "@/data/researchConfig"
@@ -53,6 +53,19 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
   const locale = useLocale()
   const [refreshing, setRefreshing] = useState(false)
   const [refreshMsg, setRefreshMsg] = useState<{ ok: boolean; text: string; wait?: boolean } | null>(null)
+  const [shareMsg, setShareMsg] = useState<string | null>(null)
+
+  // Fiche détail : bouton « Partager » posé sur la photo, comme sur la fiche annonce (08/11/2026).
+  // Feuille de partage native du téléphone, sinon copie du lien.
+  const shareResearch = async () => {
+    const url = window.location.href
+    try {
+      if (navigator.share) { await navigator.share({ title: document.title, url }); return }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return
+    }
+    try { await navigator.clipboard.writeText(url); setShareMsg(t("linkCopied")) } catch { setShareMsg(url) }
+  }
 
   // Actualiser (1 point) : la demande remonte en tête de /demandes, comme « actualiser » une annonce.
   const refresh = async () => {
@@ -306,11 +319,24 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
           <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white/95 text-[#003B4A] shadow-sm">
             {r.transaction === "SALE" ? t("sale") : r.transaction === "RENTAL" ? t("rental") : t("holiday")}
           </span>
-          {wasRefreshed && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide bg-amber-400 text-amber-950 shadow-sm">
-              <Zap className="h-3 w-3" /> {t("refreshedBadge")}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {wasRefreshed && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide bg-amber-400 text-amber-950 shadow-sm">
+                <Zap className="h-3 w-3" /> {t("refreshedBadge")}
+              </span>
+            )}
+            {variant === "detail" && (
+              <button
+                type="button"
+                onClick={shareResearch}
+                aria-label={t("shareAction")}
+                title={t("shareAction")}
+                className="h-9 w-9 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-600 hover:text-[#00BFA6] hover:scale-105 active:scale-95 transition-all"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
         {!coverImage && (
           <div className="absolute bottom-3 inset-x-3 flex items-center gap-2 text-white">
@@ -322,6 +348,7 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
         )}
       </div>
 
+      <CenterToast message={shareMsg} variant="success" durationMs={3000} onClose={() => setShareMsg(null)} />
       <div className="p-6 flex flex-col gap-4 flex-1">
       {r.title && <h2 className="text-lg font-extrabold text-gray-900 dark:text-white leading-snug break-words [overflow-wrap:anywhere]">{r.title}</h2>}
 
@@ -418,15 +445,29 @@ export function EntrustedResearchCard({ research: r, variant = "public", onRefre
             <Calendar className="h-3.5 w-3.5" />
             {t("submittedOn", { date: new Date(r.createdAt).toLocaleDateString(locale) })}
           </div>
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={refreshing}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#003B4A] hover:bg-[#0094BD] disabled:opacity-60 text-white text-sm font-bold py-2.5 transition-colors"
-          >
-            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            {t("refreshBtn")}
-          </button>
+          {/* Statut de validation par l'administration (08/11/2026) — une recherche n'est publique
+              qu'une fois validée ; seule une recherche validée peut être actualisée. */}
+          {r.status && r.status !== "VALIDATED" ? (
+            <div className={`rounded-xl px-3 py-2.5 text-sm ${r.status === "REJECTED" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>
+              <p className="font-bold">{r.status === "REJECTED" ? t("statusRejected") : t("statusPending")}</p>
+              <p className="mt-0.5 text-xs">
+                {r.status === "REJECTED" ? (r.statusReason ? t("statusRejectedReason", { reason: r.statusReason }) : t("statusRejectedHint")) : t("statusPendingHint")}
+              </p>
+            </div>
+          ) : (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">{t("statusValidated")}</span>
+              <button
+                type="button"
+                onClick={refresh}
+                disabled={refreshing}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#003B4A] hover:bg-[#0094BD] disabled:opacity-60 text-white text-sm font-bold py-2.5 transition-colors"
+              >
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                {t("refreshBtn")}
+              </button>
+            </>
+          )}
           {/* Retour d'actualisation au centre de l'écran (succès, délai de 45 min, points insuffisants). */}
           <CenterToast
             message={refreshMsg?.text}

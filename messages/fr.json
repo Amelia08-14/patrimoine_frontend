@@ -246,7 +246,8 @@
     "min": "Min",
     "search": "Rechercher",
     "moreFilters": "Plus de critères",
-    "resetFilters": "Réinitialiser"
+    "resetFilters": "Réinitialiser",
+    "unitLabel": "Unité"
   },
   "AnnouncesPage": {
     "heroTitle": "Trouvez votre futur chez-vous",
@@ -502,7 +503,16 @@
     "viewGrid": "Grille",
     "viewLarge": "Grandes cartes",
     "viewList": "Liste",
-    "refreshCooldown": "Vous avez déjà actualisé cette recherche récemment. Prochaine actualisation possible dans {minutes} min (une actualisation toutes les 45 min)."
+    "refreshCooldown": "Vous avez déjà actualisé cette recherche récemment. Prochaine actualisation possible dans {minutes} min (une actualisation toutes les 45 min).",
+    "filterPeriodLabel": "Date de la demande",
+    "statusPending": "En attente de validation",
+    "statusPendingHint": "Notre équipe vérifie votre recherche. Elle apparaîtra dans les demandes en cours une fois validée.",
+    "statusValidated": "✓ Validée — visible dans les demandes en cours",
+    "statusRejected": "Recherche refusée",
+    "statusRejectedReason": "Motif : {reason}",
+    "statusRejectedHint": "Contactez le support pour en connaître la raison.",
+    "shareAction": "Partager",
+    "linkCopied": "Lien copié — vous pouvez le coller pour le partager."
   },
   "Research": {
     "zodBranchRequired": "Choisissez une branche",
@@ -811,7 +821,9 @@
     "searchTitlePlaceholder": "Ex : Studio équipé et sécurisé à Alger-Centre",
     "alertAccountPending": "Votre compte est en attente de validation par un administrateur. Vous ne pouvez pas confier de recherche tant qu'il n'est pas validé.",
     "standbyBadge": "Bientôt disponible",
-    "detailCriteriaTitle": "Critères de la recherche"
+    "detailCriteriaTitle": "Critères de la recherche",
+    "burScopeGroupeeCommercial": "Appartement, Villa, Niveau de Villa commercial",
+    "alertSuccessPending": "Votre recherche a bien été envoyée. Elle sera visible dans les demandes en cours dès sa validation par notre équipe."
   },
   "ProfileHome": {
     "pendingBanner": "Compte en attente de validation.",
@@ -1620,7 +1632,13 @@
     "adLandServiced": "Terrain viabilisé",
     "adLandNotServiced": "Non viabilisé",
     "adSpaceExploited": "Espace exploité",
-    "adLivingSpace": "Espace de Vie"
+    "adLivingSpace": "Espace de Vie",
+    "favAdd": "Ajouter aux favoris",
+    "favRemove": "Retirer des favoris",
+    "favError": "Impossible de mettre à jour vos favoris pour le moment.",
+    "loginToFavorite": "Connectez-vous pour ajouter cette annonce à vos favoris.",
+    "shareAction": "Partager",
+    "linkCopied": "Lien copié — vous pouvez le coller pour le partager."
   },
   "Deposit": {
     "draftFoundTitle": "Un brouillon vous attend",
@@ -2319,7 +2337,9 @@
     "mobileAppStoreGoogle": "Google Play",
     "mobileAppStatListings": "annonces en ligne",
     "mobileAppStatWilayas": "wilayas couvertes",
-    "mobileAppStatCategories": "catégories de biens"
+    "mobileAppStatCategories": "catégories de biens",
+    "exploreTypesPrev": "Types précédents",
+    "exploreTypesNext": "Types suivants"
   },
   "ResearchOptions": {
     "RESEARCH_PROPERTY_TYPES": {

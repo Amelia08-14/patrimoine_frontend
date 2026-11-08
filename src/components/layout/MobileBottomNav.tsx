@@ -3,33 +3,19 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
-import { Home, Search, Plus, MessageSquare, User, ClipboardList, X } from "lucide-react"
+import { Home, Search, Plus, MessageSquare, ClipboardList, X } from "lucide-react"
 
 /**
  * Navigation mobile persistante (bottom tab bar), calquée sur l'IA de l'app mobile à venir :
- * Accueil / Rechercher / [+ action centrale] / Messages / Profil. Remplace, sous `lg`, l'ancien
+ * Accueil / Rechercher / [+ action centrale] / Messages (Profil : en haut, sous l'avatar). Remplace, sous `lg`, l'ancien
  * système de dropdowns improvisés (voir Navbar.tsx — le mini-menu "+" du haut a été retiré).
  * Ne s'affiche que sur le site public ([locale]/layout.tsx) : l'admin garde son propre layout.
  */
 export function MobileBottomNav() {
   const t = useTranslations("Navbar")
   const pathname = usePathname()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const token = localStorage.getItem("token")
-    const userStr = localStorage.getItem("user")
-    if (token && userStr) {
-      try {
-        const userData = JSON.parse(userStr)
-        setIsLoggedIn(userData.userType !== "ADMIN")
-      } catch {
-        setIsLoggedIn(false)
-      }
-    }
-  }, [])
 
   // Ferme le tiroir d'actions si on tape en dehors, ou si on navigue.
   useEffect(() => {
@@ -46,7 +32,6 @@ export function MobileBottomNav() {
   const isHome = pathname === "/"
   const isSearch = pathname.startsWith("/announces") || pathname.startsWith("/demandes")
   const isMessages = pathname.startsWith("/profile/messages")
-  const isProfile = pathname.startsWith("/profile") && !isMessages || pathname.startsWith("/auth")
 
   const tabClass = (active: boolean) =>
     `flex flex-col items-center justify-center gap-1 flex-1 h-full text-[11px] font-bold transition-colors ${
@@ -114,10 +99,8 @@ export function MobileBottomNav() {
             <MessageSquare className="h-5 w-5" strokeWidth={isMessages ? 2.5 : 2} />
             {t("navMessages")}
           </Link>
-          <Link href={isLoggedIn ? "/profile/info" : "/auth/login"} className={tabClass(isProfile)}>
-            <User className="h-5 w-5" strokeWidth={isProfile ? 2.5 : 2} />
-            {t("navProfile")}
-          </Link>
+          {/* Onglet « Profil » retiré le 08/11/2026 (demande client) : le profil s'ouvre depuis le logo /
+              l'avatar en haut, désormais accompagné du mot « Profil » (voir Navbar.tsx). */}
         </div>
       </nav>
     </>

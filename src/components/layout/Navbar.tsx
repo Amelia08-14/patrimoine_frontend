@@ -372,13 +372,15 @@ export function Navbar() {
                        <span className="text-xs font-medium">{getNavbarSubtitle(user)}</span>
                      </div>
                   </div>
-                  <div className="relative shrink-0">
+                  {/* Sous xl : le mot « Profil » sous le logo/avatar (l'onglet Profil de la barre du bas a été
+                      retiré le 08/11/2026 à la demande du client). */}
+                  <div className="relative shrink-0 flex flex-col items-center gap-0.5">
                   {unreadNotifications > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 z-10 h-3.5 w-3.5 rounded-full bg-red-500 border-2 border-white dark:border-[#022229]" aria-label={`${unreadNotifications} notifications non lues`} />
                   )}
                   {user?.userType === 'SOCIETE' && user?.agencyLogoUrl && !logoFailed ? (
                       <div
-                        className="h-10 w-10 rounded-full cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all overflow-hidden border border-gray-200 bg-white flex items-center justify-center"
+                        className="h-9 w-9 md:h-10 md:w-10 rounded-full cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all overflow-hidden border border-gray-200 bg-white flex items-center justify-center"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                       >
                           <img 
@@ -390,12 +392,19 @@ export function Navbar() {
                       </div>
                   ) : (
                       <div 
-                        className="h-10 w-10 bg-[#003B4A] rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all" 
+                        className="h-9 w-9 md:h-10 md:w-10 bg-[#003B4A] rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:ring-4 hover:ring-[#00BFA6]/20 transition-all" 
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                       >
                          {userInitials}
                       </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="xl:hidden text-[10px] leading-none font-bold text-gray-500 dark:text-white/60 hover:text-[#0094BD]"
+                  >
+                    {t('navProfile')}
+                  </button>
                   </div>
 
                   {/* Dropdown Menu */}

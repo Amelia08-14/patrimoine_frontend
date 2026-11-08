@@ -44,13 +44,13 @@ import {
 } from '@/data/researchConfig';
 import { getCategoryColor } from '@/data/categoryColors';
 import { HEBERGEMENT_SEJOUR_TYPES } from '@/data/hebergementSejourTypes';
-import { isLockedCategory } from '@/data/lockedCategories';
+import { isLockedCategory, isLockedPropertyType } from '@/data/lockedCategories';
 import {
   INDUSTRIAL_SITUATIONS, INDUSTRIAL_ACCESS_TRANSPORT as DEP_INDUSTRIAL_ACCESS_TRANSPORT, INDUSTRIAL_SOCIAL_LOCALES, INDUSTRIAL_HEBERGEMENT,
   INDUSTRIAL_SECURITY, INDUSTRIAL_WATER_SOURCES, INDUSTRIAL_FIRE_NETWORK, INDUSTRIAL_FIRE_EQUIPMENT,
   CF_ZONE_DECHARGEMENT, CF_TECHNIQUE_FROID, CF_MODE_DIFFUSION, TERRAIN_RACCORDEMENTS, TERRAIN_AGRICOLE_RESSOURCES_EAU,
   TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE, TERRAIN_AGRICOLE_ACCES, TERRAIN_AGRICOLE_ACCES_LOURDS, TERRAIN_AGRICOLE_CONSTRUCTIONS,
-  TERRAIN_AGRICOLE_CLOTURE, TERRAIN_TOURISTIQUE_PAT,
+  TERRAIN_AGRICOLE_CLOTURE, TERRAIN_TOURISTIQUE_PAT, SHOWROOM_STYLE, SHOWROOM_STRUCTURE,
 } from '@/data/industrialTerrainOptions';
 import { useLocalizedPlaceName } from '@/lib/typeLabels';
 
@@ -603,7 +603,18 @@ export default function ResearchPage() {
     buildingSurfaceMax: z.coerce.number().optional(),
 
     // Bureaux et Commerces — choix entre 3 fiches dédiées (même concept que Résidentiel).
-    bureauxSearchScope: z.enum(['GROUPEE', 'IMMEUBLE', 'BLOC_ADMINISTRATIF', 'BLOC_COMMERCIAL', 'LOCAL_COMMERCIAL']).optional(),
+    bureauxSearchScope: z.enum(['GROUPEE', 'IMMEUBLE', 'BLOC_ADMINISTRATIF', 'BLOC_COMMERCIAL', 'LOCAL_COMMERCIAL', 'SHOWROOM']).optional(),
+    // Fiche « Showroom » (Bureaux & Commerces, 08/11/2026) — rubriques de la fiche annonce Showroom du dépôt.
+    srSurfaceTerrainMin: z.coerce.number().optional(),
+    srSurfaceTerrainMax: z.coerce.number().optional(),
+    srSurfaceBatieMin: z.coerce.number().optional(),
+    srSurfaceBatieMax: z.coerce.number().optional(),
+    srNiveauxMin: z.coerce.number().optional(),
+    srNiveauxMax: z.coerce.number().optional(),
+    srStyle: z.array(z.string()).optional(),
+    srStructure: z.array(z.string()).optional(),
+    srStructureOther: z.string().optional(),
+    srVisibiliteAutoroute: z.enum(['OUI', 'NON']).optional(),
     baSpaceTypes: z.array(z.string()).optional(),
     baEnergie: z.array(z.string()).optional(),
     bcEtatGeneral: z.array(z.string()).optional(),
@@ -736,6 +747,7 @@ export default function ResearchPage() {
       cfTechniqueFroid: [], cfModeDiffusion: [],
       terRaccordements: [], terAgriRessourcesEau: [], terAgriEquipementHydro: [], terAgriAcces: [], terAgriAccesLourds: [],
       terAgriConstructions: [], terAgriCloture: [], terTouPat: [],
+      srStyle: [], srStructure: [],
       isDelegate: false,
       receiveAlert: false,
     },
@@ -825,22 +837,24 @@ export default function ResearchPage() {
   const isTerrain = branch === 'TERRAIN_FONCIER';
 
   // Résidentiel (Location/Achat), Bureaux et Commerces, Industriel (Location/Achat), Hébergement
-  // et Séjour et Terrains et Foncier : fiche unique dédiée (critères + localisation + message) et
-  // contact direct. Les autres branches gardent le parcours complet (Budget/Interlocuteur en
-  // étapes à part).
+  // et Séjour et Terrains et Foncier : fiche unique dédiée (critères + localisation + message).
+  // Plus d'étape « Informations et Contact » séparée (retour client du 08/11/2026) : options de la
+  // recherche + coordonnées sont à la FIN de la page qui porte l'interlocuteur et le titre/message
+  // (INTERLOCUTOR pour le Résidentiel, CRITERIA pour les autres fiches) — cf. renderContactSection,
+  // ajouté par renderStep à la dernière étape du parcours.
   const steps: StepKey[] = (isResidentielLocation || isResidentielAchat)
-    ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'INTERLOCUTOR', 'CONTACT']
+    ? ['TRANSACTION', 'BRANCH', 'RES_SEARCH_SCOPE', 'CRITERIA', 'INTERLOCUTOR']
     : isBureauxCommerces
-    ? ['TRANSACTION', 'BRANCH', 'BUR_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    ? ['TRANSACTION', 'BRANCH', 'BUR_SEARCH_SCOPE', 'CRITERIA']
     : isIndustrielFiche
-    ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
+    ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA']
     : isIndustriel
-    ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR', 'CONTACT']
+    ? ['TRANSACTION', 'BRANCH', 'IND_SEARCH_SCOPE', 'CRITERIA', 'BUDGET', 'INTERLOCUTOR']
     : isHotelier
     ? ['TRANSACTION', 'BRANCH', 'HS_TYPE']
     : isTerrain
-    ? ['TRANSACTION', 'BRANCH', 'TER_SEARCH_SCOPE', 'CRITERIA', 'CONTACT']
-    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE' && s !== 'TER_SEARCH_SCOPE' && s !== 'HS_TYPE');
+    ? ['TRANSACTION', 'BRANCH', 'TER_SEARCH_SCOPE', 'CRITERIA']
+    : STEP_KEYS.filter((s) => s !== 'RES_SEARCH_SCOPE' && s !== 'BUR_SEARCH_SCOPE' && s !== 'IND_SEARCH_SCOPE' && s !== 'TER_SEARCH_SCOPE' && s !== 'HS_TYPE' && s !== 'CONTACT');
   const currentStep = steps[currentStepIndex];
 
   // Si le parcours se raccourcit (ex: on vient de choisir Résidentiel + Location) alors qu'on
@@ -931,9 +945,23 @@ export default function ResearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedResPropertyTypes.join('|')]);
 
+  // Options « rien » exclusives, comme au dépôt d'annonce (retour client du 08/11/2026 : cocher « Vide »
+  // dans les équipements de cuisine doit décocher les autres) : cocher l'option exclusive vide le reste,
+  // cocher une autre option retire l'option exclusive.
+  const EXCLUSIVE_OPTIONS: Partial<Record<keyof ResearchFormValues, string>> = {
+    resKitchenEquipment: 'no_appliances',
+    indGas: 'AUCUN',
+    cfLogistiqueVerticale: 'AUCUN',
+    terAgriConstructions: 'AUCUNE',
+  };
+
   const toggleArrayValue = (field: keyof ResearchFormValues, value: string) => {
     const current = (watch(field) as string[]) || [];
-    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+    const exclusive = EXCLUSIVE_OPTIONS[field];
+    let next: string[];
+    if (current.includes(value)) next = current.filter((v) => v !== value);
+    else if (exclusive && value === exclusive) next = [value];
+    else next = [...current.filter((v) => v !== exclusive), value];
     setValue(field as any, next as any);
   };
 
@@ -1181,6 +1209,22 @@ export default function ResearchPage() {
               environment: data.environment,
               equipments: resEquipments,
             };
+          } else if (data.bureauxSearchScope === 'SHOWROOM') {
+            amenities.bureaux.showroom = {
+              surfaceTerrainMin: data.srSurfaceTerrainMin,
+              surfaceTerrainMax: data.srSurfaceTerrainMax,
+              surfaceBatieMin: data.srSurfaceBatieMin,
+              surfaceBatieMax: data.srSurfaceBatieMax,
+              niveauxMin: data.srNiveauxMin,
+              niveauxMax: data.srNiveauxMax,
+              style: data.srStyle || [],
+              structure: data.srStructure || [],
+              structureOther: (data.srStructure || []).includes('AUTRE') ? data.srStructureOther : undefined,
+              visibiliteAutoroute: data.srVisibiliteAutoroute,
+              cityIds: data.cityIds || [],
+              environment: data.environment,
+              equipments: resEquipments,
+            };
           } else if (data.bureauxSearchScope === 'LOCAL_COMMERCIAL') {
             amenities.bureaux.localCommercial = {
               minSurface: data.minSurface,
@@ -1323,14 +1367,20 @@ export default function ResearchPage() {
         // Fiche Résidentiel Location : choix multiple — on le reflète aussi dans le champ plat
         // `propertyType` (comme du temps du choix unique) pour que /demandes et l'admin restent
         // cohérents, en plus du détail complet dans `amenities`.
-        propertyType: (data.resPropertyTypes && data.resPropertyTypes.length > 0) ? data.resPropertyTypes.join(',') : data.propertyType,
+        // Fiche Showroom : type de bien explicite, affiché sur la carte /demandes comme pour une annonce.
+        propertyType: (data.branch === 'BUREAUX_COMMERCES' && data.bureauxSearchScope === 'SHOWROOM')
+          ? 'SHOWROOM'
+          : (data.resPropertyTypes && data.resPropertyTypes.length > 0) ? data.resPropertyTypes.join(',') : data.propertyType,
         amenities: JSON.stringify(amenities),
       };
 
       await axios.post(`${apiUrl}/entrusted-research`, payload);
       clearDraft();
-      alert(t('alertSuccess'));
-      router.push('/demandes');
+      // La recherche part EN ATTENTE de validation par l'administration (08/11/2026) : elle n'est pas
+      // encore dans /demandes — un utilisateur connecté est donc renvoyé vers « Mes recherches », où il
+      // en voit le statut.
+      alert(t('alertSuccessPending'));
+      router.push(loggedInUser ? '/profile/researches' : '/demandes');
     } catch (err: any) {
       console.error(err);
       // Compte en attente de validation admin (nouveau compte ou profil modifié) : l'API refuse.
@@ -1359,10 +1409,10 @@ export default function ResearchPage() {
       return;
     }
     if (formErrors.isDelegate) {
-      // La case de consentement vit toujours sur l'étape Contact, la dernière du parcours. Message
+      // La case de consentement vit à la fin de la dernière étape du parcours (bloc contact). Message
       // du schéma zod (module-level, donc en français en dur comme les ~35 autres messages de
       // validation de ce fichier — cf. CLAUDE.md).
-      setCurrentStepIndex(steps.indexOf('CONTACT'));
+      setCurrentStepIndex(steps.length - 1);
       alert(formErrors.isDelegate.message);
       return;
     }
@@ -1554,12 +1604,14 @@ export default function ResearchPage() {
       | 'buildingTypologyMin' | 'buildingFloorsMin' | 'buildingSurfaceMin' | 'buildingSurfaceSimilaireMin'
       | 'hgSurfaceTerrainMin' | 'hgSurfaceCouverteMin' | 'hgHauteurMin'
       | 'usSurfaceTerrainMin' | 'usSurfaceBatieMin' | 'cfCapaciteMin'
-      | 'facadesMin' | 'terAgriAltitudeMin',
+      | 'facadesMin' | 'terAgriAltitudeMin'
+      | 'srSurfaceTerrainMin' | 'srSurfaceBatieMin' | 'srNiveauxMin',
     maxField: 'typologyMax' | 'floorMax' | 'maxSurface'
       | 'buildingTypologyMax' | 'buildingFloorsMax' | 'buildingSurfaceMax' | 'buildingSurfaceSimilaireMax'
       | 'hgSurfaceTerrainMax' | 'hgSurfaceCouverteMax' | 'hgHauteurMax'
       | 'usSurfaceTerrainMax' | 'usSurfaceBatieMax' | 'cfCapaciteMax'
-      | 'facadesMax' | 'terAgriAltitudeMax',
+      | 'facadesMax' | 'terAgriAltitudeMax'
+      | 'srSurfaceTerrainMax' | 'srSurfaceBatieMax' | 'srNiveauxMax',
     opts?: { unit?: string; unitPosition?: 'prefix' | 'suffix'; placeholderMin?: string; placeholderMax?: string },
   ) => (
     <div className="min-w-0">
@@ -2114,6 +2166,47 @@ export default function ResearchPage() {
     </>
   );
 
+  // Fiche « Showroom » (Bureaux & Commerces) — mêmes rubriques que la fiche annonce Showroom du dépôt
+  // (Superficies & Dimensions, État & Style architectural, Visibilité & Accessibilité), puis les blocs
+  // communs des fiches Bureaux : localisation, cadre de vie, équipements, interlocuteur, message.
+  const renderShowroomCriteria = () => (
+    <>
+      <Section title={tDep('f137')} icon={Ruler}>
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {renderBoxedRange(tDep('f040'), 'srSurfaceTerrainMin', 'srSurfaceTerrainMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '300' }), placeholderMax: t('exVal', { v: '1000' }) })}
+            {renderBoxedRange(tDep('f138'), 'srSurfaceBatieMin', 'srSurfaceBatieMax', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '200' }), placeholderMax: t('exVal', { v: '600' }) })}
+            {renderBoxedRange(tDep('f139'), 'srNiveauxMin', 'srNiveauxMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
+          </div>
+          {renderIndustrielBudgetDateRow()}
+        </div>
+      </Section>
+
+      <Section title={tDep('f140')} icon={Sparkles}>
+        <div className="space-y-5">
+          {renderDepGroup(tDep('f141'), 'SHOWROOM_STYLE', SHOWROOM_STYLE, 'srStyle')}
+          {renderDepGroup(tDep('f142'), 'SHOWROOM_STRUCTURE', SHOWROOM_STRUCTURE, 'srStructure',
+            (watch('srStructure') || []).includes('AUTRE') ? (
+              <div className="mt-3">
+                <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
+                <input type="text" {...register('srStructureOther')} className={inputCls} placeholder={t('autrePrecisezPlaceholder')} />
+              </div>
+            ) : null)}
+        </div>
+      </Section>
+
+      <Section title={tDep('f143')} icon={Store}>
+        {renderYesNo(tDep('f144'), 'srVisibiliteAutoroute', t('optYes'), t('optNo'))}
+      </Section>
+
+      {renderLocalisationSection()}
+      {renderEnvironmentSection()}
+      {renderResidentielEquipmentsSection()}
+      {renderSharedInterlocutorSection()}
+      {renderCommentSection()}
+    </>
+  );
+
   // --- Industriel (Location) — fiches "Hangar" / "Usine" / "Chambre Froide" (même concept que
   // Bureaux et Commerces). Interlocuteur réduit à 2 choix (Agence/Particulier), spécifique à ces
   // 3 fiches. Budget/Date sur une ligne partagée, comme partout ailleurs sur ce formulaire. ---
@@ -2170,7 +2263,7 @@ export default function ResearchPage() {
   );
 
   // Oui / Non à choix unique (re-cliquer désélectionne).
-  const renderYesNo = (label: string, field: 'indOffices' | 'terViabilise', yesLabel: string, noLabel: string, extra?: React.ReactNode) => (
+  const renderYesNo = (label: string, field: 'indOffices' | 'terViabilise' | 'srVisibiliteAutoroute', yesLabel: string, noLabel: string, extra?: React.ReactNode) => (
     <div className="min-w-0">
       <label className="block text-sm font-bold text-gray-900 mb-3">{label}</label>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
@@ -2186,39 +2279,119 @@ export default function ResearchPage() {
     <div className="mt-3 max-w-xs">{renderHtlBoxedNumber(label, field, { unit, placeholder })}</div>
   );
 
-  // Annexes & Commodités — Hangar, Usine et Chambre froide (même bloc au dépôt).
-  const renderIndustrielAnnexesSection = () => (
-    <Section title={tDep('f016')} icon={LayoutGrid}>
-      <div className="space-y-5">
-        {renderYesNo(tDep('f017'), 'indOffices', tDep('f018'), tDep('f019'),
-          watch('indOffices') === 'OUI' ? renderNestedNumber(tDep('f020'), 'indOfficesAreaMin', tDep('f352'), 'm²') : null)}
-        {renderDepGroup(tDep('f021'), 'INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES, 'indSocialLocales')}
-        {renderDepGroup(tDep('f022'), 'INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT, 'indHebergement')}
-        {renderDepGroup(tDep('f023'), 'INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY, 'indSecurity')}
+  // --- Fiches Industriel : à partir de l'infrastructure, MÊME design et MÊME ordre que la fiche annonce
+  // du dépôt (retour client du 08/11/2026, capture à l'appui) — cartes encadrées (une par groupe), titre
+  // en gras, cases à cocher / boutons radio en liste, mêmes grilles que /deposit. Seule la couleur
+  // d'accent reste le bleu de ce formulaire. Hangar/Usine : Emplacement → Annexes & Commodités →
+  // Énergie & Fluides → Sécurité incendie. Chambre froide : Annexes → Configuration & Emplacement →
+  // Équipements de sécurité & Performance → Modalités. ---
+
+  const depCard = (title: string, children: React.ReactNode, subtitle?: string) => (
+    <div className="bg-white border-2 border-gray-200 p-4 rounded-xl h-full">
+      <div className="font-bold text-gray-900 mb-3">{title}</div>
+      {subtitle && <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{subtitle}</div>}
+      {children}
+    </div>
+  );
+
+  // Liste de cases (choix multiple, via toggleArrayValue — garde les options « aucun » exclusives) ou
+  // de boutons radio (choix unique), comme dans les cartes du dépôt.
+  const renderCheckList = (items: { id: string; label: string }[], field: any, type: 'checkbox' | 'radio' = 'checkbox', layout = 'space-y-2') => (
+    <div className={layout}>
+      {items.map((x) => (
+        <label key={x.id} className="flex items-center gap-2 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
+          <input
+            type={type}
+            name={type === 'radio' ? String(field) : undefined}
+            checked={type === 'radio' ? watch(field) === x.id : ((watch(field) as string[] | undefined) || []).includes(x.id)}
+            onChange={() => (type === 'radio' ? setValue(field, x.id as any) : toggleArrayValue(field, x.id))}
+            className="accent-[#0094BD] w-4 h-4"
+          />
+          {x.label}
+        </label>
+      ))}
+    </div>
+  );
+
+  const depItems = (group: string, arr: readonly { id: string; label: string }[]) => arr.map((o) => ({ id: o.id, label: depOpt(group, o) }));
+  const resItems = (group: string, arr: readonly { id: string; label: string }[]) => arr.map((o) => ({ id: o.id, label: optLabel(group, o) }));
+
+  const depNumberInput = (field: any, placeholder: string, label?: string) => (
+    <div className="mt-3">
+      {label && <label className="block text-sm font-bold text-gray-900 mb-2">{label}</label>}
+      <input
+        {...register(field)}
+        type="number"
+        min="0"
+        onKeyDown={(e) => ['-', 'e', 'E', '+'].includes(e.key) && e.preventDefault()}
+        placeholder={placeholder}
+        className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none font-medium text-gray-900"
+      />
+    </div>
+  );
+
+  // Emplacement — Hangar (« Emplacement » : Situation + Logistique) et Usine (« Emplacement &
+  // Logistique » : Situation + Accès transport), comme au dépôt.
+  const renderIndustrielEmplacementSection = (zoneField: 'hgZone' | 'usZone', accesField: 'hgAccesTransport' | 'usAccesTransport', variant: 'hangar' | 'usine') => (
+    <Section title={tDep(variant === 'hangar' ? 'f057' : 'f013')} icon={MapPin}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {depCard(tDep('f014'), renderCheckList(depItems('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS), zoneField))}
+        {variant === 'hangar'
+          ? depCard(tDep('f058'), renderCheckList(depItems('INDUSTRIAL_ACCESS_TRANSPORT', DEP_INDUSTRIAL_ACCESS_TRANSPORT), accesField), tDep('f015'))
+          : depCard(tDep('f015'), renderCheckList(depItems('INDUSTRIAL_ACCESS_TRANSPORT', DEP_INDUSTRIAL_ACCESS_TRANSPORT), accesField))}
       </div>
     </Section>
   );
 
-  // Énergie & Fluides — Hangar et Usine (remplace l'ancienne liste simplifiée "Énergie et fluide").
+  // Annexes & Commodités — Hangar, Usine et Chambre froide.
+  const renderIndustrielAnnexesSection = (gridClassName = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch') => (
+    <Section title={tDep('f016')} icon={LayoutGrid}>
+      <div className={gridClassName}>
+        {depCard(tDep('f017'), (
+          <>
+            <div className="flex gap-4 flex-wrap">
+              {renderCheckList([{ id: 'OUI', label: tDep('f018') }, { id: 'NON', label: tDep('f019') }], 'indOffices', 'radio')}
+            </div>
+            {watch('indOffices') === 'OUI' && depNumberInput('indOfficesAreaMin', tDep('f352'), tDep('f020'))}
+          </>
+        ))}
+        {depCard(tDep('f021'), renderCheckList(depItems('INDUSTRIAL_SOCIAL_LOCALES', INDUSTRIAL_SOCIAL_LOCALES), 'indSocialLocales'))}
+        {depCard(tDep('f022'), renderCheckList(depItems('INDUSTRIAL_HEBERGEMENT', INDUSTRIAL_HEBERGEMENT), 'indHebergement'))}
+        {depCard(tDep('f023'), renderCheckList(depItems('INDUSTRIAL_SECURITY', INDUSTRIAL_SECURITY), 'indSecurity'))}
+      </div>
+    </Section>
+  );
+
+  // Énergie & Fluides — Hangar et Usine.
   const renderIndustrielEnergySection = () => (
     <Section title={tDep('f024')} icon={Zap}>
-      <div className="space-y-5">
-        <div className="min-w-0">
-          <label className="block text-sm font-bold text-gray-900 mb-3">{tDep('f025')}</label>
-          <div className="space-y-3">
-            <div className="max-w-xs">{renderHtlBoxedNumber(tDep('f026'), 'indKvaMin', { unit: 'KVA', placeholder: tDep('f353') })}</div>
-            <div className="flex">
-              <PillOption checked={!!watch('indForceMotrice')} label={tDep('f027')} icon={Zap} onChange={() => setValue('indForceMotrice', !watch('indForceMotrice'))} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+        {depCard(tDep('f025'), (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">{tDep('f026')}</label>
+              <input
+                {...register('indKvaMin')}
+                type="number"
+                min="0"
+                onKeyDown={(e) => ['-', 'e', 'E', '+'].includes(e.key) && e.preventDefault()}
+                placeholder={tDep('f353')}
+                className="w-full p-3 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none font-medium text-gray-900"
+              />
             </div>
+            <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+              <input type="checkbox" checked={!!watch('indForceMotrice')} onChange={() => setValue('indForceMotrice', !watch('indForceMotrice'))} className="accent-[#0094BD] w-5 h-5" />
+              <span className="font-bold text-gray-900 text-sm">{tDep('f027')}</span>
+            </label>
           </div>
-        </div>
-        {renderDepGroup(tDep('f028'), '', [
+        ))}
+        {depCard(tDep('f028'), renderCheckList([
           { id: 'INDUSTRIEL', label: tDep('f029') }, { id: 'VILLE', label: tDep('f030') }, { id: 'AUCUN', label: tDep('f031') },
-        ], 'indGas')}
-        {renderDepGroup(tDep('f032'), 'INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES, 'indWaterSources')}
-        {renderDepGroup(tDep('f033'), '', [
+        ], 'indGas'))}
+        {depCard(tDep('f032'), renderCheckList(depItems('INDUSTRIAL_WATER_SOURCES', INDUSTRIAL_WATER_SOURCES), 'indWaterSources'))}
+        {depCard(tDep('f033'), renderCheckList([
           { id: 'RESEAU_PUBLIC', label: tDep('f034') }, { id: 'FOSSE_INDUSTRIELLE', label: tDep('f035') },
-        ], 'indSanitation')}
+        ], 'indSanitation'))}
       </div>
     </Section>
   );
@@ -2226,89 +2399,77 @@ export default function ResearchPage() {
   // Sécurité incendie & Protection — Hangar et Usine.
   const renderIndustrielFireSection = () => (
     <Section title={tDep('f036')} icon={Siren}>
-      <div className="space-y-5">
-        {renderDepGroup(tDep('f037'), 'INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK, 'indFireNetwork')}
-        {renderDepGroup(tDep('f038'), 'INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT, 'indFireEquipment',
-          (watch('indFireEquipment') || []).includes('BACHE_EAU') ? renderNestedNumber(tDep('f172'), 'indFireWaterReserveMin', tDep('f354'), 'L') : null)}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {depCard(tDep('f037'), renderCheckList(depItems('INDUSTRIAL_FIRE_NETWORK', INDUSTRIAL_FIRE_NETWORK), 'indFireNetwork'))}
+        {depCard(tDep('f038'), (
+          <>
+            {renderCheckList(depItems('INDUSTRIAL_FIRE_EQUIPMENT', INDUSTRIAL_FIRE_EQUIPMENT), 'indFireEquipment')}
+            {(watch('indFireEquipment') || []).includes('BACHE_EAU') && depNumberInput('indFireWaterReserveMin', tDep('f354'), tDep('f172'))}
+          </>
+        ))}
       </div>
     </Section>
   );
 
-  // Configuration & Emplacement du site — Chambre froide.
+  // Configuration & Emplacement du site — Chambre froide (6 cartes, comme au dépôt).
   const renderCfConfigSection = () => (
     <Section title={tDep('f064')} icon={MapPin}>
-      <div className="space-y-5">
-        {renderDepGroup(tDep('f065'), 'INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS, 'cfLocalisation')}
-        {renderDepGroup(tDep('f067'), '', [{ id: 'PLAIN_PIED', label: tDep('f068') }, { id: 'ETAGES', label: tDep('f069') }], 'cfConfiguration',
-          (watch('cfConfiguration') || []).includes('ETAGES') ? renderNestedNumber(tDep('f139'), 'cfFloorsMin', t('exVal', { v: '2' })) : null)}
-        {renderDepGroup(tDep('f070'), '', [{ id: 'MONTE_CHARGE', label: tDep('f071') }, { id: 'AUCUN', label: tDep('f031') }], 'cfLogistiqueVerticale',
-          (watch('cfLogistiqueVerticale') || []).includes('MONTE_CHARGE') ? renderNestedNumber(tDep('f363'), 'cfMonteChargeCapacityMin', t('exVal', { v: '1000' }), 'kg') : null)}
-        {renderDepGroup(tDep('f072'), 'INDUSTRIAL_ACCESS_TRANSPORT', DEP_INDUSTRIAL_ACCESS_TRANSPORT, 'cfAccessibilite')}
-        {renderDepGroup(tDep('f073'), 'CF_ZONE_DECHARGEMENT', CF_ZONE_DECHARGEMENT, 'cfZoneDechargement')}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+        {depCard(tDep('f065'), renderCheckList(depItems('INDUSTRIAL_SITUATIONS', INDUSTRIAL_SITUATIONS), 'cfLocalisation'))}
+        {depCard(tDep('f066'), renderCheckList(resItems('CF_STRUCTURE_TYPES', CF_STRUCTURE_TYPES), 'cfStructureType', 'radio'))}
+        {depCard(tDep('f067'), (
+          <>
+            {renderCheckList([{ id: 'PLAIN_PIED', label: tDep('f068') }, { id: 'ETAGES', label: tDep('f069') }], 'cfConfiguration')}
+            {(watch('cfConfiguration') || []).includes('ETAGES') && depNumberInput('cfFloorsMin', tDep('f139'))}
+          </>
+        ))}
+        {depCard(tDep('f070'), (
+          <>
+            {renderCheckList([{ id: 'MONTE_CHARGE', label: tDep('f071') }, { id: 'AUCUN', label: tDep('f031') }], 'cfLogistiqueVerticale')}
+            {(watch('cfLogistiqueVerticale') || []).includes('MONTE_CHARGE') && depNumberInput('cfMonteChargeCapacityMin', tDep('f363'))}
+          </>
+        ))}
+        {depCard(tDep('f072'), renderCheckList(depItems('INDUSTRIAL_ACCESS_TRANSPORT', DEP_INDUSTRIAL_ACCESS_TRANSPORT), 'cfAccessibilite'))}
+        {depCard(tDep('f073'), renderCheckList(depItems('CF_ZONE_DECHARGEMENT', CF_ZONE_DECHARGEMENT), 'cfZoneDechargement'))}
       </div>
     </Section>
   );
 
-  // Équipements de sécurité & Performance — Chambre froide (le type de froid a déjà sa section).
+  // Équipements de sécurité & Performance — Chambre froide (énergie de secours + technique froid, puis
+  // type de froid + mode de diffusion, comme au dépôt).
   const renderCfEquipmentSection = () => (
     <Section title={tDep('f074')} icon={Shield}>
       <div className="space-y-5">
-        <div className="min-w-0">
-          <label className="block text-sm font-bold text-gray-900 mb-3">{tDep('f075')}</label>
-          <div className="flex">
-            <PillOption checked={!!watch('cfGenerateur')} label={tDep('f076')} icon={Zap} onChange={() => setValue('cfGenerateur', !watch('cfGenerateur'))} />
-          </div>
-          {watch('cfGenerateur') ? renderNestedNumber(tDep('f364'), 'cfGenerateurKvaMin', tDep('f353'), 'KVA') : null}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {depCard(tDep('f075'), (
+            <>
+              <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-200 rounded-xl hover:border-gray-300 bg-white">
+                <input type="checkbox" checked={!!watch('cfGenerateur')} onChange={() => setValue('cfGenerateur', !watch('cfGenerateur'))} className="accent-[#0094BD] w-5 h-5" />
+                <span className="font-bold text-gray-900 text-sm">{tDep('f076')}</span>
+              </label>
+              {watch('cfGenerateur') && depNumberInput('cfGenerateurKvaMin', tDep('f364'))}
+            </>
+          ))}
+          {depCard(tDep('f077'), renderCheckList(depItems('CF_TECHNIQUE_FROID', CF_TECHNIQUE_FROID), 'cfTechniqueFroid'))}
         </div>
-        {renderDepGroup(tDep('f077'), 'CF_TECHNIQUE_FROID', CF_TECHNIQUE_FROID, 'cfTechniqueFroid')}
-        {renderDepGroup(tDep('f079'), 'CF_MODE_DIFFUSION', CF_MODE_DIFFUSION, 'cfModeDiffusion')}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {depCard(tDep('f078'), renderCheckList(resItems('CF_TYPE_FROID_OPTIONS', CF_TYPE_FROID_OPTIONS), 'cfTypeFroidChoices'))}
+          {depCard(tDep('f079'), renderCheckList(depItems('CF_MODE_DIFFUSION', CF_MODE_DIFFUSION), 'cfModeDiffusion'))}
+        </div>
       </div>
     </Section>
   );
 
-  // Viabilisation (+ raccordements à proximité si non viabilisé) — toutes les fiches Terrain ; les
-  // raccordements ne sont proposés au dépôt que pour Terrain Industriel / Résidentiel.
-  const renderTerrainViabilisationSection = (withRaccordements: boolean) => (
-    <Section title={tDep('f091')} icon={FileText}>
-      {renderYesNo(tDep('f091'), 'terViabilise', tDep('f092'), tDep('f093'),
-        withRaccordements && watch('terViabilise') === 'NON' ? (
-          <div className="mt-4">{renderDepGroup(tDep('f097'), 'TERRAIN_RACCORDEMENTS', TERRAIN_RACCORDEMENTS, 'terRaccordements')}</div>
-        ) : null)}
+  // Modalités — Chambre froide (mode de gestion, dernière section comme sur la fiche annonce ; titre de
+  // la recherche, le « Modalités de location » du dépôt serait faux pour une recherche en achat).
+  const renderCfModalitesSection = () => (
+    <Section title={t('cfModeGestionTitle')} icon={Users}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {depCard(tDep('f081'), renderCheckList(resItems('CF_MODE_GESTION_OPTIONS', CF_MODE_GESTION_OPTIONS), 'cfModeGestionChoices'))}
+      </div>
     </Section>
   );
 
-  // Terrain Agricole : ressources en eau & équipements hydrauliques, accessibilité, bâtiments & clôture.
-  const renderTerrainAgricoleCommoditiesSections = () => (
-    <>
-      <Section title={tDep('f100')} icon={Droplet}>
-        <div className="space-y-5">
-          {renderDepGroup(tDep('f100'), 'TERRAIN_AGRICOLE_RESSOURCES_EAU', TERRAIN_AGRICOLE_RESSOURCES_EAU, 'terAgriRessourcesEau',
-            (watch('terAgriRessourcesEau') || []).includes('FORAGE') ? renderNestedNumber(tDep('f102'), 'terAgriDebitForageMin', tDep('f371'), 'm³/h') : null)}
-          {renderDepGroup(tDep('f108'), 'TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE', TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE, 'terAgriEquipementHydro')}
-        </div>
-      </Section>
-      <Section title={tDep('f112')} icon={Navigation}>
-        <div className="space-y-5">
-          {renderDepGroup(tDep('f113'), 'TERRAIN_AGRICOLE_ACCES', TERRAIN_AGRICOLE_ACCES, 'terAgriAcces')}
-          {renderDepGroup(tDep('f114'), 'TERRAIN_AGRICOLE_ACCES_LOURDS', TERRAIN_AGRICOLE_ACCES_LOURDS, 'terAgriAccesLourds')}
-        </div>
-      </Section>
-      <Section title={tDep('f115')} icon={Leaf}>
-        <div className="space-y-5">
-          {renderDepGroup(tDep('f116'), 'TERRAIN_AGRICOLE_CONSTRUCTIONS', TERRAIN_AGRICOLE_CONSTRUCTIONS, 'terAgriConstructions')}
-          {renderDepGroup(tDep('f117'), 'TERRAIN_AGRICOLE_CLOTURE', TERRAIN_AGRICOLE_CLOTURE, 'terAgriCloture')}
-        </div>
-      </Section>
-    </>
-  );
-
-  // Terrain Touristique : Plan d'Aménagement Touristique (la ZET et la vocation ont déjà leur section).
-  const renderTerrainTouristiquePatSection = () => (
-    <Section title={tDep('f121')} icon={Palmtree}>
-      <p className="text-sm text-gray-500">{tDep('f122')}</p>
-      {renderDepGroup('', 'TERRAIN_TOURISTIQUE_PAT', TERRAIN_TOURISTIQUE_PAT, 'terTouPat')}
-    </Section>
-  );
 
   const renderHangarLocationCriteria = () => (
     <>
@@ -2331,25 +2492,10 @@ export default function ResearchPage() {
         </div>
       </Section>
 
-      <Section title={t('indEmplacementTitle')} icon={Compass}>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-          {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('hgZone') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('hgZone', opt.id)} />
-          ))}
-        </div>
-      </Section>
-
-      {renderIndustrielEnergySection()}
-
-      <Section title={t('indAccessTransportTitle')} icon={Truck}>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-          {INDUSTRIAL_ACCESS_TRANSPORT.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('hgAccesTransport') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ACCESS_TRANSPORT', opt)} onChange={() => toggleArrayValue('hgAccesTransport', opt.id)} />
-          ))}
-        </div>
-      </Section>
-
+      {/* À partir d'ici : même design et même ordre que la fiche annonce Hangar du dépôt. */}
+      {renderIndustrielEmplacementSection('hgZone', 'hgAccesTransport', 'hangar')}
       {renderIndustrielAnnexesSection()}
+      {renderIndustrielEnergySection()}
       {renderIndustrielFireSection()}
 
       {renderIndustrielLegalDocumentsSection()}
@@ -2397,25 +2543,10 @@ export default function ResearchPage() {
           </div>
         </Section>
 
-        <Section title={t('indEmplacementTitle')} icon={Compass}>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-            {INDUSTRIAL_ZONE_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('usZone') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('usZone', opt.id)} />
-            ))}
-          </div>
-        </Section>
-
-        {renderIndustrielEnergySection()}
-
-        <Section title={t('indAccessTransportTitle')} icon={Truck}>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-            {INDUSTRIAL_ACCESS_TRANSPORT.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('usAccesTransport') || []).includes(opt.id)} label={optLabel('INDUSTRIAL_ACCESS_TRANSPORT', opt)} onChange={() => toggleArrayValue('usAccesTransport', opt.id)} />
-            ))}
-          </div>
-        </Section>
-
+        {/* À partir d'ici : même design et même ordre que la fiche annonce Usine du dépôt. */}
+        {renderIndustrielEmplacementSection('usZone', 'usAccesTransport', 'usine')}
         {renderIndustrielAnnexesSection()}
+        {renderIndustrielEnergySection()}
         {renderIndustrielFireSection()}
 
         {renderIndustrielLegalDocumentsSection()}
@@ -2455,33 +2586,12 @@ export default function ResearchPage() {
           </div>
         </Section>
 
-        <Section title={t('cfTypeFroidTitle')} icon={Thermometer}>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-            {CF_TYPE_FROID_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('cfTypeFroidChoices') || []).includes(opt.id)} label={optLabel('CF_TYPE_FROID_OPTIONS', opt)} onChange={() => toggleArrayValue('cfTypeFroidChoices', opt.id)} />
-            ))}
-          </div>
-        </Section>
-
-        <Section title={t('cfModeGestionTitle')} icon={Users}>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-            {CF_MODE_GESTION_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('cfModeGestionChoices') || []).includes(opt.id)} label={optLabel('CF_MODE_GESTION_OPTIONS', opt)} onChange={() => toggleArrayValue('cfModeGestionChoices', opt.id)} />
-            ))}
-          </div>
-        </Section>
-
-        <Section title={t('cfStructureTitle')} icon={Snowflake}>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-            {CF_STRUCTURE_TYPES.map((opt) => (
-              <PillOption type="radio" key={opt.id} checked={watch('cfStructureType') === opt.id} label={optLabel('CF_STRUCTURE_TYPES', opt)} onChange={() => setValue('cfStructureType', opt.id as any)} />
-            ))}
-          </div>
-        </Section>
-
+        {/* À partir d'ici : même design et même ordre que la fiche annonce Chambre froide du dépôt
+            (type de structure, type de froid et mode de gestion sont désormais des cartes de ces sections). */}
+        {renderIndustrielAnnexesSection('grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5')}
         {renderCfConfigSection()}
-        {renderIndustrielAnnexesSection()}
         {renderCfEquipmentSection()}
+        {renderCfModalitesSection()}
 
         {renderIndustrielLegalDocumentsSection()}
         {renderLocalisationSection({ hideDate: true })}
@@ -2797,42 +2907,78 @@ export default function ResearchPage() {
     </div>
   );
 
+  // --- Fiches Terrain : MÊME design et MÊME ordre que la fiche annonce Terrain du dépôt (retour client du
+  // 08/11/2026) — « Caractéristiques Physiques » (champs + cartes), puis cartes encadrées par rubrique.
+  // Agricole : Physiques (+ viabilisation) → Caractéristiques agricoles → Accessibilité → Bâtiments & clôture.
+  // Industriel / Résidentiel : Physiques (+ statut de la zone) → Viabilisation (+ raccordements).
+  // Touristique : Physiques (+ viabilisation) → Statut & Vocation touristique (ZET, PAT, classification). ---
+
+  // Carte « Viabilisation » (Terrain viabilisé / Non viabilisé) ; raccordements à proximité si non
+  // viabilisé, uniquement pour Terrain Industriel / Résidentiel comme au dépôt.
+  const renderTerrainViabilisationCard = (withRaccordements: boolean) => depCard(tDep('f091'), (
+    <>
+      {renderCheckList([{ id: 'OUI', label: tDep('f092') }, { id: 'NON', label: tDep('f093') }], 'terViabilise', 'radio', 'flex gap-6 flex-wrap')}
+      {withRaccordements && watch('terViabilise') === 'NON' && (
+        <div className="mt-4">
+          <div className="text-sm font-bold text-gray-700 mb-2">{tDep('f097')}</div>
+          {renderCheckList(depItems('TERRAIN_RACCORDEMENTS', TERRAIN_RACCORDEMENTS), 'terRaccordements', 'checkbox', 'flex flex-wrap gap-x-6 gap-y-2')}
+        </div>
+      )}
+    </>
+  ));
+
+  // Champ « Précisez » d'une option « Autre », dans sa carte.
+  const renderAutreInCard = (field: 'terAgriCultureOther' | 'terTouVocationOther') => (
+    <input type="text" {...register(field)} className="mt-3 w-full p-2 border-2 border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#0094BD] text-sm font-medium" placeholder={t('autrePrecisezPlaceholder')} />
+  );
+
   const renderTerrainAgricoleCriteria = () => (
     <>
-      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {renderTerSurfaceWithUnit()}
-          {renderBoxedRange(t('terAltitudeLabel'), 'terAgriAltitudeMin', 'terAgriAltitudeMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '100' }), placeholderMax: t('exVal', { v: '500' }) })}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
-        </div>
-      </Section>
-
-      <Section title={t('terAgriCultureTitle')} icon={Trees}>
-        <div className="space-y-3">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-            {TER_AGRI_CULTURE_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('terAgriCulture') || []).includes(opt.id)} label={optLabel('TER_AGRI_CULTURE_OPTIONS', opt)} onChange={() => toggleArrayValue('terAgriCulture', opt.id)} />
-            ))}
+      <Section title={tDep('f084')} icon={Ruler}>
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {renderTerSurfaceWithUnit()}
+            {renderBoxedRange(t('terAltitudeLabel'), 'terAgriAltitudeMin', 'terAgriAltitudeMax', { unit: 'm', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '100' }), placeholderMax: t('exVal', { v: '500' }) })}
+            {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
           </div>
-          {(watch('terAgriCulture') || []).includes('AUTRE') && (
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
-              <input type="text" {...register('terAgriCultureOther')} className={inputCls} placeholder={t('autrePrecisezPlaceholder')} />
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {renderTerrainViabilisationCard(false)}
+          </div>
         </div>
       </Section>
 
-      <Section title={t('terAgriEtatTitle')} icon={Sparkles}>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-          {TER_AGRI_ETAT_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('terAgriEtat') || []).includes(opt.id)} label={optLabel('TER_AGRI_ETAT_OPTIONS', opt)} onChange={() => toggleArrayValue('terAgriEtat', opt.id)} />
+      <Section title={tDep('f098')} icon={Leaf}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {depCard(tDep('f099'), (
+            <>
+              {renderCheckList(resItems('TER_AGRI_CULTURE_OPTIONS', TER_AGRI_CULTURE_OPTIONS), 'terAgriCulture')}
+              {(watch('terAgriCulture') || []).includes('AUTRE') && renderAutreInCard('terAgriCultureOther')}
+            </>
           ))}
+          {depCard(tDep('f100'), (
+            <>
+              {renderCheckList(depItems('TERRAIN_AGRICOLE_RESSOURCES_EAU', TERRAIN_AGRICOLE_RESSOURCES_EAU), 'terAgriRessourcesEau')}
+              {(watch('terAgriRessourcesEau') || []).includes('FORAGE') && depNumberInput('terAgriDebitForageMin', tDep('f371'), tDep('f102'))}
+            </>
+          ))}
+          {depCard(tDep('f108'), renderCheckList(depItems('TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE', TERRAIN_AGRICOLE_EQUIPEMENT_HYDRAULIQUE), 'terAgriEquipementHydro'))}
+          {depCard(tDep('f109'), renderCheckList(resItems('TER_AGRI_ETAT_OPTIONS', TER_AGRI_ETAT_OPTIONS), 'terAgriEtat', 'checkbox', 'flex gap-6 flex-wrap'))}
         </div>
       </Section>
 
-      {renderTerrainViabilisationSection(false)}
-      {renderTerrainAgricoleCommoditiesSections()}
+      <Section title={tDep('f112')} icon={Navigation}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {depCard(tDep('f113'), renderCheckList(depItems('TERRAIN_AGRICOLE_ACCES', TERRAIN_AGRICOLE_ACCES), 'terAgriAcces'))}
+          {depCard(tDep('f114'), renderCheckList(depItems('TERRAIN_AGRICOLE_ACCES_LOURDS', TERRAIN_AGRICOLE_ACCES_LOURDS), 'terAgriAccesLourds'))}
+        </div>
+      </Section>
+
+      <Section title={tDep('f115')} icon={Home}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {depCard(tDep('f116'), renderCheckList(depItems('TERRAIN_AGRICOLE_CONSTRUCTIONS', TERRAIN_AGRICOLE_CONSTRUCTIONS), 'terAgriConstructions'))}
+          {depCard(tDep('f117'), renderCheckList(depItems('TERRAIN_AGRICOLE_CLOTURE', TERRAIN_AGRICOLE_CLOTURE), 'terAgriCloture'))}
+        </div>
+      </Section>
 
       {renderIndustrielBudgetDateRow()}
       {renderLocalisationSection({ hideDate: true })}
@@ -2841,24 +2987,26 @@ export default function ResearchPage() {
     </>
   );
 
-  const renderTerrainIndustrielCriteria = () => (
+  // Terrain Industriel et Terrain Résidentiel : même fiche, seule la liste « Statut de la zone » change.
+  const renderTerrainZoneCriteria = (kind: 'INDUSTRIEL' | 'RESIDENTIEL') => (
     <>
-      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '500' }), placeholderMax: t('exVal', { v: '2000' }) })}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
+      <Section title={tDep('f084')} icon={Ruler}>
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: kind === 'INDUSTRIEL' ? '500' : '200' }), placeholderMax: t('exVal', { v: kind === 'INDUSTRIEL' ? '2000' : '600' }) })}
+            {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {kind === 'INDUSTRIEL'
+              ? depCard(tDep('f094'), renderCheckList(resItems('TER_IND_ZONE_OPTIONS', TER_IND_ZONE_OPTIONS), 'terIndZone'))
+              : depCard(tDep('f094'), renderCheckList(resItems('TER_RES_ZONE_OPTIONS', TER_RES_ZONE_OPTIONS), 'terResZone'))}
+          </div>
         </div>
       </Section>
 
-      <Section title={t('terIndZoneTitle')} icon={Compass}>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-          {TER_IND_ZONE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('terIndZone') || []).includes(opt.id)} label={optLabel('TER_IND_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('terIndZone', opt.id)} />
-          ))}
-        </div>
+      <Section title={tDep('f091')} icon={FileText}>
+        {renderTerrainViabilisationCard(true)}
       </Section>
-
-      {renderTerrainViabilisationSection(true)}
 
       {renderIndustrielBudgetDateRow()}
       {renderLocalisationSection({ hideDate: true })}
@@ -2866,67 +3014,48 @@ export default function ResearchPage() {
       {renderCommentSection()}
     </>
   );
-
-  const renderTerrainResidentielCriteria = () => (
-    <>
-      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {renderBoxedRange(t('terSurfaceLabel'), 'minSurface', 'maxSurface', { unit: 'm²', unitPosition: 'suffix', placeholderMin: t('exVal', { v: '200' }), placeholderMax: t('exVal', { v: '600' }) })}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
-        </div>
-      </Section>
-
-      <Section title={t('terResZoneTitle')} icon={Compass}>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-          {TER_RES_ZONE_OPTIONS.map((opt) => (
-            <PillOption key={opt.id} checked={(watch('terResZone') || []).includes(opt.id)} label={optLabel('TER_RES_ZONE_OPTIONS', opt)} onChange={() => toggleArrayValue('terResZone', opt.id)} />
-          ))}
-        </div>
-      </Section>
-
-      {renderTerrainViabilisationSection(true)}
-
-      {renderIndustrielBudgetDateRow()}
-      {renderLocalisationSection({ hideDate: true })}
-      {renderSharedInterlocutorSection()}
-      {renderCommentSection()}
-    </>
-  );
+  const renderTerrainIndustrielCriteria = () => renderTerrainZoneCriteria('INDUSTRIEL');
+  const renderTerrainResidentielCriteria = () => renderTerrainZoneCriteria('RESIDENTIEL');
 
   const renderTerrainTouristiqueCriteria = () => (
     <>
-      <Section title={t('terSurfaceDimensionTitle')} icon={Ruler}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {renderTerSurfaceWithUnit()}
-          {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
+      <Section title={tDep('f084')} icon={Ruler}>
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {renderTerSurfaceWithUnit()}
+            {renderBoxedRange(t('terFacadesLabel'), 'facadesMin', 'facadesMax', { placeholderMin: t('exVal', { v: '1' }), placeholderMax: t('exVal', { v: '2' }) })}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {renderTerrainViabilisationCard(false)}
+          </div>
         </div>
       </Section>
 
-      <Section title={t('terTouZetTitle')} icon={Sparkles}>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-          <PillOption type="radio" checked={watch('terTouZet') === 'OUI'} label={t('optYes')} onChange={() => setValue('terTouZet', 'OUI')} />
-          <PillOption type="radio" checked={watch('terTouZet') === 'NON'} label={t('optNo')} onChange={() => setValue('terTouZet', 'NON')} />
-        </div>
-      </Section>
-
-      <Section title={t('terTouVocationTitle')} icon={Compass}>
-        <div className="space-y-3">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-            {TER_TOU_VOCATION_OPTIONS.map((opt) => (
-              <PillOption key={opt.id} checked={(watch('terTouVocation') || []).includes(opt.id)} label={optLabel('TER_TOU_VOCATION_OPTIONS', opt)} onChange={() => toggleArrayValue('terTouVocation', opt.id)} />
+      <Section title={tDep('f118')} icon={Palmtree}>
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {depCard(tDep('f119'), (
+              <>
+                <div className="text-xs text-gray-500 mb-3">{tDep('f120')}</div>
+                {renderCheckList([{ id: 'OUI', label: t('optYes') }, { id: 'NON', label: t('optNo') }], 'terTouZet', 'radio')}
+              </>
+            ))}
+            {depCard(tDep('f121'), (
+              <>
+                <div className="text-xs text-gray-500 mb-3">{tDep('f122')}</div>
+                {renderCheckList(depItems('TERRAIN_TOURISTIQUE_PAT', TERRAIN_TOURISTIQUE_PAT), 'terTouPat')}
+              </>
             ))}
           </div>
-          {(watch('terTouVocation') || []).includes('AUTRE') && (
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">{t('autrePrecisezLabel')}</label>
-              <input type="text" {...register('terTouVocationOther')} className={inputCls} placeholder={t('autrePrecisezPlaceholder')} />
-            </div>
-          )}
+          {depCard(tDep('f123'), (
+            <>
+              <div className="text-xs text-gray-500 mb-3">{tDep('f124')}</div>
+              {renderCheckList(resItems('TER_TOU_VOCATION_OPTIONS', TER_TOU_VOCATION_OPTIONS), 'terTouVocation', 'checkbox', 'grid grid-cols-1 md:grid-cols-2 gap-2')}
+              {(watch('terTouVocation') || []).includes('AUTRE') && renderAutreInCard('terTouVocationOther')}
+            </>
+          ))}
         </div>
       </Section>
-
-      {renderTerrainTouristiquePatSection()}
-      {renderTerrainViabilisationSection(false)}
 
       {renderIndustrielBudgetDateRow()}
       {renderLocalisationSection({ hideDate: true })}
@@ -2983,6 +3112,7 @@ export default function ResearchPage() {
           case 'IMMEUBLE': return renderImmeubleCriteria();
           case 'BLOC_COMMERCIAL': return renderBlocCommercialCriteria();
           case 'LOCAL_COMMERCIAL': return renderLocalCommercialCriteria();
+          case 'SHOWROOM': return renderShowroomCriteria();
           case 'BLOC_ADMINISTRATIF':
           default:
             return renderBlocAdministratifCriteria();
@@ -3088,6 +3218,65 @@ export default function ResearchPage() {
     </Section>
   );
 
+  // Options de la recherche (confier à Patrimoine Immobilier — obligatoire —, alerte mail) et, si
+  // l'utilisateur n'est pas connecté, ses coordonnées. Affiché à la FIN de la dernière étape du
+  // parcours, sur la même page que l'interlocuteur et le titre/message (retour client du 08/11/2026 :
+  // plus d'étape séparée où la case obligatoire apparaissait déjà en erreur).
+  // Connecté : plus de bloc « coordonnées » — le profil est repris en silence par l'effet plus haut
+  // (nom, e-mail, téléphone, adresse) et il ne reste que les deux cases à cocher.
+  const renderContactSection = () => {
+    const showManualForm = !loggedInUser;
+    return (
+            <Section title={showManualForm ? t('contactTitle') : t('contactOptionsTitle')} icon={showManualForm ? MapPin : Handshake}>
+              {showManualForm && (
+                <>
+                  <div className="flex justify-center gap-4 mb-2">
+                    <label className="flex items-center gap-2 font-bold text-gray-900">
+                      <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#0094BD]" /> {t('contactParticulier')}
+                    </label>
+                    <label className="flex items-center gap-2 font-bold text-gray-900">
+                      <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#0094BD]" /> {t('contactSociete')}
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Field label={t('contactLastName')}><input type="text" {...register('lastName')} className={inputCls} /></Field>
+                    <Field label={t('contactFirstName')}><input type="text" {...register('firstName')} className={inputCls} /></Field>
+                    <Field label={t('contactEmail')}><input type="email" {...register('email')} className={inputCls} /></Field>
+                    <Field label={t('contactPhone')}><input type="tel" {...register('phone')} className={inputCls} /></Field>
+                    <Field label={t('contactAddress')} full><input type="text" {...register('address')} className={inputCls} /></Field>
+
+                    {watch('userType') === 'SOCIETE' && (
+                      <>
+                        <Field label={t('contactCompanyName')}><input type="text" {...register('companyName')} className={inputCls} /></Field>
+                        <Field label={t('contactActivity')}><input type="text" {...register('activity')} className={inputCls} /></Field>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Consentement obligatoire : rendu comme une case à part, clairement requise, pour
+                  qu'elle demande une décision explicite avant l'envoi plutôt qu'un détail qu'on
+                  peut manquer (retour client du 15/10/2026). */}
+              <div className="space-y-3 mt-2">
+                <label className={cn(
+                  'flex items-start gap-2.5 text-sm font-bold p-3 rounded-xl border-2 transition-colors',
+                  errors.isDelegate ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#0094BD]/30 bg-[#0094BD]/[0.04] text-gray-900'
+                )}>
+                  <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 mt-0.5 accent-[#0094BD] shrink-0" />
+                  <span>{t('contactIsDelegate')} <span className="text-red-500">*</span></span>
+                </label>
+                {errors.isDelegate && <p className="text-red-500 text-sm">{errors.isDelegate.message as any}</p>}
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  <input type="checkbox" {...register('receiveAlert')} className="h-4 w-4 accent-[#0094BD]" />
+                  {t('contactReceiveAlert')}
+                </label>
+              </div>
+            </Section>
+    );
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 'BRANCH':
@@ -3160,6 +3349,8 @@ export default function ResearchPage() {
           </div>
         );
 
+      // Étapes « Type de recherche » : ronds au petit format (96 px), comme l'étape « type de bien »
+      // du dépôt d'annonce (retour client du 08/11/2026 : « plus joli »).
       case 'RES_SEARCH_SCOPE':
         return (
           <div className="w-full max-w-sm md:max-w-md mx-auto animate-fade-in py-4 md:py-6">
@@ -3171,14 +3362,14 @@ export default function ResearchPage() {
                 active={watch('searchScope') === 'GROUPEE'}
                 icon={Home}
                 label={t('resSearchScopeGroupee')}
-                size="lg"
+                size="sm"
                 onClick={() => { setValue('searchScope', 'GROUPEE'); nextStep(); }}
               />
               <CircleOption
                 active={watch('searchScope') === 'IMMEUBLE'}
                 icon={Building2}
                 label={t('resSearchScopeImmeuble')}
-                size="lg"
+                size="sm"
                 onClick={() => { setValue('searchScope', 'IMMEUBLE'); nextStep(); }}
               />
             </div>
@@ -3188,44 +3379,42 @@ export default function ResearchPage() {
       case 'BUR_SEARCH_SCOPE':
         return (
           <div className="w-full max-w-5xl animate-fade-in py-6 md:py-10">
-            {/* 5 pastilles : grille (comme l'étape Branche) plutôt qu'une rangée flex, sinon le
-                w-full interne de CircleOption les fait repasser en colonne dès que ça déborde. */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-10 gap-x-6 justify-items-center">
-              <CircleOption
-                active={watch('bureauxSearchScope') === 'GROUPEE'}
-                icon={Home}
-                label={t('resSearchScopeGroupee')}
-                size="md"
-                onClick={() => { setValue('bureauxSearchScope', 'GROUPEE'); nextStep(); }}
-              />
-              <CircleOption
-                active={watch('bureauxSearchScope') === 'IMMEUBLE'}
-                icon={Building2}
-                label={t('resSearchScopeImmeuble')}
-                size="md"
-                onClick={() => { setValue('bureauxSearchScope', 'IMMEUBLE'); nextStep(); }}
-              />
-              <CircleOption
-                active={watch('bureauxSearchScope') === 'BLOC_ADMINISTRATIF'}
-                icon={Briefcase}
-                label={t('burScopeBlocAdmin')}
-                size="md"
-                onClick={() => { setValue('bureauxSearchScope', 'BLOC_ADMINISTRATIF'); nextStep(); }}
-              />
-              <CircleOption
-                active={watch('bureauxSearchScope') === 'BLOC_COMMERCIAL'}
-                icon={Building2}
-                label={t('burScopeBlocCommercial')}
-                size="md"
-                onClick={() => { setValue('bureauxSearchScope', 'BLOC_COMMERCIAL'); nextStep(); }}
-              />
-              <CircleOption
-                active={watch('bureauxSearchScope') === 'LOCAL_COMMERCIAL'}
-                icon={Store}
-                label={t('burScopeLocalCommercial')}
-                size="md"
-                onClick={() => { setValue('bureauxSearchScope', 'LOCAL_COMMERCIAL'); nextStep(); }}
-              />
+            {/* Même ordre que le dépôt d'annonce (08/11/2026), 3 par ligne : biens commerciaux,
+                immeuble, bloc administratif / bloc commercial, local commercial, showroom / puis les
+                3 types « Bientôt disponible » (LOCKED_PROPERTY_TYPES) en dernière ligne. */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-10 gap-x-6 justify-items-center">
+              {([
+                { id: 'GROUPEE', icon: Home, label: t('burScopeGroupeeCommercial') },
+                { id: 'IMMEUBLE', icon: Building2, label: t('resSearchScopeImmeuble') },
+                { id: 'BLOC_ADMINISTRATIF', icon: Briefcase, label: t('burScopeBlocAdmin') },
+                { id: 'BLOC_COMMERCIAL', icon: Building2, label: t('burScopeBlocCommercial') },
+                { id: 'LOCAL_COMMERCIAL', icon: Store, label: t('burScopeLocalCommercial') },
+                { id: 'SHOWROOM', icon: Store, label: tpt.has('SHOWROOM') ? tpt('SHOWROOM') : 'Showroom' },
+              ] as const).map((o) => (
+                <CircleOption
+                  key={o.id}
+                  active={watch('bureauxSearchScope') === o.id}
+                  icon={o.icon}
+                  label={o.label}
+                  size="sm"
+                  onClick={() => { setValue('bureauxSearchScope', o.id); nextStep(); }}
+                />
+              ))}
+              {([
+                { id: 'CENTRE_AFFAIRES', icon: Building2, fr: "Centre d'affaires" },
+                { id: 'COWORKING', icon: Users, fr: 'Espace Co-Travail' },
+                { id: 'BUREAU_FLEXIBLE', icon: Briefcase, fr: 'Bureau flexible' },
+              ] as const).filter((o) => isLockedPropertyType(o.id)).map((o) => (
+                <CircleOption
+                  key={o.id}
+                  active={false}
+                  icon={o.icon}
+                  label={tpt.has(o.id) ? tpt(o.id) : o.fr}
+                  size="sm"
+                  lockedBadge={t('standbyBadge')}
+                  onClick={() => {}}
+                />
+              ))}
             </div>
           </div>
         );
@@ -3238,21 +3427,21 @@ export default function ResearchPage() {
                 active={watch('industrielSearchScope') === 'HANGAR'}
                 icon={Warehouse}
                 label={t('indScopeHangar')}
-                size="md"
+                size="sm"
                 onClick={() => { setValue('industrielSearchScope', 'HANGAR'); nextStep(); }}
               />
               <CircleOption
                 active={watch('industrielSearchScope') === 'USINE'}
                 icon={Factory}
                 label={t('indScopeUsine')}
-                size="md"
+                size="sm"
                 onClick={() => { setValue('industrielSearchScope', 'USINE'); nextStep(); }}
               />
               <CircleOption
                 active={watch('industrielSearchScope') === 'CHAMBRE_FROIDE'}
                 icon={Snowflake}
                 label={t('indScopeChambreFroide')}
-                size="md"
+                size="sm"
                 onClick={() => { setValue('industrielSearchScope', 'CHAMBRE_FROIDE'); nextStep(); }}
               />
             </div>
@@ -3267,28 +3456,28 @@ export default function ResearchPage() {
                 active={watch('terrainSearchScope') === 'AGRICOLE'}
                 icon={Trees}
                 label={t('terScopeAgricole')}
-                size="md"
+                size="sm"
                 onClick={() => { setValue('terrainSearchScope', 'AGRICOLE'); nextStep(); }}
               />
               <CircleOption
                 active={watch('terrainSearchScope') === 'INDUSTRIEL'}
                 icon={Factory}
                 label={t('terScopeIndustriel')}
-                size="md"
+                size="sm"
                 onClick={() => { setValue('terrainSearchScope', 'INDUSTRIEL'); nextStep(); }}
               />
               <CircleOption
                 active={watch('terrainSearchScope') === 'RESIDENTIEL'}
                 icon={Home}
                 label={t('terScopeResidentiel')}
-                size="md"
+                size="sm"
                 onClick={() => { setValue('terrainSearchScope', 'RESIDENTIEL'); nextStep(); }}
               />
               <CircleOption
                 active={watch('terrainSearchScope') === 'TOURISTIQUE'}
                 icon={Hotel}
                 label={t('terScopeTouristique')}
-                size="md"
+                size="sm"
                 onClick={() => { setValue('terrainSearchScope', 'TOURISTIQUE'); nextStep(); }}
               />
             </div>
@@ -3306,7 +3495,7 @@ export default function ResearchPage() {
         const options = isResidentielAchat ? ACHAT_INTERLOCUTOR_OPTIONS : (RESEARCH_INTERLOCUTORS[branch as ResearchBranchId] || []);
         const optionsNs = isResidentielAchat ? 'ACHAT_INTERLOCUTOR_OPTIONS' : `RESEARCH_INTERLOCUTORS.${branch}`;
         return (
-          <div className="w-full max-w-2xl animate-fade-in space-y-8">
+          <div className="w-full max-w-4xl animate-fade-in space-y-8">
             {isResidentielAchat && (
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-3">{t('interlocutorSituation')}</label>
@@ -3324,9 +3513,12 @@ export default function ResearchPage() {
                   {isResidentielAchat ? t('interlocutorPreferredType') : t('interlocutorChooseWho')}
                 </p>
               </div>
-              {options.map((opt) => (
-                <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={optLabel(optionsNs, opt)} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
-              ))}
+              {/* Les choix d'interlocuteur sur une seule ligne (retour client du 08/11/2026). */}
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+                {options.map((opt) => (
+                  <PillOption key={opt.id} checked={(watch('interlocutors') || []).includes(opt.id)} label={optLabel(optionsNs, opt)} onChange={() => toggleArrayValue('interlocutors', opt.id)} />
+                ))}
+              </div>
             </div>
             {/* Message explicatif — seulement pour la branche Résidentiel, qui a déplacé ce bloc ici
                 (page 2) ; les autres branches (Industriel...) le gardent sur la page des critères. */}
@@ -3335,64 +3527,20 @@ export default function ResearchPage() {
         );
       }
 
-      case 'CONTACT': {
-        // Connecté : plus de bloc « coordonnées » — le profil est repris en silence par l'effet plus haut
-        // (nom, e-mail, téléphone, adresse) et il ne reste que les deux cases à cocher.
-        // Non connecté : le formulaire de coordonnées reste nécessaire pour pouvoir répondre/alerter.
-        const showManualForm = !loggedInUser;
-        return (
-          <div className="w-full max-w-4xl animate-fade-in space-y-10">
-            <Section title={showManualForm ? t('contactTitle') : t('contactOptionsTitle')} icon={showManualForm ? MapPin : Handshake}>
-              {showManualForm && (
-                <>
-                  <div className="flex justify-center gap-4 mb-2">
-                    <label className="flex items-center gap-2 font-bold text-gray-900">
-                      <input type="radio" {...register('userType')} value="PARTICULIER" className="accent-[#0094BD]" /> {t('contactParticulier')}
-                    </label>
-                    <label className="flex items-center gap-2 font-bold text-gray-900">
-                      <input type="radio" {...register('userType')} value="SOCIETE" className="accent-[#0094BD]" /> {t('contactSociete')}
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Field label={t('contactLastName')}><input type="text" {...register('lastName')} className={inputCls} /></Field>
-                    <Field label={t('contactFirstName')}><input type="text" {...register('firstName')} className={inputCls} /></Field>
-                    <Field label={t('contactEmail')}><input type="email" {...register('email')} className={inputCls} /></Field>
-                    <Field label={t('contactPhone')}><input type="tel" {...register('phone')} className={inputCls} /></Field>
-                    <Field label={t('contactAddress')} full><input type="text" {...register('address')} className={inputCls} /></Field>
-
-                    {watch('userType') === 'SOCIETE' && (
-                      <>
-                        <Field label={t('contactCompanyName')}><input type="text" {...register('companyName')} className={inputCls} /></Field>
-                        <Field label={t('contactActivity')}><input type="text" {...register('activity')} className={inputCls} /></Field>
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Consentement obligatoire : rendu comme une case à part, clairement requise, pour
-                  qu'elle demande une décision explicite avant l'envoi plutôt qu'un détail qu'on
-                  peut manquer (retour client du 15/10/2026). */}
-              <div className="space-y-3 mt-2">
-                <label className={cn(
-                  'flex items-start gap-2.5 text-sm font-bold p-3 rounded-xl border-2 transition-colors',
-                  errors.isDelegate ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#0094BD]/30 bg-[#0094BD]/[0.04] text-gray-900'
-                )}>
-                  <input type="checkbox" {...register('isDelegate')} className="h-4 w-4 mt-0.5 accent-[#0094BD] shrink-0" />
-                  <span>{t('contactIsDelegate')} <span className="text-red-500">*</span></span>
-                </label>
-                {errors.isDelegate && <p className="text-red-500 text-sm">{errors.isDelegate.message as any}</p>}
-                <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                  <input type="checkbox" {...register('receiveAlert')} className="h-4 w-4 accent-[#0094BD]" />
-                  {t('contactReceiveAlert')}
-                </label>
-              </div>
-            </Section>
-          </div>
-        );
-      }
     }
+  };
+
+  // Étape affichée + bloc contact quand c'est la dernière étape d'un parcours qui s'envoie.
+  const renderStepWithContact = () => {
+    const content = renderStep();
+    const isLast = currentStepIndex === steps.length - 1;
+    if (!isLast || !['CRITERIA', 'BUDGET', 'INTERLOCUTOR'].includes(currentStep)) return content;
+    return (
+      <div className="w-full max-w-4xl space-y-10">
+        {content}
+        {renderContactSection()}
+      </div>
+    );
   };
 
   const isNextDisabled = currentStep === 'BRANCH' && !branch;
@@ -3512,13 +3660,14 @@ export default function ResearchPage() {
           </div>
 
           <div className="p-6 md:p-10 flex-1 flex flex-col items-center justify-center text-left">
-            {renderStep()}
+            {renderStepWithContact()}
           </div>
 
           {!AUTO_ADVANCE_STEPS.includes(currentStep) && (
             <div className="p-6 md:p-8 border-t border-gray-100 flex justify-end items-center bg-gray-50/50 rounded-b-2xl md:rounded-b-3xl">
               {currentStepIndex < steps.length - 1 ? (
                 <button
+                  key="next-step"
                   type="button"
                   onClick={nextStep}
                   disabled={isNextDisabled}
@@ -3528,6 +3677,7 @@ export default function ResearchPage() {
                 </button>
               ) : (
                 <button
+                  key="submit-research"
                   type="submit"
                   disabled={loading}
                   className="bg-[#0094BD] hover:bg-[#003B4A] text-white rounded-full px-8 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg shadow-[#0094BD]/20 transition-all disabled:opacity-50"

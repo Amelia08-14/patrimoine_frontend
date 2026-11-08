@@ -246,7 +246,8 @@
     "min": "الحد الأدنى",
     "search": "بحث",
     "moreFilters": "معايير إضافية",
-    "resetFilters": "إعادة التعيين"
+    "resetFilters": "إعادة التعيين",
+    "unitLabel": "الوحدة"
   },
   "AnnouncesPage": {
     "heroTitle": "اعثر على منزلك المستقبلي",
@@ -502,7 +503,16 @@
     "viewGrid": "شبكة",
     "viewLarge": "بطاقات كبيرة",
     "viewList": "قائمة",
-    "refreshCooldown": "لقد قمت بتحديث هذا البحث مؤخرًا. يمكنك التحديث مجددًا بعد {minutes} دقيقة (تحديث واحد كل 45 دقيقة)."
+    "refreshCooldown": "لقد قمت بتحديث هذا البحث مؤخرًا. يمكنك التحديث مجددًا بعد {minutes} دقيقة (تحديث واحد كل 45 دقيقة).",
+    "filterPeriodLabel": "تاريخ الطلب",
+    "statusPending": "في انتظار المصادقة",
+    "statusPendingHint": "يقوم فريقنا بمراجعة بحثك. سيظهر ضمن الطلبات الجارية بعد المصادقة عليه.",
+    "statusValidated": "✓ تمت المصادقة — ظاهر ضمن الطلبات الجارية",
+    "statusRejected": "تم رفض البحث",
+    "statusRejectedReason": "السبب: {reason}",
+    "statusRejectedHint": "تواصل مع الدعم لمعرفة السبب.",
+    "shareAction": "مشاركة",
+    "linkCopied": "تم نسخ الرابط — يمكنك لصقه لمشاركته."
   },
   "Research": {
     "zodBranchRequired": "اختر فئة",
@@ -811,7 +821,9 @@
     "searchTitlePlaceholder": "مثال: استوديو مجهز وآمن في وسط الجزائر",
     "alertAccountPending": "حسابك في انتظار مصادقة المسؤول. لا يمكنك إيداع طلب بحث قبل المصادقة عليه.",
     "standbyBadge": "قريبًا",
-    "detailCriteriaTitle": "معايير البحث"
+    "detailCriteriaTitle": "معايير البحث",
+    "burScopeGroupeeCommercial": "شقة، فيلا، مستوى فيلا تجاري",
+    "alertSuccessPending": "تم إرسال بحثك بنجاح. سيظهر ضمن الطلبات الجارية فور مصادقة فريقنا عليه."
   },
   "ProfileHome": {
     "pendingBanner": "الحساب في انتظار التحقق.",
@@ -1620,7 +1632,13 @@
     "adLandServiced": "أرض مهيّأة بالشبكات",
     "adLandNotServiced": "غير مهيّأة",
     "adSpaceExploited": "الفضاء المستغَلّ",
-    "adLivingSpace": "فضاء المعيشة"
+    "adLivingSpace": "فضاء المعيشة",
+    "favAdd": "إضافة إلى المفضلة",
+    "favRemove": "إزالة من المفضلة",
+    "favError": "تعذر تحديث المفضلة حاليًا.",
+    "loginToFavorite": "سجّل الدخول لإضافة هذا الإعلان إلى المفضلة.",
+    "shareAction": "مشاركة",
+    "linkCopied": "تم نسخ الرابط — يمكنك لصقه لمشاركته."
   },
   "Deposit": {
     "draftFoundTitle": "توجد مسودة بانتظارك",
@@ -2319,7 +2337,9 @@
     "mobileAppStoreGoogle": "Google Play",
     "mobileAppStatListings": "إعلان منشور",
     "mobileAppStatWilayas": "ولاية مغطاة",
-    "mobileAppStatCategories": "فئات عقارية"
+    "mobileAppStatCategories": "فئات عقارية",
+    "exploreTypesPrev": "الأنواع السابقة",
+    "exploreTypesNext": "الأنواع التالية"
   },
   "ResearchOptions": {
     "RESEARCH_PROPERTY_TYPES": {

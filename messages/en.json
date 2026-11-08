@@ -246,7 +246,8 @@
     "min": "Min",
     "search": "Search",
     "moreFilters": "More filters",
-    "resetFilters": "Reset"
+    "resetFilters": "Reset",
+    "unitLabel": "Unit"
   },
   "AnnouncesPage": {
     "heroTitle": "Find your future home",
@@ -502,7 +503,16 @@
     "viewGrid": "Grid",
     "viewLarge": "Large cards",
     "viewList": "List",
-    "refreshCooldown": "You already refreshed this search recently. Next refresh possible in {minutes} min (one refresh every 45 min)."
+    "refreshCooldown": "You already refreshed this search recently. Next refresh possible in {minutes} min (one refresh every 45 min).",
+    "filterPeriodLabel": "Request date",
+    "statusPending": "Awaiting approval",
+    "statusPendingHint": "Our team is reviewing your search. It will appear in the open requests once approved.",
+    "statusValidated": "✓ Approved — visible in open requests",
+    "statusRejected": "Search rejected",
+    "statusRejectedReason": "Reason: {reason}",
+    "statusRejectedHint": "Contact support to find out why.",
+    "shareAction": "Share",
+    "linkCopied": "Link copied — paste it to share."
   },
   "Research": {
     "zodBranchRequired": "Choose a category",
@@ -811,7 +821,9 @@
     "searchTitlePlaceholder": "e.g. Furnished and secure studio in Algiers Centre",
     "alertAccountPending": "Your account is awaiting administrator approval. You cannot submit a search until it is approved.",
     "standbyBadge": "Coming soon",
-    "detailCriteriaTitle": "Search criteria"
+    "detailCriteriaTitle": "Search criteria",
+    "burScopeGroupeeCommercial": "Commercial Apartment, Villa, Villa Level",
+    "alertSuccessPending": "Your search has been sent. It will appear in the open requests as soon as our team approves it."
   },
   "ProfileHome": {
     "pendingBanner": "Account pending validation.",
@@ -1620,7 +1632,13 @@
     "adLandServiced": "Serviced plot",
     "adLandNotServiced": "Not serviced",
     "adSpaceExploited": "Operated space",
-    "adLivingSpace": "Living space"
+    "adLivingSpace": "Living space",
+    "favAdd": "Add to favourites",
+    "favRemove": "Remove from favourites",
+    "favError": "Unable to update your favourites right now.",
+    "loginToFavorite": "Log in to add this listing to your favourites.",
+    "shareAction": "Share",
+    "linkCopied": "Link copied — paste it to share."
   },
   "Deposit": {
     "draftFoundTitle": "A draft is waiting for you",
@@ -2319,7 +2337,9 @@
     "mobileAppStoreGoogle": "Google Play",
     "mobileAppStatListings": "listings online",
     "mobileAppStatWilayas": "wilayas covered",
-    "mobileAppStatCategories": "property categories"
+    "mobileAppStatCategories": "property categories",
+    "exploreTypesPrev": "Previous types",
+    "exploreTypesNext": "Next types"
   },
   "ResearchOptions": {
     "RESEARCH_PROPERTY_TYPES": {
