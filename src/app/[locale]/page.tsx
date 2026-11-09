@@ -15,6 +15,7 @@ import { AdSidebar, AdStrip } from "@/components/AdSidebar"
 import { WILAYAS } from "@/data/wilayas"
 import { COMMUNES } from "@/data/communes"
 import { getCategoryColor } from "@/data/categoryColors"
+import { isLockedCategory } from "@/data/lockedCategories"
 
 // « Explorer par type de bien » — sous lg : UNE ligne défilante (retour client du 08/11/2026), avec deux
 // petites flèches et un défilement automatique d'une carte toutes les 3,5 s qui repart au début en fin
@@ -283,6 +284,7 @@ const RotatingCategoryWord = ({ categories, tc }: { categories: { id: string, ic
 // (gauche en LTR, droite en arabe).
 function CategorySelect({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
   const tc = useTranslations("Categories")
+  const tHome = useTranslations("HomePage")
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const options = PUBLIC_CATEGORIES.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i)
@@ -339,18 +341,23 @@ function CategorySelect({ value, onChange, placeholder }: { value: string; onCha
           {options.map((c) => {
             const color = getCategoryColor(c.id)
             const active = c.id === value
+            // Hébergement & Séjour : visible mais non sélectionnable (« Bientôt disponible »), comme au dépôt.
+            const locked = isLockedCategory(c.id)
             return (
               <button
                 key={c.id}
                 type="button"
                 role="option"
                 aria-selected={active}
-                onClick={() => { onChange(c.id); setOpen(false) }}
-                className="w-full flex items-center gap-[9px] rounded-xl px-[8px] py-[8px] text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                aria-disabled={locked}
+                disabled={locked}
+                onClick={() => { if (locked) return; onChange(c.id); setOpen(false) }}
+                className={cn("w-full flex items-center gap-[9px] rounded-xl px-[8px] py-[8px] text-start transition-colors", locked ? "cursor-not-allowed opacity-60" : "hover:bg-gray-50 dark:hover:bg-white/5")}
                 style={active ? { backgroundColor: `${color.hex}12` } : undefined}
               >
                 {chip(color.hex, getIcon(c.iconName))}
                 <span className="flex-1 truncate text-[13px] font-semibold text-gray-800 dark:text-white/90" style={active ? { color: color.hex } : undefined}>{tc(c.id)}</span>
+                {locked && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{tHome("comingSoonBadge")}</span>}
                 {active && <Check className="h-3.5 w-3.5" style={{ color: color.hex }} />}
               </button>
             )
@@ -573,6 +580,7 @@ export default function HomePage() {
   const [partners, setPartners] = useState<{ id: number; name: string; nameAr?: string | null; nameEn?: string | null; logoUrl: string | null; websiteUrl: string | null }[]>([]);
 
   const handleCategoryClick = (categoryId: string) => {
+    if (isLockedCategory(categoryId)) return
     router.push(`/announces?realEstateCategory=${categoryId}`)
   }
 
@@ -708,6 +716,16 @@ export default function HomePage() {
     "HOTELIER",
   ];
 
+  // ≥ 1536 px (2xl) : colonnes publicitaires flottantes sur toute la page (voir plus bas).
+  const [isWideScreen, setIsWideScreen] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1536px)")
+    const update = () => setIsWideScreen(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    return () => mq.removeEventListener("change", update)
+  }, [])
+
   // Comptes réels par domaine (toutes les annonces en ligne, pas seulement celles en vedette)
   // pour la rangée "Explorer par type de bien".
   const countsByCategory = announces.filter(matchesSearchFilters).reduce((acc: Record<string, number>, announce: any) => {
@@ -776,7 +794,8 @@ export default function HomePage() {
           {activeSlideCategory && (
             <button
               onClick={() => handleCategoryClick(activeSlideCategory.id)}
-              className="absolute top-4 right-4 sm:top-6 sm:right-6 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1.5 pr-3.5 py-1.5 text-xs rtl:text-sm font-bold text-[#003B4A] hover:bg-white transition-colors z-20"
+              disabled={isLockedCategory(activeSlideCategory.id)}
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1.5 pr-3.5 py-1.5 text-xs rtl:text-sm font-bold text-[#003B4A] hover:bg-white transition-colors z-20 disabled:cursor-default disabled:hover:bg-white/90"
             >
               {(() => {
                 const Icon = getIcon(activeSlideCategory.iconName)
@@ -853,10 +872,23 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Colonnes publicitaires latérales (comme /announces) : colonne de fin dès xl, de début dès 2xl ;
-          en dessous, les publicités passent en bandeaux entre les catégories. */}
+      {/* Colonnes publicitaires latérales. Dès 2xl (retour client du 08/11/2026) : elles flottent au PREMIER PLAN
+          et restent collées sous l'en-tête jusqu'à la fin de la page (rail absolu couvrant toute la suite de
+          l'accueil, au-dessus des sections pleine largeur) ; des cales de même largeur réservent leur place à
+          côté des annonces. Entre xl et 2xl (marges trop étroites pour ne rien masquer) : colonne de fin dans
+          la zone des annonces, comme avant. En dessous : bandeaux entre les catégories. Un seul jeu de
+          colonnes est monté à la fois (isWideScreen) pour ne pas compter deux fois les vues. */}
+      <div className="relative">
+      {isWideScreen && (
+        <div className="pointer-events-none absolute inset-0 z-30 hidden 2xl:block">
+          <div className="mx-auto flex h-full w-full max-w-[1900px] justify-between px-6">
+            <div className="h-full pt-8"><AdSidebar page="HOME" category={searchFilters.category || undefined} side="start" className="pointer-events-auto" /></div>
+            <div className="h-full pt-8"><AdSidebar page="HOME" category={searchFilters.category || undefined} side="end" className="pointer-events-auto" /></div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto flex w-full max-w-[1900px] items-start gap-6 xl:pe-4 2xl:px-6">
-        <AdSidebar page="HOME" category={searchFilters.category || undefined} side="start" className="hidden 2xl:block mt-8" />
+        <div aria-hidden="true" className="hidden 2xl:block shrink-0 w-[clamp(11.5rem,12.5vw,18rem)]" />
         <div className="min-w-0 flex-1">
           {/* EXPLORER PAR TYPE DE BIEN — comptes réels, rangées compactes pour libérer de la hauteur */}
           <div className="bg-gray-50 dark:bg-transparent pt-6 lg:pt-8 pb-8">
@@ -867,6 +899,24 @@ export default function HomePage() {
                   if (!catDef) return null
                   const Icon = getIcon(catDef.iconName)
                   const catColor = getCategoryColor(catId)
+                  // Hébergement & Séjour : carte visible mais non cliquable, « Bientôt disponible ».
+                  if (isLockedCategory(catId)) {
+                    return (
+                      <div
+                        key={catId}
+                        aria-disabled="true"
+                        className="flex items-center gap-3 bg-white dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/10 rounded-xl px-3.5 py-3 cursor-not-allowed shrink-0 snap-start w-[46%] sm:w-[31%] lg:w-auto"
+                      >
+                        <span className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center opacity-60" style={{ backgroundColor: `${catColor.hex}1A` }}>
+                          <Icon className="h-4.5 w-4.5" style={{ color: catColor.hex }} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-[13px] sm:text-sm font-bold leading-tight text-gray-500 dark:text-white/50 line-clamp-2 lg:line-clamp-none lg:truncate">{tc(catId)}</span>
+                          <span className="mt-0.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{t("comingSoonBadge")}</span>
+                        </span>
+                      </div>
+                    )
+                  }
                   return (
                     <Link
                       key={catId}
@@ -914,7 +964,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 orderedCategoryIds
-                  .filter((catId) => groupedAnnounces[catId]?.items?.length > 0)
+                  .filter((catId) => !isLockedCategory(catId) && groupedAnnounces[catId]?.items?.length > 0)
                   .map((catId, i) => {
                     const catData = groupedAnnounces[catId];
                     return (
@@ -937,7 +987,8 @@ export default function HomePage() {
             </>
           )}
         </div>
-        <AdSidebar page="HOME" category={searchFilters.category || undefined} side="end" className="hidden xl:block mt-8" />
+        {!isWideScreen && <AdSidebar page="HOME" category={searchFilters.category || undefined} side="end" className="hidden xl:block mt-8" />}
+        <div aria-hidden="true" className="hidden 2xl:block shrink-0 w-[clamp(11.5rem,12.5vw,18rem)]" />
       </div>
 
       {/* WHY CHOOSE US — présenté comme un acte certifié, pas une grille de cartes générique */}
@@ -1348,6 +1399,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </div>
 
     </div>
   )

@@ -247,7 +247,8 @@
     "search": "Search",
     "moreFilters": "More filters",
     "resetFilters": "Reset",
-    "unitLabel": "Unit"
+    "unitLabel": "Unit",
+    "comingSoonBadge": "Coming soon"
   },
   "AnnouncesPage": {
     "heroTitle": "Find your future home",
@@ -2339,7 +2340,8 @@
     "mobileAppStatWilayas": "wilayas covered",
     "mobileAppStatCategories": "property categories",
     "exploreTypesPrev": "Previous types",
-    "exploreTypesNext": "Next types"
+    "exploreTypesNext": "Next types",
+    "comingSoonBadge": "Coming soon"
   },
   "ResearchOptions": {
     "RESEARCH_PROPERTY_TYPES": {
@@ -4426,5 +4428,9 @@
     "SPLIT": "Split",
     "NONE": "None",
     "SANS": "None"
+  },
+  "Common": {
+    "searchPlaceholder": "Search…",
+    "noResults": "No results"
   }
 }

@@ -31,7 +31,7 @@ export const AD_FORMATS: Record<AdFormatId, {
     height: 1200,
     ratio: "1:2",
     safeZone: null,
-    displayed: "de 168 × 336 à 272 × 544 px selon la largeur de l'écran (grands écrans uniquement)",
+    displayed: "de 184 × 368 à 288 × 576 px selon la largeur de l'écran (grands écrans uniquement)",
   },
   HORIZONTAL: {
     label: "Horizontal — bandeau principal et bandeaux compacts",

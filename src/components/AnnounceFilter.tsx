@@ -14,6 +14,7 @@ import { COMMUNES } from "@/data/communes"
 import { REAL_ESTATE_CATEGORIES, PUBLIC_CATEGORIES, PROPERTY_TYPES } from "@/data/propertyTypes"
 import { DEPOSIT_PROPERTY_TYPES } from "@/data/depositPropertyTypes"
 import { getCategoryColor } from "@/data/categoryColors"
+import { isLockedCategory } from "@/data/lockedCategories"
 import { usePropertyTypeLabel, useCategoryLabel, useLocalizedGeoName } from "@/lib/typeLabels"
 
 // Icon mapping helper
@@ -324,20 +325,26 @@ export function AnnounceFilter({ filters, onFilterChange, accentColor, transacti
                   const Icon = getIcon(cat.iconName)
                   const color = getCategoryColor(cat.id).hex
                   const active = filters.realEstateCategory === cat.id
+                  // Hébergement & Séjour : visible mais non sélectionnable (« Bientôt disponible »).
+                  const locked = isLockedCategory(cat.id)
                   return (
                     <button
                       key={cat.id}
                       type="button"
+                      disabled={locked}
+                      aria-disabled={locked}
                       onClick={() => {
+                        if (locked) return
                         onFilterChange("realEstateCategory", cat.id)
                         onFilterChange("propertyType", "") // Reset sub-filter
                         setOpenDropdown(null)
                       }}
-                      className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                      className={`w-full flex items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors ${locked ? "cursor-not-allowed opacity-60" : "hover:bg-gray-50 dark:hover:bg-white/5"}`}
                       style={active ? { backgroundColor: `${color}12` } : undefined}
                     >
                       {chip(color, Icon)}
                       <span className="flex-1 truncate text-[13px] font-semibold text-gray-800 dark:text-white/90" style={active ? { color } : undefined}>{catLabel(cat.id, cat.label)}</span>
+                      {locked && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{t("comingSoonBadge")}</span>}
                       {active && <Check className="h-3.5 w-3.5" style={{ color }} />}
                     </button>
                   )

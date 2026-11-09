@@ -1,5 +1,6 @@
 "use client"
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useEffect, useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
@@ -332,7 +333,7 @@ export default function MyAnnouncesPage() {
                 <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="text-xs border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 focus:border-[#00BFA6] outline-none" />
               </div>
 
-              <select
+              <SelectMenu
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="text-xs font-bold border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 bg-white dark:bg-white/5 text-gray-700 dark:text-white/70 focus:border-[#00BFA6] outline-none"
@@ -342,7 +343,7 @@ export default function MyAnnouncesPage() {
                 <option value="OLDEST">{t("sortOldest")}</option>
                 <option value="POINTS_DESC">{t("sortMostPoints")}</option>
                 <option value="POINTS_ASC">{t("sortLeastPoints")}</option>
-              </select>
+              </SelectMenu>
 
               {hasActiveFilters && (
                 <button onClick={resetFilters} className="flex items-center gap-1.5 text-xs font-bold text-gray-400 dark:text-white/40 hover:text-gray-600 shrink-0">

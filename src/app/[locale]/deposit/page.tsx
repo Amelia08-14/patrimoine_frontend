@@ -1,5 +1,6 @@
 "use client"
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useState, useEffect, useRef } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -5050,7 +5051,7 @@ function DepositPageComponent() {
                                         </div>
                                         <div>
                                             <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f007')}</FitText></label>
-                                            <select
+                                            <SelectMenu
                                                 {...register("industrialGlobalState")}
                                                 className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all bg-white font-medium text-gray-900"
                                             >
@@ -5058,7 +5059,7 @@ function DepositPageComponent() {
                                                 {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((s) => (
                                                     <option key={s.id} value={s.id}>{s.label}</option>
                                                 ))}
-                                            </select>
+                                            </SelectMenu>
                                         </div>
                                     </div>
 
@@ -5423,12 +5424,12 @@ function DepositPageComponent() {
                                     </div>
                                     <div>
                                         <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f007')}</FitText></label>
-                                        <select {...register("cfEtatGlobal")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
+                                        <SelectMenu {...register("cfEtatGlobal")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
                                             <option value="">{t('f042')}</option>
                                             {tGroup('INDUSTRIAL_GLOBAL_STATES', INDUSTRIAL_GLOBAL_STATES).map((s) => (
                                                 <option key={s.id} value={s.id}>{s.label}</option>
                                             ))}
-                                        </select>
+                                        </SelectMenu>
                                     </div>
                                 </div>
                             </section>
@@ -5712,10 +5713,10 @@ function DepositPageComponent() {
                                                     placeholder={t('f365')}
                                                 />
                                                 <div className="absolute end-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-1">
-                                                    <select {...register("terrainAgricoleUnite")} className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none pr-1">
+                                                    <SelectMenu {...register("terrainAgricoleUnite")} className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none pr-1">
                                                         <option value="">{t('f085')}</option>
                                                         {tGroup('TERRAIN_AGRICOLE_UNITE', TERRAIN_AGRICOLE_UNITE).map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
-                                                    </select>
+                                                    </SelectMenu>
                                                 </div>
                                             </div>
                                         ) : (
@@ -6463,10 +6464,10 @@ function DepositPageComponent() {
                                 <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                     <div>
                                         <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f156')}</FitText></label>
-                                        <select {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
+                                        <SelectMenu {...register("state")} className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-[#00BFA6] font-medium text-gray-900">
                                             <option value="">{t('f042')}</option>
                                             {PROPERTY_STATES.filter(s => s.id !== "A_DEMOLIR" && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
-                                        </select>
+                                        </SelectMenu>
                                     </div>
                                     <div>
                                         <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f157')}</FitText></label>
@@ -6785,10 +6786,10 @@ function DepositPageComponent() {
                                                 )}>
                                                     <div className="min-w-0">
                                                         <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f177')} <span className="text-red-500">*</span></FitText></label>
-                                                        <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
+                                                        <SelectMenu {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">{t('f042')}</option>
                                                             {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
-                                                        </select>
+                                                        </SelectMenu>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
 
@@ -7030,10 +7031,10 @@ function DepositPageComponent() {
                                                 <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-5 items-end">
                                                     <div className="min-w-0">
                                                         <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f177')} <span className="text-red-500">*</span></FitText></label>
-                                                        <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
+                                                        <SelectMenu {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                             <option value="">{t('f042')}</option>
                                                             {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
-                                                        </select>
+                                                        </SelectMenu>
                                                         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                     </div>
                                                     <div className="min-w-0">
@@ -7101,14 +7102,14 @@ function DepositPageComponent() {
                                                             <span className="font-bold text-gray-700 text-lg whitespace-nowrap">{t('f174')}</span>
                                                         )}
                                                         {(propertyType === "NIVEAU_VILLA" || propertyType === "NIVEAU_VILLA_COMMERCIAL") ? (
-                                                            <select
+                                                            <SelectMenu
                                                                 {...register("floorCount")}
                                                                 className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base"
                                                             >
                                                                 <option value="">{t('f042')}</option>
                                                                 <option value="0">{t('f175')}</option>
                                                                 <option value="1">{t('f176')}</option>
-                                                            </select>
+                                                            </SelectMenu>
                                                         ) : (
                                                             <input 
                                                                 {...register("floorCount")} 
@@ -7203,10 +7204,10 @@ function DepositPageComponent() {
                                             )}>
                                                 <div className="min-w-0">
                                                     <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2"><FitText>{t('f177')}</FitText></label>
-                                                    <select {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
+                                                    <SelectMenu {...register("state")} className="w-full p-2 border-2 border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#00BFA6] focus:border-[#00BFA6] font-medium text-gray-900 text-base">
                                                         <option value="">{t('f042')}</option>
                                                         {PROPERTY_STATES.filter(s => (allowDemolirOption || s.id !== "A_DEMOLIR") && stateAllowed(s.id)).map(s => <option key={s.id} value={s.id}>{optLabel('PROPERTY_STATES', s)}</option>)}
-                                                    </select>
+                                                    </SelectMenu>
                                                     {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                                                 </div>
                                                 {(propertyType === "VILLA" || propertyType === "VILLA_COMMERCIALE") && !isSaleVillaDemolition && (
@@ -7433,12 +7434,12 @@ function DepositPageComponent() {
                                     {/* Type de Cuisine */}
                                     <div>
                                         <label className="block text-xs md:text-sm font-bold text-gray-900 mb-1.5 md:mb-3"><FitText>{t('f187')}</FitText></label>
-                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-4 max-md:[&>label>div]:h-full max-md:[&>label>div]:justify-center max-md:[&>label>div]:text-center max-md:[&>label>div]:px-2 max-md:[&>label>div]:py-2.5 max-md:[&>label>div]:text-xs max-md:[&>label]:min-w-0 max-md:[&>label]:px-2 max-md:[&>label]:text-xs">
+                                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-4">
                                             {KITCHEN_TYPES.map(k => (
-                                                <label key={k.id} className="flex items-center gap-2 cursor-pointer bg-white p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center relative group md:min-w-[140px]">
-                                                    <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-4 h-4" /> 
-                                                    <span className="text-sm font-bold text-gray-900">{optLabel('KITCHEN_TYPES', k)}</span>
-                                                    <div className="relative group/info ms-1">
+                                                <label key={k.id} className="flex items-center gap-1.5 md:gap-2 cursor-pointer bg-white px-2 py-2.5 md:p-3 border-2 border-gray-200 rounded-xl hover:border-[#00BFA6] transition-colors flex-1 justify-center relative group min-w-0 md:min-w-[140px]">
+                                                    <input type="radio" value={k.id} {...register("kitchenType")} className="accent-[#00BFA6] w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> 
+                                                    <FitText className="text-xs md:text-sm font-bold text-gray-900">{optLabel('KITCHEN_TYPES', k)}</FitText>
+                                                    <div className="relative group/info ms-1 hidden md:block shrink-0">
                                                         <Info className="h-4 w-4 text-gray-400 hover:text-[#00BFA6]" />
                                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 font-normal text-start">
                                                             {optDesc('KITCHEN_TYPES', k)}
@@ -9507,7 +9508,7 @@ function DepositPageComponent() {
                                                                 placeholder="0"
                                                             />
                                                             <div className="absolute end-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
-                                                                <select 
+                                                                <SelectMenu 
                                                                     value={currentPriceUnit}
                                                                     onChange={(e) => handlePriceUnitChange(e.target.value as any)}
                                                                     className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none"
@@ -9517,7 +9518,7 @@ function DepositPageComponent() {
                                                                     <option value="MILLION">{t('f310')}</option>
                                                                     <option value="MILLION_M2">{t('f311')}</option>
                                                                     <option value="MILLIARD">{t('f312')}</option>
-                                                                </select>
+                                                                </SelectMenu>
                                                             </div>
                                                         </div>
 
@@ -9569,7 +9570,7 @@ function DepositPageComponent() {
                                                         placeholder="0"
                                                     />
                                                     <div className="absolute end-2 top-2 bottom-2 flex items-center bg-gray-100 rounded-lg px-2">
-                                                        <select 
+                                                        <SelectMenu 
                                                             value={currentPriceUnit}
                                                             onChange={(e) => handlePriceUnitChange(e.target.value as any)}
                                                             className="bg-transparent border-none focus:ring-0 text-gray-700 font-bold text-sm cursor-pointer outline-none"
@@ -9579,7 +9580,7 @@ function DepositPageComponent() {
                                                             <option value="MILLION">{t('f310')}</option>
                                                             <option value="MILLION_M2">{t('f311')}</option>
                                                             <option value="MILLIARD">{t('f312')}</option>
-                                                        </select>
+                                                        </SelectMenu>
                                                     </div>
                                                 </div>
                                                 
@@ -9870,33 +9871,33 @@ function DepositPageComponent() {
                                                     )}
                                                 </div>
                                                 
-                                                <div className="flex gap-4 flex-wrap pt-8">
-                                                    <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#25D366] transition-colors">
+                                                <div className="grid grid-cols-3 gap-2 md:flex md:gap-4 md:flex-wrap md:pt-8 w-full md:w-auto">
+                                                    <label className="flex items-center justify-center md:justify-start gap-1.5 md:gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#25D366] transition-colors min-w-0">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={contact.hasWhatsapp}
                                                             onChange={(e) => updateContact(index, 'hasWhatsapp', e.target.checked)}
-                                                            className="accent-[#25D366] w-4 h-4" 
+                                                            className="accent-[#25D366] w-4 h-4 shrink-0" 
                                                         />
-                                                        <span className="font-medium text-gray-700 text-sm">{t('f333')}</span>
+                                                        <FitText className="font-medium text-gray-700 text-xs md:text-sm">{t('f333')}</FitText>
                                                     </label>
-                                                    <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#7360f2] transition-colors">
+                                                    <label className="flex items-center justify-center md:justify-start gap-1.5 md:gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#7360f2] transition-colors min-w-0">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={contact.hasViber}
                                                             onChange={(e) => updateContact(index, 'hasViber', e.target.checked)}
-                                                            className="accent-[#7360f2] w-4 h-4" 
+                                                            className="accent-[#7360f2] w-4 h-4 shrink-0" 
                                                         />
-                                                        <span className="font-medium text-gray-700 text-sm">{t('f334')}</span>
+                                                        <FitText className="font-medium text-gray-700 text-xs md:text-sm">{t('f334')}</FitText>
                                                     </label>
-                                                    <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#0088cc] transition-colors">
+                                                    <label className="flex items-center justify-center md:justify-start gap-1.5 md:gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-[#0088cc] transition-colors min-w-0">
                                                         <input 
                                                             type="checkbox" 
                                                             checked={contact.hasTelegram}
                                                             onChange={(e) => updateContact(index, 'hasTelegram', e.target.checked)}
-                                                            className="accent-[#0088cc] w-4 h-4" 
+                                                            className="accent-[#0088cc] w-4 h-4 shrink-0" 
                                                         />
-                                                        <span className="font-medium text-gray-700 text-sm">{t('f335')}</span>
+                                                        <FitText className="font-medium text-gray-700 text-xs md:text-sm">{t('f335')}</FitText>
                                                     </label>
                                                 </div>
                                             </div>
@@ -9921,23 +9922,23 @@ function DepositPageComponent() {
                                         <div className="flex flex-col md:flex-row gap-4">
                                             <div className="flex-1">
                                                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f336')}</FitText></label>
-                                                <select {...register("city")} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white">
+                                                <SelectMenu {...register("city")} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white">
                                                     <option value="">{t('f337')}</option>
                                                     {WILAYAS.map((wilaya) => (
                                                         <option key={wilaya.id} value={wilaya.name}>{wilaya.code} - {geoName(wilaya)}</option>
                                                     ))}
-                                                </select>
+                                                </SelectMenu>
                                                 {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>}
                                             </div>
 
                                             <div className="flex-1">
                                                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2"><FitText>{t('f338')}</FitText></label>
-                                                <select {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100 disabled:text-gray-400">
+                                                <SelectMenu {...register("commune")} disabled={!selectedCity} className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00BFA6] outline-none transition-all text-gray-900 bg-white disabled:bg-gray-100 disabled:text-gray-400">
                                                     <option value="">{t('f337')}</option>
                                                     {filteredCommunes.map((commune) => (
                                                         <option key={commune.id} value={commune.name}>{geoName(commune)}</option>
                                                     ))}
-                                                </select>
+                                                </SelectMenu>
                                                 {errors.commune && <p className="text-red-500 text-sm mt-1">{errors.commune.message}</p>}
                                             </div>
 

@@ -1,5 +1,6 @@
 "use client"
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useEffect, useState, type ComponentType } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -576,7 +577,7 @@ export default function RegisterPage() {
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="space-y-1">
                      <div className="relative">
-                       <select
+                       <SelectMenu
                          {...register("cityCode", { valueAsNumber: true })}
                          className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white"
                          disabled={isLoadingCities}
@@ -587,7 +588,7 @@ export default function RegisterPage() {
                              {c.nameFr || c.name || `Wilaya ${c.id}`}
                            </option>
                          ))}
-                       </select>
+                       </SelectMenu>
                        {isLoadingCities && (
                          <div className="absolute inset-y-0 right-3 flex items-center">
                            <Loader2 className="h-4 w-4 animate-spin text-gray-400 dark:text-white/40" />
@@ -599,7 +600,7 @@ export default function RegisterPage() {
 
                    <div className="space-y-1">
                      <div className="relative">
-                       <select
+                       <SelectMenu
                          {...register("townCode", { valueAsNumber: true })}
                          className="w-full px-4 py-3.5 bg-gray-50 dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#00BFA6]/20 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white"
                          disabled={!selectedCityCode || isLoadingTowns}
@@ -610,7 +611,7 @@ export default function RegisterPage() {
                              {t.nameFr || t.name || `Commune ${t.id}`}
                            </option>
                          ))}
-                       </select>
+                       </SelectMenu>
                        {isLoadingTowns && (
                          <div className="absolute inset-y-0 right-3 flex items-center">
                            <Loader2 className="h-4 w-4 animate-spin text-gray-400 dark:text-white/40" />

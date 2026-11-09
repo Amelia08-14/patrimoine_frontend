@@ -247,7 +247,8 @@
     "search": "بحث",
     "moreFilters": "معايير إضافية",
     "resetFilters": "إعادة التعيين",
-    "unitLabel": "الوحدة"
+    "unitLabel": "الوحدة",
+    "comingSoonBadge": "قريبًا"
   },
   "AnnouncesPage": {
     "heroTitle": "اعثر على منزلك المستقبلي",
@@ -2339,7 +2340,8 @@
     "mobileAppStatWilayas": "ولاية مغطاة",
     "mobileAppStatCategories": "فئات عقارية",
     "exploreTypesPrev": "الأنواع السابقة",
-    "exploreTypesNext": "الأنواع التالية"
+    "exploreTypesNext": "الأنواع التالية",
+    "comingSoonBadge": "قريبًا"
   },
   "ResearchOptions": {
     "RESEARCH_PROPERTY_TYPES": {
@@ -4426,5 +4428,9 @@
     "SPLIT": "سبليت",
     "NONE": "بدون",
     "SANS": "بدون"
+  },
+  "Common": {
+    "searchPlaceholder": "بحث…",
+    "noResults": "لا توجد نتائج"
   }
 }

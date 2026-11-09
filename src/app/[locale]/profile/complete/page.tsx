@@ -1,5 +1,6 @@
 "use client"
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -284,7 +285,7 @@ export default function CompleteProfilePage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                  <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("wilayaLabel")}</label>
-                                 <select
+                                 <SelectMenu
                                    {...wilayaRegister}
                                    onChange={(e) => {
                                      wilayaRegister.onChange(e)
@@ -296,19 +297,19 @@ export default function CompleteProfilePage() {
                                      {cities.map((c) => (
                                          <option key={c.id} value={c.id}>{c.nameFr}</option>
                                      ))}
-                                 </select>
+                                 </SelectMenu>
                                  {errors.wilaya && <p className="text-red-500 text-xs pl-1">{errors.wilaya.message}</p>}
                              </div>
                              <div className="space-y-1">
                                  <label className="text-xs font-bold text-gray-700 dark:text-white/70 uppercase ml-1">{t("communeLabel")}</label>
-                                 <select {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px] disabled:opacity-60">
+                                 <SelectMenu {...communeRegister} disabled={!watch("wilaya")} className="w-full px-4 py-2 border-2 border-gray-200 dark:border-white/10 rounded-xl focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium appearance-none text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-transparent h-[42px] disabled:opacity-60">
                                      <option value="">{t("selectOption")}</option>
                                      {towns.map((town) => (
                                        <option key={town.id} value={town.id}>
                                          {town.nameFr}
                                        </option>
                                      ))}
-                                 </select>
+                                 </SelectMenu>
                                  {errors.commune && <p className="text-red-500 text-xs pl-1">{errors.commune.message}</p>}
                              </div>
                         </div>

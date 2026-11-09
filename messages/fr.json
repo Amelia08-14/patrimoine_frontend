@@ -247,7 +247,8 @@
     "search": "Rechercher",
     "moreFilters": "Plus de critères",
     "resetFilters": "Réinitialiser",
-    "unitLabel": "Unité"
+    "unitLabel": "Unité",
+    "comingSoonBadge": "Bientôt disponible"
   },
   "AnnouncesPage": {
     "heroTitle": "Trouvez votre futur chez-vous",
@@ -2339,7 +2340,8 @@
     "mobileAppStatWilayas": "wilayas couvertes",
     "mobileAppStatCategories": "catégories de biens",
     "exploreTypesPrev": "Types précédents",
-    "exploreTypesNext": "Types suivants"
+    "exploreTypesNext": "Types suivants",
+    "comingSoonBadge": "Bientôt disponible"
   },
   "ResearchOptions": {
     "RESEARCH_PROPERTY_TYPES": {
@@ -4426,5 +4428,9 @@
     "SPLIT": "Split",
     "NONE": "Sans",
     "SANS": "Sans"
+  },
+  "Common": {
+    "searchPlaceholder": "Rechercher…",
+    "noResults": "Aucun résultat"
   }
 }

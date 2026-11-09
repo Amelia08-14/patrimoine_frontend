@@ -1,5 +1,6 @@
 'use client';
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -1549,7 +1550,7 @@ export default function ResearchPage() {
         }}
         className="w-32 h-11 px-3 text-center font-bold text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#0094BD]"
       />
-      <select
+      <SelectMenu
         {...register('budgetUnit')}
         className="h-11 px-3 rounded-xl border-2 border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#0094BD] cursor-pointer"
       >
@@ -1558,7 +1559,7 @@ export default function ResearchPage() {
         <option value="MILLION">{t('curMillions')}</option>
         <option value="MILLION_M2">{t('curMillionsM2')}</option>
         <option value="MILLIARD">{t('curMilliards')}</option>
-      </select>
+      </SelectMenu>
     </div>
   );
 
@@ -1676,7 +1677,7 @@ export default function ResearchPage() {
           className="w-full min-w-0 p-2 outline-none bg-transparent font-medium text-gray-900 text-base text-center"
         />
         {opts?.withUnit && (
-          <select
+          <SelectMenu
             {...register('budgetUnit')}
             className="h-full shrink-0 ps-1.5 pe-1 border-s-2 border-gray-300 bg-gray-100 font-bold text-[11px] text-gray-700 outline-none cursor-pointer"
           >
@@ -1685,7 +1686,7 @@ export default function ResearchPage() {
             <option value="MILLION">{t('curMillions')}</option>
             <option value="MILLION_M2">{t('curMillionsM2')}</option>
             <option value="MILLIARD">{t('curMilliards')}</option>
-          </select>
+          </SelectMenu>
         )}
       </div>
     </div>
@@ -1731,14 +1732,14 @@ export default function ResearchPage() {
           {/* Wilaya en choix unique (demande client du 15/10/2026) — stockée comme tableau à un
               seul élément pour ne rien changer au reste (effet de chargement des communes, payload
               de soumission), qui lisent déjà `cityIds` comme un tableau. */}
-          <select
+          <SelectMenu
             value={(watch('cityIds') || [])[0] ?? ''}
             onChange={(e) => setValue('cityIds', e.target.value ? [e.target.value as any] : [])}
             className={inputCls}
           >
             <option value="">{t('optSelect')}</option>
             {cities.map((c) => <option key={c.id} value={c.id}>{c.code ? `${c.code} - ${place.city(c)}` : place.city(c)}</option>)}
-          </select>
+          </SelectMenu>
         </Field>
         <Field label={t('budgetTowns')}>
           <MultiSelectDropdown
@@ -2896,13 +2897,13 @@ export default function ResearchPage() {
           placeholder={t('exVal', { v: '2000' })}
           className="flex-1 min-w-[3.5rem] p-2 border-2 border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-[#0094BD] focus:border-[#0094BD] outline-none transition-all font-medium text-gray-900 text-base text-center"
         />
-        <select
+        <SelectMenu
           {...register('surfaceUnit')}
           className="h-[42px] shrink-0 px-2 border-2 border-gray-300 rounded-xl bg-gray-100 font-bold text-xs text-gray-700 outline-none cursor-pointer"
         >
           <option value="M2">m²</option>
           <option value="HA">{t('optHectares')}</option>
-        </select>
+        </SelectMenu>
       </div>
     </div>
   );
@@ -3140,10 +3141,10 @@ export default function ResearchPage() {
     <Section title={t('budgetTitle')} icon={Ruler}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Field label={t('budgetCity')}>
-          <select {...register('cityId', { valueAsNumber: true })} className={inputCls}>
+          <SelectMenu {...register('cityId', { valueAsNumber: true })} className={inputCls}>
             <option value="">{t('optSelect')}</option>
             {cities.map((c) => <option key={c.id} value={c.id}>{c.code ? `${c.code} - ${place.city(c)}` : place.city(c)}</option>)}
-          </select>
+          </SelectMenu>
         </Field>
 
         <Field label={t('budgetDesiredDate')}>

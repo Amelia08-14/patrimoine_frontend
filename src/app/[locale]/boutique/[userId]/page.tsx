@@ -1,5 +1,6 @@
 "use client"
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useState, useEffect, useMemo, use, useRef } from "react"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
@@ -570,25 +571,120 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
         />
       )}
 
-      {/* ── MENU NAVIGATION ── */}
-      {config.menuItems && config.menuItems.length > 0 && (
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-6xl mx-auto px-4">
-            <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0">
-              {config.menuItems.map((item, i) => (
-                <a
-                  key={i}
-                  href={item.href || '#'}
-                  className="px-5 py-3.5 text-sm font-bold text-gray-600 hover:text-gray-900 whitespace-nowrap border-b-2 border-transparent hover:border-gray-300 transition-all"
-                  style={{}}
+      {/* ── EN-TÊTE DE LA BOUTIQUE ── (retour client du 09/11/2026) : l'ancienne grande bande colorée
+          (logos, nom, slogan, contacts, boutons) est fusionnée avec la barre de menu en UNE barre compacte,
+          avant la bannière : identité à gauche, menu au centre, contacts / réseaux / actions à droite. Sur
+          mobile les trois groupes passent les uns sous les autres, le menu défile horizontalement. */}
+      {(() => {
+        const shape1 = config.logoShape || 'round'
+        const shape2 = config.secondLogoShape || 'round'
+        const sc = (sh: string) => sh === 'round' ? 'rounded-full' : sh === 'rectangle' ? 'rounded-xl' : 'rounded-none'
+        const ring = (sh: string) => sh !== 'none' ? 'border-2 border-white/80 shadow-md' : ''
+        const secondAtEnd = config.logoAlignment === 'sides' && !!config.logoUrl && !!config.secondLogoUrl
+        const iconBtn = "h-9 w-9 shrink-0 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 flex items-center justify-center text-white transition-colors"
+        return (
+          <header className="relative" style={{ background: `linear-gradient(135deg, ${color} 0%, ${lighten(color, 0.1)} 55%, ${lighten(color, 0.22)} 100%)` }}>
+            <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap lg:flex-nowrap items-center gap-x-6 gap-y-3">
+              {/* Identité */}
+              <div className="flex min-w-0 items-center gap-3">
+                {config.logoUrl && <img src={getImageUrl(config.logoUrl)} alt="Logo" className={`h-12 w-12 shrink-0 object-contain bg-white ${sc(shape1)} ${ring(shape1)}`} />}
+                {config.secondLogoUrl && !secondAtEnd && <img src={getImageUrl(config.secondLogoUrl)} alt="Logo 2" className={`h-10 w-10 shrink-0 object-contain bg-white ${sc(shape2)} ${ring(shape2)}`} />}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h1 className="truncate text-lg md:text-xl font-black leading-tight" style={{ color: headerTextColor }}>
+                      {config.companyName || "Boutique Immobilière"}
+                    </h1>
+                    {config.subscriptionPlan && config.subscriptionPlan !== 'STARTER' && (
+                      <span className="hidden sm:inline-flex shrink-0 items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 border border-white/40 text-white">
+                        {config.subscriptionPlan === 'PREMIUM' ? <Crown className="h-3 w-3 text-yellow-300" /> : <Star className="h-3 w-3 text-blue-300" />}
+                        {config.subscriptionPlan === 'PREMIUM' ? 'Premium' : 'Pro'}
+                      </span>
+                    )}
+                  </div>
+                  {config.slogan && <p className="truncate text-xs md:text-sm font-medium" style={{ color: headerTextColor, opacity: 0.85 }}>{config.slogan}</p>}
+                </div>
+              </div>
+
+              {/* Menu de la boutique */}
+              {config.menuItems && config.menuItems.length > 0 && (
+                <nav className="order-last lg:order-none w-full lg:w-auto lg:flex-1 min-w-0 flex items-center gap-1 overflow-x-auto hide-scrollbar lg:justify-center border-t border-white/20 pt-2 lg:border-0 lg:pt-0">
+                  {config.menuItems.map((item, i) => (
+                    <a
+                      key={i}
+                      href={item.href || '#'}
+                      className="px-3 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors hover:bg-white/15"
+                      style={{ color: headerTextColor }}
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </nav>
+              )}
+
+              {/* Contacts, réseaux et actions */}
+              <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap lg:ms-auto">
+                {config.phone && (
+                  <a href={`tel:${config.phone}`} onClick={() => trackBoutiqueContact('CALL')} className="flex items-center gap-1.5 bg-white text-gray-900 px-3 py-2 rounded-full font-bold text-xs md:text-sm shadow-sm hover:shadow transition-all whitespace-nowrap">
+                    <Phone className="h-3.5 w-3.5" style={{ color }} /> {config.phone}
+                  </a>
+                )}
+                {config.whatsapp && (
+                  <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} onClick={() => trackBoutiqueContact('WHATSAPP')} target="_blank" title="WhatsApp" aria-label="WhatsApp" className="h-9 w-9 shrink-0 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white transition-colors">
+                    <MessageCircle className="h-4 w-4" />
+                  </a>
+                )}
+                {config.email && (
+                  <a href={`mailto:${config.email}`} onClick={() => trackBoutiqueContact('EMAIL')} title="Email" aria-label="Email" className={iconBtn}>
+                    <Mail className="h-4 w-4" />
+                  </a>
+                )}
+                {config.website && (
+                  <a href={config.website} target="_blank" title="Web" aria-label="Web" className={iconBtn}>
+                    <Globe className="h-4 w-4" />
+                  </a>
+                )}
+                {config.facebook && (
+                  <a href={config.facebook} target="_blank" aria-label="Facebook" className={iconBtn}><Facebook className="h-4 w-4" /></a>
+                )}
+                {config.instagram && (
+                  <a href={config.instagram.startsWith('http') ? config.instagram : `https://instagram.com/${config.instagram.replace('@', '')}`} target="_blank" aria-label="Instagram" className={iconBtn}><Instagram className="h-4 w-4" /></a>
+                )}
+                {config.linkedin && (
+                  <a href={config.linkedin} target="_blank" aria-label="LinkedIn" className={iconBtn}><Linkedin className="h-4 w-4" /></a>
+                )}
+                {(hasContact || hasSocial) && <span className="h-6 w-px bg-white/30 mx-0.5" />}
+                <button
+                  type="button"
+                  onClick={() => setMsgOpen(true)}
+                  title={tm('sendMessage')}
+                  className="flex items-center gap-1.5 bg-white/15 border border-white/40 px-3 py-2 rounded-full font-bold text-xs md:text-sm hover:bg-white/25 transition-colors whitespace-nowrap"
+                  style={{ color: headerTextColor }}
                 >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-        </div>
-      )}
+                  <Send className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{tm('sendMessage')}</span>
+                </button>
+                <button
+                  className={`flex items-center gap-1.5 border px-3 py-2 rounded-full font-bold text-xs md:text-sm transition-colors whitespace-nowrap disabled:opacity-60 ${isFollowing ? 'bg-white/35 border-white/60' : 'bg-white/15 border-white/40 hover:bg-white/25'}`}
+                  style={{ color: headerTextColor }}
+                  onClick={toggleFollow}
+                  disabled={followLoading}
+                >
+                  <Bell className={`h-3.5 w-3.5 ${isFollowing ? 'fill-current' : ''}`} />
+                  {isFollowing ? 'Abonné' : "S'abonner"}
+                  {followerCount > 0 && <span className="opacity-80">· {followerCount}</span>}
+                </button>
+                {secondAtEnd && <img src={getImageUrl(config.secondLogoUrl!)} alt="Logo 2" className={`hidden lg:block h-11 w-11 shrink-0 object-contain bg-white ${sc(shape2)} ${ring(shape2)}`} />}
+              </div>
+            </div>
+            {config.description && (
+              <div className="max-w-6xl mx-auto px-4 pb-3 -mt-1">
+                <p className="text-xs md:text-sm leading-relaxed line-clamp-2 whitespace-pre-line break-words [overflow-wrap:anywhere]" style={{ color: headerTextColor, opacity: 0.75 }}>
+                  {config.description}
+                </p>
+              </div>
+            )}
+          </header>
+        )
+      })()}
 
       {/* ── BANNIÈRE ── bloc à part, APRÈS le menu et AVANT le hero (retour client du 25/10/2026) :
           ratio fixe 1920×400 (= 24/5, la taille exigée dans l'éditeur) pour que l'image s'affiche
@@ -622,239 +718,6 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
             )}
         </div>
       )}
-
-      {/* ── HERO SECTION ── logos, nom, slogan, contacts — toujours sur la couleur d'en-tête,
-          sous la bannière s'il y en a une. */}
-      <div className="relative overflow-hidden" style={{ minHeight: 180 }}>
-        <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(135deg, ${color} 0%, ${lighten(color, 0.1)} 50%, ${lighten(color, 0.25)} 100%)` }}
-        />
-
-        {/* Immeubles décoratifs SVG — seulement sans bannière (sinon le hero reste sobre) */}
-        {bannerImages.length === 0 && (
-          <svg
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="xMidYMid slice"
-            viewBox="0 0 1440 400"
-          >
-            {/* Immeuble tour gauche */}
-            <g opacity="0.12" fill="none" stroke="white" strokeWidth="1.5">
-              <rect x="30" y="80" width="70" height="320" />
-              <rect x="30" y="80" width="70" height="15" fill="white" fillOpacity="0.2" />
-              {[110,140,170,200,230,260,290,320,350].map(y => (
-                <g key={y}>
-                  <rect x="38" y={y} width="14" height="18" rx="1" />
-                  <rect x="58" y={y} width="14" height="18" rx="1" />
-                  <rect x="78" y={y} width="14" height="18" rx="1" />
-                </g>
-              ))}
-              <line x1="65" y1="75" x2="65" y2="50" />
-              <line x1="55" y1="50" x2="75" y2="50" />
-            </g>
-
-            {/* Résidence centrale gauche */}
-            <g opacity="0.10" fill="none" stroke="white" strokeWidth="1.5">
-              <rect x="120" y="160" width="90" height="240" />
-              {[185,215,245,275,305,335,365].map(y => (
-                <g key={y}>
-                  <rect x="130" y={y} width="16" height="20" rx="1" />
-                  <rect x="154" y={y} width="16" height="20" rx="1" />
-                  <rect x="178" y={y} width="16" height="20" rx="1" />
-                </g>
-              ))}
-              <rect x="148" y="340" width="20" height="60" />
-              <path d="M120 160 L165 130 L210 160" />
-            </g>
-
-            {/* Petits immeubles milieu gauche */}
-            <g opacity="0.08" fill="none" stroke="white" strokeWidth="1.2">
-              <rect x="230" y="230" width="55" height="170" />
-              {[250,275,300,325,350,375].map(y => (
-                <g key={y}>
-                  <rect x="238" y={y} width="12" height="14" rx="1" />
-                  <rect x="258" y={y} width="12" height="14" rx="1" />
-                  <rect x="274" y={y} width="4" height="14" rx="1" />
-                </g>
-              ))}
-            </g>
-
-            {/* Grande tour droite */}
-            <g opacity="0.12" fill="none" stroke="white" strokeWidth="1.5">
-              <rect x="1320" y="40" width="80" height="360" />
-              <rect x="1320" y="40" width="80" height="12" fill="white" fillOpacity="0.15" />
-              {[65,95,125,155,185,215,245,275,305,335,365].map(y => (
-                <g key={y}>
-                  <rect x="1328" y={y} width="16" height="19" rx="1" />
-                  <rect x="1352" y={y} width="16" height="19" rx="1" />
-                  <rect x="1376" y={y} width="16" height="19" rx="1" />
-                </g>
-              ))}
-              <line x1="1360" y1="35" x2="1360" y2="10" />
-              <circle cx="1360" cy="8" r="3" fill="white" fillOpacity="0.3" />
-            </g>
-
-            {/* Immeuble résidence droite */}
-            <g opacity="0.10" fill="none" stroke="white" strokeWidth="1.5">
-              <rect x="1210" y="150" width="95" height="250" />
-              <path d="M1210 150 L1257 115 L1305 150" />
-              {[170,200,230,260,290,320,350].map(y => (
-                <g key={y}>
-                  <rect x="1220" y={y} width="17" height="20" rx="1" />
-                  <rect x="1245" y={y} width="17" height="20" rx="1" />
-                  <rect x="1270" y={y} width="17" height="20" rx="1" />
-                </g>
-              ))}
-              <rect x="1245" y="345" width="18" height="55" />
-            </g>
-
-            {/* Petite maison droite */}
-            <g opacity="0.08" fill="none" stroke="white" strokeWidth="1.2">
-              <rect x="1135" y="260" width="60" height="140" />
-              <path d="M1130 260 L1165 225 L1200 260" />
-              <rect x="1148" y="325" width="16" height="75" />
-              <rect x="1140" y="280" width="14" height="16" rx="1" />
-              <rect x="1162" y="280" width="14" height="16" rx="1" />
-              <rect x="1140" y="305" width="14" height="16" rx="1" />
-              <rect x="1162" y="305" width="14" height="16" rx="1" />
-            </g>
-
-            {/* Skyline silhouette légère au sol */}
-            <polyline
-              points="0,400 0,340 40,340 40,290 80,290 80,260 110,260 110,220 140,220 140,200 200,200 200,240 240,240 240,270 290,270 290,400"
-              opacity="0.06" fill="white" stroke="none"
-            />
-            <polyline
-              points="1440,400 1440,330 1400,330 1400,270 1370,270 1370,240 1330,240 1330,200 1295,200 1295,180 1260,180 1260,210 1215,210 1215,250 1170,250 1170,280 1130,280 1130,400"
-              opacity="0.06" fill="white" stroke="none"
-            />
-
-            {/* Petits points lumineux (fenêtres éclairées) */}
-            {[[60,120],[60,150],[60,200],[60,260],[155,175],[155,225],[155,285],[1355,70],[1355,120],[1355,190],[1355,250],[1245,175],[1245,235]].map(([x,y],i) => (
-              <circle key={i} cx={x} cy={y} r="2" fill="white" opacity="0.25" />
-            ))}
-          </svg>
-        )}
-
-        {/* Hero content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-8 flex flex-col items-center text-center">
-          {/* Logos */}
-          {(() => {
-            const hasLogo = !!config.logoUrl
-            const hasSecond = !!config.secondLogoUrl
-            const isSides = config.logoAlignment === 'sides' && hasLogo && hasSecond
-            const shape1 = config.logoShape || 'round'
-            const shape2 = config.secondLogoShape || 'round'
-            const sc1 = shape1 === 'round' ? 'rounded-full' : shape1 === 'rectangle' ? 'rounded-2xl' : 'rounded-none'
-            const sc2 = shape2 === 'round' ? 'rounded-full' : shape2 === 'rectangle' ? 'rounded-2xl' : 'rounded-none'
-            const border = 'border-4 border-white shadow-xl'
-            if (isSides) return (
-              <div className="w-full flex items-center justify-between mb-4 px-4">
-                <img src={getImageUrl(config.logoUrl!)} alt="Logo" className={`h-16 w-16 object-contain bg-white/10 ${sc1} ${border}`} />
-                <img src={getImageUrl(config.secondLogoUrl!)} alt="Logo 2" className={`h-16 w-16 object-contain bg-white/10 ${sc2} ${border}`} />
-              </div>
-            )
-            return (
-              <div className="flex items-center gap-4 mb-4 justify-center">
-                {hasLogo && <img src={getImageUrl(config.logoUrl!)} alt="Logo" className={`h-20 w-20 object-contain bg-white/10 ${sc1} ${shape1 !== 'none' ? border : ''}`} />}
-                {hasSecond && <img src={getImageUrl(config.secondLogoUrl!)} alt="Logo 2" className={`h-16 w-16 object-contain bg-white/10 ${sc2} ${shape2 !== 'none' ? border : ''}`} />}
-              </div>
-            )
-          })()}
-
-          <h1 className="text-3xl md:text-4xl font-black drop-shadow-sm leading-tight" style={{ color: headerTextColor }}>
-            {config.companyName || "Boutique Immobilière"}
-          </h1>
-
-          {config.slogan && (
-            <p className="mt-2 text-lg font-medium max-w-xl" style={{ color: headerTextColor, opacity: 0.9 }}>
-              {config.slogan}
-            </p>
-          )}
-
-          {config.description && (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]" style={{ color: headerTextColor, opacity: 0.7 }}>
-              {config.description}
-            </p>
-          )}
-
-          {/* Contact + Social — une seule ligne */}
-          {(hasContact || hasSocial) && (
-            <div className="mt-6 flex flex-wrap items-center gap-2.5 justify-center">
-              {config.phone && (
-                <a href={`tel:${config.phone}`} onClick={() => trackBoutiqueContact('CALL')} className="flex items-center gap-2 bg-white text-gray-900 px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
-                  <Phone className="h-3.5 w-3.5" style={{ color }} /> {config.phone}
-                </a>
-              )}
-              {config.whatsapp && (
-                <a href={`https://wa.me/${config.whatsapp.replace(/[^0-9]/g, '')}`} onClick={() => trackBoutiqueContact('WHATSAPP')} target="_blank" className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow hover:shadow-lg transition-all">
-                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                </a>
-              )}
-              {config.email && (
-                <a href={`mailto:${config.email}`} onClick={() => trackBoutiqueContact('EMAIL')} className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
-                  <Mail className="h-3.5 w-3.5" /> Email
-                </a>
-              )}
-              {config.website && (
-                <a href={config.website} target="_blank" className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/40 text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all">
-                  <Globe className="h-3.5 w-3.5" /> Web
-                </a>
-              )}
-              {/* Séparateur visuel si contact + social */}
-              {hasContact && hasSocial && <span className="h-5 w-px bg-white/30 mx-1" />}
-              {config.facebook && (
-                <a href={config.facebook} target="_blank" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all">
-                  <Facebook className="h-3.5 w-3.5" />
-                </a>
-              )}
-              {config.instagram && (
-                <a href={config.instagram.startsWith('http') ? config.instagram : `https://instagram.com/${config.instagram.replace('@', '')}`} target="_blank" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all">
-                  <Instagram className="h-3.5 w-3.5" />
-                </a>
-              )}
-              {config.linkedin && (
-                <a href={config.linkedin} target="_blank" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 flex items-center justify-center text-white transition-all">
-                  <Linkedin className="h-3.5 w-3.5" />
-                </a>
-              )}
-            </div>
-          )}
-
-          {/* Badge abonnement */}
-          {config.subscriptionPlan && config.subscriptionPlan !== 'STARTER' && (
-            <div className="mt-4">
-              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 border border-white/40 text-white">
-                {config.subscriptionPlan === 'PREMIUM' ? <Crown className="h-3.5 w-3.5 text-yellow-300" /> : <Star className="h-3.5 w-3.5 text-blue-300" />}
-                Boutique {config.subscriptionPlan === 'PREMIUM' ? 'Premium' : 'Pro'} · Patrimoine.dz
-              </span>
-            </div>
-          )}
-
-          {/* Boutons action visiteur */}
-          <div className="mt-5 flex items-center gap-2.5 flex-wrap justify-center">
-            <button
-              type="button"
-              onClick={() => setMsgOpen(true)}
-              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/40 px-4 py-2 rounded-full font-bold text-sm hover:bg-white/30 transition-all"
-              style={{ color: headerTextColor }}
-            >
-              <Send className="h-3.5 w-3.5" /> {tm('sendMessage')}
-            </button>
-            <button
-              className={`flex items-center gap-2 border px-4 py-2 rounded-full font-bold text-sm transition-all disabled:opacity-60 ${isFollowing ? 'bg-white/40 border-white/60' : 'bg-white/20 border-white/40 hover:bg-white/30'}`}
-              style={{ color: headerTextColor }}
-              onClick={toggleFollow}
-              disabled={followLoading}
-            >
-              <Bell className={`h-3.5 w-3.5 ${isFollowing ? 'fill-current' : ''}`} />
-              {isFollowing ? 'Abonné' : "S'abonner"}
-              {followerCount > 0 && <span className="opacity-80">· {followerCount}</span>}
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* ── STORIES ── */}
       {(() => {
@@ -908,30 +771,30 @@ export default function BoutiquePage({ params }: { params: Promise<{ userId: str
 
               {availableCategories.length > 0 && (
                 <div className="relative">
-                  <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
+                  <SelectMenu value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
                     <option value="">Catégorie</option>
                     {availableCategories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
+                  </SelectMenu>
                   <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
                 </div>
               )}
 
               {availableWilayas.length > 0 && (
                 <div className="relative">
-                  <select value={wilayas} onChange={e => { setWilayas(e.target.value); setCommune("") }} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
+                  <SelectMenu value={wilayas} onChange={e => { setWilayas(e.target.value); setCommune("") }} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
                     <option value="">Wilaya</option>
                     {availableWilayas.map(w => <option key={w} value={w}>{w}</option>)}
-                  </select>
+                  </SelectMenu>
                   <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
                 </div>
               )}
 
               {wilayas && availableCommunes.length > 0 && (
                 <div className="relative">
-                  <select value={commune} onChange={e => setCommune(e.target.value)} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
+                  <SelectMenu value={commune} onChange={e => setCommune(e.target.value)} className="appearance-none pl-3 pr-6 py-1.5 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-[#00BFA6] outline-none bg-white cursor-pointer">
                     <option value="">Commune</option>
                     {availableCommunes.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  </SelectMenu>
                   <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
                 </div>
               )}

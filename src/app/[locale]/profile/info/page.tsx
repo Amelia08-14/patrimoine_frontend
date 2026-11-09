@@ -1,5 +1,6 @@
 "use client"
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useTranslations } from "next-intl";
@@ -411,18 +412,18 @@ export default function ProfileInfoPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("wilaya")}</label>
-                            <select
+                            <SelectMenu
                                 value={selectedWilaya}
                                 onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); }}
                                 className="w-full bg-gray-50 dark:bg-transparent border-2 border-gray-200 dark:border-white/10 focus:bg-white focus:ring-0 focus:border-[#00BFA6] outline-none transition-all font-medium text-gray-900 dark:text-white h-[42px] rounded-md px-3"
                             >
                                 <option value="">{t("wilayaPlaceholder")}</option>
                                 {cities.map((c) => <option key={c.id} value={c.id}>{c.nameFr}</option>)}
-                            </select>
+                            </SelectMenu>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700 dark:text-white/70">{t("commune")}</label>
-                            <select
+                            <SelectMenu
                                 value={selectedCommune}
                                 onChange={(e) => setSelectedCommune(e.target.value)}
                                 disabled={!selectedWilaya}
@@ -430,7 +431,7 @@ export default function ProfileInfoPage() {
                             >
                                 <option value="">{t("communePlaceholder")}</option>
                                 {towns.map((tw) => <option key={tw.id} value={tw.id}>{tw.nameFr}</option>)}
-                            </select>
+                            </SelectMenu>
                         </div>
                     </div>
                 </div>

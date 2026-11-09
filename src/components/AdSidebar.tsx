@@ -50,7 +50,7 @@ export function AdSidebar({ side, className, page = "ANNOUNCES", category }: { s
 
   return (
     <aside aria-label={t("adLabel")} className={cn("sticky top-24 shrink-0 self-start", className)}>
-      <div className="relative w-[clamp(10.5rem,11vw,17rem)] aspect-[1/2] overflow-hidden rounded-3xl bg-[#003B4A] shadow-md">
+      <div className="relative w-[clamp(11.5rem,12.5vw,18rem)] aspect-[1/2] overflow-hidden rounded-3xl bg-[#003B4A] shadow-md">
         {ads.map((ad, i) => (
           <AdLink
             key={ad.key}

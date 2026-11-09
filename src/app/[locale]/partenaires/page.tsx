@@ -1,5 +1,6 @@
 "use client"
 
+import { SelectMenu } from "@/components/ui/select-menu"
 import { useEffect, useState, useMemo, useRef } from "react"
 import { useTranslations } from "next-intl"
 import { Handshake, Building, Hotel, PartyPopper, Warehouse, ImageOff, ExternalLink, ChevronLeft, ChevronRight, Send, Loader2, CheckCircle2, Upload, ArrowRight } from "lucide-react"
@@ -186,18 +187,18 @@ function PartnerApplicationForm() {
       </div>
       <div>
         <label className="block text-xs font-bold text-gray-600 dark:text-white/60 mb-1.5">{t("formCategory")}</label>
-        <select
+        <SelectMenu
           value={category}
           onChange={(e) => { setCategory(e.target.value as ActivityPole | ""); setSubCategory("") }}
           className="w-full rounded-xl border border-gray-200 dark:border-white/10 px-3.5 py-2.5 text-sm bg-white dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#00BFA6]/30 focus:border-[#00BFA6]"
         >
           <option value="">{t("formCategoryPlaceholder")}</option>
           {partnerCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-        </select>
+        </SelectMenu>
       </div>
       <div>
         <label className="block text-xs font-bold text-gray-600 dark:text-white/60 mb-1.5">{t("formSubCategory")}</label>
-        <select
+        <SelectMenu
           value={subCategory}
           onChange={(e) => setSubCategory(e.target.value)}
           disabled={!category}
@@ -205,7 +206,7 @@ function PartnerApplicationForm() {
         >
           <option value="">{t("formSubCategoryPlaceholder")}</option>
           {category && subCategoriesForPole(category).map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-        </select>
+        </SelectMenu>
       </div>
       <div>
         <label className="block text-xs font-bold text-gray-600 dark:text-white/60 mb-1.5">{t("formWebsite")}</label>
